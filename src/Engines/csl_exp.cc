@@ -61,7 +61,7 @@ CSL_expl_eng::CSL_expl_eng() : subengine()
 
 bool CSL_expl_eng::AppliesToModelType(hldsm::model_type mt) const
 {
-  return (0==mt); 
+  return (0==mt);
 }
 
 // **************************************************************************
@@ -88,7 +88,7 @@ void TU_generate::RunEngine(result* pass, int np, traverse_data &x)
   DCASSERT(pass[0].isNormal());
   DCASSERT(pass[2].isNormal());
 
-  // 
+  //
   // Parameter 0: the model.
   //
 
@@ -153,7 +153,7 @@ void TU_generate::RunEngine(result* pass, int np, traverse_data &x)
     initial = Share(smart_cast <statedist*>(pass[3].getPtr()));
     DCASSERT(initial);
     DCASSERT(initial->getParent() == sm);
-  } 
+  }
 
   //
   // Build a phase-type model for p U q.
@@ -199,7 +199,7 @@ public:
   PU_expl_eng();
   virtual void RunEngine(result* pass, int np, traverse_data &x);
 protected:
-  inline static void 
+  inline static void
   generateTU(result* pass, int np, traverse_data &x)
   {
     if (0==TUgen) {
@@ -216,7 +216,7 @@ protected:
       double* newvec;
       long newvecsize;
     public:
-      reindex(const hldsm* p, const double* ov, long os, double* nv, long ns) 
+      reindex(const hldsm* p, const double* ov, long os, double* nv, long ns)
       : state_lldsm::state_visitor(p)
       {
         oldvec = ov;
@@ -227,7 +227,7 @@ protected:
       virtual ~reindex() { }
 
       virtual bool visit() {
-        long ni = state()->get(0); 
+        long ni = state()->get(0);
         if (ni >= newvecsize) return false; // must be trap or accept
         //fprintf(stderr, "Converting from %ld to %ld\n", index(), ni);
         CHECK_RANGE(0, index(), oldvecsize);
@@ -314,7 +314,7 @@ void PU_expl_eng::RunEngine(result* pass, int np, traverse_data &x)
   //
   // Convert from phase model indexes back to the original model
   //
-  const stochastic_lldsm* sm 
+  const stochastic_lldsm* sm
   = dynamic_cast <const stochastic_lldsm*>(pass[0].getPtr());
 
   long mns = sm->getNumStates();
@@ -328,7 +328,7 @@ void PU_expl_eng::RunEngine(result* pass, int np, traverse_data &x)
   // Done with ttax
   //
   delete[] ttax;
-  
+
   //
   // Set the accept equivalent states to 1 here
   //
@@ -378,7 +378,7 @@ bool init_cslengines::execute()
   RegisterEngine(
       em,
       "TUgenerator",
-      "process", 
+      "process",
       "Use the underlying process to generate a TU distribution",
       &the_TU_generator
   );
@@ -386,9 +386,9 @@ bool init_cslengines::execute()
   RegisterEngine(
       em,
       "PUalgorithm",
-      "phase_tta", 
+      "phase_tta",
       "Use a phase-type tta operation to compute PU",
-      &the_PU_expl_eng 
+      &the_PU_expl_eng
   );
 
   return true;

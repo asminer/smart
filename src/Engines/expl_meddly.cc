@@ -358,7 +358,7 @@ class edge_2001_cmds {
         if (e->index != index) return false;
         return e->down == down;
       }
-      void Show(OutputStream &s) const {
+      void Show(std::ostream &s) const {
         s << index << ":" << down << " ";
         if (next) next->Show(s);
         else s << "\n";
@@ -441,7 +441,7 @@ class edge_2001_cmds {
     void Alloc(unsigned short sz, long &memused);
     void Free(element* &freelist, long &memused);
     void FindInList(int l, int ind, element* &prev, element* &curr);
-    void Show(OutputStream &s, bool summarize) const;
+    void Show(std::ostream &s, bool summarize) const;
     int Nonzeroes();
     // required by hash table
     long Signature(long M) const;
@@ -627,7 +627,7 @@ void edge_2001_cmds::submatrix
   if (curr) if (curr->index!=ind) curr = 0;
 }
 
-void edge_2001_cmds::submatrix::Show(OutputStream &s, bool summarize) const
+void edge_2001_cmds::submatrix::Show(std::ostream &s, bool summarize) const
 {
   if (summarize) if (state==MERGED || state==RECYCLED) return;
   s << "Submatrix #" << number << " : ";
@@ -1057,7 +1057,7 @@ class real_2001_cmds {
         index = i; value = v; down = d; next = n;
       }
       bool Equals(element *e) const;
-      void Show(OutputStream &s) {
+      void Show(std::ostream &s) {
         s << index << ":(" << value << ", " << down << ") ";
         if (next) next->Show(s);
         else s << "\n";
@@ -1146,7 +1146,7 @@ class real_2001_cmds {
     void Free(element* &freelist, long &memused);
     void FindInList(int l, int ind, element* &prev, element* &curr);
     void MultiplyBy(double a);
-    void Show(OutputStream &s, bool summarize);
+    void Show(std::ostream &s, bool summarize);
     int Nonzeroes();
     // convert to storage by columns
     // void Transpose();
@@ -1398,7 +1398,7 @@ void real_2001_cmds::submatrix::MultiplyBy(double a)
       ptr->value *= a;
 }
 
-void real_2001_cmds::submatrix::Show(OutputStream &s, bool summarize)
+void real_2001_cmds::submatrix::Show(std::ostream &s, bool summarize)
 {
   if (summarize) if (state==MERGED || state==RECYCLED) return;
   s << "Submatrix #" << number << " : ";
@@ -2460,18 +2460,18 @@ class gen_wrapper_templ {
       return states_only;
     }
 
-    inline void show(OutputStream &s, bool isVan, const int* id, const shared_state* curr) const
+    inline void show(std::ostream &s, bool isVan, const int* id, const shared_state* curr) const
     {
       if (isVan) s << "vanishing state: ";
       else       s << "tangible  state: ";
       curr->Print(s, 0);
     }
-    inline void show(OutputStream &s, const int* id) const
+    inline void show(std::ostream &s, const int* id) const
     {
       s << " minterm ";
       minterms->showMinterm(s, id);
     }
-    inline void show(OutputStream &s, const shared_state* curr) const
+    inline void show(std::ostream &s, const shared_state* curr) const
     {
       s << " state ";
       curr->Print(s, 0);
@@ -2610,14 +2610,14 @@ protected:
     return true;
   }
 
-  static inline void showAlgorithm(OutputStream &s) {
+  static inline void showAlgorithm(std::ostream &s) {
     s << "Explicit, ";
     if (batch_removal)  s << "batch";
     else                s << "single";
     s << " removal, ";
   }
 
-  inline void showMatrix(OutputStream &s) const {
+  inline void showMatrix(std::ostream &s) const {
     if (states_only_this_time) return;
     switch (matrix_style) {
       case CMD:

@@ -2288,8 +2288,8 @@ protected:
     // returns true on success
     bool addMinterm(const int* from, const int* to);
     // show minterms
-    void showMinterms(OutputStream &s, int pad);
-    void showMintermPairs(OutputStream &s, int pad);
+    void showMinterms(std::ostream &s, int pad);
+    void showMintermPairs(std::ostream &s, int pad);
 
     inline int getLevelAbove(int k) const {
       return level_deps.getSmallestAfter(k);
@@ -2434,7 +2434,7 @@ protected:
   }
 
 #ifdef SHOW_SUBSTATES
-  void show_substates(OutputStream &s);
+  void show_substates(std::ostream &s);
 #endif
 };
 
@@ -2584,7 +2584,7 @@ bool substate_varoption::deplist::addMinterm(const int* from, const int* to)
   return true;
 }
 
-void substate_varoption::deplist::showMinterms(OutputStream &s, int pad)
+void substate_varoption::deplist::showMinterms(std::ostream &s, int pad)
 {
   for (int i=0; i<mt_used; i++) {
     s.Pad(' ', pad);
@@ -2599,7 +2599,7 @@ void substate_varoption::deplist::showMinterms(OutputStream &s, int pad)
   }
 }
 
-void substate_varoption::deplist::showMintermPairs(OutputStream &s, int pad)
+void substate_varoption::deplist::showMintermPairs(std::ostream &s, int pad)
 {
   for (int i=0; i<mt_used; i++) {
     s.Pad(' ', pad);
@@ -4196,7 +4196,7 @@ void substate_varoption::updateLevels(debugging_msg &d, const int* levels)
 }
 
 #ifdef SHOW_SUBSTATES
-void substate_varoption::show_substates(OutputStream &s)
+void substate_varoption::show_substates(std::ostream &s)
 {
   for (int k=num_levels; k>0; k--) {
     s << "    Level " << k << " substates:\n";

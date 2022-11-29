@@ -37,7 +37,7 @@ struct indexed_statedbs {
 public:
 	indexed_statedbs(StateLib::state_db &tdb, StateLib::state_db &vdb);
 	// required
-	static inline void show(OutputStream &s, bool van, long id,
+	static inline void show(std::ostream &s, bool van, long id,
 			const shared_state* curr_st) {
 		if (van) {
 			s << "vanishing state# ";
@@ -48,10 +48,10 @@ public:
 		s << " : ";
 		curr_st->Print(s, 0);
 	}
-	static inline void show(OutputStream &s, long id) {
+	static inline void show(std::ostream &s, long id) {
 		s << " state# " << id;
 	}
-	static inline void show(OutputStream &s, const shared_state* curr_st) {
+	static inline void show(std::ostream &s, const shared_state* curr_st) {
 		s << " state ";
 		curr_st->Print(s, 0);
 	}

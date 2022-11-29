@@ -78,7 +78,7 @@ public:
     memcpy(dest, src, term_depth * sizeof(int));
   }
 
-  inline void showMinterm(OutputStream &s, const int* m) const {
+  inline void showMinterm(std::ostream &s, const int* m) const {
     s.Put('[');
     s.PutArray(m, term_depth);
     s.Put(']');

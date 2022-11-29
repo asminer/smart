@@ -54,7 +54,7 @@ class conf_intl : public shared_object {
 public:
   conf_intl(double hw, float cl);
 
-  virtual bool Print(OutputStream &s, int prec) const;
+  virtual bool Print(std::ostream &s, int prec) const;
   virtual bool Equals(const shared_object *o) const;
 };
 
@@ -64,7 +64,7 @@ conf_intl::conf_intl(double hw, float cl) : shared_object()
   conf_level = cl;
 }
 
-bool conf_intl::Print(OutputStream &s, int prec) const
+bool conf_intl::Print(std::ostream &s, int prec) const
 {
   s << " +- ";
   s.Put(half_width, 0, prec);
@@ -108,7 +108,7 @@ public:
   inline double GetPrecision() const { return Precision; }
   inline int GetType() const { return Type; }
 
-  friend void PrintSimLibraryVersions(OutputStream &s);
+  friend void PrintSimLibraryVersions(std::ostream &s);
   friend class jump_distance_option;
   friend class init_simul;
 

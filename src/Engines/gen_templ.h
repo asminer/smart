@@ -30,7 +30,7 @@
  bool statesOnly();
  void addInitial(const UID id);
  void addEdge(UID from, UID to);
- void show(OutputStream &s, bool isVanishing, const UID id, const shared_state* st);
+ void show(std::ostream &s, bool isVanishing, const UID id, const shared_state* st);
  UID  illegalID();
 
  @throws An appropriate error code
@@ -965,7 +965,7 @@ lchild_rsiblingt* generateCGT(debugging_msg &debug, dsde_hlm &dsm,
  void addTVEdge(UID from, UID to, double wt);
  void addVTEdge(UID from, UID to, double wt);
  void addVVEdge(UID from, UID to, double wt);
- void show(OutputStream &s, bool isVanishing, const UID id, const shared_state* st);
+ void show(std::ostream &s, bool isVanishing, const UID id, const shared_state* st);
  UID  illegalID();
 
  @throws An appropriate error code
@@ -1265,9 +1265,9 @@ void generateSMPt(debugging_msg &debug, dsde_hlm &dsm, SMP &smp) {
  bool statesOnly();
  void addInitial(bool isVan, const UID id, double wt);
  void addTTEdge(UID from, UID to, double wt);
- void show(OutputStream &s, bool isVan, const UID id, const shared_state* st);
- void show(OutputStream &s, const shared_state* st);
- void show(OutputStream &s, const UID id);
+ void show(std::ostream &s, bool isVan, const UID id, const shared_state* st);
+ void show(std::ostream &s, const shared_state* st);
+ void show(std::ostream &s, const UID id);
  void makeIllegalID(UID &);
 
  @throws An appropriate error code
