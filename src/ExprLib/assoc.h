@@ -199,18 +199,15 @@ protected:
 
 class summation : public flipassoc {
 public:
-  summation(const location &W, exprman::assoc_opcode oc,
-    const type* t, expr** x, bool* f, int n);
+    summation(const location &W, exprman::assoc_opcode oc,
+        const type* t, expr** x, bool* f, int n);
 protected:
-  inline void inftyMinusInfty(const expr* opnd) const {
-    DCASSERT(opnd);
-    if (em->startError()) {
-      em->causedBy(opnd);
-      em->cerr() << "Undefined operation (infty-infty) due to ";
-      opnd->Print(em->cerr(), 0);
-      em->stopIO();
+    inline void inftyMinusInfty(const expr* opnd, result* ans) const {
+        DCASSERT(opnd);
+        expr_error E(opnd, ans);
+        E << "Undefined operation (infty-infty) due to ";
+        opnd->Print(E.stream(), 0);
     }
-  }
 };
 
 // ******************************************************************
@@ -230,48 +227,35 @@ protected:
 
 class product : public flipassoc {
 public:
-  product(const location &W, exprman::assoc_opcode oc,
-    const type* t, expr** x, bool* f, int n);
-  virtual void Traverse(traverse_data &x);
+    product(const location &W, exprman::assoc_opcode oc,
+        const type* t, expr** x, bool* f, int n);
+    virtual void Traverse(traverse_data &x);
 protected:
-  inline void divideByZero(const expr* opnd) const {
-    DCASSERT(opnd);
-    if (em->startError()) {
-      em->causedBy(opnd);
-      em->cerr() << "Undefined operation (divide by 0) due to ";
-      opnd->Print(em->cerr(), 0);
-      em->stopIO();
+    inline void divideByZero(const expr* opnd, result* ans) const {
+        DCASSERT(opnd);
+        expr_error E(opnd, ans);
+        E << "Undefined operation (divide by 0) due to ";
+        opnd->Print(E.stream(), 0);
     }
-  }
-  inline void zeroTimesInfty(const expr* opnd) const {
-    DCASSERT(opnd);
-    if (em->startError()) {
-      em->causedBy(opnd);
-      em->cerr() << "Undefined operation (0 * infty) due to ";
-      opnd->Print(em->cerr(), 0);
-      em->stopIO();
+    inline void zeroTimesInfty(const expr* opnd, result* ans) const {
+        DCASSERT(opnd);
+        expr_error E(opnd, ans);
+        E << "Undefined operation (0 * infty) due to ";
+        opnd->Print(E.stream(), 0);
     }
-  }
-  inline void inftyTimesZero(bool flip, const expr* opnd) const {
-    DCASSERT(opnd);
-    if (em->startError()) {
-      em->causedBy(opnd);
-      em->cerr() << "Undefined operation (infty ";
-      if (flip) em->cerr() << "/"; else em->cerr() << "*";
-      em->cerr() << "0) due to ";
-      opnd->Print(em->cerr(), 0);
-      em->stopIO();
+    inline void inftyTimesZero(bool flip, const expr* opnd, result* ans) const {
+        DCASSERT(opnd);
+        expr_error E(opnd, ans);
+        E << "Undefined operation (infty " << (flip ? '/' : '*')
+          << "0) due to ";
+        opnd->Print(E.stream(), 0);
     }
-  }
-  inline void inftyDivInfty(const expr* opnd) const {
-    DCASSERT(opnd);
-    if (em->startError()) {
-      em->causedBy(opnd);
-      em->cerr() << "Undefined operation (infty / infty) due to ";
-      opnd->Print(em->cerr(), 0);
-      em->stopIO();
+    inline void inftyDivInfty(const expr* opnd, result* ans) const {
+        DCASSERT(opnd);
+        expr_error E(opnd, ans);
+        E << "Undefined operation (infty / infty) due to ";
+        opnd->Print(E.stream(), 0);
     }
-  }
 };
 
 
