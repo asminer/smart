@@ -9,7 +9,8 @@
 // *                          type methods                          *
 // ******************************************************************
 
-shared_string* type::infinity_string;
+shared_string* type::pos_infinity_string;
+shared_string* type::neg_infinity_string;
 
 type::type(const char* n)
 {
@@ -93,46 +94,50 @@ int type::compare(const result& a, const result& b) const
 
 bool type::print(std::ostream &s, const result& r) const
 {
-  DCASSERT(isPrintable());
-  if (r.isUnknown()) {
-    s.Put('?');
-    return true;
-  }
-  if (r.isInfinity()) {
-    DCASSERT(infinity_string);
-    if (r.signInfinity() < 0)   s.Put('-');
-    s.Put(infinity_string->getStr());
-    return true;
-  }
-  if (r.isNull()) {
-    s.Put("null");
-    return true;
-  }
-  return print_normal(s, r);
+    DCASSERT(isPrintable());
+    if (r.isUnknown()) {
+        s << '?';
+        return true;
+    }
+    if (r.isInfinity()) {
+        if (r.signInfinity() < 0) {
+            DCASSERT(neg_infinity_string);
+            s << getMinusInfinityString();
+        } else {
+            DCASSERT(pos_infinity_string);
+            s << getPlusInfinityString();
+        }
+        return true;
+    }
+    if (r.isNull()) {
+        s << "null";
+        return true;
+    }
+    return print_normal(s, r);
 }
 
 bool type::print(std::ostream &s, const result& r, int width) const
 {
-  DCASSERT(isPrintable());
-  if (r.isUnknown()) {
-    s.Put('?', width);
-    return true;
-  }
-  if (r.isInfinity()) {
-    DCASSERT(infinity_string);
-    int inflen = infinity_string->length();
-    if (r.signInfinity() < 0)   inflen++;
-    if (width > 0)              s.Pad(' ', width - inflen);
-    if (r.signInfinity() < 0)   s.Put('-');
-    s.Put(infinity_string->getStr());
-    if (width < 0)              s.Pad(' ', (-width) - inflen);
-    return true;
-  }
-  if (r.isNull()) {
-    s.Put("null", width);
-    return true;
-  }
-  return print_normal(s, r, width);
+    DCASSERT(isPrintable());
+    if (r.isUnknown()) {
+        s << formatted_string("?", width);
+        return true;
+    }
+    if (r.isInfinity()) {
+        if (r.signInfinity() < 0) {
+            DCASSERT(neg_infinity_string);
+            s << formatted_string(getMinusInfinityString(), width);
+        } else {
+            DCASSERT(pos_infinity_string);
+            s << formatted_string(getPlusInfinityString(), width);
+        }
+        return true;
+    }
+    if (r.isNull()) {
+        s << formatted_string("null", width);
+        return true;
+    }
+    return print_normal(s, r, width);
 }
 
 bool type::print(std::ostream &s, const result& r, int width, int prec) const
@@ -147,18 +152,8 @@ bool type::print(std::ostream &s, const result& r, int width, int prec) const
 
 void type::show(std::ostream &s, const result& r) const
 {
-  if (r.isUnknown()) {
-    s.Put('?');
-    return;
-  }
-  if (r.isInfinity()) {
-    DCASSERT(infinity_string);
-    if (r.signInfinity() < 0)  s.Put('-');
-    s.Put(infinity_string->getStr());
-    return;
-  }
-  if (r.isNull()) {
-    s.Put("null");
+  if (r.isUnknown() || r.isInfinity() || r.isNull()) {
+    print(s, r);
     return;
   }
   return show_normal(s, r);
@@ -247,10 +242,10 @@ typelist::~typelist()
 bool typelist::Print(std::ostream &s, int) const
 {
   DCASSERT(list);
-  s.Put( list[0] ? list[0]->getName() : "error" );
+  s << ( list[0] ? list[0]->getName() : "error" );
   for (int i=1; i<nt; i++) {
-    s.Put(':');
-    s.Put( list[i] ? list[i]->getName() : "error" );
+    s << ':';
+    s << ( list[i] ? list[i]->getName() : "error" );
   }
   return true;
 }
@@ -582,11 +577,18 @@ void InitTypeOptions(exprman* em)
   if (0==em)  return;
   if (0==em->OptMan()) return;
 
-  type::infinity_string = new shared_string("infinity");
+  type::pos_infinity_string = new shared_string("+infinity");
   em->OptMan()->addStringOption(
-      "InfinityString",
-      "Output string for infinity.",
-      type::infinity_string
+      "PlusInfinityString",
+      "Output string for positive infinity.",
+      type::pos_infinity_string
+  );
+
+  type::neg_infinity_string = new shared_string("-infinity");
+  em->OptMan()->addStringOption(
+      "MinusInfinityString",
+      "Output string for negative infinity.",
+      type::neg_infinity_string
   );
 }
 
