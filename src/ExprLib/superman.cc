@@ -779,13 +779,9 @@ expr* superman::makeUnaryOp(const location& W,
   } // for all operations with this code
 
   if (0==num_matches) {
-    if (startError()) {
-      causedBy(W);
-      cerr() << "Undefined unary operation: ";
-      cerr() << getOp(op) << " ";
-      opnd->PrintType(cerr());
-      stopIO();
-    }
+    typechecking_error E(W);
+    E << "Undefined unary operation: " << getOp(op) << " ";
+    opnd->PrintType(E.stream());
     Delete(opnd);
     return makeError();
   }
@@ -793,22 +789,17 @@ expr* superman::makeUnaryOp(const location& W,
   if (1==num_matches) {
     DCASSERT(match);
     expr* answer = match->makeExpr(W, opnd);
-    if (0==answer && startInternal(__FILE__, __LINE__)) {
-      causedBy(W);
-      internal() << "Couldn't build unary expression for " << getOp(op);
-      stopIO();
+    if (0==answer) {
+        internal_error E(__FILE__, __LINE__, W);
+        E << "Couldn't build unary expression for " << getOp(op);
     }
     return answer;
   }
 
   // too many matches, this should not happen!
-  if (startInternal(__FILE__, __LINE__)) {
-      causedBy(W);
-      internal() << "Cannot decide on unary operation: ";
-      internal() << getOp(op) << " ";
-      opnd->PrintType(internal());
-      stopIO();
-  }
+  internal_error E(__FILE__, __LINE__, W);
+  E << "Cannot decide on unary operation: " << getOp(op) << " ";
+  opnd->PrintType(E.stream());
   return 0;
 }
 
@@ -853,14 +844,11 @@ expr* superman::makeBinaryOp(const location &W,
   } // for all operations with this code
 
   if (0==num_matches) {
-    if (startError()) {
-      causedBy(W);
-      cerr() << "Undefined binary operation: ";
-      lt->PrintType(cerr());
-      cerr() << " " << getOp(op) << " ";
-      rt->PrintType(cerr());
-      stopIO();
-    }
+    typechecking_error E(W);
+    E << "Undefined binary operation: ";
+    lt->PrintType(E.stream());
+    E << " " << getOp(op) << " ";
+    rt->PrintType(E.stream());
     Delete(lt);
     Delete(rt);
     return makeError();
@@ -869,23 +857,19 @@ expr* superman::makeBinaryOp(const location &W,
   if (1==num_matches) {
     DCASSERT(match);
     expr* answer = match->makeExpr(W, lt, rt);
-    if (0==answer && startInternal(__FILE__, __LINE__)) {
-      causedBy(W);
-      internal() << "Couldn't build binary expression for " << getOp(op);
-      stopIO();
+    if (0==answer) {
+        internal_error E(__FILE__, __LINE__, W);
+        E << "Couldn't build binary expression for " << getOp(op);
     }
     return answer;
   }
 
   // too many matches, this should not happen!
-  if (startInternal(__FILE__, __LINE__)) {
-    causedBy(W);
-    internal() << "Cannot decide on binary operation: ";
-    lt->PrintType(internal());
-    internal() << " " << getOp(op) << " ";
-    rt->PrintType(internal());
-    stopIO();
-  }
+  internal_error E(__FILE__, __LINE__, W);
+  E << "Cannot decide on binary operation: ";
+  lt->PrintType(E.stream());
+  E << " " << getOp(op) << " ";
+  rt->PrintType(E.stream());
   return 0;
 }
 
@@ -933,16 +917,13 @@ expr* superman::makeTrinaryOp(const location &W, trinary_opcode op,
   } // for all operations with this code
 
   if (0==num_matches) {
-    if (startError()) {
-      causedBy(W);
-      cerr() << "Undefined trinary operation: ";
-      l->PrintType(cerr());
-      cerr() << " " << getFirst(op) << " ";
-      m->PrintType(cerr());
-      cerr() << " " << getSecond(op) << " ";
-      r->PrintType(cerr());
-      stopIO();
-    }
+    typechecking_error E(W);
+    E << "Undefined trinary operation: ";
+    l->PrintType(E.stream());
+    E << " " << getFirst(op) << " ";
+    m->PrintType(E.stream());
+    E << " " << getSecond(op) << " ";
+    r->PrintType(E.stream());
     Delete(l);
     Delete(m);
     Delete(r);
@@ -952,27 +933,22 @@ expr* superman::makeTrinaryOp(const location &W, trinary_opcode op,
   if (1==num_matches) {
     DCASSERT(match);
     expr* answer = match->makeExpr(W, l, m, r);
-    if (0==answer && startInternal(__FILE__, __LINE__)) {
-      causedBy(W);
-      internal() << "Couldn't build trinary expression for ";
-      internal() << getFirst(op) << " ";
-      internal() << getSecond(op);
-      stopIO();
+    if (0==answer) {
+        internal_error E(__FILE__, __LINE__, W);
+        E << "Couldn't build trinary expression for ";
+        E << getFirst(op) << " " << getSecond(op);
     }
     return answer;
   }
 
   // too many matches, this should not happen!
-  if (startInternal(__FILE__, __LINE__)) {
-    causedBy(W);
-    internal() << "Cannot decide on trinary operation: ";
-    l->PrintType(internal());
-    cerr() << " " << getFirst(op) << " ";
-    m->PrintType(cerr());
-    cerr() << " " << getSecond(op) << " ";
-    r->PrintType(cerr());
-    stopIO();
-  }
+  internal_error E(__FILE__, __LINE__, W);
+  E << "Cannot decide on trinary operation: ";
+  l->PrintType(E.stream());
+  E << " " << getFirst(op) << " ";
+  m->PrintType(E.stream());
+  E << " " << getSecond(op) << " ";
+  r->PrintType(E.stream());
   return 0;
 }
 
@@ -1025,18 +1001,15 @@ expr* superman::makeAssocOp(const location &W, assoc_opcode op,
   } // for all operations with this code
 
   if (0==num_matches) {
-    if (startError()) {
-      causedBy(W);
-      cerr() << "Undefined associative operation: ";
-      if (opnds[0])  opnds[0]->PrintType(cerr());
-      else    cerr() << NULTYPE->getName();
-      for (int i=1; i<N; i++) {
+    typechecking_error E(W);
+    E << "Undefined associative operation: ";
+    if (opnds[0])   opnds[0]->PrintType(E.stream());
+    else            E << NULTYPE->getName();
+    for (int i=1; i<N; i++) {
         bool f = flip ? flip[i] : 0;
-        cerr() << " " << getOp(f, op) << " ";
-        if (opnds[i]) opnds[i]->PrintType(cerr());
-        else          cerr() << NULTYPE->getName();
-      }
-      stopIO();
+        E << " " << getOp(f, op) << " ";
+        if (opnds[i]) opnds[i]->PrintType(E.stream());
+        else          E << NULTYPE->getName();
     }
     for (int i=0; i<N; i++)  Delete(opnds[i]);
     delete[] opnds;
@@ -1057,18 +1030,15 @@ expr* superman::makeAssocOp(const location &W, assoc_opcode op,
   }
 
   // too many matches, this should not happen!
-  if (startInternal(__FILE__, __LINE__)) {
-      causedBy(W);
-      internal() << "Cannot decide on associative operation: ";
-      if (opnds[0])   opnds[0]->PrintType(internal());
-      else            internal() << NULTYPE->getName();
-      for (int i=1; i<N; i++) {
-        bool f = flip ? flip[i] : 0;
-        internal() << " " << getOp(f, op) << " ";
-        if (opnds[i])   opnds[i]->PrintType(internal());
-        else            internal() << NULTYPE->getName();
-      }
-      stopIO();
+  internal_error E(__FILE__, __LINE__, W);
+  E << "Cannot decide on associative operation: ";
+  if (opnds[0])   opnds[0]->PrintType(E.stream());
+  else            E << NULTYPE->getName();
+  for (int i=1; i<N; i++) {
+    bool f = flip ? flip[i] : 0;
+    E << " " << getOp(f, op) << " ";
+    if (opnds[i])   opnds[i]->PrintType(E.stream());
+    else            E << NULTYPE->getName();
   }
   return 0;
 }
