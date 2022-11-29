@@ -56,7 +56,7 @@ public:
         @param  k       Collection number, should be 1 <= k <= num_levels.
         @param  i       Index of substate to obtain.
         @param  state   Substate will be written here.
-        @param  size    Length of state array.  
+        @param  size    Length of state array.
 
         @return Actual size of substate, or negative on error:
                   -1  index out of bounds
@@ -66,7 +66,7 @@ public:
   /** Get (one plus) the maximum allowed index for collection \a k.
         @param  k       Collection number, should be 1 <= k <= num_levels.
 
-        @return Smallest I such that any index i for collection k 
+        @return Smallest I such that any index i for collection k
                 should be i < I.
   */
   virtual long getMaxIndex(int k) const = 0;
@@ -79,11 +79,11 @@ public:
 
   /** Print a report about memory usage to the given stream.
   */
-  virtual void Report(OutputStream &) const = 0;
+  virtual void Report(std::ostream &) const = 0;
 
   // required for shared objects
 
-  virtual bool Print(OutputStream &, int) const;
+  virtual bool Print(std::ostream &, int) const;
   virtual bool Equals(const shared_object*) const;
 };
 
@@ -94,7 +94,7 @@ class exp_state_lib : public library {
 public:
   exp_state_lib();
   virtual const char* getDBMethod() const = 0;
-  virtual StateLib::state_db* 
+  virtual StateLib::state_db*
     createStateDB(bool indexed, bool store_sizes) const = 0;
   virtual substate_colls* createSubstateDBs(int K, bool store_sizes) const = 0;
 };
@@ -136,10 +136,10 @@ void LexicalSort(const hldsm* hm, const StateLib::state_coll* ss, long* map);
                 state i in collection ss.
     @param  map Mapping is written here.
                 On exit, map[i] is a permutation so that
-                sh[map[i]] is the handle for the ith state 
+                sh[map[i]] is the handle for the ith state
                 in lexical order.
 */
-void LexicalSort(const hldsm* hm, const StateLib::state_coll* ss, 
+void LexicalSort(const hldsm* hm, const StateLib::state_coll* ss,
                   const long* sh, long* map);
 
 #endif

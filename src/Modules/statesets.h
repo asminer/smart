@@ -41,7 +41,7 @@ public:
   const hldsm* getGrandparent() const;
 
   /// Build a deep copy of this stateset
-  virtual stateset* DeepCopy() const = 0; 
+  virtual stateset* DeepCopy() const = 0;
 
   /** Take the complement of this stateset, in place.
         @return true on success, false on error.
@@ -133,8 +133,8 @@ public:
 
         @param  c   Expression requiring these to match
         @param  op  Human readable operation name
-        @param  A   First stateset 
-        @param  B   Second stateset 
+        @param  A   First stateset
+        @param  B   Second stateset
 
         @return true if the parents matched, false otherwise.
   */

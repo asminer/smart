@@ -45,7 +45,7 @@ public:
   virtual void Concatenate(int i, trace* subtrace);
   virtual const trace* getSubtrace(int i) const;
 
-  virtual bool Print(OutputStream &s, int width) const;
+  virtual bool Print(std::ostream &s, int width) const;
   virtual bool Equals(const shared_object *o) const;
 
 private:
@@ -65,7 +65,7 @@ class trace_data : public shared_object {
 public:
   trace_data();
 
-  virtual bool Print(OutputStream &s, int width) const;
+  virtual bool Print(std::ostream &s, int width) const;
   virtual bool Equals(const shared_object *o) const;
 };
 

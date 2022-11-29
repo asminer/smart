@@ -41,9 +41,9 @@ public:
 #endif
   bigint(const bigint &b);
   virtual ~bigint();
-  virtual bool Print(OutputStream &s, int width) const;
+  virtual bool Print(std::ostream &s, int width) const;
   virtual bool Equals(const shared_object *o) const;
-  
+
   // Handy stuff:
 
   inline void set_si(long i) {

@@ -18,7 +18,7 @@ class string_type : public simple_type {
 public:
   string_type();
 protected:
-  virtual void show_normal(OutputStream &s, const result& r) const;
+  virtual void show_normal(std::ostream &s, const result& r) const;
   virtual void assign_normal(result& r, const char* s) const;
 };
 
@@ -31,7 +31,7 @@ string_type::string_type() : simple_type("string", "String of characters", "Stri
   setPrintable();
 }
 
-void string_type::show_normal(OutputStream &s, const result& r) const
+void string_type::show_normal(std::ostream &s, const result& r) const
 {
   s.Put('"');
   shared_string* foo = smart_cast <shared_string*> (r.getPtr());

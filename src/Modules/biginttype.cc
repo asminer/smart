@@ -99,7 +99,7 @@ bigint::~bigint()
   mpz_clear(value);
 }
 
-bool bigint::Print(OutputStream &s, int width) const
+bool bigint::Print(std::ostream &s, int width) const
 {
   int digits = mpz_sizeinbase(value, 10)+2;
   if (digits > bufsize) {
@@ -152,7 +152,7 @@ bigint::~bigint()
 {
 }
 
-bool bigint::Print(OutputStream &s, int width) const
+bool bigint::Print(std::ostream &s, int width) const
 {
   if (bufsize < 24) {
     char* newbuf = (char*) realloc(buffer, 24);

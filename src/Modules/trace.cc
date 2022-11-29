@@ -79,7 +79,7 @@ const trace* trace::getSubtrace(int i) const
   return subtraces.ReadItem(i);
 }
 
-bool trace::Print(OutputStream &s, int width) const
+bool trace::Print(std::ostream &s, int width) const
 {
   s << "\n";
   int total = TotalLength();
@@ -124,7 +124,7 @@ trace_data::trace_data()
 {
 }
 
-bool trace_data::Print(OutputStream &s, int width) const
+bool trace_data::Print(std::ostream &s, int width) const
 {
   // TODO: To be implemented
   return true;

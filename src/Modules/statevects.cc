@@ -23,20 +23,20 @@
 // ******************************************************************
 
 class statevect_printer : public state_lldsm::state_visitor {
-  OutputStream &out;
+  std::ostream &out;
   unsigned display_style;
   double* myvect;
   long nextz;
   bool comma;
 public:
-  statevect_printer(const hldsm* mdl, OutputStream &s, const statevect* d,
+  statevect_printer(const hldsm* mdl, std::ostream &s, const statevect* d,
     unsigned style);
   ~statevect_printer();
   virtual bool canSkipIndex();
   virtual bool visit();
 };
 
-statevect_printer::statevect_printer(const hldsm* m, OutputStream &s,
+statevect_printer::statevect_printer(const hldsm* m, std::ostream &s,
   const statevect* d, unsigned style) : state_visitor(m), out(s)
 {
   display_style = style;
@@ -327,7 +327,7 @@ long statevect::countNNZs() const
   return nnzs;
 }
 
-bool statevect::Print(OutputStream &s, int width) const
+bool statevect::Print(std::ostream &s, int width) const
 {
   DCASSERT(parent);
 

@@ -40,7 +40,7 @@ class temporal_type : public simple_type {
     }
 
     /**
-        Specify what happens to this type if 
+        Specify what happens to this type if
         subjected to logic operators (default: stay the same)
     */
     inline void setLogic(const temporal_type* lt) {

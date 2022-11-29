@@ -12,7 +12,7 @@
 // *                                                                *
 // ******************************************************************
 
-meddly_stateset::meddly_stateset(const state_lldsm* p, shared_domain* sd, 
+meddly_stateset::meddly_stateset(const state_lldsm* p, shared_domain* sd,
   meddly_encoder* me, shared_ddedge* E) : stateset(p)
 {
   vars = sd;
@@ -161,7 +161,7 @@ bool meddly_stateset::isEmpty() const
   return ans;
 }
 
-bool meddly_stateset::Print(OutputStream &s, int) const
+bool meddly_stateset::Print(std::ostream &s, int) const
 {
   // TBD - option for printing indexes instead?
 

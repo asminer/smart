@@ -23,7 +23,7 @@ substate_colls::~substate_colls()
 {
 }
 
-bool substate_colls::Print(OutputStream &, int) const
+bool substate_colls::Print(std::ostream &, int) const
 {
   DCASSERT(0);
   return false;
@@ -53,7 +53,7 @@ public:
   virtual int getSubstate(int k, long i, int* state, int size) const;
   virtual long getMaxIndex(int k) const;
   virtual void convertToStatic();
-  virtual void Report(OutputStream &) const;
+  virtual void Report(std::ostream &) const;
 };
 
 // **************************************************************************
@@ -122,7 +122,7 @@ void separate_colls::convertToStatic()
   }
 }
 
-void separate_colls::Report(OutputStream &s) const
+void separate_colls::Report(std::ostream &s) const
 {
   size_t total = sizeof(StateLib::state_coll*) * num_levels;
   for (int k=1; k<=num_levels; k++) {
@@ -152,7 +152,7 @@ public:
   virtual int getSubstate(int k, long i, int* state, int size) const;
   virtual long getMaxIndex(int k) const;
   virtual void convertToStatic();
-  virtual void Report(OutputStream &) const;
+  virtual void Report(std::ostream &) const;
 };
 
 // **************************************************************************
@@ -208,7 +208,7 @@ void synchronized_colls::convertToStatic()
   common->ConvertToStatic(true);
 }
 
-void synchronized_colls::Report(OutputStream &s) const
+void synchronized_colls::Report(std::ostream &s) const
 {
   size_t total = common->ReportMemTotal();
   s << "Synchronized substate collection requires ";
@@ -243,7 +243,7 @@ public:
   virtual int getSubstate(int k, long i, int* state, int size) const;
   virtual long getMaxIndex(int k) const;
   virtual void convertToStatic();
-  virtual void Report(OutputStream &) const;
+  virtual void Report(std::ostream &) const;
 };
 
 // **************************************************************************
@@ -353,7 +353,7 @@ void unsynch_colls::convertToStatic()
   common->ConvertToStatic(true);
 }
 
-void unsynch_colls::Report(OutputStream &s) const
+void unsynch_colls::Report(std::ostream &s) const
 {
   size_t total = common->ReportMemTotal();
   for (int k=1; k<=num_levels; k++) {

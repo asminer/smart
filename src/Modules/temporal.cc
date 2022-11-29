@@ -56,7 +56,7 @@ class temporal_unary : public unary {
   public:
     temporal_unary(const location &W, exprman::unary_opcode,
       const type* t, expr* x);
-    virtual bool Print(OutputStream &s, int) const;
+    virtual bool Print(std::ostream &s, int) const;
     virtual void Traverse(traverse_data &x);
 
     exprman::unary_opcode getOpCode() const;
@@ -78,7 +78,7 @@ temporal_unary::temporal_unary(const location &W,
   opcode = op;
 }
 
-bool temporal_unary::Print(OutputStream &s, int) const
+bool temporal_unary::Print(std::ostream &s, int) const
 {
   s << em->getOp(opcode);
   DCASSERT(opnd);
@@ -448,7 +448,7 @@ void temporal_X::Traverse(traverse_data &x)
 class temporal_U : public binary {
   public:
     temporal_U(const location &W, const type* t, expr* l, expr* r);
-    virtual bool Print(OutputStream &s, int) const;
+    virtual bool Print(std::ostream &s, int) const;
     virtual void Traverse(traverse_data &x);
   protected:
     virtual expr* buildAnother(expr *nl, expr *nr) const;
@@ -464,7 +464,7 @@ temporal_U::temporal_U(const location &W, const type* t, expr *l, expr *r)
 {
 }
 
-bool temporal_U::Print(OutputStream &s, int) const
+bool temporal_U::Print(std::ostream &s, int) const
 {
   s << "(";
   DCASSERT(left);

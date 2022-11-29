@@ -18,18 +18,18 @@
 // ******************************************************************
 
 class expl_printer : public state_lldsm::state_visitor {
-  OutputStream &out;
+  std::ostream &out;
   const intset &toprint;
   bool print_indexes;
   bool comma;
 public:
-  expl_printer(const hldsm* mdl, OutputStream &s, const intset &p, bool pi);
+  expl_printer(const hldsm* mdl, std::ostream &s, const intset &p, bool pi);
   virtual bool canSkipIndex();
   virtual bool visit();
 };
 
 expl_printer
-::expl_printer(const hldsm* m, OutputStream &s, const intset &p, bool pi)
+::expl_printer(const hldsm* m, std::ostream &s, const intset &p, bool pi)
  : state_visitor(m), out(s), toprint(p)
 {
   print_indexes = pi;
@@ -46,7 +46,7 @@ bool expl_printer::visit()
   if (comma)  out << ", ";
   else        comma = true;
   if (print_indexes) {
-    out.Put(x.current_state_index); 
+    out.Put(x.current_state_index);
   } else {
     x.current_state->Print(out, 0);
   }
@@ -76,7 +76,7 @@ stateset* expl_stateset::DeepCopy() const
   return new expl_stateset(getParent(), new intset (*data) );
 }
 
-bool expl_stateset::Complement() 
+bool expl_stateset::Complement()
 {
   if (0==data) return false;
   data->complement();
@@ -92,7 +92,7 @@ bool expl_stateset::Union(const expr* c, const char* op, const stateset* x)
     return false;
   }
 
-  (*data) += *(ex->data); 
+  (*data) += *(ex->data);
   return true;
 }
 
@@ -105,7 +105,7 @@ bool expl_stateset::Intersect(const expr* c, const char* op, const stateset* x)
     return false;
   }
 
-  (*data) *= *(ex->data); 
+  (*data) *= *(ex->data);
   return true;
 }
 
@@ -132,7 +132,7 @@ bool expl_stateset::isEmpty() const
   return data->isEmpty();
 }
 
-bool expl_stateset::Print(OutputStream &s, int) const
+bool expl_stateset::Print(std::ostream &s, int) const
 {
   expl_printer foo(getGrandparent(), s, *data, printIndexes());
   s.Put('{');
@@ -149,11 +149,11 @@ bool expl_stateset::Equals(const shared_object *o) const
 
   if (getParent() != b->getParent()) return false;  // TBD: may want to allow this
 
-  // Not sure if data can ever be 0, but this is probably 
+  // Not sure if data can ever be 0, but this is probably
   // the correct way to handle it if it is possible.
-  if (0==data && 0==b->data) return true; 
+  if (0==data && 0==b->data) return true;
   if (0==data || 0==b->data) return false;
-  
+
   return (*data) == *(b->data);
 }
 
@@ -205,7 +205,7 @@ init_explssets::init_explssets() : initializer("init_explssets")
 bool init_explssets::execute()
 {
   if (0==em)  return false;
-  
+
   // Library registry
   em->registerLibrary(  &intset_lib_data );
   return true;

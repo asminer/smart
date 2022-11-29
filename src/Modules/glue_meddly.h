@@ -28,6 +28,7 @@
     This little widget allows us to use our own I/O stuff
     natively inside Meddly.
 */
+/*
 class smart_output : public MEDDLY::output {
   public:
     smart_output(OutputStream &DS);
@@ -44,6 +45,7 @@ class smart_output : public MEDDLY::output {
   private:
     OutputStream &ds;
 };
+*/
 
 
 // ******************************************************************
@@ -65,7 +67,7 @@ class shared_domain : public shared_object {
   protected:
     virtual ~shared_domain();
   public:
-    virtual bool Print(OutputStream &s, int) const;
+    virtual bool Print(std::ostream &s, int) const;
     virtual bool Equals(const shared_object* x) const;
 
     // handy methods
@@ -109,7 +111,7 @@ public:
 protected:
   virtual ~shared_ddedge();
 public:
-  virtual bool Print(OutputStream &s, int) const;
+  virtual bool Print(std::ostream &s, int) const;
   virtual bool Equals(const shared_object* x) const;
 
   inline MEDDLY::forest* getForest() const {
@@ -187,9 +189,9 @@ public:
   }
 
 public:
-  virtual void dumpNode(OutputStream &s, shared_object* e) const;
-  virtual void showNodeGraph(OutputStream &s, shared_object* e) const;
-  virtual void dumpForest(OutputStream &s) const;
+  virtual void dumpNode(std::ostream &s, shared_object* e) const;
+  virtual void showNodeGraph(std::ostream &s, shared_object* e) const;
+  virtual void dumpForest(std::ostream &s) const;
 
   virtual shared_object* makeEdge(const shared_object* e);
 
@@ -248,7 +250,7 @@ public:
                             const shared_object* cols,
                             shared_object* ans);
 
-  virtual void reportStats(OutputStream &out);
+  virtual void reportStats(std::ostream &out);
 
   // Nice:
 

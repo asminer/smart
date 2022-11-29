@@ -124,7 +124,7 @@ public:
   long countNNZs() const;
 
   // required for shared_object
-  virtual bool Print(OutputStream &s, int width) const;
+  virtual bool Print(std::ostream &s, int width) const;
   virtual bool Equals(const shared_object *o) const;
 
   // for conversions to explicit statesets

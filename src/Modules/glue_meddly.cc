@@ -20,6 +20,7 @@
 // *                                                                *
 // ******************************************************************
 
+/*
 smart_output::smart_output(OutputStream &DS) : output(), ds(DS)
 {
 }
@@ -88,6 +89,7 @@ void smart_output::flush()
 {
   ds.flush();
 }
+*/
 
 // ******************************************************************
 // *                                                                *
@@ -110,7 +112,7 @@ shared_domain::~shared_domain()
   MEDDLY::destroyDomain(D);
 }
 
-bool shared_domain::Print(OutputStream &s, int) const
+bool shared_domain::Print(std::ostream &s, int) const
 {
   s << "Meddly domain";
   return true;
@@ -205,7 +207,7 @@ shared_ddedge::~shared_ddedge()
   delete iter;
 }
 
-bool shared_ddedge::Print(OutputStream &s, int) const
+bool shared_ddedge::Print(std::ostream &s, int) const
 {
   s << "Meddly edge: " << E.getNode();
   return true;
@@ -303,14 +305,14 @@ meddly_encoder::~meddly_encoder()
   MEDDLY::destroyForest(F);
 }
 
-void meddly_encoder::dumpNode(OutputStream &s, shared_object* e) const
+void meddly_encoder::dumpNode(std::ostream &s, shared_object* e) const
 {
   shared_ddedge* me = dynamic_cast <shared_ddedge*> (e);
   if (0==me) throw  Invalid_Edge;
   s.Put(me->E.getNode());
 }
 
-void meddly_encoder::showNodeGraph(OutputStream &s, shared_object* e) const
+void meddly_encoder::showNodeGraph(std::ostream &s, shared_object* e) const
 {
   shared_ddedge* me = dynamic_cast <shared_ddedge*> (e);
   if (0==me) throw  Invalid_Edge;
@@ -318,7 +320,7 @@ void meddly_encoder::showNodeGraph(OutputStream &s, shared_object* e) const
   me->E.show(sout, 2);
 }
 
-void meddly_encoder::dumpForest(OutputStream &s) const
+void meddly_encoder::dumpForest(std::ostream &s) const
 {
   DCASSERT(F);
   smart_output sout(s);
@@ -1042,7 +1044,7 @@ void meddly_encoder
   }
 }
 
-inline void putNodes(OutputStream &out, const char* pre, const char* f, long n)
+inline void putNodes(std::ostream &out, const char* pre, const char* f, long n)
 {
   out << "\t    ";
   out.Put(pre, -8);
@@ -1050,7 +1052,7 @@ inline void putNodes(OutputStream &out, const char* pre, const char* f, long n)
   out << " nodes: " << n << "\n";
 }
 
-inline void putMem(OutputStream &out, const char* pre, const char* f, size_t m)
+inline void putMem(std::ostream &out, const char* pre, const char* f, size_t m)
 {
   out << "\t    ";
   out.Put(pre, -8);
@@ -1060,7 +1062,7 @@ inline void putMem(OutputStream &out, const char* pre, const char* f, size_t m)
   out << "\n";
 }
 
-void meddly_encoder::reportStats(OutputStream &out)
+void meddly_encoder::reportStats(std::ostream &out)
 {
   if (0==F->getPeakNumNodes()) return;
   out << "\t" << name << " forest stats:\n";
