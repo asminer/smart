@@ -25,6 +25,16 @@ class outputStream {
         void buildRealOption(option_manager* om, const char* name,
                 const char* doc);
 
+        /**
+         * Build an option to set the thousands separator for this stream.
+         *  @param  om      Option manager to get the option
+         *  @param  name    Name of the option
+         *  @param  doc     Documentation for the option
+         */
+        void buildThousandsOption(option_manager* om, const char* name,
+                const char* doc);
+
+
         // TBD: option for thousands separator
 
         /** Switch to a file with given name.
@@ -66,21 +76,20 @@ class outputStream {
 
         /*
          * Write a signed integer with commas.
-         * TBD - remove comma parameter and pull it from option
          */
-        void putWithCommas(long x, const char* comma);
+        void putWithCommas(long x);
 
         /*
          * Write an unsigned integer with commas.
          */
-        void putWithCommas(unsigned long x, const char* comma);
+        void putWithCommas(unsigned long x);
 
         /*
          * Write an integer or real, encoded as a string, with commas.
          * The integer portion may start with -, +, or a digit,
          * and ends with the first non-digit.
          */
-        void putWithCommas(const char* x, const char* comma);
+        void putWithCommas(const char* x);
 
 
         /*
@@ -122,6 +131,7 @@ class outputStream {
         std::ofstream fout;
 
         unsigned realfmt;
+        shared_string* comma;
 
         void update_real_format();
         friend class rfwatch;

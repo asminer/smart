@@ -41,10 +41,13 @@ outputStream::outputStream(std::ostream &_deflt) : deflt(_deflt)
     update_real_format();
 
     clearIndent();
+
+    comma = 0;
 }
 
 outputStream::~outputStream()
 {
+    Delete(comma);
 }
 
 void outputStream::buildRealOption(option_manager* om,
@@ -57,6 +60,13 @@ void outputStream::buildRealOption(option_manager* om,
     rbo->addRadioButton("FIXED", "Same as printf(%f)", RF_FIXED);
     rbo->addRadioButton("GENERAL", "Same as printf(%g)", RF_GENERAL);
     rbo->addRadioButton("SCIENTIFIC", "Same as printf(%e)", RF_SCIENTIFIC);
+}
+
+void outputStream::buildThousandsOption(option_manager* om,
+        const char* name, const char* doc)
+{
+    if (0==om) return;
+    om->addStringOption(name, doc, comma);
 }
 
 bool outputStream::switchOutput(const char* outfile)
@@ -75,33 +85,37 @@ void outputStream::defaultOutput()
     }
 }
 
-void outputStream::putWithCommas(long x, const char* comma)
+void outputStream::putWithCommas(long x)
 {
     if ((x>-1000)&&(x<1000)) {
         stream() << x;
         return;
     }
-    putWithCommas(x/1000, comma);
-    stream() << comma;
+    putWithCommas(x/1000);
+    if (comma) {
+        stream() << comma->getStr();
+    }
     stream().fill('0');
     stream() << std::setw(3) << ABS(x%1000);
     stream().fill(' ');
 }
 
-void outputStream::putWithCommas(unsigned long x, const char* comma)
+void outputStream::putWithCommas(unsigned long x)
 {
     if (x<1000) {
         stream() << x;
         return;
     }
-    putWithCommas(x/1000, comma);
-    stream() << comma;
+    putWithCommas(x/1000);
+    if (comma) {
+        stream() << comma->getStr();
+    }
     stream().fill('0');
     stream() << std::setw(3) << x%1000;
     stream().fill(' ');
 }
 
-void outputStream::putWithCommas(const char* x, const char* comma)
+void outputStream::putWithCommas(const char* x)
 {
     if (nullptr == x) return;
     if (('-' == x[0]) || ('+' == x[0])) {
@@ -135,7 +149,9 @@ void outputStream::putWithCommas(const char* x, const char* comma)
     for (; x[0]; x += 3) {
         if (x[0] < '0') break;
         if (x[0] > '9') break;
-        stream() << comma;
+        if (comma) {
+            stream() << comma->getStr();
+        }
         stream() << x[0] << x[1] << x[2];
     }
     stream() << x;
