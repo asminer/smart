@@ -3,17 +3,10 @@
 #define SHARED_H
 
 #include "defines.h"
-#include "../Streams/streams.h"
+#include <iostream>
 
 // #define DEBUG_LINKCOUNTS
 // #define DISPLAY_LINKCOUNTS
-
-#ifdef DEBUG_LINKCOUNTS
-  #include "streams.h"
-#endif
-#ifdef DISPLAY_LINKCOUNTS
-  #include "streams.h"
-#endif
 
 // ******************************************************************
 // *                                                                *
@@ -28,69 +21,77 @@
     INT, and REAL (for speed).
 */
 class shared_object {
-  long linkcount;
+    // TBD: make this unsigned long?
+    long linkcount;
 public:
-  shared_object() {
-    linkcount = 1;
-  }
-protected:
-  virtual ~shared_object() {
-  }
-public:
-  inline long numRefs() const {
-    return linkcount;
-  }
-  /// Safer to call template function Share() below.
-  inline void ShareMe() {
-#ifdef DEBUG_LINKCOUNTS
-    if (linkcount <= 0) {
-      DisplayStream cout(stderr);
-      cout << "Sharing a deleted object: ";
-      Print(cout, 0);
-      cout << "\n";
+    shared_object() {
+        linkcount = 1;
     }
-#endif
-    DCASSERT(linkcount > 0);
-    linkcount++;
-  }
-  /** Write the object to the given stream.
-        @param  s     The output stream to write to.
-        @param  width Number of slots to use.
-                      This is only allowed for certain objects.
-                      If zero, consume exactly the amount of
-                      space required.
-                      If positive, add spaces before the object
-                      so that \a width space is consumed.
-                      If negative, add spaces after the object
-                      so that \a -width space is consumed.
+protected:
+    virtual ~shared_object() { }
+public:
+    inline long numRefs() const {
+        return linkcount;
+    }
+    virtual bool Equals(const shared_object *o) const = 0;
 
-        @return  true  if anything was printed, false otherwise.
+    /** Write the object to the given stream.
+            @param  s       The output stream to write to.
+            @param  width   Number of slots to use.
+                            This is only allowed for certain objects.
+                            If zero, consume exactly the amount of
+                            space required.
+                            If positive, add spaces before the object
+                            so that \a width space is consumed.
+                            If negative, add spaces after the object
+                            so that \a -width space is consumed.
 
-  */
-#ifdef OLD_STREAMS
-  virtual bool Print(OutputStream &s, int width) const = 0;
-#else
-  virtual bool Print(std::ostream &s, int width) const = 0;
+    */
+    virtual bool Print(std::ostream &s, int width=0) const = 0;
+
+protected:
+    inline shared_object* ShareMe() {
+#ifdef DEBUG_LINKCOUNTS
+        if (linkcount < 1) {
+            std::cerr << "Sharing a deleted object: ";
+            Print(std::cerr, 0);
+            std::cerr << endl;
+        }
 #endif
-  virtual bool Equals(const shared_object *o) const = 0;
-  friend void Delete(shared_object* o);
+        DCASSERT(linkcount > 0);
+        linkcount++;
+#ifdef DISPLAY_LINKCOUNTS
+        std::cerr << "+1 (total " << linkcount << ") for object: ";
+        Print(std::cerr, 0);
+#endif
+        return this;
+    }
+
+    friend shared_object* _Share(shared_object* o);
+    friend void Delete(shared_object* o);
 };
+
+inline std::ostream& operator<< (std::ostream& s, const shared_object &o)
+{
+    o.Print(s);
+    return s;
+}
 
 /** Create a shallow copy of this object.
     Basically, like creating a hard link to a file.
 */
+inline shared_object* _Share(shared_object* o)
+{
+    return o ? o->ShareMe() : 0;
+}
+
+/**
+ * Templated version of Share to get the same type of pointer out.
+ */
 template <class SHARED>
 inline SHARED* Share(SHARED *o)
 {
-  if (0==o) return 0;
-  o->ShareMe();
-#ifdef DISPLAY_LINKCOUNTS
-  DisplayStream cout(stderr);
-  cout << "+1 (total " << o->numRefs() << ") for object: ";
-  o->Print(cout, 0);
-  cout << "\n";
-#endif
-  return o;
+    return static_cast <SHARED*> (_Share(o));
 }
 
 /** Delete a shared object.
@@ -100,36 +101,34 @@ inline SHARED* Share(SHARED *o)
 */
 inline void Delete(shared_object* o)
 {
-  if (0==o) return;
+    if (0==o) return;
 #ifdef DEBUG_LINKCOUNTS
-  if (o->linkcount <= 0) {
-    DisplayStream cout(stderr);
-    cout << "Too many deletes for object: ";
-    o->Print(cout, 0);
-    cout << "\n";
-  }
+    if (o->linkcount < 1) {
+        std::cerr << "Too many deletes for object: ";
+        o->Print(std::cerr, 0);
+        std::cerr << endl;
+    }
 #endif
-  DCASSERT(o->linkcount>0);
-  o->linkcount--;
+    DCASSERT(o->linkcount>0);
+    o->linkcount--;
 #ifdef DISPLAY_LINKCOUNTS
-  DisplayStream cout(stderr);
-  cout << "-1 (total " << o->numRefs() << ") for object: ";
-  o->Print(cout, 0);
-  cout << "\n";
+    std::cerr << "-1 (total " << o->linkcount << ") for object: ";
+    o->Print(std::cerr, 0);
+    std::cerr << endl;
 #endif
-  if (0==o->linkcount) {
+    if (0==o->linkcount) {
 #ifndef DEBUG_LINKCOUNTS
-    delete o;
+        delete o;
 #endif
-  }
+    }
 }
 
 /// Handy way to delete and set to null
 template <class SHARED>
 inline void Nullify(SHARED* &ptr)
 {
-  Delete(ptr);
-  ptr = 0;
+    Delete(ptr);
+    ptr = 0;
 }
 
 #endif
