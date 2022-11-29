@@ -79,7 +79,7 @@ negop
   opcode = oc;
 }
 
-bool negop::Print(OutputStream &s, int) const
+bool negop::Print(std::ostream &s, int) const
 {
   s << em->getOp(opcode);
   DCASSERT(opnd);
@@ -129,7 +129,7 @@ unary_temporal_expr
   opcode = oc;
 }
 
-bool unary_temporal_expr::Print(OutputStream &s, int) const
+bool unary_temporal_expr::Print(std::ostream &s, int) const
 {
   s << em->getOp(opcode);
   DCASSERT(opnd);

@@ -76,7 +76,7 @@ const type* sequence_op
 class void_seq : public assoc {
 public:
   void_seq(const location &W, expr** x, int n);
-  virtual bool Print(OutputStream &s, int) const;
+  virtual bool Print(std::ostream &s, int) const;
   virtual void Compute(traverse_data &x);
 protected:
   virtual expr* buildAnother(expr **x, int n) const;
@@ -91,7 +91,7 @@ void_seq::void_seq(const location &W, expr** x, int n)
 {
 }
 
-bool void_seq::Print(OutputStream &s, int d) const
+bool void_seq::Print(std::ostream &s, int d) const
 {
   for (int i=0; i<opnd_count; i++) {
     operands[i]->Print(s, d);
@@ -164,7 +164,7 @@ assoc* void_seq_op::makeExpr(const location &W, expr** list,
 class next_state_seq : public assoc {
 public:
   next_state_seq(const location &W, expr** x, int n);
-  virtual bool Print(OutputStream &s, int) const;
+  virtual bool Print(std::ostream &s, int) const;
   virtual void Compute(traverse_data &x);
   virtual void Traverse(traverse_data &x);
 protected:
@@ -180,7 +180,7 @@ next_state_seq::next_state_seq(const location &W, expr** x, int n)
 {
 }
 
-bool next_state_seq::Print(OutputStream &s, int d) const
+bool next_state_seq::Print(std::ostream &s, int d) const
 {
   for (int i=0; i<opnd_count; i++) {
     if (i) s << "; ";
@@ -275,7 +275,7 @@ public:
   virtual expr* GetComponent(int i);
   virtual void Compute(traverse_data &x);
   virtual void Traverse(traverse_data &x);
-  virtual bool Print(OutputStream &s, int) const;
+  virtual bool Print(std::ostream &s, int) const;
 protected:
   virtual assoc* buildAnother(expr **, int) const;
 };
@@ -322,7 +322,7 @@ void aggregates::Traverse(traverse_data &x)
   x.aggregate = i;  // just in case the caller needs it
 }
 
-bool aggregates::Print(OutputStream &s, int) const
+bool aggregates::Print(std::ostream &s, int) const
 {
   operands[0]->Print(s, 0);
   for (int i=1; i<opnd_count; i++) {

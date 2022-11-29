@@ -9,7 +9,7 @@ sv_encoder::~sv_encoder()
 {
 }
 
-bool sv_encoder::Print(OutputStream &s, int) const
+bool sv_encoder::Print(std::ostream &s, int) const
 {
   DCASSERT(0);
   s << "sv_encoder";

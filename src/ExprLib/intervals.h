@@ -17,7 +17,7 @@ class exprman;
 */
 class interval_point {
     /// This is useful for printing.
-    static const type* reals; 
+    static const type* reals;
     friend void InitIntervals(const exprman *);
 
   public:
@@ -48,7 +48,7 @@ class interval_point {
     */
 
     /// @return true iff the interval contains the point.
-    inline bool contains() const { 
+    inline bool contains() const {
       return (normal_closed == status) || (infinity_closed == status);
     }
     /// @return true iff the point is an ordinary real.
@@ -111,14 +111,14 @@ class interval_point {
       value = SIGN(s);
     }
     /// Set the point to be "unknown".
-    inline void setUnknown() { 
+    inline void setUnknown() {
       value = 0;
-      status = unknown; 
+      status = unknown;
     }
     /// Set the point to be null.
-    inline void setNull() { 
+    inline void setNull() {
       value = 0;
-      status = null; 
+      status = null;
     }
     /// Set the point from a result
     void setFrom(const result &v, const type* st);
@@ -156,7 +156,7 @@ class interval_point {
 class interval_object : public shared_object {
 
   /// This is useful for printing.
-  static const type* reals; 
+  static const type* reals;
   friend void InitIntervals(const exprman *);
 
   interval_point left, right;
@@ -171,7 +171,7 @@ protected:
   virtual ~interval_object();
 public:
   // required for shared_object
-  virtual bool Print(OutputStream &s, int width) const;
+  virtual bool Print(std::ostream &s, int width) const;
   virtual bool Equals(const shared_object *o) const;
 
   inline       interval_point& Left()       { return left; }

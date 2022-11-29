@@ -67,7 +67,7 @@ void symbol::Rename(shared_object* newname)
   }
 }
 
-bool symbol::Print(OutputStream &s, int width) const
+bool symbol::Print(std::ostream &s, int width) const
 {
   if (0==name) return false;
   s.Put(name->getStr(), width);
@@ -232,7 +232,7 @@ void help_topic::setName(char* n)
   Rename(new shared_string(n));
 }
 
-void help_topic::PrintHeader(OutputStream &s) const
+void help_topic::PrintHeader(std::ostream &s) const
 {
   s << "Help topic: ";
   s.Put(Name());

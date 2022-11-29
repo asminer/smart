@@ -48,7 +48,7 @@ protected:
   virtual ~sv_encoder();
 public:
   // Required for shared_object:
-  virtual bool Print(OutputStream &s, int width) const;
+  virtual bool Print(std::ostream &s, int width) const;
   virtual bool Equals(const shared_object *o) const;
 
   /** For debugging, display the current node information.
@@ -56,24 +56,24 @@ public:
         @param  e   Edge pointer
         @throws     An error, as appropriate
   */
-  virtual void dumpNode(OutputStream &s, shared_object* e) const = 0;
+  virtual void dumpNode(std::ostream &s, shared_object* e) const = 0;
 
   /**
       For debugging, and displaying the internal representation.
       Display the graph rooted at the given node.
   */
-  virtual void showNodeGraph(OutputStream &s, shared_object* e) const = 0;
+  virtual void showNodeGraph(std::ostream &s, shared_object* e) const = 0;
 
   /** For debugging, display the current "forest".
       Might not be supported for all backends.
         @param  s   Output stream to write to.
   */
-  virtual void dumpForest(OutputStream &s) const = 0;
+  virtual void dumpForest(std::ostream &s) const = 0;
 
   /** Does the forest separate primed from unprimed vars?
       This affects numbering.
       If false, then primed and unprimed vars are mixed together.
-      If there are NO primed variables, then 
+      If there are NO primed variables, then
         TBD: does it matter?
   */
   virtual bool arePrimedVarsSeparate() const = 0;
@@ -100,14 +100,14 @@ public:
 
   /** Copy one edge to another.
         @param  src   Source edge.
-        @param  dest  Destination edge. 
+        @param  dest  Destination edge.
         @throws       Appropriate error code.
   */
   virtual void copyEdge(const shared_object* src, shared_object* dest) const = 0;
 
   /** Build the "symbolic" representation for a given boolean constant.
         @param  t       Boolean constant
-        @param  answer  An edge for storing the result, 
+        @param  answer  An edge for storing the result,
                         should have been created by makeEdge().
         @throws         Appropriate error code.
   */
@@ -115,7 +115,7 @@ public:
 
   /** Build the "symbolic" representation for a given boolean constant.
         @param  t       Integer constant
-        @param  answer  An edge for storing the result, 
+        @param  answer  An edge for storing the result,
                         should have been created by makeEdge().
         @throws         Appropriate error code.
   */
@@ -123,7 +123,7 @@ public:
 
   /** Build the "symbolic" representation for a given boolean constant.
         @param  t       Real constant
-        @param  answer  An edge for storing the result, 
+        @param  answer  An edge for storing the result,
                         should have been created by makeEdge().
         @throws         Appropriate error code.
   */
@@ -136,11 +136,11 @@ public:
         @param  primed  Do we want the primed or unprimed version?
         @param  f       Expression to evaluate on sv;
                         if 0, we assume the identity function.
-        @param  answer  An edge for storing the result, 
+        @param  answer  An edge for storing the result,
                         should have been created by makeEdge().
         @throws         Appropriate error code.
   */
-  virtual void buildSymbolicSV(const symbol* sv, bool primed, 
+  virtual void buildSymbolicSV(const symbol* sv, bool primed,
                                 expr* f, shared_object* answer) = 0;
 
   /** Convert a state to a "minterm" (path in DD).
@@ -182,7 +182,7 @@ public:
   virtual const int* nextMinterm(shared_object* set) const = 0;
 
   /** Convert a set of "minterms" to a set, encoded as a DD.
-        @param  mts     Minterms to add.  Array of 
+        @param  mts     Minterms to add.  Array of
                         arrays of dimension (#levels+1)
                         of (unprimed) variable assignments.
         @param  n       Number of minterms.
@@ -193,7 +193,7 @@ public:
 
 
   /** Convert a set of "minterms" to a set of edges, encoded as a DD.
-        @param  from    From states.  Array of 
+        @param  from    From states.  Array of
                         arrays of dimension (#levels+1)
                         of unprimed variable assignments.
         @param  to      To states. Array of
@@ -206,7 +206,7 @@ public:
   virtual void createMinterms(const int* const* from, const int* const* to, int n, shared_object* ans) = 0;
 
   /** Convert a set of "minterms" and values to a matrix, encoded as a DD.
-        @param  from    From states.  Array of 
+        @param  from    From states.  Array of
                         arrays of dimension (#levels+1)
                         of unprimed variable assignments.
         @param  to      To states. Array of
@@ -228,7 +228,7 @@ public:
                       Can be the same pointer as \a opnd.
         @throws       Appropriate error code.
   */
-  virtual void buildUnary(exprman::unary_opcode op, 
+  virtual void buildUnary(exprman::unary_opcode op,
                             const shared_object* opnd, shared_object* ans) = 0;
 
   /** Build a binary operation on DD nodes.
@@ -240,8 +240,8 @@ public:
                       Can be the same pointer as \a left or \a right.
         @throws       Appropriate error code.
   */
-  virtual void  buildBinary(const shared_object* left, 
-                            exprman::binary_opcode op, 
+  virtual void  buildBinary(const shared_object* left,
+                            exprman::binary_opcode op,
                             const shared_object* right,
                             shared_object* ans) = 0;
 
@@ -255,8 +255,8 @@ public:
                       Can be the same pointer as \a left or \a right.
         @throws       Appropriate error code.
   */
-  virtual void  buildAssoc(const shared_object* left, 
-                            bool flip, exprman::assoc_opcode op, 
+  virtual void  buildAssoc(const shared_object* left,
+                            bool flip, exprman::assoc_opcode op,
                             const shared_object* right,
                             shared_object* ans) = 0;
 
@@ -302,8 +302,8 @@ public:
         @param  ans   Output: source states; within this forest.
         @throws       Appropriate error code.
   */
-  virtual void  preImage(const shared_object* x, 
-                          const shared_object* E, 
+  virtual void  preImage(const shared_object* x,
+                          const shared_object* E,
                           shared_object* ans) = 0;
 
   /** Post-image operator.
@@ -315,8 +315,8 @@ public:
         @param  ans   Output: target states; within this forest.
         @throws       Appropriate error code.
   */
-  virtual void  postImage(const shared_object* x, 
-                          const shared_object* E, 
+  virtual void  postImage(const shared_object* x,
+                          const shared_object* E,
                           shared_object* ans) = 0;
 
   /** Backward reachability operator.
@@ -326,8 +326,8 @@ public:
         @param  ans   Output: source states; within this forest.
         @throws       Appropriate error code.
   */
-  virtual void  preImageStar(const shared_object* x, 
-                              const shared_object* E, 
+  virtual void  preImageStar(const shared_object* x,
+                              const shared_object* E,
                               shared_object* ans) = 0;
 
   /** Forward reachability operator.
@@ -337,39 +337,39 @@ public:
         @param  ans   Output: target states; within this forest.
         @throws       Appropriate error code.
   */
-  virtual void  postImageStar(const shared_object* x, 
-                              const shared_object* E, 
+  virtual void  postImageStar(const shared_object* x,
+                              const shared_object* E,
                               shared_object* ans) = 0;
 
   /** Restrict first element in a relation.
         @param  E     Set of edges (e, e'); within this forest.
-        @param  rows  Set of desired "rows"; must be "compatible" 
+        @param  rows  Set of desired "rows"; must be "compatible"
                       with this forest.
         @param  ans   Output: new set of edges equal to
                       E & (rows X all); within this forest.
 
         @throws       Appropriate error code.
   */
-  virtual void  selectRows(const shared_object* E, 
+  virtual void  selectRows(const shared_object* E,
                             const shared_object* rows,
                             shared_object* ans) = 0;
 
   /** Restrict second element in a relation.
         @param  E     Set of edges (e, e'); within this forest.
-        @param  cols  Set of desired "columns"; must be "compatible" 
+        @param  cols  Set of desired "columns"; must be "compatible"
                       with this forest.
         @param  ans   Output: new set of edges equal to
                       E & (all X cols); within this forest.
 
         @throws       Appropriate error code.
   */
-  virtual void  selectCols(const shared_object* E, 
+  virtual void  selectCols(const shared_object* E,
                             const shared_object* cols,
                             shared_object* ans) = 0;
 
 
   /// Report stats
-  virtual void reportStats(OutputStream &out) = 0;
+  virtual void reportStats(std::ostream &out) = 0;
 };
 
 #endif

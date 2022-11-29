@@ -23,7 +23,7 @@ value::~value()
 {
 }
 
-bool value::Print(OutputStream &s, int width) const
+bool value::Print(std::ostream &s, int width) const
 {
   const type* t = Type();
   DCASSERT(t);

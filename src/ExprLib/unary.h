@@ -118,7 +118,7 @@ class negop : public unary {
   exprman::unary_opcode opcode;
 public:
   negop(const location& W, exprman::unary_opcode oc, const type* t, expr* x);
-  virtual bool Print(OutputStream &s, int) const;
+  virtual bool Print(std::ostream &s, int) const;
   virtual void Traverse(traverse_data &x);
 };
 
@@ -135,7 +135,7 @@ class unary_temporal_expr : public unary {
   exprman::unary_opcode opcode;
 public:
   unary_temporal_expr(const location& W, exprman::unary_opcode oc, const type* t, expr* x);
-  virtual bool Print(OutputStream &s, int) const;
+  virtual bool Print(std::ostream &s, int) const;
 
   exprman::unary_opcode GetOpCode() const
   {

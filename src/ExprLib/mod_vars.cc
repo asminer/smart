@@ -468,7 +468,7 @@ void shared_state::fillFrom(const shared_state &s) {
 	}
 }
 
-bool shared_state::Print(OutputStream &s, int) const {
+bool shared_state::Print(std::ostream &s, int) const {
 	if (0 == parent)
 		return false;
 	parent->showState(s, this);
@@ -550,7 +550,7 @@ public:
 
 	virtual ~model_var_stmt();
 
-	virtual bool Print(OutputStream &s, int) const;
+	virtual bool Print(std::ostream &s, int) const;
 	virtual void Compute(traverse_data &x);
 	virtual void Traverse(traverse_data &x);
 };
@@ -575,7 +575,7 @@ model_var_stmt::~model_var_stmt() {
 	Delete(bounds);
 }
 
-bool model_var_stmt::Print(OutputStream &s, int w) const {
+bool model_var_stmt::Print(std::ostream &s, int w) const {
 	s.Pad(' ', w);
 	DCASSERT(names[0]);
 	const type* t = names[0]->Type();
@@ -697,7 +697,7 @@ public:
 
 	virtual ~model_varray_stmt();
 
-	virtual bool Print(OutputStream &s, int) const;
+	virtual bool Print(std::ostream &s, int) const;
 	virtual void Compute(traverse_data &x);
 	virtual void Traverse(traverse_data &x);
 };
@@ -721,7 +721,7 @@ model_varray_stmt::~model_varray_stmt() {
 	delete[] vars;
 }
 
-bool model_varray_stmt::Print(OutputStream &s, int w) const {
+bool model_varray_stmt::Print(std::ostream &s, int w) const {
 	s.Pad(' ', w);
 	DCASSERT(vars[0]);
 	const type* t = vars[0]->Type();
@@ -781,7 +781,7 @@ public:
 			expr* rhs);
 	virtual ~measure_assign();
 
-	virtual bool Print(OutputStream &s, int) const;
+	virtual bool Print(std::ostream &s, int) const;
 	virtual void Compute(traverse_data &x);
 	virtual void Traverse(traverse_data &x);
 };
@@ -799,7 +799,7 @@ measure_assign::~measure_assign() {
 	Delete(retval);
 }
 
-bool measure_assign::Print(OutputStream &s, int w) const {
+bool measure_assign::Print(std::ostream &s, int w) const {
 	s.Pad(' ', w);
 	wrapper->PrintType(s);
 	s.Put(' ');
@@ -879,7 +879,7 @@ public:
 			expr *e);
 	virtual ~measure_array_assign();
 
-	virtual bool Print(OutputStream &s, int) const;
+	virtual bool Print(std::ostream &s, int) const;
 	virtual void Compute(traverse_data &x);
 	virtual void Traverse(traverse_data &x);
 };
@@ -897,7 +897,7 @@ measure_array_assign::~measure_array_assign() {
 	Delete(retval);
 }
 
-bool measure_array_assign::Print(OutputStream &s, int w) const {
+bool measure_array_assign::Print(std::ostream &s, int w) const {
 	s.Pad(' ', w);
 	wrapper->PrintType(s);
 	s.Put(' ');
@@ -1021,7 +1021,7 @@ void clev_op::Traverse(traverse_data &x) {
 	x.answer->setPtr(ans);
 }
 
-bool clev_op::Print(OutputStream &s, int w) const {
+bool clev_op::Print(std::ostream &s, int w) const {
 	DCASSERT(opnd);
 	s << lower;
 #ifdef DEBUG_BLEVLTB
@@ -1157,7 +1157,7 @@ public:
 	vltc_op(const location &W, model_var* v, long b);
 	virtual void Compute(traverse_data &x);
 	virtual void Traverse(traverse_data &x);
-	virtual bool Print(OutputStream &s, int w) const;
+	virtual bool Print(std::ostream &s, int w) const;
 	virtual long getUpper() const;
 protected:
 	virtual expr* buildAnother(expr *r) const;
@@ -1219,7 +1219,7 @@ void vltc_op::Traverse(traverse_data &x) {
 	x.answer->setPtr(ans);
 }
 
-bool vltc_op::Print(OutputStream &s, int w) const {
+bool vltc_op::Print(std::ostream &s, int w) const {
 	DCASSERT(opnd);
 	opnd->Print(s, 0);
 	s << "<";
@@ -1346,7 +1346,7 @@ public:
 	clevltc_op(const location &W, long lb, model_var* v, long ub);
 	virtual void Compute(traverse_data &x);
 	virtual void Traverse(traverse_data &x);
-	virtual bool Print(OutputStream &s, int w) const;
+	virtual bool Print(std::ostream &s, int w) const;
 	virtual long getLower() const;
 	virtual long getUpper() const;
 protected:
@@ -1418,7 +1418,7 @@ void clevltc_op::Traverse(traverse_data &x) {
 	x.answer->setPtr(ans);
 }
 
-bool clevltc_op::Print(OutputStream &s, int w) const {
+bool clevltc_op::Print(std::ostream &s, int w) const {
 	DCASSERT(opnd);
 	s << lower;
 #ifdef DEBUG_BLEVLTB
@@ -1464,7 +1464,7 @@ public:
 	blevltb_op(const location &W, expr* lb, model_var* v, expr* ub);
 	virtual void Compute(traverse_data &x);
 	virtual void Traverse(traverse_data &x);
-	virtual bool Print(OutputStream &s, int) const;
+	virtual bool Print(std::ostream &s, int) const;
 protected:
 	virtual expr* buildAnother(expr *l, expr* m, expr *r) const;
 };
@@ -1592,7 +1592,7 @@ void blevltb_op::Traverse(traverse_data &x) {
 	x.answer->setPtr(vdd);
 }
 
-bool blevltb_op::Print(OutputStream &s, int) const {
+bool blevltb_op::Print(std::ostream &s, int) const {
 	s << "(";
 	left->Print(s, 0);
 	s << " <= ";
@@ -1677,7 +1677,7 @@ void cupdate_op::Compute(traverse_data &x) {
 	}
 }
 
-bool cupdate_op::Print(OutputStream &s, int) const {
+bool cupdate_op::Print(std::ostream &s, int) const {
 	s << var->Name() << "' := " << var->Name();
 	if (delta > 0) {
 		s << " + " << delta;
@@ -1714,7 +1714,7 @@ public:
 	virtual ~vupdate_op();
 	virtual void Traverse(traverse_data &x);
 	virtual void Compute(traverse_data &x);
-	virtual bool Print(OutputStream &s, int) const;
+	virtual bool Print(std::ostream &s, int) const;
 };
 
 // ******************************************************************
@@ -1820,7 +1820,7 @@ void vupdate_op::Compute(traverse_data &x) {
 	var->AddToState(x, delta);
 }
 
-bool vupdate_op::Print(OutputStream &s, int) const {
+bool vupdate_op::Print(std::ostream &s, int) const {
 	s << var->Name() << "' := " << var->Name();
 	if (inc_amount) {
 		s << " + ";
@@ -1851,7 +1851,7 @@ public:
 	virtual ~cassign_op();
 	virtual void Traverse(traverse_data &x);
 	virtual void Compute(traverse_data &x);
-	virtual bool Print(OutputStream &s, int) const;
+	virtual bool Print(std::ostream &s, int) const;
 };
 
 // ******************************************************************
@@ -1901,7 +1901,7 @@ void cassign_op::Compute(traverse_data &x) {
 	var->SetNextState(x, x.next_state, rhs);
 }
 
-bool cassign_op::Print(OutputStream &s, int) const {
+bool cassign_op::Print(std::ostream &s, int) const {
 	s << var->Name() << "' := " << rhs;
 	return true;
 }
@@ -1924,7 +1924,7 @@ public:
 	virtual ~vassign_op();
 	virtual void Traverse(traverse_data &x);
 	virtual void Compute(traverse_data &x);
-	virtual bool Print(OutputStream &s, int) const;
+	virtual bool Print(std::ostream &s, int) const;
 };
 
 // ******************************************************************
@@ -1993,7 +1993,7 @@ void vassign_op::Compute(traverse_data &x) {
 	// error ... propogate it
 }
 
-bool vassign_op::Print(OutputStream &s, int) const {
+bool vassign_op::Print(std::ostream &s, int) const {
 	s << var->Name() << "' := ";
 	if (rhs)
 		rhs->Print(s, 0);

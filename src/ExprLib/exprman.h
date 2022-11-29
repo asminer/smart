@@ -1385,7 +1385,7 @@ public:
   virtual char registerLibrary(const library* lib) = 0;
 
   /// Print version info for all registered supporting libraries.
-  virtual void printLibraryVersions(OutputStream &s) const = 0;
+  virtual void printLibraryVersions(std::ostream &s) const = 0;
 
   /// Print copyright info for all registered supporting libraries.
   virtual void printLibraryCopyrights(doc_formatter* df) const = 0;

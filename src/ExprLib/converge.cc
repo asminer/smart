@@ -35,7 +35,7 @@ public:
 
   virtual void Compute(traverse_data &x);
   virtual void Traverse(traverse_data &x);
-  virtual bool Print(OutputStream &s, int) const;
+  virtual bool Print(std::ostream &s, int) const;
 
   inline long GetMaxIters() const { return max_iters; }
 
@@ -108,7 +108,7 @@ void converge_stmt::Traverse(traverse_data &x)
 }
 
 
-bool converge_stmt::Print(OutputStream &s, int w) const
+bool converge_stmt::Print(std::ostream &s, int w) const
 {
   s.Pad(' ', w);
   s.Put("converge {\n");
@@ -218,7 +218,7 @@ public:
 
   virtual void Compute(traverse_data &x);
   virtual void Traverse(traverse_data &x);
-  virtual bool Print(OutputStream &s, int) const;
+  virtual bool Print(std::ostream &s, int) const;
 
   void Guess(traverse_data &x);
 };
@@ -271,7 +271,7 @@ void guess_stmt::Traverse(traverse_data &x)
   }
 }
 
-bool guess_stmt::Print(OutputStream &s, int w) const
+bool guess_stmt::Print(std::ostream &s, int w) const
 {
   s.Pad(' ', w);
   s << "real " << var->Name() << " guess ";
@@ -313,7 +313,7 @@ public:
 
   virtual void Compute(traverse_data &x);
   virtual void Traverse(traverse_data &x);
-  virtual bool Print(OutputStream &s, int) const;
+  virtual bool Print(std::ostream &s, int) const;
 
   void Update();
 };
@@ -389,7 +389,7 @@ void assign_stmt::Traverse(traverse_data &x)
   }
 }
 
-bool assign_stmt::Print(OutputStream &s, int w) const
+bool assign_stmt::Print(std::ostream &s, int w) const
 {
   s.Pad(' ', w);
   s << "real " << var->Name() << " := ";
@@ -432,7 +432,7 @@ public:
 
   virtual void Compute(traverse_data &x);
   virtual void Traverse(traverse_data &x);
-  virtual bool Print(OutputStream &s, int) const;
+  virtual bool Print(std::ostream &s, int) const;
 
   void Guess(traverse_data &x);
 };
@@ -485,7 +485,7 @@ void array_guess_stmt::Traverse(traverse_data &x)
   }
 }
 
-bool array_guess_stmt::Print(OutputStream &s, int w) const
+bool array_guess_stmt::Print(std::ostream &s, int w) const
 {
   s.Pad(' ', w);
   var->PrintHeader(s);
@@ -537,7 +537,7 @@ public:
 
   virtual void Compute(traverse_data &x);
   virtual void Traverse(traverse_data &x);
-  virtual bool Print(OutputStream &s, int) const;
+  virtual bool Print(std::ostream &s, int) const;
 
   void Update(converge_var* var);
 };
@@ -637,7 +637,7 @@ void array_assign_stmt::Traverse(traverse_data &x)
   }
 }
 
-bool array_assign_stmt::Print(OutputStream &s, int w) const
+bool array_assign_stmt::Print(std::ostream &s, int w) const
 {
   s.Pad(' ', w);
   var->PrintHeader(s);

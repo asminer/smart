@@ -5,7 +5,7 @@
 #include "result.h"
 #include "functions.h"
 
-/** \file measures.h 
+/** \file measures.h
 
    Implementation of measures, and measure front-end functions.
 
@@ -61,8 +61,8 @@ public:
 protected:
   virtual ~measure();
 public:
-  inline engtype* EngineType() const { 
-    return which_engine; 
+  inline engtype* EngineType() const {
+    return which_engine;
   }
   inline void SetOwner(model_instance* mi) {
     DCASSERT(0==owner);
@@ -85,7 +85,7 @@ public:
   inline void TraverseRHS(traverse_data &x) {
     if (rhs)  rhs->Traverse(x);
   }
-  inline const type* RHSType() const { 
+  inline const type* RHSType() const {
     return rhs ? rhs->Type() : 0;
   }
   void Solve(traverse_data &x);
@@ -140,13 +140,13 @@ public:
   */
   time_measure(const expr* e, model_def* p, expr* rhs);
 
-  inline double GetTime() const { 
+  inline double GetTime() const {
     DCASSERT(!isBlockedEngine());
-    return time; 
+    return time;
   }
-  inline double GetStopTime() const { 
+  inline double GetStopTime() const {
     DCASSERT(!isBlockedEngine());
-    return stop_time; 
+    return stop_time;
   }
 
 protected:
@@ -209,7 +209,7 @@ protected:
 public:
   set_of_measures();
   virtual ~set_of_measures();
-  
+
   /** Add a new measure to the collection, to solve.
       The measure may be blocked or ready.
   */
@@ -244,7 +244,7 @@ public:
     must be called, such as "avg_ss".
 
     These functions work by creating the appropriate measure
-    during substitution, as provided in derived classes by 
+    during substitution, as provided in derived classes by
     the virtual method buildMeasure().  No other methods must
     be provided in derived classes.
 */
@@ -279,9 +279,9 @@ public:
     In this case we build a measure that will be computed directly,
     such as "num_states".
     Desired behavior should be provided in derived classes
-    by virtual method Compute().  No other methods must be 
+    by virtual method Compute().  No other methods must be
     provided in derived classes.
-    Note that we still build an appropriate measure during 
+    Note that we still build an appropriate measure during
     substitution to handle complex measure dependencies.
 */
 class msr_noengine : public msr_func {

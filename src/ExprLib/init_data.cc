@@ -38,8 +38,8 @@ class bool_type : public simple_type {
 public:
   bool_type();
 protected:
-  virtual bool print_normal(OutputStream &s, const result& r, int w) const;
-  virtual void show_normal(OutputStream &s, const result& r) const;
+  virtual bool print_normal(std::ostream &s, const result& r, int w) const;
+  virtual void show_normal(std::ostream &s, const result& r) const;
   virtual void assign_normal(result& r, const char* s) const;
   virtual bool equals_normal(const result &x, const result &y) const;
 };
@@ -54,14 +54,14 @@ bool_type::bool_type()
   setPrintable();
 }
 
-bool bool_type::print_normal(OutputStream &s, const result& r, int w) const
+bool bool_type::print_normal(std::ostream &s, const result& r, int w) const
 {
   if (r.getBool())  s.Put("true", w);
   else              s.Put("false", w);
   return true;
 }
 
-void bool_type::show_normal(OutputStream &s, const result& r) const
+void bool_type::show_normal(std::ostream &s, const result& r) const
 {
   if (r.getBool())  s.Put("true");
   else              s.Put("false");
@@ -96,9 +96,9 @@ public:
   int_type();
   virtual int compare(const result& a, const result& b) const;
 protected:
-  virtual bool print_normal(OutputStream &s, const result& r) const;
-  virtual bool print_normal(OutputStream &s, const result& r, int w) const;
-  virtual void show_normal(OutputStream &s, const result& r) const;
+  virtual bool print_normal(std::ostream &s, const result& r) const;
+  virtual bool print_normal(std::ostream &s, const result& r, int w) const;
+  virtual void show_normal(std::ostream &s, const result& r) const;
   virtual void assign_normal(result& r, const char* s) const;
   virtual bool equals_normal(const result &x, const result &y) const;
 };
@@ -133,19 +133,19 @@ int int_type::compare(const result& a, const result& b) const
   return 0;
 }
 
-bool int_type::print_normal(OutputStream &s, const result& r) const
+bool int_type::print_normal(std::ostream &s, const result& r) const
 {
   s.Put(r.getInt());
   return true;
 }
 
-bool int_type::print_normal(OutputStream &s, const result& r, int w) const
+bool int_type::print_normal(std::ostream &s, const result& r, int w) const
 {
   s.Put(r.getInt(), w);
   return true;
 }
 
-void int_type::show_normal(OutputStream &s, const result& r) const
+void int_type::show_normal(std::ostream &s, const result& r) const
 {
   s.Put(r.getInt());
 }
@@ -186,10 +186,10 @@ public:
   real_type();
   virtual int compare(const result& a, const result& b) const;
 protected:
-  virtual bool print_normal(OutputStream &s, const result& r) const;
-  virtual bool print_normal(OutputStream &s, const result& r, int w) const;
-  virtual bool print_normal(OutputStream &s, const result& r, int w, int p) const;
-  virtual void show_normal(OutputStream &s, const result& r) const;
+  virtual bool print_normal(std::ostream &s, const result& r) const;
+  virtual bool print_normal(std::ostream &s, const result& r, int w) const;
+  virtual bool print_normal(std::ostream &s, const result& r, int w, int p) const;
+  virtual void show_normal(std::ostream &s, const result& r) const;
   virtual void assign_normal(result& r, const char* s) const;
   virtual bool equals_normal(const result &x, const result &y) const;
 private:
@@ -235,7 +235,7 @@ int real_type::compare(const result& a, const result& b) const
   return 0;
 }
 
-bool real_type::print_normal(OutputStream &s, const result& r) const
+bool real_type::print_normal(std::ostream &s, const result& r) const
 {
 #ifdef DEBUG_REAL_TYPE
   fprintf(stderr, "print_normal %lf\n", r.getReal());
@@ -246,7 +246,7 @@ bool real_type::print_normal(OutputStream &s, const result& r) const
   return true;
 }
 
-bool real_type::print_normal(OutputStream &s, const result& r, int w) const
+bool real_type::print_normal(std::ostream &s, const result& r, int w) const
 {
 #ifdef DEBUG_REAL_TYPE
   fprintf(stderr, "print_normal %lf:%d\n", r.getReal(), w);
@@ -257,7 +257,7 @@ bool real_type::print_normal(OutputStream &s, const result& r, int w) const
   return true;
 }
 
-bool real_type::print_normal(OutputStream &s, const result& r, int w, int p) const
+bool real_type::print_normal(std::ostream &s, const result& r, int w, int p) const
 {
 #ifdef DEBUG_REAL_TYPE
   fprintf(stderr, "print_normal %lf:%d:%d\n", r.getReal(), w, p);
@@ -268,7 +268,7 @@ bool real_type::print_normal(OutputStream &s, const result& r, int w, int p) con
   return true;
 }
 
-void real_type::show_normal(OutputStream &s, const result& r) const
+void real_type::show_normal(std::ostream &s, const result& r) const
 {
   s.Put(r.getReal());
   shared_object* o = r.getPtr();
@@ -302,16 +302,16 @@ bool real_type::equals_normal(const result &x, const result &y) const
 // ******************************************************************
 
 class rf_watcher : public option::watcher {
-        OutputStream &os;
+        std::ostream &os;
     public:
         unsigned selected;
-        OutputStream::real_format formats[3];
+        std::ostream::real_format formats[3];
     public:
-        rf_watcher(OutputStream &s);
+        rf_watcher(std::ostream &s);
         virtual void notify(const option* o);
 };
 
-rf_watcher::rf_watcher(OutputStream &s) : os(s)
+rf_watcher::rf_watcher(std::ostream &s) : os(s)
 {
 }
 
@@ -321,7 +321,7 @@ void rf_watcher::notify(const option* o)
 }
 
 
-void MakeRFOption(exprman* em, OutputStream &s, const char* n, const char* d)
+void MakeRFOption(exprman* em, std::ostream &s, const char* n, const char* d)
 {
     if (!em->hasIO()) return;
     if (0==em->OptMan()) return;
@@ -332,13 +332,13 @@ void MakeRFOption(exprman* em, OutputStream &s, const char* n, const char* d)
     rbo->registerWatcher(rw);
 
     rbo->addRadioButton("FIXED", "Same as printf(%f)", 0);
-    rw->formats[0] = OutputStream::RF_FIXED;
+    rw->formats[0] = std::ostream::RF_FIXED;
 
     rbo->addRadioButton("GENERAL", "Same as printf(%g)", 1);
-    rw->formats[1] = OutputStream::RF_GENERAL;
+    rw->formats[1] = std::ostream::RF_GENERAL;
 
     rbo->addRadioButton("SCIENTIFIC", "Same as printf(%e)", 2);
-    rw->formats[2] = OutputStream::RF_SCIENTIFIC;
+    rw->formats[2] = std::ostream::RF_SCIENTIFIC;
 
     rw->selected = 1;
 }

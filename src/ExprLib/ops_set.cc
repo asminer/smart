@@ -89,7 +89,7 @@ class int_ivlexpr : public trinary {
 public:
   int_ivlexpr(const location &W, expr* s, expr* e, expr* i);
   virtual void Compute(traverse_data &x);
-  virtual bool Print(OutputStream &s, int) const;
+  virtual bool Print(std::ostream &s, int) const;
 protected:
   virtual expr* buildAnother(expr* newl, expr* newm, expr* newr) const;
 };
@@ -144,7 +144,7 @@ void int_ivlexpr::Compute(traverse_data &x)
   x.answer->setPtr( MakeRangeSet(s.getInt(), e.getInt(), i.getInt()) );
 }
 
-bool int_ivlexpr::Print(OutputStream &s, int) const
+bool int_ivlexpr::Print(std::ostream &s, int) const
 {
   s.Put('{');
   left->Print(s, 0);
@@ -239,7 +239,7 @@ class real_ivlexpr : public trinary {
 public:
   real_ivlexpr(const location &W, expr* s, expr* e, expr* i);
   virtual void Compute(traverse_data &x);
-  virtual bool Print(OutputStream &s, int) const;
+  virtual bool Print(std::ostream &s, int) const;
 protected:
   virtual expr* buildAnother(expr* newl, expr* newm, expr* newr) const;
 };
@@ -295,7 +295,7 @@ void real_ivlexpr::Compute(traverse_data &x)
       e.getReal(), i.getReal()) );
 }
 
-bool real_ivlexpr::Print(OutputStream &s, int) const
+bool real_ivlexpr::Print(std::ostream &s, int) const
 {
   s.Put('{');
   left->Print(s, 0);

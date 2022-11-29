@@ -91,7 +91,7 @@ public:
   static const char* getNameOf(model_type t);
 
   // shared object requirements:
-  virtual bool Print(OutputStream &, int) const;
+  virtual bool Print(std::ostream &, int) const;
   virtual bool Equals(const shared_object*) const;
 
   /** Write memory information to the reporting stream.
@@ -270,7 +270,7 @@ protected:
 public:
 
   // shared object requirements:
-  virtual bool Print(OutputStream &, int) const;
+  virtual bool Print(std::ostream &, int) const;
   virtual bool Equals(const shared_object*) const;
 
   /** Start a warning message.
@@ -317,7 +317,7 @@ public:
       @param  s  Stream to write to
       @param  x  The state
   */
-  virtual void showState(OutputStream &s, const shared_state* x) const = 0;
+  virtual void showState(std::ostream &s, const shared_state* x) const = 0;
 
 protected:
   /// Start an appopriate internal error message.

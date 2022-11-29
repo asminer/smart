@@ -199,7 +199,7 @@ void model_def::Compute(traverse_data &x, expr** pass, int np)
   current = 0;
 }
 
-void model_def::PrintHeader(OutputStream &s, bool hide) const
+void model_def::PrintHeader(std::ostream &s, bool hide) const
 {
   if (Type())  s << Type()->getName();
   s << " " << Name();
@@ -330,7 +330,7 @@ public:
 
   virtual void Compute(traverse_data &x);
   virtual void Traverse(traverse_data &x);
-  virtual bool Print(OutputStream &s, int) const;
+  virtual bool Print(std::ostream &s, int) const;
 };
 
 md_call::md_call(const location &W, model_def *m,
@@ -413,7 +413,7 @@ void md_call::Traverse(traverse_data &x)
   }
 }
 
-bool md_call::Print(OutputStream &s, int) const
+bool md_call::Print(std::ostream &s, int) const
 {
   if (mdl->Name()==NULL) return false; // can this happen?
   s << mdl->Name();
@@ -462,7 +462,7 @@ public:
 
   virtual void Compute(traverse_data &x);
   virtual void Traverse(traverse_data &x);
-  virtual bool Print(OutputStream &s, int) const;
+  virtual bool Print(std::ostream &s, int) const;
 };
 
 md_acall::md_acall(const location &W, model_def* m, expr** p, int np,
@@ -575,7 +575,7 @@ void md_acall::Traverse(traverse_data &x)
   }
 }
 
-bool md_acall::Print(OutputStream &s, int) const
+bool md_acall::Print(std::ostream &s, int) const
 {
   if (mdl->Name()==NULL) return false; // can this happen?
   s << mdl->Name();

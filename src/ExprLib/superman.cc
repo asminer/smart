@@ -1161,7 +1161,7 @@ char superman::registerLibrary(const library* lib)
   return 0;
 }
 
-void superman::printLibraryVersions(OutputStream &s) const
+void superman::printLibraryVersions(std::ostream &s) const
 {
   for (int i=0; i<num_libs; i++) {
     const char* v = extlibs[i]->getVersionString();

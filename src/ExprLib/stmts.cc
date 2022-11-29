@@ -43,7 +43,7 @@ public:
   exprstmt(const location &W, expr *e);
   virtual ~exprstmt();
 
-  virtual bool Print(OutputStream &s, int) const;
+  virtual bool Print(std::ostream &s, int) const;
   virtual void Compute(traverse_data &x);
   virtual void Traverse(traverse_data &x);
 };
@@ -58,7 +58,7 @@ exprstmt::~exprstmt()
   Delete(x);
 }
 
-bool exprstmt::Print(OutputStream &s, int w) const
+bool exprstmt::Print(std::ostream &s, int w) const
 {
   s.Pad(' ', w);
   x->Print(s, 0);
@@ -117,7 +117,7 @@ public:
   optassign_val(const location &W, option* o, expr* v);
   virtual ~optassign_val();
 
-  virtual bool Print(OutputStream &s, int) const;
+  virtual bool Print(std::ostream &s, int) const;
   virtual void Compute(traverse_data &x);
   virtual void Traverse(traverse_data &x);
 };
@@ -134,7 +134,7 @@ optassign_val::~optassign_val()
   Delete(val);
 }
 
-bool optassign_val::Print(OutputStream &s, int w) const
+bool optassign_val::Print(std::ostream &s, int w) const
 {
   s.Pad(' ', w);
   opt->show(s);
@@ -232,7 +232,7 @@ public:
   optassign_id(const location &W, option* o, radio_button* v);
   virtual ~optassign_id();
 
-  virtual bool Print(OutputStream &s, int) const;
+  virtual bool Print(std::ostream &s, int) const;
   virtual void Compute(traverse_data &x);
   virtual void Traverse(traverse_data &x);
 };
@@ -248,7 +248,7 @@ optassign_id::~optassign_id()
 {
 }
 
-bool optassign_id::Print(OutputStream &s, int w) const
+bool optassign_id::Print(std::ostream &s, int w) const
 {
   s.Pad(' ', w);
   opt->show(s);
@@ -312,7 +312,7 @@ public:
   opt_checker(const location &W, option* o, bool c, checklist_enum** v, int nv);
   virtual ~opt_checker();
 
-  virtual bool Print(OutputStream &s, int) const;
+  virtual bool Print(std::ostream &s, int) const;
   virtual void Compute(traverse_data &x);
   virtual void Traverse(traverse_data &x);
 };
@@ -331,7 +331,7 @@ opt_checker::~opt_checker()
   delete[] vals;
 }
 
-bool opt_checker::Print(OutputStream &s, int w) const
+bool opt_checker::Print(std::ostream &s, int w) const
 {
   s.Pad(' ', w);
   opt->show(s);

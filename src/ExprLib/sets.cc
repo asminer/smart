@@ -27,12 +27,12 @@ shared_set::shared_set(long s) : shared_object()
 // *                                                                *
 // ******************************************************************
 
-set_converter::element_convert::element_convert() 
-{ 
+set_converter::element_convert::element_convert()
+{
 }
 
-set_converter::element_convert::~element_convert() 
-{ 
+set_converter::element_convert::~element_convert()
+{
 }
 
 
@@ -64,7 +64,7 @@ long set_converter::IndexOf(const result &x) const
   return oldset->IndexOf(y);
 }
 
-bool set_converter::Print(OutputStream &s, int) const
+bool set_converter::Print(std::ostream &s, int) const
 {
   DCASSERT(oldset);
   return oldset->Print(s, 0);
@@ -93,7 +93,7 @@ public:
   int_ivlset(long s, long e, long i);
   virtual void GetElement(long n, result &x) const;
   virtual long IndexOf(const result &x) const;
-  virtual bool Print(OutputStream &s, int) const;
+  virtual bool Print(std::ostream &s, int) const;
   virtual bool Equals(const shared_object* o) const;
 };
 
@@ -112,7 +112,7 @@ int_ivlset::int_ivlset(long s, long e, long i)
 
 void int_ivlset::GetElement(long n, result &x) const
 {
- // CHECK_RANGE(0, n, Size()); 
+ // CHECK_RANGE(0, n, Size());
  //Incorrect Range check; To be corrected
   x.setInt(start + n * inc);
 }
@@ -128,7 +128,7 @@ long int_ivlset::IndexOf(const result &x) const
   return i;
 }
 
-bool int_ivlset::Print(OutputStream &s, int) const
+bool int_ivlset::Print(std::ostream &s, int) const
 {
   if (1==inc) {
     s << "{" << start << ".." << stop << "}";
@@ -163,7 +163,7 @@ public:
   real_ivlset(const type* rt, double s, double e, double i);
   virtual void GetElement(long n, result &x) const;
   virtual long IndexOf(const result &x) const;
-  virtual bool Print(OutputStream &s, int) const;
+  virtual bool Print(std::ostream &s, int) const;
   virtual bool Equals(const shared_object* o) const;
 };
 
@@ -191,7 +191,7 @@ long real_ivlset::IndexOf(const result &x) const
 {
   if (!x.isNormal()) return -1;
   long i;
-  if (inc>0) 
+  if (inc>0)
     i = long( ceil((x.getReal()-start)/inc - 0.5) );
   else
     i = long( ceil((start-x.getReal())/inc - 0.5) );
@@ -205,7 +205,7 @@ long real_ivlset::IndexOf(const result &x) const
   return -1;
 }
 
-bool real_ivlset::Print(OutputStream &s, int) const
+bool real_ivlset::Print(std::ostream &s, int) const
 {
   s << "{" << start << ".." << stop << ".." << inc << "}";
   return true;
@@ -239,10 +239,10 @@ class objset : public shared_set {
   long* order;
 public:
   objset(const type* t, long s, result* v, long* o);
-  virtual ~objset(); 
+  virtual ~objset();
   virtual void GetElement(long n, result& x) const;
   virtual long IndexOf(const result &x) const;
-  virtual bool Print(OutputStream &s, int) const;
+  virtual bool Print(std::ostream &s, int) const;
   virtual bool Equals(const shared_object* o) const;
 };
 
@@ -302,7 +302,7 @@ long objset::IndexOf(const result &x) const
   return -1;
 }
 
-bool objset::Print(OutputStream &s, int) const
+bool objset::Print(std::ostream &s, int) const
 {
   s.Put('{');
   for (long i=0; i<Size(); i++) {

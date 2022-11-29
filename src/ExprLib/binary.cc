@@ -96,7 +96,7 @@ void binary::Traverse(traverse_data &x)
   }
 }
 
-bool binary::Print(OutputStream &s, int) const
+bool binary::Print(std::ostream &s, int) const
 {
   s.Put('(');
   left->Print(s, 0);

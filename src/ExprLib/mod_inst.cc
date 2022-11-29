@@ -55,7 +55,7 @@ const char* lldsm::getNameOf(model_type t)
   return "unknown type code!";
 }
 
-bool lldsm::Print(OutputStream &s, int) const
+bool lldsm::Print(std::ostream &s, int) const
 {
   s << "low-level model";
   return true;
@@ -122,7 +122,7 @@ bool hldsm::buildPartInfo()
   return part;
 }
 
-bool hldsm::Print(OutputStream &s, int) const
+bool hldsm::Print(std::ostream &s, int) const
 {
   s << "high-level model";
   return true;
@@ -657,7 +657,7 @@ public:
 
   virtual void Compute(traverse_data &x);
   virtual void Traverse(traverse_data &x);
-  virtual bool Print(OutputStream &s, int) const;
+  virtual bool Print(std::ostream &s, int) const;
 };
 
 mi_call::mi_call(const location &W, const model_def* p, expr* m, int slot)
@@ -724,7 +724,7 @@ void mi_call::Traverse(traverse_data &x)
   }
 }
 
-bool mi_call::Print(OutputStream &s, int) const
+bool mi_call::Print(std::ostream &s, int) const
 {
   DCASSERT(mdl);
   if (!mdl->Print(s, 0)) {
@@ -767,7 +767,7 @@ public:
 
   virtual void Compute(traverse_data &x);
   virtual void Traverse(traverse_data &x);
-  virtual bool Print(OutputStream &s, int) const;
+  virtual bool Print(std::ostream &s, int) const;
 };
 
 mi_acall::mi_acall(const location &W, const model_def* p,
@@ -869,7 +869,7 @@ void mi_acall::Traverse(traverse_data &x)
 }
 
 
-bool mi_acall::Print(OutputStream &s, int) const
+bool mi_acall::Print(std::ostream &s, int) const
 {
   DCASSERT(mdl);
   if (!mdl->Print(s, 0)) {

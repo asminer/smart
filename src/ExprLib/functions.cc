@@ -57,7 +57,7 @@ public:
   virtual ~fcall();
   virtual void Compute(traverse_data &x);
   virtual void Traverse(traverse_data &x);
-  virtual bool Print(OutputStream &s, int) const;
+  virtual bool Print(std::ostream &s, int) const;
 };
 
 // ******************************************************************
@@ -141,7 +141,7 @@ void fcall::Traverse(traverse_data &x)
   x.parent = oldp;
 }
 
-bool fcall::Print(OutputStream &s, int w) const
+bool fcall::Print(std::ostream &s, int w) const
 {
   if (0==func->Name())  return false;  // hidden?
   if (w>0)  s.Pad(' ', w);
@@ -305,7 +305,7 @@ public:
   named_param(const location &W, char* n, expr* p);
   virtual ~named_param();
 
-  virtual bool Print(OutputStream &s, int width) const;
+  virtual bool Print(std::ostream &s, int width) const;
 
   inline expr* copyPass() const {
     return Share(pass);
@@ -325,7 +325,7 @@ named_param::~named_param()
   Delete(pass);
 }
 
-bool named_param::Print(OutputStream &s, int width) const
+bool named_param::Print(std::ostream &s, int width) const
 {
   if (symbol::Print(s, 0)) {
     s.Put(":=");
@@ -384,7 +384,7 @@ public:
   inline void HideMe() { hidden = true; }
 
   /// Returns true iff we printed something.
-  bool PrintHeader(OutputStream &s, bool hide);
+  bool PrintHeader(std::ostream &s, bool hide);
 };
 
 formal_param::formal_param(const formal_param* fp) : symbol(fp)
@@ -418,7 +418,7 @@ formal_param::~formal_param()
   Delete(deflt);
 }
 
-bool formal_param::PrintHeader(OutputStream &s, bool hide)
+bool formal_param::PrintHeader(std::ostream &s, bool hide)
 {
   if (0==Name())  return false;
   if (hidden && hide)  return false;
@@ -703,7 +703,7 @@ bool fplist::isHidden(int fpnum) const
   return false;
 }
 
-void fplist::PrintHeader(OutputStream &s, bool hide) const
+void fplist::PrintHeader(std::ostream &s, bool hide) const
 {
   s << "(";
   bool printed = false;
@@ -1146,7 +1146,7 @@ int simple_internal::Traverse(traverse_data &x, expr** pass, int np)
   };
 }
 
-void simple_internal::PrintHeader(OutputStream &s, bool hide) const
+void simple_internal::PrintHeader(std::ostream &s, bool hide) const
 {
   if (Type())  s << Type()->getName();
   s << " " << Name();
@@ -1215,7 +1215,7 @@ custom_internal::custom_internal(const char* name, const char* h)
   header = h;
 }
 
-void custom_internal::PrintHeader(OutputStream &s, bool hide) const
+void custom_internal::PrintHeader(std::ostream &s, bool hide) const
 {
   DCASSERT(header);
   s.Put(header);
@@ -1258,7 +1258,7 @@ public:
 
   virtual int Traverse(traverse_data &x, expr** pass, int np);
 
-  virtual void PrintHeader(OutputStream &s, bool hide) const;
+  virtual void PrintHeader(std::ostream &s, bool hide) const;
   virtual symbol* FindFormal(const char* name) const;
   virtual bool IsHidden(int fpnum) const;
 
@@ -1267,7 +1267,7 @@ public:
 
   virtual bool DocumentHeader(doc_formatter* df) const;
   virtual void DocumentBehavior(doc_formatter* df) const;
-  inline void ShowWhereDefined(OutputStream &s) const {
+  inline void ShowWhereDefined(std::ostream &s) const {
     if (return_expr) {
       s << Where();
     }
@@ -1313,7 +1313,7 @@ int user_func::Traverse(traverse_data &x, expr** pass, int np)
   };
 }
 
-void user_func::PrintHeader(OutputStream &s, bool hide) const
+void user_func::PrintHeader(std::ostream &s, bool hide) const
 {
   if (Type())  s << Type()->getName();
   s << " " << Name();
@@ -1506,7 +1506,7 @@ public:
   virtual int Traverse(traverse_data &x, expr** pass, int np);
   virtual void Compute(traverse_data &x, expr** pass, int np);
 
-  inline void showAll(OutputStream &s) const {
+  inline void showAll(std::ostream &s) const {
     PrintHeader(s, false);
     s << " := ";
     if (return_expr) return_expr->Print(s, 0);
@@ -1592,7 +1592,7 @@ public:
   func_stmt(const location &W, model_def* p, wrapped_user_func* f);
   virtual ~func_stmt();
 
-  virtual bool Print(OutputStream &s, int) const;
+  virtual bool Print(std::ostream &s, int) const;
   virtual void Compute(traverse_data &x);
   virtual void Traverse(traverse_data &x);
 };
@@ -1610,7 +1610,7 @@ func_stmt::~func_stmt()
   Delete(wuf);
 }
 
-bool func_stmt::Print(OutputStream &s, int w) const
+bool func_stmt::Print(std::ostream &s, int w) const
 {
   s.Pad(' ', w);
   DCASSERT(wuf);

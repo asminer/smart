@@ -25,7 +25,7 @@ public:
   forstmt(const location &W, iterator** i, int d, expr* b);
   virtual ~forstmt();
 
-  virtual bool Print(OutputStream &s, int) const;
+  virtual bool Print(std::ostream &s, int) const;
   virtual void Compute(traverse_data &x);
   virtual void Traverse(traverse_data &x);
 
@@ -33,7 +33,7 @@ protected:
   void Compute(int d, traverse_data &x);
   void Traverse(int d, traverse_data &x);
 
-  void ShowAssignments(OutputStream &s) const;
+  void ShowAssignments(std::ostream &s) const;
   inline void DebugIteration(const char* msg) const {
     if (!expr_debug.startReport())  return;
     expr_debug.report() << msg;
@@ -75,7 +75,7 @@ forstmt::~forstmt()
   free(index);
 }
 
-bool forstmt::Print(OutputStream &s, int w) const
+bool forstmt::Print(std::ostream &s, int w) const
 {
   s.Pad(' ', w);
   s.Put("for (");
@@ -150,7 +150,7 @@ void forstmt::Traverse(int d, traverse_data &x)
   }
 }
 
-void forstmt::ShowAssignments(OutputStream &s) const
+void forstmt::ShowAssignments(std::ostream &s) const
 {
 
 }

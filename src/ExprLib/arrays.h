@@ -39,7 +39,7 @@ public:
 protected:
   virtual ~array_item();
 public:
-  virtual bool Print(OutputStream &s, int) const;
+  virtual bool Print(std::ostream &s, int) const;
   virtual bool Equals(const shared_object*) const;
   inline void Compute(traverse_data &x, bool subst) {
     if (0==e) {
@@ -142,7 +142,7 @@ public:
   bool checkArrayCall(const location &W, expr** indexes, int dim) const;
 
   virtual void Traverse(traverse_data &x);
-  void PrintHeader(OutputStream &s) const;
+  void PrintHeader(std::ostream &s) const;
 
 protected:
   array* instantiateMe() const;

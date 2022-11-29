@@ -125,7 +125,7 @@ public:
   // Supporting  libraries
 
   virtual char registerLibrary(const library* lib);
-  virtual void printLibraryVersions(OutputStream &s) const;
+  virtual void printLibraryVersions(std::ostream &s) const;
   virtual void printLibraryCopyrights(doc_formatter* df) const;
 };
 

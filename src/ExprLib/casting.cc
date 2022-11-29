@@ -41,7 +41,7 @@ typecast::typecast(const location &W, const type* newt, expr* x)
   silent = false;
 }
 
-bool typecast::Print(OutputStream &s, int) const
+bool typecast::Print(std::ostream &s, int) const
 {
   DCASSERT(opnd);
 

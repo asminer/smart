@@ -15,7 +15,7 @@ interval_point::interval_point()
   setUnknown();
 }
 
-void interval_point::setFrom(const result &v, const type* st) 
+void interval_point::setFrom(const result &v, const type* st)
 {
   if (v.isNormal()) {
     status = normal_closed;
@@ -51,9 +51,9 @@ void Minimum(interval_point &c, const interval_point &a, const interval_point &b
       return;
     }
     // equal, check for inclusion or not
-    if (left) 
+    if (left)
       c.setNormal(a.contains() || b.contains(), a.getValue());
-    else 
+    else
       c.setNormal(a.contains() && b.contains(), a.getValue());
     return;
   }
@@ -65,7 +65,7 @@ void Minimum(interval_point &c, const interval_point &a, const interval_point &b
   }
   DCASSERT(! a.isNull());
   DCASSERT(! b.isNull());
- 
+
   // are they both infinity?
   if (a.isInfinity() && b.isInfinity()) {
     if (a.getSign() < b.getSign()) {
@@ -125,7 +125,7 @@ void Maximum(interval_point &c, const interval_point &a, const interval_point &b
       c.setNormal(a.contains() || b.contains(), a.getValue());
     return;
   }
- 
+
   // a or b is null, keep it null.
   if (a.isNull() || b.isNull()) {
     c.setNull();
@@ -133,7 +133,7 @@ void Maximum(interval_point &c, const interval_point &a, const interval_point &b
   }
   DCASSERT(! a.isNull());
   DCASSERT(! b.isNull());
- 
+
   // are they both infinity?
   if (a.isInfinity() && b.isInfinity()) {
     if (a.getSign() < b.getSign()) {
@@ -199,7 +199,7 @@ interval_object::~interval_object()
 {
 }
 
-bool interval_object::Print(OutputStream &s, int width) const
+bool interval_object::Print(std::ostream &s, int width) const
 {
   DCASSERT(reals);
   result x;

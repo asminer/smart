@@ -14,7 +14,6 @@ class exprman;
 class result;
 class rng_stream;
 
-// class OutputStream;  // defined in Streams module
 class io_environ;    // defined in Streams module
 
 class option_manager;   // defined in Options module
@@ -138,7 +137,7 @@ public:
   }
 
   /// Handy for debugging and such
-  bool Print(OutputStream &s) const;
+  bool Print(std::ostream &s) const;
 
   void Clear(traversal_type w) {
     which = w;
@@ -366,7 +365,7 @@ public:
   /** Show the type.  Super handy!
       virtualness: super duper handy for error expressions!
   */
-  virtual void PrintType(OutputStream &s) const;
+  virtual void PrintType(std::ostream &s) const;
 
   /** Compute the expression.
       A special case of Traversal, because it needs to be fast.

@@ -18,10 +18,10 @@ class option_manager;
       are defined elsewhere.
 
       Also, note that these are for finte sets.
-*/  
+*/
 class shared_set : public shared_object {
   /// Number of elements
-  long size;  
+  long size;
 public:
   shared_set(long s);
 
@@ -63,7 +63,7 @@ public:
   virtual ~set_converter();
   virtual void GetElement(long n, result &x) const;
   virtual long IndexOf(const result &x) const;
-  virtual bool Print(OutputStream &s, int) const;
+  virtual bool Print(std::ostream &s, int) const;
   virtual bool Equals(const shared_object* o) const;
 };
 
@@ -111,7 +111,7 @@ shared_set* MakeSet(const type* t, long s, result* v, long* o);
 
 
 /** Make a generic set of items.
-    This function builds the appropriate order array 
+    This function builds the appropriate order array
     and calls the other version of MakeSet.
       @param  t  Type of the items in the set.
       @param  s  Size of the set.

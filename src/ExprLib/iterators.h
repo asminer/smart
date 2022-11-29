@@ -40,7 +40,7 @@ public:
   /** Prints the iterator name, and the set of values.
       Required by for loops.
   */
-  void PrintAll(OutputStream &s) const;
+  void PrintAll(std::ostream &s) const;
 
   /** Compute the current range of values for the iterator.
       Required by for loops.
@@ -91,7 +91,7 @@ public:
   }
 
   /// For debugging.
-  void ShowAssignment(OutputStream &s) const;
+  void ShowAssignment(std::ostream &s) const;
 };
 
 

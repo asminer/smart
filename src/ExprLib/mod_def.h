@@ -156,7 +156,7 @@ public:
   */
   virtual void Compute(traverse_data &x, expr** pass, int np);
 
-  void PrintHeader(OutputStream &s, bool hide) const;
+  void PrintHeader(std::ostream &s, bool hide) const;
   virtual symbol* FindFormal(const char* name) const;
   virtual bool IsHidden(int fpnum) const;
   virtual bool HasNameConflict(symbol** fp, int np, int* tmp) const;
@@ -220,7 +220,7 @@ protected:
 
       @param  s  Stream to write the model to, as a dot file.
   */
-  virtual void FinalizeModel(OutputStream &s) = 0;
+  virtual void FinalizeModel(std::ostream &s) = 0;
 
   /// Call this when Finalization is successful for a high-level model.
   void ConstructionSuccess(hldsm* cm) {

@@ -91,7 +91,7 @@ int type::compare(const result& a, const result& b) const
   return 0;
 }
 
-bool type::print(OutputStream &s, const result& r) const
+bool type::print(std::ostream &s, const result& r) const
 {
   DCASSERT(isPrintable());
   if (r.isUnknown()) {
@@ -111,7 +111,7 @@ bool type::print(OutputStream &s, const result& r) const
   return print_normal(s, r);
 }
 
-bool type::print(OutputStream &s, const result& r, int width) const
+bool type::print(std::ostream &s, const result& r, int width) const
 {
   DCASSERT(isPrintable());
   if (r.isUnknown()) {
@@ -135,7 +135,7 @@ bool type::print(OutputStream &s, const result& r, int width) const
   return print_normal(s, r, width);
 }
 
-bool type::print(OutputStream &s, const result& r, int width, int prec) const
+bool type::print(std::ostream &s, const result& r, int width, int prec) const
 {
   DCASSERT(isPrintable());
   if (r.isUnknown() || r.isInfinity() || r.isNull()) {
@@ -145,7 +145,7 @@ bool type::print(OutputStream &s, const result& r, int width, int prec) const
   return print_normal(s, r, width, prec);
 }
 
-void type::show(OutputStream &s, const result& r) const
+void type::show(std::ostream &s, const result& r) const
 {
   if (r.isUnknown()) {
     s.Put('?');
@@ -184,12 +184,12 @@ bool type::equals(const result &x, const result &y) const
   return false;
 }
 
-bool type::print_normal(OutputStream &s, const result& r) const
+bool type::print_normal(std::ostream &s, const result& r) const
 {
   return print_normal(s, r, 0);
 }
 
-bool type::print_normal(OutputStream &s, const result& r, int w) const
+bool type::print_normal(std::ostream &s, const result& r, int w) const
 {
   shared_object* foo = r.getPtr();
   if (foo) {
@@ -200,12 +200,12 @@ bool type::print_normal(OutputStream &s, const result& r, int w) const
   return false;
 }
 
-bool type::print_normal(OutputStream &s, const result& r, int w, int p) const
+bool type::print_normal(std::ostream &s, const result& r, int w, int p) const
 {
   return print_normal(s, r, w);
 }
 
-void type::show_normal(OutputStream &s, const result& r) const
+void type::show_normal(std::ostream &s, const result& r) const
 {
   shared_object* foo = r.getPtr();
   if (foo) {
@@ -244,7 +244,7 @@ typelist::~typelist()
   delete[] list;
 }
 
-bool typelist::Print(OutputStream &s, int) const
+bool typelist::Print(std::ostream &s, int) const
 {
   DCASSERT(list);
   s.Put( list[0] ? list[0]->getName() : "error" );

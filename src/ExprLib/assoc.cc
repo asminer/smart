@@ -235,7 +235,7 @@ void flipassoc::Traverse(traverse_data &x)
   }
 }
 
-bool flipassoc::Print(OutputStream &s, int) const
+bool flipassoc::Print(std::ostream &s, int) const
 {
   s.Put('(');
   if (flip && flip[0]) s << em->getOp(true, opcode);

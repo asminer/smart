@@ -158,7 +158,7 @@ protected:
   virtual ~flipassoc();
 public:
   virtual void Traverse(traverse_data &x);
-  virtual bool Print(OutputStream &s, int) const;
+  virtual bool Print(std::ostream &s, int) const;
   /** Used for Substitution.
       Whatever kind of flip associative operation we are, make another one;
       except we make a shallow copy if possible.

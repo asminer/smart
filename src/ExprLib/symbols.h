@@ -59,7 +59,7 @@ public:
 
   inline bool WillSubstitute() const { return substitute_value; }
 
-  virtual bool Print(OutputStream &s, int width) const;
+  virtual bool Print(std::ostream &s, int width) const;
 
   virtual void Traverse(traverse_data &x);
 
@@ -100,7 +100,7 @@ protected:
     summary = sum;
   }
 public:
-  void PrintHeader(OutputStream &s) const;
+  void PrintHeader(std::ostream &s) const;
   inline const char* Summary() const { return summary; }
 };
 

@@ -21,7 +21,7 @@ public:
 protected:
     virtual ~value();
 public:
-    virtual bool Print(OutputStream &s, int width) const;
+    virtual bool Print(std::ostream &s, int width) const;
     virtual bool Equals(const shared_object* o) const;
     virtual void Compute(traverse_data &x);
     virtual void Traverse(traverse_data &x);

@@ -174,7 +174,7 @@ public:
                                 must appear in a model.
                       If false, shows the complete function header.
   */
-  virtual void PrintHeader(OutputStream &s, bool hide) const = 0;
+  virtual void PrintHeader(std::ostream &s, bool hide) const = 0;
 
   /** Document the header only.
   */
@@ -365,7 +365,7 @@ public:
   inline void setRepeat(int r) { repeat_point = r; }
 
   /// Prints the formal params, surrounded by parens.
-  void PrintHeader(OutputStream &s, bool hide) const;
+  void PrintHeader(std::ostream &s, bool hide) const;
 
   /// Compute formals, assuming no repeats!
   inline void compute(traverse_data &x, expr** pass, result* stack) const {
@@ -585,7 +585,7 @@ public:
   inline void SetRepeat(int r) { formals.setRepeat(r); }
 
   virtual int Traverse(traverse_data &x, expr** pass, int np);
-  virtual void PrintHeader(OutputStream &s, bool hide) const;
+  virtual void PrintHeader(std::ostream &s, bool hide) const;
   virtual symbol* FindFormal(const char* name) const;
 
   virtual int maxNamedParams() const;
@@ -632,7 +632,7 @@ class custom_internal : public internal_func {
   const char* header;
 public:
   custom_internal(const char* name, const char* header);
-  virtual void PrintHeader(OutputStream &s, bool hide) const;
+  virtual void PrintHeader(std::ostream &s, bool hide) const;
   // default: nothing is hidden.
   virtual bool IsHidden(int fpnum) const;
 };

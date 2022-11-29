@@ -27,7 +27,7 @@ array_item::~array_item()
   Delete(e);
 }
 
-bool array_item::Print(OutputStream &s, int) const
+bool array_item::Print(std::ostream &s, int) const
 {
   // DCASSERT(0);
   s << "array_item ";
@@ -71,7 +71,7 @@ struct array_desc : public shared_object {
 
   array_desc(shared_set *v);
   ~array_desc();
-  virtual bool Print(OutputStream &s, int) const;
+  virtual bool Print(std::ostream &s, int) const;
   virtual bool Equals(const shared_object*) const;
 };
 
@@ -99,7 +99,7 @@ array_desc::~array_desc()
   }
 }
 
-bool array_desc::Print(OutputStream &s, int) const
+bool array_desc::Print(std::ostream &s, int) const
 {
   DCASSERT(0);
   s << "array_desc";
@@ -293,7 +293,7 @@ public:
   arrayassign(const location &W, array *a, expr *e);
   virtual ~arrayassign();
 
-  virtual bool Print(OutputStream &s, int) const;
+  virtual bool Print(std::ostream &s, int) const;
   virtual void Compute(traverse_data &x);
   virtual void Traverse(traverse_data &x);
 };
@@ -315,7 +315,7 @@ arrayassign::~arrayassign()
   Delete(retval);
 }
 
-bool arrayassign::Print(OutputStream &s, int w) const
+bool arrayassign::Print(std::ostream &s, int w) const
 {
   DCASSERT(f);
   s.Pad(' ', w);
@@ -365,7 +365,7 @@ public:
   virtual ~acall();
   virtual void Compute(traverse_data &x);
   virtual void Traverse(traverse_data &x);
-  virtual bool Print(OutputStream &s, int) const;
+  virtual bool Print(std::ostream &s, int) const;
 };
 
 // ******************************************************************
@@ -460,7 +460,7 @@ void acall::Traverse(traverse_data &x)
   } // switch
 }
 
-bool acall::Print(OutputStream &s, int) const
+bool acall::Print(std::ostream &s, int) const
 {
   if (0==func->Name())  return false;  // hidden?
   s << func->Name();
@@ -584,7 +584,7 @@ void array::Traverse(traverse_data &x)
   }
 }
 
-void array::PrintHeader(OutputStream &s) const
+void array::PrintHeader(std::ostream &s) const
 {
   s << Name();
   for (int i=0; i<dimension; i++) {

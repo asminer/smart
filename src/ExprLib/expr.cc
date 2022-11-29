@@ -17,7 +17,7 @@
 // *                     traverse_data  methods                     *
 // ******************************************************************
 
-bool traverse_data::Print(OutputStream &s) const
+bool traverse_data::Print(std::ostream &s) const
 {
   switch (which) {
     case None:
@@ -226,7 +226,7 @@ expr* expr::GetComponent(int i)
   return 0;
 }
 
-void expr::PrintType(OutputStream &s) const
+void expr::PrintType(std::ostream &s) const
 {
   if (aggtype) {
     aggtype->Print(s, 0);
@@ -358,7 +358,7 @@ int expr
   return ans.getInt();
 }
 
-OutputStream& operator<< (OutputStream &s, const expr* e)
+std::ostream& operator<< (std::ostream &s, const expr* e)
 {
   if (e) e->Print(s, 0);
   return s;

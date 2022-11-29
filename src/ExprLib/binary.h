@@ -102,7 +102,7 @@ protected:
   virtual ~binary();
 public:
   virtual void Traverse(traverse_data &x);
-  virtual bool Print(OutputStream &s, int) const;
+  virtual bool Print(std::ostream &s, int) const;
   /** Used for Substitution.
       Whatever kind of binary operation we are, make another one;
       except we try to make a shallow copy if possible.

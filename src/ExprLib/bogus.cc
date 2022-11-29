@@ -13,13 +13,13 @@ bogus_expr::bogus_expr(const char* w)
   which = w;
 }
 
-bool bogus_expr::Print(OutputStream &s, int width) const
+bool bogus_expr::Print(std::ostream &s, int width) const
 {
   s << which;
   return (which[0]!=0);
 }
 
-void bogus_expr::PrintType(OutputStream &s) const
+void bogus_expr::PrintType(std::ostream &s) const
 {
   s << which;
 }

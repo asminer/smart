@@ -446,7 +446,7 @@ public:
 	}
 
 	// required for shared object
-	virtual bool Print(OutputStream &, int) const;
+	virtual bool Print(std::ostream &, int) const;
 	virtual bool Equals(const shared_object*) const;
 
 	/// Is the value for state variable i unknown?
@@ -636,7 +636,7 @@ public:
 	clev_op(const location &W, long b, model_var* v);
 	virtual void Compute(traverse_data &x);
 	virtual void Traverse(traverse_data &x);
-	virtual bool Print(OutputStream &s, int w) const;
+	virtual bool Print(std::ostream &s, int w) const;
 	virtual long getLower() const;
 protected:
 	virtual expr* buildAnother(expr *r) const;
@@ -661,7 +661,7 @@ public:
 	virtual long getDelta() const override;
 	virtual void Traverse(traverse_data &x) override;
 	virtual void Compute(traverse_data &x) override;
-	virtual bool Print(OutputStream &s, int) const override;
+	virtual bool Print(std::ostream &s, int) const override;
 };
 
 #endif

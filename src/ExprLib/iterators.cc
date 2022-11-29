@@ -37,7 +37,7 @@ void iterator::Compute(traverse_data &x)
   current->GetElement(index, x.answer[0]);
 }
 
-void iterator::PrintAll(OutputStream &s) const
+void iterator::PrintAll(std::ostream &s) const
 {
   s.Put(Name());
   s.Put(" in {");
@@ -67,7 +67,7 @@ void iterator::ComputeCurrent(traverse_data &x)
   }
 }
 
-void iterator::ShowAssignment(OutputStream &s) const
+void iterator::ShowAssignment(std::ostream &s) const
 {
   DCASSERT(Type());
   result foo;
