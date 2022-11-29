@@ -5,26 +5,10 @@
     catching signals, exiting cleanly.
 */
 
-#ifndef SYSENV_H
-#define SYSENV_H
+#ifndef SIGMAN_H
+#define SIGMAN_H
 
-#include <fstream>
-
-class system_environ {
-        /*
-         * Element 0: Output
-         * Element 1: Report
-         * Element 2: Warning
-         * Element 3: Error
-         * Element 4: Internal
-         */
-        ofstream outstream[5];
-        /*
-         * Index of active error stream, in the outstream array.
-         * Use 0 for unused.
-         */
-        unsigned errindex;
-
+class signal_manager {
         /*
          * Centralized signal catching mechanism
          */
@@ -35,9 +19,10 @@ class system_environ {
          */
         bool wait_to_terminate;
 
+        signal_manager();
+        ~signal_manager();
+
     public:
-        system_environ();
-        ~system_environ();
 
         /*
          * Call this to indicate that termination due to
@@ -72,10 +57,9 @@ class system_environ {
          * Clean exit, either due to an internal error,
          * caught signal, user function call, or end of input.
          */
-        void clean_exit(int code);
+        static void clean_exit(int code);
 
-
-        // TBD: streams, if we even keep them here
+        static signal_manager& theSigMan();
 
     private:
 

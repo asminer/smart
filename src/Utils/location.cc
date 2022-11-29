@@ -39,11 +39,7 @@ location::~location()
     Delete(filename);
 }
 
-#ifdef OLD_STREAMS
-void location::show(OutputStream &s) const
-#else
 void location::show(std::ostream &s) const
-#endif
 {
     switch (ltype) {
         case 'c':   s << "on command line";     return;

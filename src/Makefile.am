@@ -43,9 +43,11 @@ smart_SOURCES = \
   _MCLib/mclib.cc _MCLib/error.cc _MCLib/vanishing.cc \
   _MCLib/markov_chain.cc \
   \
-  Utils/strings.cc \
   Utils/location.cc \
   Utils/messages.cc \
+  Utils/outstream.cc \
+  Utils/sigman.cc \
+  Utils/strings.cc \
   \
   Streams/streams.cc \
   Streams/textfmt.cc \
@@ -180,9 +182,11 @@ icp_SOURCES = \
   _StateLib/statelib.cc _StateLib/coll.cc _StateLib/bst_db.cc \
   _StateLib/splaydb.cc _StateLib/rb_db.cc _StateLib/hash_db.cc \
   \
-  Utils/strings.cc \
   Utils/location.cc \
   Utils/messages.cc \
+  Utils/outstream.cc \
+  Utils/sigman.cc \
+  Utils/strings.cc \
   \
   Streams/streams.cc \
   Streams/textfmt.cc \
@@ -300,9 +304,11 @@ testinit_SOURCES = \
 ## ============================================================
 
 lextest_SOURCES = \
-  Utils/strings.cc \
   Utils/location.cc \
   Utils/messages.cc \
+  Utils/outstream.cc \
+  Utils/sigman.cc \
+  Utils/strings.cc \
   \
   Streams/streams.cc \
   Streams/textfmt.cc \

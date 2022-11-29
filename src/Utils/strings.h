@@ -3,7 +3,6 @@
 #define STRINGS_H
 
 #include "../include/shared.h"
-#include "../Streams/streams.h"
 
 /** Shared strings.
     Used so we can "share" strings without copying them.
@@ -24,11 +23,7 @@ class shared_string : public shared_object {
     public:
 //        void CopyFrom(const char* s);
         inline const char* getStr() const { return string; }
-#ifdef OLD_STREAMS
-        virtual bool Print(OutputStream &s, int width) const;
-#else
-        virtual bool Print(std::ostream &s, int width) const;
-#endif
+        virtual bool Print(std::ostream &s, int indent=0) const;
         virtual bool Equals(const shared_object *o) const;
         int Compare(const shared_string* s) const;
         int Compare(const char* x) const;

@@ -1,8 +1,10 @@
 
-#include "../Streams/streams.h"
 #include "strings.h"
+#include "outstream.h"
+
 #include <cstring>
 #include <cstdlib>
+#include <iomanip>
 
 // ******************************************************************
 // *                                                                *
@@ -31,20 +33,35 @@ unsigned shared_string::length() const
     return 0;
 }
 
-/*
-void shared_string::CopyFrom(const char* s)
+bool shared_string::Print(std::ostream &s, int indent) const
 {
-    free(string);
-    string = strdup(s);
-}
-*/
+    DCASSERT(string);
 
-#ifdef OLD_STREAMS
-bool shared_string::Print(OutputStream &s, int width) const
-#else
-bool shared_string::Print(std::ostream &s, int width) const
-#endif
-{
+    s << std::setw(indent) << "";
+
+    unsigned i;
+    for (i=0; string[i]; i++) {
+        if (string[i] != '\\') {
+            s << string[i];
+            continue;
+        }
+        // special char.
+        i++;
+        if (0==string[i]) break;
+        switch (string[i]) {
+            case 'a'  :  s << '\a'; break;
+            case 'b'  :  s << '\b'; break;
+            case 'n'  :  s << '\n'; break;
+            case 'q'  :  s << '"';  break;
+            case 't'  :  s << '\t'; break;
+            case '\\' :  s << '\\'; break;
+        }
+    }
+
+
+    /*
+     *  OLD IMPLEMENTATION
+     *
     DCASSERT(string);
 
     int stlen = strlen(string);
@@ -71,21 +88,13 @@ bool shared_string::Print(std::ostream &s, int width) const
 
     // nice trick: if no special chars, just print it!
     if (0==correction && 0==has_special) {
-#ifdef OLD_STREAMS
-        s.Put(string, width);
-#else
         s << std::setw(width) << string;
-#endif
         return true;
     }
 
     // right justify
     if (width>0) {
-#ifdef OLD_STREAMS
-        s.Pad(' ', width-stlen+correction);
-#else
         Pad(s, ' ', width-stlen+correction);
-#endif
     }
 
     // print the string, taking special chars into account
@@ -110,14 +119,11 @@ bool shared_string::Print(std::ostream &s, int width) const
 
     // left justify
     if (width<0) {
-#ifdef OLD_STREAMS
-        s.Pad(' ', correction-width-stlen);
-#else
         Pad(s, ' ', correction-width-stlen);
-#endif
     }
 
     return true;
+    */
 }
 
 bool shared_string::Equals(const shared_object* o) const

@@ -1,64 +1,31 @@
 
-#include <iostream>
-#include <fstream>
+#include "outstream.h"
 
-using namespace std;
-
-void check(fstream &f)
-{
-    if (f.is_open()) {
-        cout << "open\n";
-    } else {
-        cout << "closed\n";
-    }
-
-}
-
-inline void showbit(const char* name, bool value)
-{
-    cout << name << " is " << (value ? "true" : "false") << "\n";
-}
 
 int main()
 {
-    fstream foo;
+    outputStream foo(std::cout);
 
-    check(foo);
+    foo << "Hello, world!\n";
 
-    foo.open("hi.txt", std::fstream::in);
-    showbit("eof", foo.eof());
-    showbit("bad", foo.bad());
-    showbit("fail", foo.fail());
-    showbit("good", foo.good());
-    check(foo);
-    foo.close();
+    unsigned char a = 'a';
+    foo.PutHex(a);
+    foo << " for a\n";
 
-    foo.open("ho.txt", std::fstream::in);
-    showbit("eof", foo.eof());
-    showbit("bad", foo.bad());
-    showbit("fail", foo.fail());
-    showbit("good", foo.good());
+    unsigned b = 123456;
+    foo.PutHex(b);
+    foo << " for b\n";
 
-    check(foo);
+    unsigned long c = ~0;
+    foo.PutHex(c);
+    foo << " for c\n";
 
-    /*
-    foo.open("ho.txt", std::fstream::out);
+    b = c;
+    foo.PutHex(b);
+    foo << "\n";
 
-    check(foo);
-
-    foo << "Howdy ho!\n";
-    */
-
-    cout << "Type an integer\n";
-    int x;
-    cin >> x;
-
-    cout << "You typed " << x << "\n";
-
-    showbit("eof", cin.eof());
-    showbit("bad", cin.bad());
-    showbit("fail", cin.fail());
-    showbit("good", cin.good());
+    foo.PutMemoryCount(15415151132, 2);
+    foo << "\n";
 
     return 0;
 
