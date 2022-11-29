@@ -162,7 +162,62 @@ class memoryCount {
         std::ostream& show(std::ostream &s) const;
 };
 
+/*
+ * Formatted integers.
+ */
+class formatted_int {
+        long val;
+        int width;
+    public:
+        inline formatted_int(long v, int w) : val(v), width(w) {
+        }
+        std::ostream& show(std::ostream &s) const;
+};
+
+/*
+ * Formatted reals.
+ */
+class formatted_real {
+        double val;
+        int width;
+        int prec;
+    public:
+        inline formatted_real(double v, int w, int p=-1)
+            : val(v), width(w), prec(p) {
+            }
+        std::ostream& show(std::ostream &s) const;
+};
+
+/*
+ * Formatted strings.
+ */
+class formatted_string {
+        const char* val;
+        int width;
+    public:
+        inline formatted_string(const char* v, int w) : val(v), width(w) {
+        }
+        std::ostream& show(std::ostream &s) const;
+};
+
+
+
 inline std::ostream& operator<< (std::ostream &s, memoryCount m)
+{
+    return m.show(s);
+}
+
+inline std::ostream& operator<< (std::ostream &s, formatted_int m)
+{
+    return m.show(s);
+}
+
+inline std::ostream& operator<< (std::ostream &s, formatted_real m)
+{
+    return m.show(s);
+}
+
+inline std::ostream& operator<< (std::ostream &s, formatted_string m)
 {
     return m.show(s);
 }

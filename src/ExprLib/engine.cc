@@ -393,26 +393,22 @@ void func_engine::Compute(traverse_data &x, expr** pass, int np)
   } // try
   catch (subengine::error e) {
     switch (e) {
-      case subengine::No_Engine:
-        if (em->startError()) {
-          em->causedBy(x.parent);
-          em->cerr() << "No solution engine available for " << Name();
-          formals.PrintHeader(em->cerr(), false);
-          em->stopIO();
-        };
-        break;
+      case subengine::No_Engine: {
+        expr_error E(x.parent, x.answer);
+        E << "No solution engine available for " << Name();
+        formals.PrintHeader(E.stream(), false);
+        return;
+      }
 
-      default:
-        if (em->startInternal(__FILE__, __LINE__)) {
-          em->causedBy(x.parent);
-          em->internal() << "unanticipated error: ";
-          em->internal() << subengine::getNameOfError(e);
-          em->newLine();
-          em->internal() << "for " << Name();
-          formals.PrintHeader(em->internal(), false);
-          em->internal() << " engine";
-          em->stopIO();
-        }
+      default: {
+        internal_error E(__FILE__, __LINE__,
+                x.parent ? x.parent->Where() : location::NOWHERE());
+        E << "unanticipated error: " << subengine::getNameOfError(e);
+        E.newLine();
+        E << "for " << Name();
+        formals.PrintHeader(E.stream(), false);
+        E << " engine";
+      }
     }
     x.answer->setNull();
   } // catch

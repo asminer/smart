@@ -286,8 +286,6 @@ void outputStream::stopInternal()
 // ======================================================================
 
 
-
-
 std::ostream& memoryCount::show(std::ostream &s) const
 {
     const double kilo = bytes / 1024.0;
@@ -320,6 +318,45 @@ std::ostream& memoryCount::show(std::ostream &s) const
     s << show;
     s.precision(oldprec);
     return s << units;
+}
+
+// ======================================================================
+
+std::ostream& formatted_int::show(std::ostream &s) const
+{
+    if (width < 0) {
+        return s << std::setw(-width) << std::left << val;
+    } else {
+        return s << std::setw(width) << std::right << val;
+    }
+}
+
+// ======================================================================
+
+std::ostream& formatted_real::show(std::ostream &s) const
+{
+    int oldprec = s.precision();
+    if (prec>=0) {
+        s.precision(prec);
+    }
+    if (width < 0) {
+        s << std::setw(-width) << std::left << val;
+    } else {
+        s << std::setw(width) << std::right << val;
+    }
+    s.precision(oldprec);
+    return s;
+}
+
+// ======================================================================
+
+std::ostream& formatted_string::show(std::ostream &s) const
+{
+    if (width < 0) {
+        return s << std::setw(-width) << std::left << val;
+    } else {
+        return s << std::setw(width) << std::right << val;
+    }
 }
 
 

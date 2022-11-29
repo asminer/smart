@@ -56,15 +56,15 @@ bool_type::bool_type()
 
 bool bool_type::print_normal(std::ostream &s, const result& r, int w) const
 {
-  if (r.getBool())  s.Put("true", w);
-  else              s.Put("false", w);
+  if (r.getBool())  s << formatted_string("true", w);
+  else              s << formatted_string("false", w);
   return true;
 }
 
 void bool_type::show_normal(std::ostream &s, const result& r) const
 {
-  if (r.getBool())  s.Put("true");
-  else              s.Put("false");
+  if (r.getBool())  s << "true";
+  else              s << "false";
 }
 
 void bool_type::assign_normal(result& r, const char* s) const
@@ -135,19 +135,19 @@ int int_type::compare(const result& a, const result& b) const
 
 bool int_type::print_normal(std::ostream &s, const result& r) const
 {
-  s.Put(r.getInt());
-  return true;
+    s << r.getInt();
+    return true;
 }
 
 bool int_type::print_normal(std::ostream &s, const result& r, int w) const
 {
-  s.Put(r.getInt(), w);
-  return true;
+    s << formatted_int(r.getInt(), w);
+    return true;
 }
 
 void int_type::show_normal(std::ostream &s, const result& r) const
 {
-  s.Put(r.getInt());
+    s << r.getInt();
 }
 
 void int_type::assign_normal(result& r, const char* s) const
@@ -240,7 +240,7 @@ bool real_type::print_normal(std::ostream &s, const result& r) const
 #ifdef DEBUG_REAL_TYPE
   fprintf(stderr, "print_normal %lf\n", r.getReal());
 #endif
-  s.Put(r.getReal());
+  s << r.getReal();
   shared_object* o = r.getPtr();
   if (o) o->Print(s, 0); // confidence interval, or something similar
   return true;
@@ -251,7 +251,7 @@ bool real_type::print_normal(std::ostream &s, const result& r, int w) const
 #ifdef DEBUG_REAL_TYPE
   fprintf(stderr, "print_normal %lf:%d\n", r.getReal(), w);
 #endif
-  s.Put(r.getReal(), w);
+  s << formatted_real(r.getReal(), w);
   shared_object* o = r.getPtr();
   if (o) o->Print(s, 0); // confidence interval, or something similar
   return true;
@@ -262,7 +262,7 @@ bool real_type::print_normal(std::ostream &s, const result& r, int w, int p) con
 #ifdef DEBUG_REAL_TYPE
   fprintf(stderr, "print_normal %lf:%d:%d\n", r.getReal(), w, p);
 #endif
-  s.Put(r.getReal(), w, p);
+  s << formatted_real(r.getReal(), w, p);
   shared_object* o = r.getPtr();
   if (o) o->Print(s, 0); // confidence interval, or something similar
   return true;
@@ -270,7 +270,7 @@ bool real_type::print_normal(std::ostream &s, const result& r, int w, int p) con
 
 void real_type::show_normal(std::ostream &s, const result& r) const
 {
-  s.Put(r.getReal());
+  s << r.getReal();
   shared_object* o = r.getPtr();
   if (o) o->Print(s, 0); // confidence interval, or something similar
 }
@@ -301,6 +301,7 @@ bool real_type::equals_normal(const result &x, const result &y) const
 // *                                                                *
 // ******************************************************************
 
+/*
 class rf_watcher : public option::watcher {
         std::ostream &os;
     public:
@@ -342,10 +343,15 @@ void MakeRFOption(exprman* em, std::ostream &s, const char* n, const char* d)
 
     rw->selected = 1;
 }
+*/
 
 void MakeRealFormatOptions(exprman* em)
 {
     if (0==em) return;
+    //
+    // TBD
+    //
+    /*
     MakeRFOption(
       em,
       em->cout(),
@@ -359,6 +365,7 @@ void MakeRealFormatOptions(exprman* em)
       "ReportRealFormat",
       "Format to use for writing reals to the reporting stream"
     );
+    */
 }
 
 // ******************************************************************
@@ -372,6 +379,11 @@ void MakeSeparatorOptions(exprman* em)
   if (!em->hasIO())  return;
   if (0==em->OptMan()) return;
 
+  //
+  // TBD
+  //
+
+  /*
   em->OptMan()->addStringOption(
       "OutputThousandSeparator",
       "Thousands separator to use for the output stream",
@@ -383,6 +395,7 @@ void MakeSeparatorOptions(exprman* em)
       "Thousands separator to use for the reporting stream",
       em->report().linkThousands()
   );
+  */
 }
 
 // ******************************************************************
