@@ -38,19 +38,19 @@ bool abstract_msg::initialize(const option_manager* om, checklist_enum* grp,
 // *                      warning_msg  methods                      *
 // ******************************************************************
 
-outputStream warning_msg::Warning(std::cerr);
+outputStream warning_msg::Out(std::cerr);
 
 warning_msg::warning_msg() : abstract_msg("Warning")
 {
     Activate();
 }
 
-bool warning_msg::startWarning(const location &L) const
+bool warning_msg::start(const location &L) const
 {
     if (!isActive()) return false;
-    Warning.out() << "WARNING";
-    if (L) Warning.out() << ' ' << L;
-    Warning.out() << ":\n    ";
+    Out << "WARNING";
+    if (L) Out << ' ' << L;
+    Out << ":\n    ";
     return true;
 }
 
@@ -58,17 +58,29 @@ bool warning_msg::startWarning(const location &L) const
 // *                     reporting_msg  methods                     *
 // ******************************************************************
 
-outputStream reporting_msg::Report(std::cout);
+outputStream reporting_msg::Out(std::cout);
 
 reporting_msg::reporting_msg() : abstract_msg("Report")
 {
     Deactivate();
 }
 
-bool reporting_msg::startReport() const
+bool reporting_msg::start() const
 {
     if (!isActive()) return false;
-    Report.out() << 'R' << getName() << ": ";
+    // Build line prefix string
+    const char* n = getName();
+    prefix[0] = 'R';
+    unsigned i;
+    for (i=0; i<250; i++) {
+        if (0 == n[i]) break;
+        prefix[i+1] = n[i];
+    }
+    prefix[i++] = ':';
+    prefix[i++] = ' ';
+    prefix[i++] = 0;
+
+    Out << prefix;
     return true;
 }
 
@@ -78,17 +90,29 @@ bool reporting_msg::startReport() const
 // *                     debugging_msg  methods                     *
 // ******************************************************************
 
-outputStream debugging_msg::Debug(std::cerr);
+outputStream debugging_msg::Out(std::cerr);
 
 debugging_msg::debugging_msg() : abstract_msg("Debug")
 {
     Deactivate();
 }
 
-bool debugging_msg::startDebug() const
+bool debugging_msg::start() const
 {
     if (!isActive()) return false;
-    Debug.out() << 'D' << getName() << ": ";
+    // Build line prefix string
+    const char* n = getName();
+    prefix[0] = 'D';
+    unsigned i;
+    for (i=0; i<250; i++) {
+        if (0 == n[i]) break;
+        prefix[i+1] = n[i];
+    }
+    prefix[i++] = ':';
+    prefix[i++] = ' ';
+    prefix[i++] = 0;
+
+    Out << prefix;
     return true;
 }
 
@@ -99,12 +123,14 @@ bool debugging_msg::startDebug() const
 
 error_msg::error_msg(const char* prefix)
 {
-    if (prefix) Error.out() << prefix;
+    Out.indentMore();
+    if (prefix) Out << prefix;
 }
 
 error_msg::~error_msg()
 {
-    Error.out() << std::endl;
+    Out.stream() << std::endl;
+    Out.clearIndent();
 }
 
 // ******************************************************************
@@ -114,25 +140,25 @@ error_msg::~error_msg()
 internal_error::internal_error(const char* sfile, unsigned sline)
     : error_msg("INTERNAL in file ")
 {
-    err() << sfile << " on line " << sline << ":";
+    Out << sfile << " on line " << sline << ":";
     newLine();
 }
 
 internal_error::internal_error(const char* sfile, unsigned sline,
         const location &w) : error_msg("INTERNAL in file ")
 {
-    err() << sfile << " on line " << sline;
+    Out << sfile << " on line " << sline;
     if (w) {
         newLine();
-        err() << "caused " << w;
+        Out << "caused " << w;
     }
-    err() << ":";
+    Out << ":";
     newLine();
 }
 
 internal_error::~internal_error()
 {
-    err() << std::endl;
+    Out.stream() << std::endl;
     signal_manager::clean_exit(1);
 }
 
@@ -144,9 +170,9 @@ typechecking_error::typechecking_error(const location &W)
     : error_msg("ERROR")
 {
     if (W) {
-        err() << ' ' << W;
+        Out << ' ' << W;
     }
-    err() << ':';
+    Out << ':';
     newLine();
 }
 

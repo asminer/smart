@@ -25,6 +25,8 @@ class outputStream {
         void buildRealOption(option_manager* om, const char* name,
                 const char* doc);
 
+        // TBD: option for thousands separator
+
         /** Switch to a file with given name.
          *  The current file, if any, is closed.
          *
@@ -40,13 +42,46 @@ class outputStream {
          */
         void defaultOutput();
 
-        inline std::ostream& out() {
+        inline std::ostream& stream() {
             return (fout.is_open()) ? fout : deflt;
         }
 
-        inline void flush() {
-            out().flush();
+        inline void indentMore() {
+            indent_spaces += 4;
         }
+        inline void indentLess() {
+            if (indent_spaces) indent_spaces -= 4;
+        }
+        inline void clearIndent() {
+            indent_spaces = 0;
+        }
+        inline void newLine(const char* prefix=nullptr) {
+            if (prefix) {
+                stream()    << std::endl << prefix
+                            << std::setw(indent_spaces) << "";
+            } else {
+                stream()    << std::endl << std::setw(indent_spaces) << "";
+            }
+        }
+
+        /*
+         * Write a signed integer with commas.
+         * TBD - remove comma parameter and pull it from option
+         */
+        void putWithCommas(long x, const char* comma);
+
+        /*
+         * Write an unsigned integer with commas.
+         */
+        void putWithCommas(unsigned long x, const char* comma);
+
+        /*
+         * Write an integer or real, encoded as a string, with commas.
+         * The integer portion may start with -, +, or a digit,
+         * and ends with the first non-digit.
+         */
+        void putWithCommas(const char* x, const char* comma);
+
 
         /*
         //
@@ -80,37 +115,9 @@ class outputStream {
         void setRealFormat(unsigned rf);
         */
 
-        //
-        // Special streams TBD REMOVE THESE
-        //
-        static outputStream& Output();
-        static outputStream& Error();
-
-        /*
-         * Start an error message.
-         *      @param  L       Position in input that caused the error
-         *                      (or location::NOWHERE)
-         *      @param  text    Text in input that caused the error,
-         *                      or null.
-         */
-        static std::ostream& startError(const location &L, const char* text=0);
-
-        /*
-         * Start a warning message.  TBD: temporary?
-         *      @param  L       Position in input that caused the error
-         *                      (or location::NOWHERE)
-         */
-        static std::ostream& startWarning(const location &L);
-
-        /*
-         * Start an internal error message.
-         *      @param  sfile   Smart source file
-         *      @param  sline   Smart source line
-         */
-        // static std::ostream& startInternal(const char* sfile, unsigned sline);
-        // static void stopInternal();
-
     private:
+        unsigned indent_spaces;
+
         std::ostream &deflt;
         std::ofstream fout;
 
@@ -120,28 +127,13 @@ class outputStream {
         friend class rfwatch;
 };
 
+template <class TYPE>
+inline outputStream& operator<< (outputStream &s, const TYPE &t)
+{
+    s.stream() << t;
+    return s;
+}
 
-/*
- * Repeat the given character.
- */
-void Pad(std::ostream &s, char repeat, int count);
-
-/*
- * Write a signed integer with commas.
- */
-void addCommas(std::ostream &s, long x, const char* comma);
-
-/*
- * Write an unsigned integer with commas.
- */
-void addCommas(std::ostream &s, unsigned long x, const char* comma);
-
-/*
- * Write an integer or real, encoded as a string, with commas.
- * The integer portion may start with -, +, or a digit,
- * and ends with the first non-digit.
- */
-void addCommas(std::ostream &s, const char* x, const char* comma);
 
 /*
  * Formatted memory usage.

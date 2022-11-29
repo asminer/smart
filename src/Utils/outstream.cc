@@ -39,6 +39,8 @@ outputStream::outputStream(std::ostream &_deflt) : deflt(_deflt)
     realfmt = RF_FIXED;
 
     update_real_format();
+
+    clearIndent();
 }
 
 outputStream::~outputStream()
@@ -73,47 +75,85 @@ void outputStream::defaultOutput()
     }
 }
 
+void outputStream::putWithCommas(long x, const char* comma)
+{
+    if ((x>-1000)&&(x<1000)) {
+        stream() << x;
+        return;
+    }
+    putWithCommas(x/1000, comma);
+    stream() << comma;
+    stream().fill('0');
+    stream() << std::setw(3) << ABS(x%1000);
+    stream().fill(' ');
+}
+
+void outputStream::putWithCommas(unsigned long x, const char* comma)
+{
+    if (x<1000) {
+        stream() << x;
+        return;
+    }
+    putWithCommas(x/1000, comma);
+    stream() << comma;
+    stream().fill('0');
+    stream() << std::setw(3) << x%1000;
+    stream().fill(' ');
+}
+
+void outputStream::putWithCommas(const char* x, const char* comma)
+{
+    if (nullptr == x) return;
+    if (('-' == x[0]) || ('+' == x[0])) {
+        stream() << x[0];
+        ++x;
+    }
+    unsigned digits=0;
+    for (; x[digits]; ++digits) {
+        if (x[digits] < '0') break;
+        if (x[digits] > '9') break;
+    }
+    if (digits < 4) {
+        stream() << x;
+        return;
+    }
+    switch (digits%3) {
+        case 1:
+            stream() << x[0];
+            ++x;
+            break;
+        case 2:
+            stream() << x[0] << x[1];
+            x += 2;
+            break;
+
+        default:
+            stream() << x[0] << x[1] << x[2];
+            x += 3;
+            break;
+    }
+    for (; x[0]; x += 3) {
+        if (x[0] < '0') break;
+        if (x[0] > '9') break;
+        stream() << comma;
+        stream() << x[0] << x[1] << x[2];
+    }
+    stream() << x;
+}
+
+
 void outputStream::update_real_format()
 {
     switch (realfmt) {
-        case RF_FIXED:          out() << std::fixed;            return;
-        case RF_SCIENTIFIC:     out() << std::scientific;       return;
-        default:                out() << std::defaultfloat;     return;
+        case RF_FIXED:          stream() << std::fixed;            return;
+        case RF_SCIENTIFIC:     stream() << std::scientific;       return;
+        default:                stream() << std::defaultfloat;     return;
     }
 }
 
 
 /*
 
-void outputStream::PutMemoryCount(size_t bytes, int prec)
-{
-    const double kilo = bytes / 1024.0;
-    const double mega = kilo / 1024.0;
-    const double giga = mega / 1024.0;
-    const double tera = giga / 1024.0;
-
-    const char* units = " bytes";
-    double show = bytes;
-    if (tera > 1.0) {
-        show = tera;
-        units = " Tibytes";
-    } else if (giga > 1.0) {
-        show = giga;
-        units = " Gibytes";
-    } else if (mega > 1.0) {
-        show = mega;
-        units = " Mibytes";
-    } else if (kilo > 1.0) {
-        show = kilo;
-        units = " Kibytes";
-    }
-    prec++;
-    if (show >= 10.0)  prec++;
-    if (show >= 100.0)  prec++;
-
-    Put(show, 0, prec);
-    out() << units;
-}
 
 void outputStream::PutHex(unsigned char data)
 {
@@ -172,6 +212,7 @@ void outputStream::Put(double data, int width, int prec)
 }
 */
 
+/*
 outputStream& outputStream::Output()
 {
     static outputStream out(std::cout);
@@ -206,6 +247,7 @@ std::ostream& outputStream::startWarning(const location &L)
     }
     return cerr << ":\n    ";
 }
+*/
 
 /*
 std::ostream& outputStream::startInternal(const char* sfile, unsigned sline)
@@ -227,78 +269,6 @@ void outputStream::stopInternal()
 //
 // ======================================================================
 
-void Pad(std::ostream &s, char repeat, int count)
-{
-    for (; count>0; count--) {
-        s.put(repeat);
-    }
-}
-
-void addCommas(std::ostream &s, long x, const char* comma)
-{
-    if ((x>-1000)&&(x<1000)) {
-        s << x;
-        return;
-    }
-    addCommas(s, x/1000, comma);
-    s << comma;
-    s.fill('0');
-    s << std::setw(3) << ABS(x%1000);
-    s.fill(' ');
-}
-
-void addCommas(std::ostream &s, unsigned long x, const char* comma)
-{
-    if (x<1000) {
-        s << x;
-        return;
-    }
-    addCommas(s, x/1000, comma);
-    s << comma;
-    s.fill('0');
-    s << std::setw(3) << x%1000;
-    s.fill(' ');
-}
-
-void addCommas(std::ostream &s, const char* x, const char* comma)
-{
-    if (nullptr == x) return;
-    if (('-' == x[0]) || ('+' == x[0])) {
-        s << x[0];
-        ++x;
-    }
-    unsigned digits=0;
-    for (; x[digits]; ++digits) {
-        if (x[digits] < '0') break;
-        if (x[digits] > '9') break;
-    }
-    if (digits < 4) {
-        s << x;
-        return;
-    }
-    switch (digits%3) {
-        case 1:
-            s << x[0];
-            ++x;
-            break;
-        case 2:
-            s << x[0] << x[1];
-            x += 2;
-            break;
-
-        default:
-            s << x[0] << x[1] << x[2];
-            x += 3;
-            break;
-    }
-    for (; x[0]; x += 3) {
-        if (x[0] < '0') break;
-        if (x[0] > '9') break;
-        s << comma;
-        s << x[0] << x[1] << x[2];
-    }
-    s << x;
-}
 
 
 

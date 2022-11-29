@@ -121,9 +121,9 @@ bool shared_string::Print(std::ostream &s, int indent) const
     if (width<0) {
         Pad(s, ' ', correction-width-stlen);
     }
+    */
 
     return true;
-    */
 }
 
 bool shared_string::Equals(const shared_object* o) const

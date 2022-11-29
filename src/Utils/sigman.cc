@@ -7,6 +7,7 @@
 #include "sigman.h"
 #include "outstream.h"
 #include "location.h"
+#include "messages.h"
 
 signal_manager::signal_manager()
 {
@@ -26,10 +27,12 @@ void signal_manager::resumeTermination()
      * Actually terminate
      */
 
-    outputStream::Output().flush();
+    // outputStream::Output().flush();
+    // TBD: how to do ^ this
 
-    std::ostream &cerr = outputStream::startError(location::NOWHERE());
-    cerr << "Caught signal " << sigx << ", terminating." << std::endl;
+    error_msg E("ERROR");
+    E << "Caught signal " << sigx << ", terminating.";
+    E.stream() << std::endl;
     clean_exit(3);
 }
 

@@ -54,94 +54,81 @@ public:
  * Warning messages.  Default to "active".
  */
 class warning_msg : public abstract_msg {
-        static outputStream Warning;
+    public:
+        static outputStream Out;
     public:
         warning_msg();
 
         inline static bool switchOutput(const char* outfile) {
-            return Warning.switchOutput(outfile);
+            return Out.switchOutput(outfile);
         }
         inline static void defaultOutput() {
-            Warning.defaultOutput();
+            Out.defaultOutput();
         }
 
-        bool startWarning(const location &L) const;
+        bool start(const location &L) const;
 
-        inline std::ostream& warn() const {
-            return Warning.out();
+        static inline std::ostream& stream() {
+            return Out.stream();
         }
-        inline void newLine() const {
-            Warning.out() << "\n    ";
-        }
-        inline void stopIO() const {
-            Warning.out() << std::endl;
-        }
-
-        static inline outputStream& getStream() {
-            return Warning;
-        }
+        static inline void indentMore() {   Out.indentMore();       }
+        static inline void indentLess() {   Out.indentLess();       }
+        static inline void newLine()    {   Out.newLine();          }
+        static inline void stop()       {   stream() << std::endl;  }
 };
 
 /*
  * Reporting messages.  Default to "inactive".
  */
 class reporting_msg : public abstract_msg {
-        static outputStream Report;
+    public:
+        static outputStream Out;
     public:
         reporting_msg();
 
         inline static bool switchOutput(const char* outfile) {
-            return Report.switchOutput(outfile);
+            return Out.switchOutput(outfile);
         }
         inline static void defaultOutput() {
-            Report.defaultOutput();
+            Out.defaultOutput();
         }
 
-        bool startReport() const;
+        bool start() const;
 
-        inline std::ostream& report() const {
-            return Report.out();
-        }
-        inline void newLine() const {
-            Report.out() << "\nR" << getName() << ": ";
-        }
-        inline void stopIO() const {
-            Report.out() << std::endl;
-        }
-        static inline outputStream& getStream() {
-            return Report;
-        }
+        static inline std::ostream& stream() { return Out.stream(); }
+        static inline void indentMore() {   Out.indentMore();       }
+        static inline void indentLess() {   Out.indentLess();       }
+        inline void newLine() const     {   Out.newLine(prefix);    }
+        static inline void stop()       {   stream() << std::endl;  }
+    private:
+        static char prefix[256];
 };
 
 /*
  * Debugging messages.  Default to "inactive".
  */
 class debugging_msg : public abstract_msg {
-        static outputStream Debug;
+    public:
+        static outputStream Out;
     public:
         debugging_msg();
 
         inline static bool switchOutput(const char* outfile) {
-            return Debug.switchOutput(outfile);
+            return Out.switchOutput(outfile);
         }
         inline static void defaultOutput() {
-            Debug.defaultOutput();
+            Out.defaultOutput();
         }
 
-        bool startDebug() const;
+        bool start() const;
 
-        inline std::ostream& debug() const {
-            return Debug.out();
-        }
-        inline void newLine() const {
-            Debug.out() << "\nD" << getName() << ": ";
-        }
-        inline void stopIO() const {
-            Debug.out() << std::endl;
-        }
-        static inline outputStream& getStream() {
-            return Debug;
-        }
+        static inline std::ostream& stream() { return Out.stream(); }
+        static inline void indentMore() {   Out.indentMore();       }
+        static inline void indentLess() {   Out.indentLess();       }
+        inline void newLine() const     {   Out.newLine(prefix);    }
+        static inline void stop()       {   stream() << std::endl;  }
+    private:
+        static char prefix[256];
 };
 
 
@@ -157,24 +144,22 @@ class debugging_msg : public abstract_msg {
  *
  */
 class error_msg {
-        static outputStream Error;
+    public:
+        static outputStream Out;
     public:
         error_msg(const char* prefix);
         ~error_msg();
 
-        inline std::ostream& err() const {
-            return Error.out();
+        static inline bool switchOutput(const char* outfile) {
+            return Out.switchOutput(outfile);
         }
-        inline void newLine() const {
-            Error.out() << "\n    ";
+        static inline void defaultOutput() {
+            Out.defaultOutput();
         }
-
-        inline static bool switchOutput(const char* outfile) {
-            return Error.switchOutput(outfile);
-        }
-        inline static void defaultOutput() {
-            Error.defaultOutput();
-        }
+        static inline std::ostream& stream() { return Out.stream(); }
+        static inline void indentMore() {   Out.indentMore();       }
+        static inline void indentLess() {   Out.indentLess();       }
+        static inline void newLine()    {   Out.newLine();          }
 };
 
 class internal_error : public error_msg {
@@ -203,27 +188,31 @@ class typechecking_error : public error_msg {
  */
 
 template <class TYPE>
-inline std::ostream& operator<<(warning_msg &W, const TYPE& t)
+inline warning_msg& operator<<(warning_msg &W, const TYPE& t)
 {
-    return W.warn() << t;
+    W.stream() << t;
+    return W;
 }
 
 template <class TYPE>
-inline std::ostream& operator<<(reporting_msg &R, const TYPE& t)
+inline reporting_msg& operator<<(reporting_msg &R, const TYPE& t)
 {
-    return R.report() << t;
+    R.stream() << t;
+    return R;
 }
 
 template <class TYPE>
-inline std::ostream& operator<<(debugging_msg &D, const TYPE& t)
+inline debugging_msg& operator<<(debugging_msg &D, const TYPE& t)
 {
-    return D.debug() << t;
+    D.stream() << t;
+    return D;
 }
 
 template <class TYPE>
-inline std::ostream& operator<<(error_msg &E, const TYPE& t)
+inline error_msg& operator<<(error_msg &E, const TYPE& t)
 {
-    return E.err() << t;
+    E.stream() << t;
+    return E;
 }
 
 #endif
