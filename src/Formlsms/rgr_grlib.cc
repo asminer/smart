@@ -44,7 +44,7 @@ grlib_reachgraph::~grlib_reachgraph()
   // in case we still have it:
   delete[] initial.index;
 
-  // deadlocks, InEdges, and OutEdges should be destroyed 
+  // deadlocks, InEdges, and OutEdges should be destroyed
   // automagically here; no need to do anything special, right?
 }
 
@@ -73,7 +73,7 @@ void grlib_reachgraph::attachToParent(graph_lldsm* p, state_lldsm::reachset* RSS
   deadlocks.resetSize(OutEdges.getNumNodes());
   OutEdges.emptyRows(deadlocks);
 
-  delete edges;  
+  delete edges;
   edges = 0;
 
 }
@@ -83,7 +83,7 @@ void grlib_reachgraph::getNumArcs(long &na) const
   na = OutEdges.getNumEdges();
 }
 
-void grlib_reachgraph::showInternal(OutputStream &os) const
+void grlib_reachgraph::showInternal(std::ostream &os) const
 {
   os << "Internal representation for graph:\n";
 
@@ -94,7 +94,7 @@ void grlib_reachgraph::showInternal(OutputStream &os) const
   showRawMatrix(os, OutEdges);
 }
 
-void grlib_reachgraph::showArcs(OutputStream &os, const show_options &opt, 
+void grlib_reachgraph::showArcs(std::ostream &os, const show_options &opt,
   state_lldsm::reachset* RSS, shared_state* st) const
 {
   if (state_lldsm::tooManyStates(OutEdges.getNumNodes(), &os))    return;
@@ -183,11 +183,11 @@ void grlib_reachgraph
   const long AS_BIGINT = -3;
   for (long i=0; i<num_states; i++) {
     shortpc[i] = dest.contains(i) ? 1 : 0;
-  } 
+  }
   bigint** paths = new bigint*[num_states];
   for (long i=0; i<num_states; i++) {
     paths[i] = 0;
-  } 
+  }
 
   // Initialize stack
   long* stack = new long[1+nb];
@@ -241,7 +241,7 @@ void grlib_reachgraph
 
     if (shortpc[visit] != VISITING) continue; // already know #paths from here
 
-    // should have #paths computed for all children, add them up   
+    // should have #paths computed for all children, add them up
     acc.set_si(0);
     for (long z=outrowptr[visit]; z<outrowptr[visit+1]; z++) {
       long next = outcolindex[z];
@@ -257,7 +257,7 @@ void grlib_reachgraph
       DCASSERT(paths[next]);
       acc.add(acc, *paths[next]);
     } // for z
-    
+
     // save the result
     if (acc.fits_slong()) {
       shortpc[visit] = acc.get_si();
@@ -267,7 +267,7 @@ void grlib_reachgraph
     }
   } // while stack not empty
 
- 
+
   // Have #paths for every state, add them up for src states
   acc.set_si(0);
   for (long s=src.getSmallestAfter(-1); s>=0; s=src.getSmallestAfter(s)) {
@@ -342,7 +342,7 @@ void grlib_reachgraph::traverse(bool rt, GraphLib::BF_graph_traversal &T) const
 }
 
 
-void grlib_reachgraph::showRawMatrix(OutputStream &os, const GraphLib::static_graph &E)
+void grlib_reachgraph::showRawMatrix(std::ostream &os, const GraphLib::static_graph &E)
 {
   const char* rptr = (E.isByCols()) ? "column pointers" : "row pointers";
   const char* cind = (E.isByCols()) ? "row index      " : "column index";

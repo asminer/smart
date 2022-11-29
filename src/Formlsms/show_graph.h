@@ -36,7 +36,7 @@ class graphlib_displayer : public GraphLib::BF_graph_traversal {
           @param  RSS   Reachable states.
           @param  st    Space for state unpacking.
     */
-    graphlib_displayer(OutputStream &out, edge_type T, 
+    graphlib_displayer(std::ostream &out, edge_type T,
       const graph_lldsm::reachgraph::show_options &opt,
       state_lldsm::reachset* RSS, shared_state* st);
 
@@ -56,20 +56,20 @@ class graphlib_displayer : public GraphLib::BF_graph_traversal {
 
   protected:
 
-    virtual void header(OutputStream &os);
-    virtual void start_row(OutputStream &os, long row);
-    virtual void show_edge(OutputStream &os, long src, long dest, const void* label);
-    virtual void finish_row(OutputStream &os);
-    virtual void footer(OutputStream &os);
-    
-    virtual void showState(OutputStream &os, long s);
-    
+    virtual void header(std::ostream &os);
+    virtual void start_row(std::ostream &os, long row);
+    virtual void show_edge(std::ostream &os, long src, long dest, const void* label);
+    virtual void finish_row(std::ostream &os);
+    virtual void footer(std::ostream &os);
+
+    virtual void showState(std::ostream &os, long s);
+
   protected:
     //
     // Helpers for us and derived classes
     //
 
-    void showLabel(OutputStream &os, const void* label) const;
+    void showLabel(std::ostream &os, const void* label) const;
 
   private:
     struct pair {
@@ -86,7 +86,7 @@ class graphlib_displayer : public GraphLib::BF_graph_traversal {
 
 
   private:
-    OutputStream &out;
+    std::ostream &out;
     edge_type Type;
     const graph_lldsm::reachgraph::show_options &opt;
     state_lldsm::reachset* RSS;

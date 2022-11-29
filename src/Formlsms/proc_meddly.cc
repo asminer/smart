@@ -27,7 +27,7 @@ void meddly_process::attachToParent(stochastic_lldsm* p, LS_Vector &init, state_
 
   process::attachToParent(p, init, rss);
 
-  rss->getNumStates(num_states); 
+  rss->getNumStates(num_states);
   // TBD
 }
 
@@ -36,20 +36,20 @@ long meddly_process::getNumStates() const
   return num_states;
 }
 
-void meddly_process::showProc(OutputStream &os, 
-  const graph_lldsm::reachgraph::show_options &opt, 
+void meddly_process::showProc(std::ostream &os,
+  const graph_lldsm::reachgraph::show_options &opt,
   state_lldsm::reachset* RSS, shared_state* st) const
 {
   if (getParent()->tooManyStates(&os))  return;
   if (getParent()->tooManyArcs(&os))    return;
-   
+
   meddly_reachset* mrss = smart_cast <meddly_reachset*> (RSS);
   DCASSERT(mrss);
 
   mrss->buildIndexSet();
 
   DCASSERT(proc);
-  
+
   bool by_rows = (graph_lldsm::OUTGOING == opt.STYLE);
   const char* row;
   const char* col;
@@ -70,7 +70,7 @@ void meddly_process::showProc(OutputStream &os,
   switch (opt.STYLE) {
     case graph_lldsm::DOT:
         os << "digraph fsm {\n";
-        for (I.start(); I; I++) { 
+        for (I.start(); I; I++) {
           os << "\ts" << I.index();
           if (opt.NODE_NAMES) {
             I.copyState(st);
@@ -176,7 +176,7 @@ void meddly_process::showProc(OutputStream &os,
   }
 }
 
-void meddly_process::showInternal(OutputStream &os) const
+void meddly_process::showInternal(std::ostream &os) const
 {
   os << "Internal process representation (using MEDDLY):\n";
   mxd_wrap->showNodeGraph(os, proc);
@@ -188,7 +188,7 @@ void meddly_process::getNumClasses(long &count) const
   DCASSERT(0);
 }
 
-void meddly_process::showClasses(OutputStream &os, state_lldsm::reachset* rss, 
+void meddly_process::showClasses(std::ostream &os, state_lldsm::reachset* rss,
       shared_state* st) const
 {
   DCASSERT(0);

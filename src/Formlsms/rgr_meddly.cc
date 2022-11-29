@@ -62,9 +62,9 @@ meddly_monolithic_rg::~meddly_monolithic_rg()
   Delete(mrss);
 }
 
-const char* meddly_monolithic_rg::getClassName() const 
-{ 
-  return "meddly_monolithic_rg"; 
+const char* meddly_monolithic_rg::getClassName() const
+{
+  return "meddly_monolithic_rg";
 }
 
 void meddly_monolithic_rg::attachToParent(graph_lldsm* p, state_lldsm::reachset* rss)
@@ -109,36 +109,36 @@ void meddly_monolithic_rg::scheduleConversionToActual()
   convert_to_actual = uses_potential;
 }
 
-void meddly_monolithic_rg::getNumArcs(result &na) const 
+void meddly_monolithic_rg::getNumArcs(result &na) const
 {
   getNumArcsTemplate(na);
 }
 
-void meddly_monolithic_rg::getNumArcs(long &na) const 
+void meddly_monolithic_rg::getNumArcs(long &na) const
 {
   getNumArcsTemplate(na);
 }
 
-void meddly_monolithic_rg::showInternal(OutputStream &os) const 
+void meddly_monolithic_rg::showInternal(std::ostream &os) const
 {
   os << "Internal reachability graph representation (using MEDDLY):\n";
   mxd_wrap->showNodeGraph(os, edges);
   os.flush();
 }
 
-void meddly_monolithic_rg::showArcs(OutputStream &os, const show_options &opt, 
+void meddly_monolithic_rg::showArcs(std::ostream &os, const show_options &opt,
       state_lldsm::reachset* RSS, shared_state* st) const
 {
   if (getParent()->tooManyStates(&os))  return;
   if (getParent()->tooManyArcs(&os))    return;
-   
+
   meddly_reachset* mrss = smart_cast <meddly_reachset*> (RSS);
   DCASSERT(mrss);
 
   mrss->buildIndexSet();
 
   DCASSERT(edges);
-  
+
   bool by_rows = (graph_lldsm::OUTGOING == opt.STYLE);
   const char* row;
   const char* col;
@@ -154,7 +154,7 @@ void meddly_monolithic_rg::showArcs(OutputStream &os, const show_options &opt,
   switch (opt.STYLE) {
     case graph_lldsm::DOT:
         os << "digraph fsm {\n";
-        for (I.start(); I; I++) { 
+        for (I.start(); I; I++) {
           os << "\ts" << I.index();
           if (opt.NODE_NAMES) {
             I.copyState(st);
@@ -279,14 +279,14 @@ stateset* meddly_monolithic_rg::EX(bool revTime, const stateset* p, trace_data* 
     }
 
     return new meddly_stateset(mp, ans);
-  } 
-  catch (sv_encoder::error err) { 
+  }
+  catch (sv_encoder::error err) {
     Delete(ans);
     throw convert(err);
   }
 }
 
-stateset* meddly_monolithic_rg::AX(bool revTime, const stateset* p) 
+stateset* meddly_monolithic_rg::AX(bool revTime, const stateset* p)
 {
   //
   // Uses AX p = !EX !p
@@ -312,7 +312,7 @@ stateset* meddly_monolithic_rg::AX(bool revTime, const stateset* p)
     MEDDLY::apply( MEDDLY::COMPLEMENT, ans->E, ans->E );
     return new meddly_stateset(mp, ans);
   }
-  catch (sv_encoder::error err) { 
+  catch (sv_encoder::error err) {
     Delete(notp);
     Delete(ans);
     throw convert(err);
@@ -342,7 +342,7 @@ stateset* meddly_monolithic_rg
   const shared_ddedge* mqe = mq->getStateDD();
   DCASSERT(mqe);
 
-  // Result 
+  // Result
   shared_ddedge* ans = mrss->newMddEdge();
   DCASSERT(ans);
 
@@ -372,8 +372,8 @@ stateset* meddly_monolithic_rg
     }
 
     return new meddly_stateset(mq, ans);
-  } 
-  catch (sv_encoder::error err) { 
+  }
+  catch (sv_encoder::error err) {
     Delete(ans);
     throw convert(err);
   }
@@ -417,12 +417,12 @@ stateset* meddly_monolithic_rg
   DCASSERT(egnotq);
   _unfairEG(revTime, notq, egnotq);
 
-  
+
   if (0==mpe) {
     //
     // p is true, which means the set satisfying
     // E (p!q) U (!p!q) must be empty.
-    // So, the answer is !EG!q 
+    // So, the answer is !EG!q
     Delete(notq);
     MEDDLY::apply( MEDDLY::COMPLEMENT, egnotq->E, egnotq->E );
     return new meddly_stateset(mq, egnotq);
@@ -498,15 +498,15 @@ stateset* meddly_monolithic_rg::unfairEG(bool revTime, const stateset* p, trace_
       }
     }
     return new meddly_stateset(mp, ans);
-  } 
-  catch (sv_encoder::error err) { 
+  }
+  catch (sv_encoder::error err) {
     Delete(ans);
     throw convert(err);
   }
-  
+
 }
 
-stateset* meddly_monolithic_rg::AG(bool revTime, const stateset* p) 
+stateset* meddly_monolithic_rg::AG(bool revTime, const stateset* p)
 {
   //
   // Uses AG p = !EF !p
@@ -713,7 +713,7 @@ stateset* meddly_monolithic_rg::attachWeight(const stateset* p) const
   return mrss->attachWeight(p);
 }
 
-meddly_encoder* meddly_monolithic_rg::newMxdWrapper(const char* n, 
+meddly_encoder* meddly_monolithic_rg::newMxdWrapper(const char* n,
   MEDDLY::forest::range_type t, MEDDLY::forest::edge_labeling ev) const
 {
   DCASSERT(vars);

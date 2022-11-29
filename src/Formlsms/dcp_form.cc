@@ -35,7 +35,7 @@ public:
 
 protected:
   virtual void InitModel();
-  virtual void FinalizeModel(OutputStream& ds);
+  virtual void FinalizeModel(std::ostream& ds);
 };
 
 // ******************************************************************
@@ -104,7 +104,7 @@ void dcp_def::InitModel()
   constraints = new List <expr>;
 }
 
-void dcp_def::FinalizeModel(OutputStream &ds)
+void dcp_def::FinalizeModel(std::ostream &ds)
 {
 #ifdef DEBUG_DCP
   em->cout() << "Finalizing dcp_def...\n";

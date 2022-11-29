@@ -86,7 +86,7 @@ void graph_lldsm::showArcsCOV(bool internal) const
     //Delete(st);
   }
 }
-bool graph_lldsm::tooManyArcs(long na, OutputStream *os)
+bool graph_lldsm::tooManyArcs(long na, std::ostream *os)
 {
   if (na>=0) {
     if ((0==max_arc_display) || (na <= max_arc_display)) return false;
@@ -104,7 +104,7 @@ bool graph_lldsm::tooManyArcs(long na, OutputStream *os)
   return true;
 }
 
-void graph_lldsm::dumpDot(OutputStream &s) const
+void graph_lldsm::dumpDot(std::ostream &s) const
 {
   DCASSERT(RGR);
   shared_state* st = new shared_state(parent);
@@ -249,7 +249,7 @@ stateset* graph_lldsm::reachgraph
   return notImplemented("attachWeight");
 }
 
-bool graph_lldsm::reachgraph::Print(OutputStream &s, int width) const
+bool graph_lldsm::reachgraph::Print(std::ostream &s, int width) const
 {
   // Required for shared object, but will we ever call it?
   s << "reachgraph (why is it printing?)";

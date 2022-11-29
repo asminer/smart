@@ -48,7 +48,7 @@ public:
   virtual bool containsListVar() const;
   virtual void determineListVars(bool*) const;
   virtual void reindexStateVars(int &start);
-  virtual void showState(OutputStream &s, const shared_state* x) const;
+  virtual void showState(std::ostream &s, const shared_state* x) const;
 };
 
 phase_dist::phase_dist(bool d) : phase_hlm(d)
@@ -61,7 +61,7 @@ int phase_dist::NumStateVars() const
   return 1;
 }
 
-bool phase_dist::containsListVar() const 
+bool phase_dist::containsListVar() const
 {
   return false;
 }
@@ -77,7 +77,7 @@ void phase_dist::reindexStateVars(int &start)
   start++;
 }
 
-void phase_dist::showState(OutputStream &s, const shared_state* x) const
+void phase_dist::showState(std::ostream &s, const shared_state* x) const
 {
   DCASSERT(x);
   if (isAcceptingState(x)) {
@@ -123,12 +123,12 @@ class tta_dist : public phase_dist {
 protected:
   int source;
 public:
-  tta_dist(bool, statedist* init, stochastic_lldsm::process* mc, 
+  tta_dist(bool, statedist* init, stochastic_lldsm::process* mc,
     expl_stateset* a, const expl_stateset* t);
 protected:
   virtual ~tta_dist();
 public:
-  virtual bool Print(OutputStream  &s, int) const;
+  virtual bool Print(std::ostream  &s, int) const;
   virtual void Sample(traverse_data &x);
   virtual void getInitialState(shared_state* s) const;
   virtual void getAcceptingState(shared_state* s) const;
@@ -165,7 +165,7 @@ protected:
 };
 
 tta_dist
-:: tta_dist(bool d, statedist* init, stochastic_lldsm::process* mc, 
+:: tta_dist(bool d, statedist* init, stochastic_lldsm::process* mc,
   expl_stateset* a, const expl_stateset* t) : phase_dist(d)
 {
   chain = mc;
@@ -225,7 +225,7 @@ tta_dist
   Delete(notfinal);
   DCASSERT(EnotfUaccept);
 
-  // (3) final is still inverted, intersect with E (!final) U accept 
+  // (3) final is still inverted, intersect with E (!final) U accept
   expl_stateset* good = smart_cast <expl_stateset*> (EnotfUaccept);
   DCASSERT(good);
   (*f) *= good->getExplicit();
@@ -253,7 +253,7 @@ tta_dist::~tta_dist()
   free(weights);
 }
 
-bool tta_dist::Print(OutputStream &s, int) const
+bool tta_dist::Print(std::ostream &s, int) const
 {
   DCASSERT(chain);
   const hldsm* p = chain->getGrandParent();
@@ -356,7 +356,7 @@ long tta_dist::setSourceState(const shared_state* s)
     else            return  num_states;
   }
   if (source > num_states) {
-    return 1; 
+    return 1;
     // trap or accept
   }
   long foo = chain->getOutgoingWeights(source, to_states, weights, out_alloc);
@@ -419,7 +419,7 @@ class inf_or_zero_ph : public phase_dist {
   int src;
 public:
   inf_or_zero_ph(bool discrete, bool inf);
-  virtual bool Print(OutputStream  &s, int) const;
+  virtual bool Print(std::ostream  &s, int) const;
 
   virtual void Sample(traverse_data &x);
   virtual void getInitialState(shared_state* s) const;
@@ -438,7 +438,7 @@ inf_or_zero_ph::inf_or_zero_ph(bool d, bool inf) : phase_dist(d)
   infty = inf;
 }
 
-bool inf_or_zero_ph::Print(OutputStream  &s, int) const
+bool inf_or_zero_ph::Print(std::ostream  &s, int) const
 {
   if (infty)   s << type::getInfinityString();
   else         s << 0;
@@ -513,7 +513,7 @@ double inf_or_zero_ph::getOutgoingFromSource(long e, shared_state* t)
 /** Geometric(p), as a discrete phase type.
       State 3: unused trap state
       State 2: accepting state
-      State 1: 
+      State 1:
       State 0: initial (vanishing) state
 */
 class geometric_dph : public phase_dist {
@@ -521,7 +521,7 @@ class geometric_dph : public phase_dist {
   int source;
 public:
   geometric_dph(double _p);
-  virtual bool Print(OutputStream &s, int) const;
+  virtual bool Print(std::ostream &s, int) const;
   virtual void Sample(traverse_data &x);
   virtual void getInitialState(shared_state* s) const;
   virtual void getAcceptingState(shared_state* s) const;
@@ -539,7 +539,7 @@ geometric_dph::geometric_dph(double _p) : phase_dist(true)
   p = _p;
 }
 
-bool geometric_dph::Print(OutputStream  &s, int) const
+bool geometric_dph::Print(std::ostream  &s, int) const
 {
   s << "Geometric(" << p << ")";
   return true;
@@ -736,7 +736,7 @@ double finite_dph::getOutgoingFromSource(long e, shared_state* t)
   if (e) {
     t->set(state_index, b+1);
     return pdf(source) / denom;
-  } 
+  }
   t->set(state_index, source+1);
   return one_minus_cdf(source) / denom;
 }
@@ -754,18 +754,18 @@ class bernoulli_dph : public finite_dph {
   double p;
 public:
   bernoulli_dph(double param);
-  virtual bool Print(OutputStream &s, int) const;
+  virtual bool Print(std::ostream &s, int) const;
   virtual void Sample(traverse_data &x);
   virtual double pdf(long x) const;
   virtual double one_minus_cdf(long x) const;
 };
 
-bernoulli_dph::bernoulli_dph(double param) : finite_dph(1) 
+bernoulli_dph::bernoulli_dph(double param) : finite_dph(1)
 {
   p = param;
 }
 
-bool bernoulli_dph::Print(OutputStream  &s, int) const
+bool bernoulli_dph::Print(std::ostream  &s, int) const
 {
   s << "Bernoulli(" << p << ")";
   return true;
@@ -776,7 +776,7 @@ void bernoulli_dph::Sample(traverse_data &x)
   generateBernoulli(p, x);
 }
 
-double bernoulli_dph::pdf(long x) const 
+double bernoulli_dph::pdf(long x) const
 {
   if (0==x) return 1-p;
   if (1==x) return p;
@@ -803,20 +803,20 @@ class equilikely_dph : public finite_dph {
   long a;
 public:
   equilikely_dph(long a, long b);
-  virtual bool Print(OutputStream &s, int) const;
+  virtual bool Print(std::ostream &s, int) const;
   virtual void Sample(traverse_data &x);
   virtual double pdf(long x) const;
   virtual double one_minus_cdf(long x) const;
 };
 
-equilikely_dph::equilikely_dph(long _a, long b) : finite_dph(b) 
+equilikely_dph::equilikely_dph(long _a, long b) : finite_dph(b)
 {
   a = _a;
   DCASSERT(a>=0);
   DCASSERT(a<=b);
 }
 
-bool equilikely_dph::Print(OutputStream  &s, int) const
+bool equilikely_dph::Print(std::ostream  &s, int) const
 {
   if (a==b) s << a;
   else      s << "Equilikely(" << a << ", " << b << ")";
@@ -828,7 +828,7 @@ void equilikely_dph::Sample(traverse_data &x)
   generateEquilikely(a, b, x);
 }
 
-double equilikely_dph::pdf(long x) const 
+double equilikely_dph::pdf(long x) const
 {
   if (x<a)  return 0.0;
   if (x<=b) return 1.0 / (b-a+1.0);
@@ -857,13 +857,13 @@ class binomial_dph : public finite_dph {
 public:
   binomial_dph(long n, double p);
   virtual ~binomial_dph();
-  virtual bool Print(OutputStream &s, int) const;
+  virtual bool Print(std::ostream &s, int) const;
   virtual void Sample(traverse_data &x);
   virtual double pdf(long x) const;
   virtual double one_minus_cdf(long x) const;
 };
 
-binomial_dph::binomial_dph(long n, double _p) : finite_dph(n) 
+binomial_dph::binomial_dph(long n, double _p) : finite_dph(n)
 {
   p = _p;
   DCASSERT(p>0);
@@ -877,7 +877,7 @@ binomial_dph::binomial_dph(long n, double _p) : finite_dph(n)
   //
   //  f(i) = C(n, i) * p^i * (1-p)^{n-1}
   //
-  
+
   // But we use a trick:
   // Divide everything by f(0);
   // when we normalize at the end, everything works out
@@ -894,7 +894,7 @@ binomial_dph::binomial_dph(long n, double _p) : finite_dph(n)
     nm--;
   }
   for (long i=0; i<=n; i++) thePdf[i] /= total;
-  
+
   // Now build the cdf
   oneMinusCdf = new double[n+1];
   oneMinusCdf[n] = 0;
@@ -909,7 +909,7 @@ binomial_dph::~binomial_dph()
   delete[] oneMinusCdf;
 }
 
-bool binomial_dph::Print(OutputStream  &s, int) const
+bool binomial_dph::Print(std::ostream  &s, int) const
 {
   s << "Binomial(" << b << ", " << p << ")";
   return true;
@@ -920,7 +920,7 @@ void binomial_dph::Sample(traverse_data &x)
   generateBinomial(b, p, x);
 }
 
-double binomial_dph::pdf(long x) const 
+double binomial_dph::pdf(long x) const
 {
   if (x<0) return 0;
   if (x>b) return 0;
@@ -951,7 +951,7 @@ class erlang_cph : public phase_dist {
   long source;
 public:
   erlang_cph(long N, double L);
-  virtual bool Print(OutputStream &s, int) const;
+  virtual bool Print(std::ostream &s, int) const;
   virtual void Sample(traverse_data &x);
   virtual void getInitialState(shared_state* s) const;
   virtual void getAcceptingState(shared_state* s) const;
@@ -971,11 +971,11 @@ erlang_cph::erlang_cph(long N, double L) : phase_dist(false)
   lambda = L;
 }
 
-bool erlang_cph::Print(OutputStream &s, int) const
+bool erlang_cph::Print(std::ostream &s, int) const
 {
   switch (n) {
     case 0:
-      s.Put('0'); 
+      s.Put('0');
       break;
 
     case 1:
@@ -1002,42 +1002,42 @@ void erlang_cph::Sample(traverse_data &x)
   x.answer->setReal(0.0);
 }
 
-void erlang_cph::getInitialState(shared_state* s) const 
-{ 
+void erlang_cph::getInitialState(shared_state* s) const
+{
   DCASSERT(s);
   s->set(state_index, 0);
 }
 
-void erlang_cph::getAcceptingState(shared_state* s) const 
-{ 
+void erlang_cph::getAcceptingState(shared_state* s) const
+{
   DCASSERT(s);
   s->set(state_index, n);
 }
 
-void erlang_cph::getTrapState(shared_state* s) const 
-{ 
+void erlang_cph::getTrapState(shared_state* s) const
+{
   DCASSERT(s);
   s->set(state_index, n+1);
 }
 
-bool erlang_cph::isVanishingState(const shared_state* s) const 
-{ 
-  return false; 
+bool erlang_cph::isVanishingState(const shared_state* s) const
+{
+  return false;
 }
-  
-bool erlang_cph::isAcceptingState(const shared_state* s) const 
-{ 
+
+bool erlang_cph::isAcceptingState(const shared_state* s) const
+{
   DCASSERT(s);
   return s->get(state_index) == n;
 }
 
-bool erlang_cph::isTrapState(const shared_state* s) const 
-{ 
+bool erlang_cph::isTrapState(const shared_state* s) const
+{
   DCASSERT(s);
   return s->get(state_index) == n+1;
 }
 
-long erlang_cph::setSourceState(const shared_state* s) 
+long erlang_cph::setSourceState(const shared_state* s)
 {
   DCASSERT(s);
   source = s->get(state_index);
@@ -1089,7 +1089,7 @@ public:
   virtual bool containsListVar() const;
   virtual void determineListVars(bool*) const;
   virtual void reindexStateVars(int &start);
-  virtual void showState(OutputStream &s, const shared_state* x) const;
+  virtual void showState(std::ostream &s, const shared_state* x) const;
 
   virtual void getInitialState(shared_state* s) const;
   virtual void getAcceptingState(shared_state* s) const;
@@ -1128,7 +1128,7 @@ int phase_cross::NumStateVars() const
   return total_svs[num_opnds];
 }
 
-bool phase_cross::containsListVar() const 
+bool phase_cross::containsListVar() const
 {
   for (int i=0; i<num_opnds; i++)
     if (opnds[i]->containsListVar()) return true;
@@ -1137,7 +1137,7 @@ bool phase_cross::containsListVar() const
 
 void phase_cross::determineListVars(bool* ilv) const
 {
-  for (int i=0; i<num_opnds; i++) 
+  for (int i=0; i<num_opnds; i++)
     opnds[i]->determineListVars(ilv + total_svs[i]);
 }
 
@@ -1147,7 +1147,7 @@ void phase_cross::reindexStateVars(int &start)
     opnds[i]->reindexStateVars(start);
 }
 
-void phase_cross::showState(OutputStream &s, const shared_state* x) const
+void phase_cross::showState(std::ostream &s, const shared_state* x) const
 {
   DCASSERT(x);
   s.Put('[');
@@ -1192,7 +1192,7 @@ class phase_addition : public phase_cross {
 public:
   phase_addition(phase_hlm** the_opnds, int N);
 public:
-  virtual bool Print(OutputStream &s, int) const;
+  virtual bool Print(std::ostream &s, int) const;
   virtual bool isVanishingState(const shared_state* s) const;
   virtual bool isAcceptingState(const shared_state* s) const;
   virtual bool isTrapState(const shared_state* s) const;
@@ -1206,7 +1206,7 @@ phase_addition::phase_addition(phase_hlm** A, int N) : phase_cross(A, N)
 {
 }
 
-bool phase_addition::Print(OutputStream &s, int) const
+bool phase_addition::Print(std::ostream &s, int) const
 {
   s.Put('(');
   for (int i=0; i<num_opnds; i++) {
@@ -1334,7 +1334,7 @@ void phint_addition::Sample(traverse_data &x)
       total += x.answer->getInt();
       continue;
     }
-    return;  
+    return;
   }
   x.answer->setInt(total);
 }
@@ -1369,7 +1369,7 @@ void phreal_addition::Sample(traverse_data &x)
       total += x.answer->getReal();
       continue;
     }
-    return;  
+    return;
   }
   x.answer->setReal(total);
 }
@@ -1413,9 +1413,9 @@ public:
   virtual bool containsListVar() const;
   virtual void determineListVars(bool*) const;
   virtual void reindexStateVars(int &start);
-  virtual void showState(OutputStream &s, const shared_state* x) const;
+  virtual void showState(std::ostream &s, const shared_state* x) const;
 
-  virtual bool Print(OutputStream &s, int) const;
+  virtual bool Print(std::ostream &s, int) const;
   virtual void Sample(traverse_data &x);
   virtual void getInitialState(shared_state* s) const;
   virtual void getAcceptingState(shared_state* s) const;
@@ -1458,7 +1458,7 @@ int dph_multiply::NumStateVars() const
   return 1 + original->NumStateVars();
 }
 
-bool dph_multiply::containsListVar() const 
+bool dph_multiply::containsListVar() const
 {
   return original->containsListVar();
 }
@@ -1476,7 +1476,7 @@ void dph_multiply::reindexStateVars(int &start)
   start++;
 }
 
-void dph_multiply::showState(OutputStream &s, const shared_state* x) const
+void dph_multiply::showState(std::ostream &s, const shared_state* x) const
 {
   DCASSERT(x);
   s.Put('[');
@@ -1485,7 +1485,7 @@ void dph_multiply::showState(OutputStream &s, const shared_state* x) const
   s.Put(']');
 }
 
-bool dph_multiply::Print(OutputStream &s, int) const
+bool dph_multiply::Print(std::ostream &s, int) const
 {
   s << N << "*";
   original->Print(s, 0);
@@ -1588,9 +1588,9 @@ public:
   virtual bool containsListVar() const;
   virtual void determineListVars(bool*) const;
   virtual void reindexStateVars(int &start);
-  virtual void showState(OutputStream &s, const shared_state* x) const;
+  virtual void showState(std::ostream &s, const shared_state* x) const;
 
-  virtual bool Print(OutputStream &s, int) const;
+  virtual bool Print(std::ostream &s, int) const;
   virtual void Sample(traverse_data &x);
   virtual void getInitialState(shared_state* s) const;
   virtual void getAcceptingState(shared_state* s) const;
@@ -1621,7 +1621,7 @@ int cph_multiply::NumStateVars() const
   return original->NumStateVars();
 }
 
-bool cph_multiply::containsListVar() const 
+bool cph_multiply::containsListVar() const
 {
   return original->containsListVar();
 }
@@ -1636,12 +1636,12 @@ void cph_multiply::reindexStateVars(int &start)
   original->reindexStateVars(start);
 }
 
-void cph_multiply::showState(OutputStream &s, const shared_state* x) const
+void cph_multiply::showState(std::ostream &s, const shared_state* x) const
 {
   original->showState(s, x);
 }
 
-bool cph_multiply::Print(OutputStream &s, int) const
+bool cph_multiply::Print(std::ostream &s, int) const
 {
   s << R << "*";
   original->Print(s, 0);
@@ -1721,7 +1721,7 @@ class cph_uniformize : public cph_multiply {
 public:
   cph_uniformize(phase_hlm* orig, double q);
 public:
-  virtual bool Print(OutputStream &s, int) const;
+  virtual bool Print(std::ostream &s, int) const;
   virtual void Sample(traverse_data &x);
 
   virtual long setSourceState(const shared_state* s);
@@ -1733,7 +1733,7 @@ cph_uniformize::cph_uniformize(phase_hlm* orig, double q)
 {
 }
 
-bool cph_uniformize::Print(OutputStream &s, int) const
+bool cph_uniformize::Print(std::ostream &s, int) const
 {
   s << "uniformize(";
   original->Print(s, 0);
@@ -1802,7 +1802,7 @@ class cph_embedded : public cph_multiply {
 public:
   cph_embedded(phase_hlm* orig);
 public:
-  virtual bool Print(OutputStream &s, int) const;
+  virtual bool Print(std::ostream &s, int) const;
   virtual void Sample(traverse_data &x);
 };
 
@@ -1811,7 +1811,7 @@ cph_embedded::cph_embedded(phase_hlm* orig)
 {
 }
 
-bool cph_embedded::Print(OutputStream &s, int) const
+bool cph_embedded::Print(std::ostream &s, int) const
 {
   s << "embedding(";
   original->Print(s, 0);
@@ -1842,7 +1842,7 @@ void cph_embedded::Sample(traverse_data &x)
 /** Class for constructing phase-type choice.
     We have our own state variable that tells which one was chosen,
     plus a concatenation of state variables of all submodels.
-   
+
     Initial state:    [0, i, i, i...]
     "middle" states:  [c, a, ..., a, s, a, ..., a]
     Accept state:     [n+1, a, a, a...]
@@ -1872,9 +1872,9 @@ public:
   virtual bool containsListVar() const;
   virtual void determineListVars(bool*) const;
   virtual void reindexStateVars(int &start);
-  virtual void showState(OutputStream &s, const shared_state* x) const;
+  virtual void showState(std::ostream &s, const shared_state* x) const;
 
-  virtual bool Print(OutputStream &s, int) const;
+  virtual bool Print(std::ostream &s, int) const;
   virtual void Sample(traverse_data &x);
   virtual void getInitialState(shared_state* s) const;
   virtual void getAcceptingState(shared_state* s) const;
@@ -1949,7 +1949,7 @@ int phase_choice::NumStateVars() const
   return total_svs[num_opnds];
 }
 
-bool phase_choice::containsListVar() const 
+bool phase_choice::containsListVar() const
 {
   for (int i=0; i<num_opnds; i++)
     if (opnds[i]->containsListVar()) return true;
@@ -1959,7 +1959,7 @@ bool phase_choice::containsListVar() const
 void phase_choice::determineListVars(bool* ilv) const
 {
   ilv[0] = false;
-  for (int i=0; i<num_opnds; i++) 
+  for (int i=0; i<num_opnds; i++)
     opnds[i]->determineListVars(ilv + total_svs[i]);
 }
 
@@ -1971,7 +1971,7 @@ void phase_choice::reindexStateVars(int &start)
     opnds[i]->reindexStateVars(start);
 }
 
-void phase_choice::showState(OutputStream &s, const shared_state* x) const
+void phase_choice::showState(std::ostream &s, const shared_state* x) const
 {
   DCASSERT(x);
   s << "[" << x->get(state_index);
@@ -1982,7 +1982,7 @@ void phase_choice::showState(OutputStream &s, const shared_state* x) const
   s.Put(']');
 }
 
-bool phase_choice::Print(OutputStream &s, int) const
+bool phase_choice::Print(std::ostream &s, int) const
 {
   s << "choose(";
   s.Put('(');
@@ -2131,7 +2131,7 @@ public:
 protected:
   virtual ~phase_order();
 public:
-  virtual bool Print(OutputStream &s, int) const;
+  virtual bool Print(std::ostream &s, int) const;
   virtual void getInitialState(shared_state* s) const;
   virtual bool isVanishingState(const shared_state* s) const;
   virtual bool isAcceptingState(const shared_state* s) const;
@@ -2174,7 +2174,7 @@ phase_order::~phase_order()
   delete[] count;
 }
 
-bool phase_order::Print(OutputStream &s, int) const
+bool phase_order::Print(std::ostream &s, int) const
 {
   if (1==K)                 s << "min(";
   else if (num_opnds == K)  s << "max(";
@@ -2519,8 +2519,8 @@ phase_hlm* makeOrder(int k, phase_hlm** opnds, int N)
   else                            return new cph_order(k, opnds, N);
 }
 
-phase_hlm* makeTTA( bool disc, statedist* initial, 
-                    shared_object* a, const shared_object* t, 
+phase_hlm* makeTTA( bool disc, statedist* initial,
+                    shared_object* a, const shared_object* t,
                     stochastic_lldsm::process* mc)
 {
   expl_stateset* ssa = dynamic_cast<expl_stateset*>(a);

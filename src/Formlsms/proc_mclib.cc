@@ -253,7 +253,7 @@ void mclib_process::getNumClasses(long &count) const
 
 // ******************************************************************
 
-void mclib_process::showClasses(OutputStream &os, state_lldsm::reachset* RSS,
+void mclib_process::showClasses(std::ostream &os, state_lldsm::reachset* RSS,
   shared_state* st) const
 {
   DCASSERT(chain);
@@ -790,7 +790,7 @@ bool mclib_process::reachesAcceptBy(double t, double* x) const
 
 // ******************************************************************
 
-void mclib_process::showInternal(OutputStream &os) const
+void mclib_process::showInternal(std::ostream &os) const
 {
   // TBD
 
@@ -801,7 +801,7 @@ void mclib_process::showInternal(OutputStream &os) const
 
 // ******************************************************************
 
-void mclib_process::showProc(OutputStream &os,
+void mclib_process::showProc(std::ostream &os,
   const graph_lldsm::reachgraph::show_options &opt,
   state_lldsm::reachset* RSS, shared_state* st) const
 {
@@ -947,13 +947,13 @@ void mclib_reachgraph::getNumArcs(long &na) const
   chain->getNumArcs(na);
 }
 
-void mclib_reachgraph::showInternal(OutputStream &os) const
+void mclib_reachgraph::showInternal(std::ostream &os) const
 {
   DCASSERT(chain);
   chain->showInternal(os);
 }
 
-void mclib_reachgraph::showArcs(OutputStream &os, const show_options &opt,
+void mclib_reachgraph::showArcs(std::ostream &os, const show_options &opt,
   state_lldsm::reachset* RSS, shared_state* st) const
 {
   DCASSERT(chain);

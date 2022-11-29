@@ -22,8 +22,8 @@ class grlib_reachgraph : public ectl_reachgraph {
 
   public:
     virtual void getNumArcs(long &na) const;
-    virtual void showInternal(OutputStream &os) const;
-    virtual void showArcs(OutputStream &os, const show_options& opt, 
+    virtual void showInternal(std::ostream &os) const;
+    virtual void showArcs(std::ostream &os, const show_options& opt,
       state_lldsm::reachset* RSS, shared_state* st) const;
 
     // Hold initial until we can give it to RSS.
@@ -39,10 +39,10 @@ class grlib_reachgraph : public ectl_reachgraph {
   protected:
     virtual void getDeadlocked(intset &r) const;
     virtual void count_edges(bool rt, CTL_traversal &CTL) const;
-    virtual void traverse(bool rt, GraphLib::BF_graph_traversal &T) const; 
+    virtual void traverse(bool rt, GraphLib::BF_graph_traversal &T) const;
 
   private:
-    static void showRawMatrix(OutputStream &os, const GraphLib::static_graph &E);
+    static void showRawMatrix(std::ostream &os, const GraphLib::static_graph &E);
 
   private:
     GraphLib::dynamic_digraph* edges;  // hold until attachToParent
@@ -50,7 +50,7 @@ class grlib_reachgraph : public ectl_reachgraph {
     intset deadlocks;     // set of states with no outgoing edges
 
     // Graph after finishing, stored by incoming edges
-    GraphLib::static_graph InEdges; 
+    GraphLib::static_graph InEdges;
 
     // Graph after finishing, stored by outgoing edges, for reverse time
     GraphLib::static_graph OutEdges;

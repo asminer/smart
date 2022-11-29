@@ -19,7 +19,7 @@ struct LS_Vector;
       TBD - first just copy the existing interface into the process class
 
       TBD - then think of clever things to reduce this interface
-*/  
+*/
 class stochastic_lldsm : public graph_lldsm {
 
 // TBD - move options here
@@ -43,7 +43,7 @@ public:
 
         /**
           Hook for any desired preprocessing.
-          The reachable states are also given, in case finishing the 
+          The reachable states are also given, in case finishing the
           reachability graph requires renumbering the states.
           Default behavior simply sets the parent.
         */
@@ -70,19 +70,19 @@ public:
             @param  RSS   Reachable states
             @param  st    Memory space to use for individual states
         */
-        virtual void showProc(OutputStream &os, 
-          const graph_lldsm::reachgraph::show_options &opt, 
+        virtual void showProc(std::ostream &os,
+          const graph_lldsm::reachgraph::show_options &opt,
           reachset* RSS, shared_state* st) const = 0;
 
         /** Show the internal representation of the process.
               @param  os    Output stream to write to
         */
-        virtual void showInternal(OutputStream &os) const = 0;
+        virtual void showInternal(std::ostream &os) const = 0;
 
         /** Get the number of recurrent classes in the process.
             The default version provided here will only work if
             the number of recurrent classes fits in a long.
-              @param  count   Number of edges is stored here, as a "bigint" 
+              @param  count   Number of edges is stored here, as a "bigint"
         */
         virtual void getNumClasses(result &count) const;
 
@@ -90,10 +90,10 @@ public:
               @param  count   Number of edges is stored here
         */
         virtual void getNumClasses(long &count) const = 0;
-     
+
         /** Show the recurrent classes.
         */
-        virtual void showClasses(OutputStream &os, state_lldsm::reachset* rss, 
+        virtual void showClasses(std::ostream &os, state_lldsm::reachset* rss,
           shared_state* st) const = 0;
 
         /** Is the given state "transient".
@@ -116,14 +116,14 @@ public:
               @param  from    Desired source state
               @param  to      Destination states are written here
               @param  w       Output weights are written here
-              @param  n       Dimension of arrays \a to and \a w.  
-                        
+              @param  n       Dimension of arrays \a to and \a w.
+
               @return Number of outgoing edges.  This can be larger than \a n.
                       We will NOT write more than \a n items to the arrays.
         */
         virtual long getOutgoingWeights(long from, long* to, double* w, long n) const;
 
-      
+
         /** Compute the distribution at time t.
             This must be provided in derived classes, the
             default behavior here is to print an error message.
@@ -137,9 +137,9 @@ public:
 
               @return    true on success, false otherwise.
         */
-        virtual bool computeTransient(double t, double* probs, 
+        virtual bool computeTransient(double t, double* probs,
               double* aux, double* aux2) const;
- 
+
         /** Accumulate expected time spent in each state, until time t.
             This must be provided in derived classes, the
             default behavior here is to print an error message.
@@ -147,7 +147,7 @@ public:
               @param  p0      An array of dimension getNumStates(), holding
                               the probability for each state at time 0.
               @param  n       An array of dimension getNumStates().
-                              On output: the accumulated expected time 
+                              On output: the accumulated expected time
                               spent in each state.
               @param  aux     Auxiliary vector, dimension getNumStates().
               @param  aux2    Another auxiliary vector, dimension getNumStates().
@@ -156,7 +156,7 @@ public:
         */
         virtual bool computeAccumulated(double t, const double* p0, double* n,
               double* aux, double* aux2) const;
- 
+
         /** Compute the steady-state distribution.
             This must be provided in derived classes, the
             default behavior here is to print an error message.
@@ -180,7 +180,7 @@ public:
               @param  x     An array of dimension getNumStates().
                             On output, x[s] will be the expected time spent in
                             state s, if s is a transient state.
-                        
+
               @return    true on success, false otherwise.
         */
         virtual bool computeTimeInStates(const double* p0, double* x) const;
@@ -195,9 +195,9 @@ public:
               @param  x     An array of dimension getNumStates().
                             On output, x[s] will be the expected time spent in
                             state s, if s is a transient state; otherwise x[s]
-                            will be the probability of eventually reaching the 
+                            will be the probability of eventually reaching the
                             recurrent class containing state s.
-                        
+
               @return    true on success, false otherwise.
         */
         virtual bool computeClassProbs(const double* p0, double* x) const;
@@ -235,7 +235,7 @@ public:
 
       public:
         // Methods involving "the accepting state", candidates to move
-        
+
         /** Get the "trap" state.
             Currently, used only for phase types.
             Default behavior is to return -1.
@@ -244,7 +244,7 @@ public:
         */
         virtual long getTrapState() const;
 
-      
+
         /** Get the "accepting" state.
             Currently, used only for phase types.
             TBD - should we move this into a derived class only?
@@ -262,14 +262,14 @@ public:
                                 the probability of reaching the accepting state
                                 at time N or later, is less than epsilon.
 
-              @param  maxsize   Maximum size N to consider; 
+              @param  maxsize   Maximum size N to consider;
                                 after that we truncate
 
               @param  dist      Output: a discrete pdf
 
               @return    true on success, false otherwise.
         */
-        virtual bool computeDiscreteTTA(double epsilon, long maxsize, 
+        virtual bool computeDiscreteTTA(double epsilon, long maxsize,
           discrete_pdf &dist) const;
 
 
@@ -285,14 +285,14 @@ public:
                                 the probability of remaining in some transient state
                                 after that time, is less than epsilon.
 
-              @param  maxsize   Maximum size N to consider; 
+              @param  maxsize   Maximum size N to consider;
                                 after that we truncate
 
               @param  dist      Output: a discrete pdf
 
               @return    true on success, false otherwise.
         */
-        virtual bool computeContinuousTTA(double dt, double epsilon, 
+        virtual bool computeContinuousTTA(double dt, double epsilon,
           long maxsize, discrete_pdf &dist) const;
 
         /**
@@ -321,9 +321,9 @@ public:
         */
         virtual bool reachesAcceptBy(double t, double* x) const;
 
-  
+
         // Shared object requirements
-        virtual bool Print(OutputStream &s, int width) const;
+        virtual bool Print(std::ostream &s, int width) const;
         virtual bool Equals(const shared_object* o) const;
 
 
@@ -360,7 +360,7 @@ public:
 
 
 public: // These methods are used for phase types.
-  
+
   inline const process* getPROC() const {
     return PROC;
   }
@@ -403,7 +403,7 @@ public:
   // TBD - rearrange / rearranging from here down
 
   /** Get the "accepting" state.
-      Currently, used only for phase types.  
+      Currently, used only for phase types.
         TBD - so move it?  Derived class of process, for goal_process,
               which has both accepting and trap states?  Lots of methods
               move there.
@@ -411,7 +411,7 @@ public:
         TBD - or, we have another layer in the hierarchy, something like
               phase_llm : public stochastic_llm
               and phase_llm :: goal_process with accepting and trap states.
-              
+
         But let's get the basic processes working before worrying about phase.
 
       Default behavior is to return -1.
@@ -466,14 +466,14 @@ public:
     DCASSERT(PROC);
     return PROC->computeTransient(t, probs, aux, aux2);
   }
- 
+
   inline bool computeAccumulated(double t, const double* p0, double* n,
               double* aux, double* aux2) const
   {
     DCASSERT(PROC);
     return PROC->computeAccumulated(t, p0, n, aux, aux2);
   }
- 
+
   inline bool computeSteadyState(double* probs) const {
     DCASSERT(PROC);
     return PROC->computeSteadyState(probs);
@@ -505,14 +505,14 @@ public:
 
 public:
   inline bool computeDiscreteTTA(double epsilon, long ms, discrete_pdf &dist)
-  const 
+  const
   {
     DCASSERT(PROC);
     return PROC->computeDiscreteTTA(epsilon, ms, dist);
   }
 
   inline bool computeContinuousTTA(double dt, double epsilon, long ms,
-    discrete_pdf &dist) const 
+    discrete_pdf &dist) const
   {
     DCASSERT(PROC);
     return PROC->computeContinuousTTA(dt, epsilon, ms, dist);
@@ -527,10 +527,10 @@ public:
     DCASSERT(PROC);
     return PROC->reachesAcceptBy(t, x);
   }
-  
+
 
 private:
   process* PROC;
 };
 
-#endif  
+#endif

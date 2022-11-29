@@ -15,8 +15,8 @@ class enum_reachset : public indexed_reachset {
     }
 
     virtual void getNumStates(long &ns) const;
-    virtual void showInternal(OutputStream &os) const;
-    virtual void showState(OutputStream &os, const shared_state* st) const;
+    virtual void showInternal(std::ostream &os) const;
+    virtual void showState(std::ostream &os, const shared_state* st) const;
     virtual iterator& iteratorForOrder(state_lldsm::display_order ord);
     virtual iterator& easiestIterator() const;
 
@@ -25,7 +25,7 @@ class enum_reachset : public indexed_reachset {
     virtual void Renumber(const GraphLib::node_renumberer* Ren);
 
   private:
-    
+
     /**
       Iterator for natural orders
     */
@@ -62,7 +62,7 @@ class enum_reachset : public indexed_reachset {
 
   private:
     model_enum* states;
-    long* state_handle;    
+    long* state_handle;
     iterator* natorder;
     iterator* lexorder;
     iterator* discorder;

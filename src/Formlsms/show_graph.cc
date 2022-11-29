@@ -7,10 +7,10 @@
 // *                                                                *
 // ******************************************************************
 
-graphlib_displayer::graphlib_displayer(OutputStream &_out, edge_type T, 
+graphlib_displayer::graphlib_displayer(std::ostream &_out, edge_type T,
   const graph_lldsm::reachgraph::show_options &_opt,
   state_lldsm::reachset* _RSS, shared_state* _st)
-  : BF_graph_traversal(), out(_out), opt(_opt), 
+  : BF_graph_traversal(), out(_out), opt(_opt),
     I( dynamic_cast <indexed_reachset::indexed_iterator &> (_RSS->iteratorForOrder(_opt.ORDER)))
 {
   Type = T;
@@ -60,14 +60,14 @@ bool graphlib_displayer::visit(long, long dest, const void* label)
   return false;
 }
 
-void graphlib_displayer::header(OutputStream &os)
+void graphlib_displayer::header(std::ostream &os)
 {
   if (graph_lldsm::TRIPLES == opt.STYLE) return;
   if (graph_lldsm::DOT == opt.STYLE) {
     os << "digraph ";
     if (NONE == Type) os << "fsm"; else os << "mc";
     os << " {\n";
-    for (I.start(); I; I++) { 
+    for (I.start(); I; I++) {
       os << "\ts" << I.index();
       os << " [label=\"";
       showState(os, I.index());
@@ -84,7 +84,7 @@ void graphlib_displayer::header(OutputStream &os)
   os << "Markov chain:\n";
 }
 
-void graphlib_displayer::start_row(OutputStream &os, long row)
+void graphlib_displayer::start_row(std::ostream &os, long row)
 {
   switch (opt.STYLE) {
       case graph_lldsm::INCOMING:
@@ -92,7 +92,7 @@ void graphlib_displayer::start_row(OutputStream &os, long row)
           showState(os, row);
           os << ":\n";
           return;
-      
+
       case graph_lldsm::OUTGOING:
           os << "From state ";
           showState(os, row);
@@ -104,7 +104,7 @@ void graphlib_displayer::start_row(OutputStream &os, long row)
   }
 }
 
-void graphlib_displayer::show_edge(OutputStream &os, long src, long dest, const void* label)
+void graphlib_displayer::show_edge(std::ostream &os, long src, long dest, const void* label)
 {
   switch (opt.STYLE) {
       case graph_lldsm::INCOMING:
@@ -143,12 +143,12 @@ void graphlib_displayer::show_edge(OutputStream &os, long src, long dest, const 
   };
 }
 
-void graphlib_displayer::finish_row(OutputStream &os)
+void graphlib_displayer::finish_row(std::ostream &os)
 {
   os.flush();
 }
 
-void graphlib_displayer::footer(OutputStream &os)
+void graphlib_displayer::footer(std::ostream &os)
 {
   switch (opt.STYLE) {
       case graph_lldsm::DOT:
@@ -161,7 +161,7 @@ void graphlib_displayer::footer(OutputStream &os)
   os.flush();
 }
 
-void graphlib_displayer::showState(OutputStream &os, long s)
+void graphlib_displayer::showState(std::ostream &os, long s)
 {
   if (opt.NODE_NAMES) {
     I.copyState(st, s);
@@ -171,7 +171,7 @@ void graphlib_displayer::showState(OutputStream &os, long s)
   }
 }
 
-void graphlib_displayer::showLabel(OutputStream &os, const void* label) const
+void graphlib_displayer::showLabel(std::ostream &os, const void* label) const
 {
   if (NONE == Type) return;
   if (0==label) {

@@ -129,9 +129,9 @@ ectl_reachgraph::~ectl_reachgraph()
   delete TH;
 }
 
-const char* ectl_reachgraph::getClassName() const 
+const char* ectl_reachgraph::getClassName() const
 {
-  return "ectl_reachgraph"; 
+  return "ectl_reachgraph";
 }
 
 void ectl_reachgraph::getDeadlocked(intset &r) const
@@ -162,7 +162,7 @@ stateset* ectl_reachgraph::EX(bool revTime, const stateset* p, trace_data* td)
   const expl_stateset* ep = dynamic_cast <const expl_stateset*> (p);
   if (0==ep) return incompatibleOperand(CTLOP);
 
-  const intset& ip = ep->getExplicit(); 
+  const intset& ip = ep->getExplicit();
   if (!TH) TH = new CTL_traversal(ip.getSize());
 
   // Explore from p states
@@ -192,7 +192,7 @@ stateset* ectl_reachgraph::AX(bool revTime, const stateset* p)
   const expl_stateset* ep = dynamic_cast <const expl_stateset*> (p);
   if (0==ep) return incompatibleOperand(CTLOP);
 
-  const intset& ip = ep->getExplicit(); 
+  const intset& ip = ep->getExplicit();
   if (!TH) TH = new CTL_traversal(ip.getSize());
 
   // Explore from p states
@@ -222,14 +222,14 @@ stateset* ectl_reachgraph::EU(bool revTime, const stateset* p, const stateset* q
   const expl_stateset* ep = dynamic_cast <const expl_stateset*> (p);
   const expl_stateset* eq = dynamic_cast <const expl_stateset*> (q);
 
-  const char* CTLOP = revTime 
+  const char* CTLOP = revTime
     ?   ( p ? "ES" : "EP" )
     :   ( p ? "EU" : "EF" )
   ;
 
   if (0==eq) return incompatibleOperand(CTLOP);
 
-  const intset& iq = eq->getExplicit(); 
+  const intset& iq = eq->getExplicit();
   if (!TH) TH = new CTL_traversal(iq.getSize());
 
   // obligations to 1
@@ -238,7 +238,7 @@ stateset* ectl_reachgraph::EU(bool revTime, const stateset* p, const stateset* q
   // if p is specified, then restrict paths to satisfying p
   if (p) {
     if (0==ep)   return incompatibleOperand(CTLOP);
-    const intset& ip = ep->getExplicit(); 
+    const intset& ip = ep->getExplicit();
     TH->restrict_paths(ip);
   }
 
@@ -266,14 +266,14 @@ stateset* ectl_reachgraph::unfairAU(bool revTime, const stateset* p, const state
   const expl_stateset* ep = dynamic_cast <const expl_stateset*> (p);
   const expl_stateset* eq = dynamic_cast <const expl_stateset*> (q);
 
-  const char* CTLOP = revTime 
+  const char* CTLOP = revTime
     ?   ( p ? "AS" : "AP" )
     :   ( p ? "AU" : "AF" )
   ;
 
   if (0==eq) return incompatibleOperand(CTLOP);
 
-  const intset& iq = eq->getExplicit(); 
+  const intset& iq = eq->getExplicit();
   if (!TH) TH = new CTL_traversal(iq.getSize());
 
   // obligations to edge counts
@@ -286,7 +286,7 @@ stateset* ectl_reachgraph::unfairAU(bool revTime, const stateset* p, const state
   // if p is specified, then restrict paths to satisfying p
   if (p) {
     if (0==ep)   return incompatibleOperand(CTLOP);
-    const intset& ip = ep->getExplicit(); 
+    const intset& ip = ep->getExplicit();
     TH->restrict_paths(ip);
   }
 
@@ -314,24 +314,24 @@ stateset* ectl_reachgraph::fairAU(bool revTime, const stateset* p, const statese
   const expl_stateset* ep = dynamic_cast <const expl_stateset*> (p);
   const expl_stateset* eq = dynamic_cast <const expl_stateset*> (q);
 
-  const char* CTLOP = revTime 
+  const char* CTLOP = revTime
     ?   ( p ? "AS" : "AP" )
     :   ( p ? "AU" : "AF" )
   ;
 
   if (0==eq) return incompatibleOperand(CTLOP);
 
-  const intset& iq = eq->getExplicit(); 
+  const intset& iq = eq->getExplicit();
   if (!TH) TH = new CTL_traversal(iq.getSize());
 
   // Based on !A p U q =  EG !q  OR  E p!q U !p!q
 
   // First, determine (fair) EG !q
-  
+
   intset* answer = new intset(iq);
   answer->complement();
   fair_EG_helper(revTime, *answer, CTLOP);
-  
+
   // answer is now (fair) EG !q.
 
   if (p) {
@@ -340,7 +340,7 @@ stateset* ectl_reachgraph::fairAU(bool revTime, const stateset* p, const statese
     //
 
     if (0==ep)   return incompatibleOperand(CTLOP);
-    const intset& ip = ep->getExplicit(); 
+    const intset& ip = ep->getExplicit();
 
     // obligations to 1
     TH->fill_obligations(1);
@@ -397,7 +397,7 @@ stateset* ectl_reachgraph::unfairEG(bool revTime, const stateset* p, trace_data*
   const expl_stateset* ep = dynamic_cast <const expl_stateset*> (p);
   if (0==ep) return incompatibleOperand(revTime ? "EH" : "EG");
 
-  const intset& ip = ep->getExplicit(); 
+  const intset& ip = ep->getExplicit();
   if (!TH) TH = new CTL_traversal(ip.getSize());
 
   // Use !AF !p
@@ -435,7 +435,7 @@ stateset* ectl_reachgraph::fairEG(bool revTime, const stateset* p)
   const expl_stateset* ep = dynamic_cast <const expl_stateset*> (p);
   if (0==ep) return incompatibleOperand(CTLOP);
 
-  const intset& ip = ep->getExplicit(); 
+  const intset& ip = ep->getExplicit();
   if (!TH) TH = new CTL_traversal(ip.getSize());
 
   intset* answer = new intset(ip);
@@ -450,7 +450,7 @@ stateset* ectl_reachgraph::AG(bool revTime, const stateset* p)
   const expl_stateset* ep = dynamic_cast <const expl_stateset*> (p);
   if (0==ep) return incompatibleOperand(CTLOP);
 
-  const intset& ip = ep->getExplicit(); 
+  const intset& ip = ep->getExplicit();
   if (!TH) TH = new CTL_traversal(ip.getSize());
 
   // We're using !EF !p, so below is EF
@@ -478,7 +478,7 @@ stateset* ectl_reachgraph::AG(bool revTime, const stateset* p)
 }
 
 
-stateset* ectl_reachgraph::unfairAEF(bool revTime, const stateset* p, const stateset* q) 
+stateset* ectl_reachgraph::unfairAEF(bool revTime, const stateset* p, const stateset* q)
 {
   if (0==p || 0==q) return 0; // propogate an earlier error
 
@@ -489,8 +489,8 @@ stateset* ectl_reachgraph::unfairAEF(bool revTime, const stateset* p, const stat
 
   if (0==ep || 0==eq) return incompatibleOperand(CTLOP);
 
-  const intset& ip = ep->getExplicit(); 
-  const intset& iq = eq->getExplicit(); 
+  const intset& ip = ep->getExplicit();
+  const intset& iq = eq->getExplicit();
 
   if (!TH) TH = new CTL_traversal(ip.getSize());
 

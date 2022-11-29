@@ -137,7 +137,7 @@ public:
   }
 
   void Compile(const exprman* em);
-  void WriteDotArc(OutputStream &ds, void* tname) const;
+  void WriteDotArc(std::ostream &ds, void* tname) const;
 protected:
   // true iff there was a duplicate
   bool addWhere(expr* x, expr* &a, List <expr>* & as);
@@ -190,7 +190,7 @@ void arc_entry::Compile(const exprman* em)
     firing = MakeVarUpdate(em, Share(place), Share(input), Share(output));
 }
 
-void arc_entry::WriteDotArc(OutputStream &ds, void* t) const
+void arc_entry::WriteDotArc(std::ostream &ds, void* t) const
 {
   if (!ds.IsActive()) return;
   if (input) {
@@ -304,7 +304,7 @@ public:
   bool hasGuards() const;
 
   /// Builds a list of enabling expressions, and a list of firing expressions.
-  void compile(OutputStream &ds);
+  void compile(std::ostream &ds);
 
   /// Get the number of enabling expressions
   int getNumEnablingExpr() const;
@@ -341,7 +341,7 @@ public:
 
   /// Builds the enabling and firing expressions.
   /// Transition cannot be modified once finalized.
-  void Finalize(OutputStream &ds);
+  void Finalize(std::ostream &ds);
 
 protected:
   inline arc_entry* UniqueInsert(arc_entry* &tmp) {
@@ -441,7 +441,7 @@ void transition::disable()
   is_disabled = true;
 }
 
-void transition::compile(OutputStream &ds)
+void transition::compile(std::ostream &ds)
 {
   if (is_disabled) return;
   if (is_compiled) return;
@@ -474,7 +474,7 @@ void transition::compile(OutputStream &ds)
 }
 
 
-void transition::Finalize(OutputStream &ds)
+void transition::Finalize(std::ostream &ds)
 {
   if (!is_compiled) compile(ds);
 
@@ -592,8 +592,8 @@ public:
   virtual ~petri_hlm();
 
   // required for hldsm:
-  virtual void showState(OutputStream &s, const shared_state* x) const;
-  static void showTokens(OutputStream &s, bool un, int tk);
+  virtual void showState(std::ostream &s, const shared_state* x) const;
+  static void showTokens(std::ostream &s, bool un, int tk);
 
   // required for dsde_hlm:
   virtual int NumInitialStates() const;
@@ -605,7 +605,7 @@ public:
 // *                       petri_hlm  methods                       *
 // ******************************************************************
 
-void petri_hlm::showTokens(OutputStream &s, bool un, int tk)
+void petri_hlm::showTokens(std::ostream &s, bool un, int tk)
 {
   if (un) s.Put('?');
   else    s.Put(tk);
@@ -623,7 +623,7 @@ petri_hlm::~petri_hlm()
 {
 }
 
-void petri_hlm::showState(OutputStream &s, const shared_state* st) const
+void petri_hlm::showState(std::ostream &s, const shared_state* st) const
 {
   DCASSERT(st);
 
@@ -757,7 +757,7 @@ public:
 
 protected:
   virtual void InitModel();
-  virtual void FinalizeModel(OutputStream &ds);
+  virtual void FinalizeModel(std::ostream &ds);
 
 
   /** Builds an incidence matrix if the Petri Net is a regular
@@ -1484,7 +1484,7 @@ bool petri_def::ReducePetriNet(std::vector<transition*>& tvec, place_sv** parray
 }
 
 
-void petri_def::FinalizeModel(OutputStream &ds)
+void petri_def::FinalizeModel(std::ostream &ds)
 {
   // "compile" the places
   if (0==num_places) {

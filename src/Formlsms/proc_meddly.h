@@ -38,12 +38,12 @@ class meddly_process : public markov_process {
   //
   public:
     virtual long getNumStates() const;
-    virtual void showProc(OutputStream &os, 
-      const graph_lldsm::reachgraph::show_options &opt, 
+    virtual void showProc(std::ostream &os,
+      const graph_lldsm::reachgraph::show_options &opt,
       state_lldsm::reachset* RSS, shared_state* st) const;
-    virtual void showInternal(OutputStream &os) const;
+    virtual void showInternal(std::ostream &os) const;
     virtual void getNumClasses(long &count) const;
-    virtual void showClasses(OutputStream &os, state_lldsm::reachset* rss, 
+    virtual void showClasses(std::ostream &os, state_lldsm::reachset* rss,
       shared_state* st) const;
     virtual bool isTransient(long st) const;
     virtual statedist* getInitialDistribution() const;

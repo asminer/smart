@@ -43,14 +43,14 @@ class indexed_reachset : public state_lldsm::reachset {
     //  @param  Ren   Node renumbering scheme.
     virtual void Renumber(const GraphLib::node_renumberer* Ren);
 
-    
+
 
   public:
     class indexed_iterator : public reachset::iterator {
       public:
         indexed_iterator(long ns);
         virtual ~indexed_iterator();
-        
+
         virtual void start();
         virtual void operator++(int);
         virtual operator bool() const;

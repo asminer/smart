@@ -124,7 +124,7 @@ public:
     return x;
   }
 
-  void Export(OutputStream &s) const;
+  void Export(std::ostream &s) const;
 };
 
 tam_tile::tam_tile(const symbol* w, const model_instance* p) : model_var(w, p)
@@ -134,7 +134,7 @@ tam_tile::tam_tile(const symbol* w, const model_instance* p) : model_var(w, p)
   index = 0;
 }
 
-void tam_tile::Export(OutputStream &s) const
+void tam_tile::Export(std::ostream &s) const
 {
   s << "TILENAME " << Name() << "\n";
   s << "LABEL\n";
@@ -296,8 +296,8 @@ public:
   inline void set_x_width(int xw) { x_width = xw; }
 
   // required for hldsm:
-  virtual void showState(OutputStream &s, const shared_state* x) const;
-  inline void showTile(OutputStream &s, bool un, int t) const {
+  virtual void showState(std::ostream &s, const shared_state* x) const;
+  inline void showTile(std::ostream &s, bool un, int t) const {
     if (un) {
       s.Put('?');
     } else if (0==t) {
@@ -324,7 +324,7 @@ public:
   void setTiles(warning_msg &warn, tam_tile** ts, int nt);
 
   // Super handy
-  bool Export(OutputStream &s) const;
+  bool Export(std::ostream &s) const;
 };
 
 // ******************************************************************
@@ -375,7 +375,7 @@ tam_hlm::~tam_hlm()
   delete[] glueset;
 }
 
-void tam_hlm::showState(OutputStream &s, const shared_state* st) const
+void tam_hlm::showState(std::ostream &s, const shared_state* st) const
 {
   DCASSERT(st);
 
@@ -484,7 +484,7 @@ void tam_hlm::setTiles(warning_msg &warn, tam_tile** ts, int nt)
   DoneWarning();
 }
 
-bool tam_hlm::Export(OutputStream &s) const
+bool tam_hlm::Export(std::ostream &s) const
 {
   for (int i=0; i<num_tiles; i++) if (tileset[i]) tileset[i]->Export(s);
   return true;
@@ -570,7 +570,7 @@ public:
 
 protected:
   virtual void InitModel();
-  virtual void FinalizeModel(OutputStream &ds);
+  virtual void FinalizeModel(std::ostream &ds);
 
   template <class SYMB>
   static inline SYMB** list2array(SYMB* front, int size) {
@@ -896,7 +896,7 @@ void tam_def::InitModel()
   board = 0;
 }
 
-void tam_def::FinalizeModel(OutputStream &ds)
+void tam_def::FinalizeModel(std::ostream &ds)
 {
   //
   // Compact glue, tile lists

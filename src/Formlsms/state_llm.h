@@ -158,13 +158,13 @@ public:
         /** Show the internal representation of the reachable states.
               @param  os    Output stream to write to
         */
-        virtual void showInternal(OutputStream &os) const = 0;
+        virtual void showInternal(std::ostream &os) const = 0;
 
         /** Show the given state
               @param  os    Output stream to write to
               @param  st    State to display
         */
-        virtual void showState(OutputStream &os, const shared_state* st) const = 0;
+        virtual void showState(std::ostream &os, const shared_state* st) const = 0;
 
         /// Build an iterator for a desired order.
         virtual iterator& iteratorForOrder(state_lldsm::display_order ord) = 0;
@@ -192,7 +192,7 @@ public:
             @param  ord     Display order to use.
             @param  st      Memory space for use to use for individual states
         */
-        void showStates(OutputStream &os, state_lldsm::display_order ord,
+        void showStates(std::ostream &os, state_lldsm::display_order ord,
           shared_state* st);
 
         /**
@@ -210,7 +210,7 @@ public:
         void visitStates(state_lldsm::state_visitor &x) const;
 
         // Shared object requirements
-        virtual bool Print(OutputStream &s, int width) const;
+        virtual bool Print(std::ostream &s, int width) const;
         virtual bool Equals(const shared_object* o) const;
 
         friend class init_statellm;
@@ -296,10 +296,10 @@ public:
         @param  os    If not null, display "too many states" message as appropriate.
         @return true  iff the number of states exceeds the option.
   */
-  static bool tooManyStates(long ns, OutputStream *os);
+  static bool tooManyStates(long ns, std::ostream *os);
 
   /// Check if reachable states has too many states
-  inline bool tooManyStates(OutputStream *os) const {
+  inline bool tooManyStates(std::ostream *os) const {
     return tooManyStates(getNumStates(), os);
   }
 

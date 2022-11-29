@@ -111,7 +111,7 @@ public:
       /** Show the internal representation of the reachability graph.
             @param  os    Output stream to write to
       */
-		virtual void showInternal(OutputStream &os) const = 0;
+		virtual void showInternal(std::ostream &os) const = 0;
 
       /**
         Show all the edges, in the desired order.
@@ -120,7 +120,7 @@ public:
           @param  RSS   Reachable states
           @param  st    Memory space to use for individual states
       */
-		virtual void showArcs(OutputStream &os, const show_options &opt,
+		virtual void showArcs(std::ostream &os, const show_options &opt,
         reachset* RSS, shared_state* st) const = 0;
 
       /** Compute states satisfying EX(p).
@@ -315,7 +315,7 @@ public:
       virtual stateset* attachWeight(const stateset* p) const;
 
       // Shared object requirements
-      virtual bool Print(OutputStream &s, int width) const;
+      virtual bool Print(std::ostream &s, int width) const;
       virtual bool Equals(const shared_object* o) const;
 
     protected:
@@ -400,16 +400,16 @@ public:
         @param  os    If not null, display "too many arcs" message as appropriate.
         @return true  iff the number of edges exceeds the option.
   */
-  static bool tooManyArcs(long na, OutputStream *os);
+  static bool tooManyArcs(long na, std::ostream *os);
 
-  inline bool tooManyArcs(OutputStream *os) const {
+  inline bool tooManyArcs(std::ostream *os) const {
     return tooManyArcs(getNumArcs(), os);
   }
 
   /** Produce a "dot" file of this model.
       Equivalent to showArcs with a style of DOT.
   */
-  void dumpDot(OutputStream &s) const;
+  void dumpDot(std::ostream &s) const;
 
 
   /** For CTL model checking, is this a "fair" model?

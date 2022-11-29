@@ -102,7 +102,7 @@ public:
     return (Hidden == FT) || (Immediate == FT);
   }
 
-  void display(OutputStream &s) const;
+  void display(std::ostream &s) const;
 
   /** Set the enabling expression for this event.
         @param e    An expression of type "proc bool" that evaluates to
@@ -341,7 +341,7 @@ public:
     DCASSERT(event_data);
     return event_data[i];
   }
-  inline void showEvents(OutputStream &s) const {
+  inline void showEvents(std::ostream &s) const {
     for (int i=0; i<num_events; i++) {
       DCASSERT(event_data[i]);
       event_data[i]->display(s);

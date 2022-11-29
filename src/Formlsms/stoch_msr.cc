@@ -317,7 +317,7 @@ public:
   virtual measure* buildMeasure(traverse_data &x, expr** pass, int np);
 };
 
-baseacc_si::mymsr::mymsr(const char* n, const expr* e, model_def* p, 
+baseacc_si::mymsr::mymsr(const char* n, const expr* e, model_def* p,
     expr* rhs, expr* t1, expr* t2) : time_measure(e, p, rhs)
 {
   name = n;

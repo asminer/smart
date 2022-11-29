@@ -76,7 +76,7 @@ inline void generateExpo(double lambda, traverse_data &x)
   if (0.0 == lambda) {
     x.answer->setInfinity(1);
     return;
-  } 
+  }
   x.answer->setNull();
 }
 
@@ -103,8 +103,8 @@ inline void generateErlang(long n, double lambda, traverse_data &x)
 // ******************************************************************
 
 /** Internal representation of high-level phase-type distributions.
-    Note: unlike version 1 of Smart, this is not based on a matrix 
-    representation, but instead provides an interface that is sufficient 
+    Note: unlike version 1 of Smart, this is not based on a matrix
+    representation, but instead provides an interface that is sufficient
     to construct a Markov chain as appropriate.
 
     We assume that:
@@ -113,13 +113,13 @@ inline void generateErlang(long n, double lambda, traverse_data &x)
       - there is a single, tangible, trap state (absorbing),
         even for models that don't need one (for "disabling").
 
-    This is not a limitation because we also allow "vanishing" states 
+    This is not a limitation because we also allow "vanishing" states
     that do not consume time; nothing is gained anyway by allowing
     multiple absorbing accepting/trap states.
 
     In a nutshell, this class is used to represent distributions
-    in terms of the time required to reach an absorbing 
-    accepting state in a Markov chain.  
+    in terms of the time required to reach an absorbing
+    accepting state in a Markov chain.
 */
 class phase_hlm : public hldsm {
   bool is_discrete;
@@ -144,7 +144,7 @@ public:
         @param  s   Place to store the state.
   */
   virtual void getInitialState(shared_state* s) const = 0;
-  
+
   /** Fill \a s with the accepting state.
         @param  s   Place to store the state.
   */
@@ -154,7 +154,7 @@ public:
         @param  s   Place to store the state.
   */
   virtual void getTrapState(shared_state* s) const = 0;
-  
+
   /// Is \a s a vanishing (zero time) state?
   virtual bool isVanishingState(const shared_state* s) const = 0;
 
@@ -306,13 +306,13 @@ phase_hlm* makeOrder(int k, phase_hlm** opnds, int N);
               A new phase-type model, otherwise.
 */
 phase_hlm* makeTTA( bool d, statedist* initial,
-                    shared_object* accept, const shared_object* trap, 
+                    shared_object* accept, const shared_object* trap,
                     stochastic_lldsm::process* mc);
 
 /** Convert a continuous phase to a discrete phase,
     using uniformization on the underlying Markov chain.
       @param  cph   The continuous phase model
-      @param  q     The uniformization constant.  If this is not 
+      @param  q     The uniformization constant.  If this is not
                     large enough, there will be a runtime error.
                     (Sorry, no easy way to determine this ahead of time.)
 

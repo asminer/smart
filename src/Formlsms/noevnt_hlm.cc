@@ -48,7 +48,7 @@ void no_event_model::determineListVars(bool* ilv) const
   for (int v=0; v<num_vars; v++) ilv[v] = 0;
 }
 
-bool no_event_model::Print(OutputStream &s, int) const
+bool no_event_model::Print(std::ostream &s, int) const
 {
   s << "no event model:\nVariables:\n\t";
   for (int i=0; i<num_vars; i++)
@@ -87,7 +87,7 @@ void no_event_model::Preprocess(expr** cl, int ncs)
   }
   for (int i=0; i<num_vars; i++)
     clists[i]->Append(0);
-  
+
   Constraints_By_Bottom = new expr**[num_vars];
   for (int i=0; i<num_vars; i++) {
     Constraints_By_Bottom[i] = clists[i]->CopyAndClear();
@@ -115,7 +115,7 @@ void no_event_model::SetState(int* indexes)
   }
 }
 
-void no_event_model::ShowCurrentState(OutputStream &s) const
+void no_event_model::ShowCurrentState(std::ostream &s) const
 {
   s.Put('[');
   for (int i=0; i<num_vars; i++) {
@@ -126,7 +126,7 @@ void no_event_model::ShowCurrentState(OutputStream &s) const
     DCASSERT(varlist[i]->Type());
     varlist[i]->Type()->print(s, foo);
   }
-  s.Put(']'); 
+  s.Put(']');
 }
 
 void no_event_model::reindexStateVars(int &start)
@@ -137,7 +137,7 @@ void no_event_model::reindexStateVars(int &start)
   } // for
 }
 
-void no_event_model::showState(OutputStream &s, const shared_state* x) const
+void no_event_model::showState(std::ostream &s, const shared_state* x) const
 {
   DCASSERT(0);
 }

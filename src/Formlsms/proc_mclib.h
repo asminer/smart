@@ -20,7 +20,7 @@ class mclib_process : public markov_process {
   public:
     mclib_process(bool discrete, GraphLib::dynamic_graph *G);
     mclib_process(MCLib::vanishing_chain* vc);
-    
+
 
   protected:
     virtual ~mclib_process();
@@ -34,12 +34,12 @@ class mclib_process : public markov_process {
   public:
     virtual long getNumStates() const;
     virtual void getNumClasses(long &count) const;
-    virtual void showClasses(OutputStream &os, state_lldsm::reachset* rss, 
+    virtual void showClasses(std::ostream &os, state_lldsm::reachset* rss,
         shared_state* st) const;
     virtual bool isTransient(long st) const;
     virtual statedist* getInitialDistribution() const;
     virtual long getOutgoingWeights(long from, long* to, double* w, long n) const;
-    virtual bool computeTransient(double t, double* probs, 
+    virtual bool computeTransient(double t, double* probs,
         double* aux, double* aux2) const;
     virtual bool computeAccumulated(double t, const double* p0, double* n,
         double* aux, double* aux2) const;
@@ -63,10 +63,10 @@ class mclib_process : public markov_process {
     virtual long getTrapState() const { return trap; }
     virtual long getAcceptingState() const { return accept; }
 
-    virtual bool computeDiscreteTTA(double epsilon, long maxsize, 
+    virtual bool computeDiscreteTTA(double epsilon, long maxsize,
       discrete_pdf &dist) const;
 
-    virtual bool computeContinuousTTA(double dt, double epsilon, 
+    virtual bool computeContinuousTTA(double dt, double epsilon,
       long maxsize, discrete_pdf &dist) const;
 
     // virtual bool reachesAccept(double* x) const;
@@ -74,10 +74,10 @@ class mclib_process : public markov_process {
     virtual bool reachesAccept(double* x) const;
     virtual bool reachesAcceptBy(double t, double* x) const;
 
-    virtual void showInternal(OutputStream &os) const;
+    virtual void showInternal(std::ostream &os) const;
 
-    virtual void showProc(OutputStream &os, 
-      const graph_lldsm::reachgraph::show_options& opt, 
+    virtual void showProc(std::ostream &os,
+      const graph_lldsm::reachgraph::show_options& opt,
       state_lldsm::reachset* RSS, shared_state* st) const;
 
 
@@ -119,7 +119,7 @@ class mclib_process : public markov_process {
 /**
   Adapter, so we don't have to use the dreaded diamond.
 
-  All of these methods simply call a method with the same name 
+  All of these methods simply call a method with the same name
   in class mclib_process.
 */
 class mclib_reachgraph : public ectl_reachgraph {
@@ -132,8 +132,8 @@ class mclib_reachgraph : public ectl_reachgraph {
 
   public:
     virtual void getNumArcs(long &na) const;
-    virtual void showInternal(OutputStream &os) const;
-    virtual void showArcs(OutputStream &os, const show_options& opt, 
+    virtual void showInternal(std::ostream &os) const;
+    virtual void showArcs(std::ostream &os, const show_options& opt,
       state_lldsm::reachset* RSS, shared_state* st) const;
 
   protected:

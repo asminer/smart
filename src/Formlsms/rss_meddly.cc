@@ -69,7 +69,7 @@ void meddly_reachset::setMddWrap(meddly_encoder* w)
   mtmdd_wrap = mdd_wrap->copyWithDifferentForest("MTMDD", foo);
 }
 
-void meddly_reachset::reportStats(OutputStream &out) const
+void meddly_reachset::reportStats(std::ostream &out) const
 {
   if (0==states) return;
   double card;
@@ -236,14 +236,14 @@ long meddly_reachset::computeMaxTokensPerSet(std::vector<int> &set_of_places) co
 
 }
 
-void meddly_reachset::showInternal(OutputStream &os) const
+void meddly_reachset::showInternal(std::ostream &os) const
 {
   os << "Internal state space representation (using MEDDLY):\n";
   mdd_wrap->showNodeGraph(os, states);
   os.flush();
 }
 
-void meddly_reachset::showState(OutputStream &os, const shared_state* st) const
+void meddly_reachset::showState(std::ostream &os, const shared_state* st) const
 {
   st->Print(os, 0);
 }

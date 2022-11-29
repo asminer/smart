@@ -20,7 +20,7 @@
 class ectl_reachgraph : public graph_lldsm::reachgraph {
 
   public:
-    
+
     // ======================================================================
     //
     // Helper class: use for the critical "traverse" method
@@ -76,13 +76,13 @@ class ectl_reachgraph : public graph_lldsm::reachgraph {
         void set_obligations(const intset &p, int value=1);
 
         /// Set all obligations to value.
-        inline void fill_obligations(int value) { 
+        inline void fill_obligations(int value) {
           DCASSERT(obligations);
           for (long i=0; i<size; i++) obligations[i] = value;
         }
 
         /// Increment obligations for state i
-        inline void add_obligation(long i) { 
+        inline void add_obligation(long i) {
           DCASSERT(obligations);
           CHECK_RANGE(0, i, size);
           obligations[i]++;
@@ -92,14 +92,14 @@ class ectl_reachgraph : public graph_lldsm::reachgraph {
         void add_obligations(const intset& p);
 
         /// Decrement obligations for state i
-        inline void remove_obligation(long i) { 
+        inline void remove_obligation(long i) {
           DCASSERT(obligations);
           CHECK_RANGE(0, i, size);
           obligations[i]--;
         }
 
         /// Get current number of unmet obligations for state i
-        inline long num_obligations(long i) const { 
+        inline long num_obligations(long i) const {
           DCASSERT(obligations);
           CHECK_RANGE(0, i, size);
           return obligations[i];
@@ -124,7 +124,7 @@ class ectl_reachgraph : public graph_lldsm::reachgraph {
 #endif
 
       private:
-        long* obligations;  
+        long* obligations;
         long size;
         bool one_step;
     };
@@ -176,29 +176,29 @@ class ectl_reachgraph : public graph_lldsm::reachgraph {
       Count edges and set obligations in our traverse helper.
         @param  rt    Reverse time?  If true, count incoming edges;
                       otherwise, count outgoing edges.
-        @param  CTL   CTL traversal.  On output, obligations will 
+        @param  CTL   CTL traversal.  On output, obligations will
                       be set accordingly.
     */
     virtual void count_edges(bool rt, CTL_traversal &CTL) const = 0;
-      
+
     /**
       Traverse graph, using the given traversal.
         @param  rt      Should we reverse time?  If so, we traverse the
                         outgoing edges, otherwise we traverse the
                         incoming edges.
-        @param  T       Graph traversal to use.  
+        @param  T       Graph traversal to use.
     */
-    virtual void traverse(bool rt, GraphLib::BF_graph_traversal &T) const = 0; 
+    virtual void traverse(bool rt, GraphLib::BF_graph_traversal &T) const = 0;
 
 
   protected:
     CTL_traversal* TH;
 
     // TBD - need a timer, for reporting
-    
+
   private:
     inline void startTraverse(const char* who) {
-      // TBD - start timer 
+      // TBD - start timer
 #ifdef DEBUG_ECTL
       fprintf(stderr, "Calling traverse for %s\n", who);
       TH->dump(stderr);

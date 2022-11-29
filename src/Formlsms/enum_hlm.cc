@@ -24,7 +24,7 @@ public:
   virtual void determineListVars(bool* ilv) const { ilv[0] = 0; }
   virtual void reindexStateVars(int &start);
   virtual int getNumEvents(bool show) const;
-  virtual void showState(OutputStream &s, const shared_state* x) const;
+  virtual void showState(std::ostream &s, const shared_state* x) const;
 };
 
 llhldsm::llhldsm(lldsm* mdl) : hldsm(Enumerated)
@@ -54,7 +54,7 @@ int llhldsm::getNumEvents(bool show) const
   return 0;
 }
 
-void llhldsm::showState(OutputStream &s, const shared_state* x) const
+void llhldsm::showState(std::ostream &s, const shared_state* x) const
 {
   DCASSERT(x);
   DCASSERT(RSS);

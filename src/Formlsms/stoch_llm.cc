@@ -208,7 +208,7 @@ bool stochastic_lldsm::process::reachesAcceptBy(double, double*) const
   return false;
 }
 
-bool stochastic_lldsm::process::Print(OutputStream &s, int width) const
+bool stochastic_lldsm::process::Print(std::ostream &s, int width) const
 {
   // Required for shared object, but will we ever call it?
   s << "stochastic process (why is it printing?)";

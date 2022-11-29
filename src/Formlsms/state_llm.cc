@@ -65,7 +65,7 @@ void state_lldsm::showStatesCOV(bool internal) const
   //  Delete(st);
   }
 }
-bool state_lldsm::tooManyStates(long ns, OutputStream* os)
+bool state_lldsm::tooManyStates(long ns, std::ostream* os)
 {
   if (ns>=0) {
     if ((0==max_state_display) || (ns <= max_state_display)) return false;
@@ -152,7 +152,7 @@ void state_lldsm::reachset::getBounds(result &ns, std::vector<int> set_of_places
 }
 
 void state_lldsm::reachset
-::showStates(OutputStream &os, display_order ord, shared_state* st)
+::showStates(std::ostream &os, display_order ord, shared_state* st)
 {
   iterator& I = iteratorForOrder(ord);
 
@@ -195,7 +195,7 @@ void state_lldsm::reachset::visitStates(state_lldsm::state_visitor &v) const
   }
 }
 
-bool state_lldsm::reachset::Print(OutputStream &s, int width) const
+bool state_lldsm::reachset::Print(std::ostream &s, int width) const
 {
   // Required for shared object, but will we ever call it?
   s << "reachset (why is it printing?)";

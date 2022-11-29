@@ -128,7 +128,7 @@ bool init_dcpmeasures::execute()
     );
 
   // "state space" engines
-  MakeEngineType(em, 
+  MakeEngineType(em,
       "ExplicitDCSolve",
       "Algorithm used to build explicit list of variable assignments that satisfy model constraints",
       engtype::Single

@@ -227,7 +227,7 @@ public:
   /// Returns true if v already had assignment in this event.
   bool setAssignment(assign_entry* &tmp, expr* rhs);
 
-  void Finalize(OutputStream &ds);
+  void Finalize(std::ostream &ds);
 };
 
 // **************************************************************************
@@ -282,7 +282,7 @@ bool evm_event::setAssignment(assign_entry* &tmp, expr* rhs)
   return false;
 }
 
-void evm_event::Finalize(OutputStream &ds)
+void evm_event::Finalize(std::ostream &ds)
 {
   // First, traverse "guards" to build enabling expression
   int ng;
@@ -349,7 +349,7 @@ public:
   virtual ~evm_hlm();
 
   // required for hldsm:
-  virtual void showState(OutputStream &s, const shared_state* x) const;
+  virtual void showState(std::ostream &s, const shared_state* x) const;
 
   // required for dsde_hlm:
   virtual int NumInitialStates() const;
@@ -371,7 +371,7 @@ evm_hlm::~evm_hlm()
 {
 }
 
-void evm_hlm::showState(OutputStream &s, const shared_state* st) const
+void evm_hlm::showState(std::ostream &s, const shared_state* st) const
 {
   DCASSERT(st);
 
@@ -489,7 +489,7 @@ public:
 
 protected:
   virtual void InitModel();
-  virtual void FinalizeModel(OutputStream &ds);
+  virtual void FinalizeModel(std::ostream &ds);
 };
 
 assign_entry* evm_def::tmp_arc = 0;
@@ -714,7 +714,7 @@ void evm_def::InitModel()
   assertion_list = new List <expr>;
 }
 
-void evm_def::FinalizeModel(OutputStream &ds)
+void evm_def::FinalizeModel(std::ostream &ds)
 {
   // Put state vars into an array
   model_statevar** svs;

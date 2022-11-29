@@ -90,7 +90,7 @@ public:
   inline bool isDiscrete() const { return discrete; }
 protected:
   virtual void InitModel();
-  virtual void FinalizeModel(OutputStream &ds);
+  virtual void FinalizeModel(std::ostream &ds);
 
 };
 
@@ -213,7 +213,7 @@ void markov_def::InitModel()
   error = false;
 }
 
-void markov_def::FinalizeModel(OutputStream &ds)
+void markov_def::FinalizeModel(std::ostream &ds)
 {
   model_enum* mcstate = new model_enum(0, current, statelist);
   statelist = 0;

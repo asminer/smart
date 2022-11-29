@@ -33,7 +33,7 @@ public:
   virtual int NumStateVars() const;
   virtual bool containsListVar() const;
   virtual void determineListVars(bool *) const;
-  virtual bool Print(OutputStream &, int) const;
+  virtual bool Print(std::ostream &, int) const;
   inline int NumVars() const { return num_vars; }
   inline model_statevar* GetVar(int i) {
     DCASSERT(varlist);
@@ -42,9 +42,9 @@ public:
   }
   bool SatisfiesConstraintsAt(int i);
   void SetState(int* indexes);
-  void ShowCurrentState(OutputStream &s) const;
+  void ShowCurrentState(std::ostream &s) const;
   virtual void reindexStateVars(int &start);
-  virtual void showState(OutputStream &s, const shared_state* x) const;
+  virtual void showState(std::ostream &s, const shared_state* x) const;
 
   inline expr** GetConstraintsAtLevel(int i) {
     DCASSERT(Constraints_By_Bottom);

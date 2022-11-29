@@ -40,7 +40,7 @@ void enum_reachset::getNumStates(long &ns) const
   ns = states->NumValues();
 }
 
-void enum_reachset::showInternal(OutputStream &os) const
+void enum_reachset::showInternal(std::ostream &os) const
 {
   os << "state_handle: [";
   os.PutArray(state_handle, states->NumValues());
@@ -54,7 +54,7 @@ void enum_reachset::showInternal(OutputStream &os) const
   } // for i
 }
 
-void enum_reachset::showState(OutputStream &os, const shared_state* st) const
+void enum_reachset::showState(std::ostream &os, const shared_state* st) const
 {
   long i = st->get(states->GetIndex());
   const model_enum_value* mev = states->ReadValue(state_handle[i]);
@@ -88,7 +88,7 @@ state_lldsm::reachset::iterator& enum_reachset::easiestIterator() const
   return *natorder;
 }
 
-shared_object* enum_reachset::getEnumeratedState(long i) const 
+shared_object* enum_reachset::getEnumeratedState(long i) const
 {
   DCASSERT(state_handle);
   return Share(states->GetValue(state_handle[i]));
@@ -116,7 +116,7 @@ void enum_reachset::Renumber(const GraphLib::node_renumberer* Ren)
 // *                                                                *
 // ******************************************************************
 
-enum_reachset::natural_iter::natural_iter(const model_enum &ss) 
+enum_reachset::natural_iter::natural_iter(const model_enum &ss)
  : indexed_iterator(ss.NumValues()), states(ss)
 {
 }
@@ -136,7 +136,7 @@ void enum_reachset::natural_iter::copyState(shared_state* st, long o) const
 // *                                                                *
 // ******************************************************************
 
-enum_reachset::lexical_iter::lexical_iter(const model_enum &ss) 
+enum_reachset::lexical_iter::lexical_iter(const model_enum &ss)
  : natural_iter(ss)
 {
   long* M = new long[ss.NumValues()];
@@ -158,7 +158,7 @@ enum_reachset::lexical_iter::~lexical_iter()
 // *                                                                *
 // ******************************************************************
 
-enum_reachset::discovery_iter::discovery_iter(const model_enum &ss) 
+enum_reachset::discovery_iter::discovery_iter(const model_enum &ss)
  : natural_iter(ss)
 {
   long* M = new long[ss.NumValues()];

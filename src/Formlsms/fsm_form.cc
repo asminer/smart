@@ -60,7 +60,7 @@ public:
 
 protected:
   virtual void InitModel();
-  virtual void FinalizeModel(OutputStream &ds);
+  virtual void FinalizeModel(std::ostream &ds);
 
 };
 
@@ -188,7 +188,7 @@ void fsm_def::InitModel()
   error = false;
 }
 
-void fsm_def::FinalizeModel(OutputStream &ds)
+void fsm_def::FinalizeModel(std::ostream &ds)
 {
   model_enum* mcstate = new model_enum(0, current, statelist);
   statelist = 0;

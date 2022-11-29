@@ -18,8 +18,8 @@ class expl_reachset : public indexed_reachset {
   public:
     virtual StateLib::state_db* getStateDatabase() const;
     virtual void getNumStates(long &ns) const;
-    virtual void showInternal(OutputStream &os) const;
-    virtual void showState(OutputStream &os, const shared_state* st) const;
+    virtual void showInternal(std::ostream &os) const;
+    virtual void showState(std::ostream &os, const shared_state* st) const;
     virtual iterator& iteratorForOrder(state_lldsm::display_order ord);
     virtual iterator& easiestIterator() const;
 
@@ -28,7 +28,7 @@ class expl_reachset : public indexed_reachset {
 
     // Renumber states
     virtual void Renumber(const GraphLib::node_renumberer* Ren);
-  
+
   private:
     /**
         Base class for state_db iterators
@@ -55,7 +55,7 @@ class expl_reachset : public indexed_reachset {
         const long* state_handle;
     };
 
-    
+
     /// Iterator for natural order, using the state_db
     class natural_db_iter : public db_iterator {
       public:

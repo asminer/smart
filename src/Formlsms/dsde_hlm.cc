@@ -98,7 +98,7 @@ model_event::~model_event() {
 	delete[] prio_list;
 }
 
-void model_event::display(OutputStream &s) const {
+void model_event::display(std::ostream &s) const {
 	const int width = 16;
 	s << nameOf(FT) << " " << Name() << "\n";
 	s.Put("enabling: ", width);

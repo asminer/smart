@@ -54,7 +54,7 @@ void expl_reachset::getNumStates(long &ns) const
   }
 }
 
-void expl_reachset::showInternal(OutputStream &os) const
+void expl_reachset::showInternal(std::ostream &os) const
 {
   long ns;
   getNumStates(ns);
@@ -78,7 +78,7 @@ void expl_reachset::showInternal(OutputStream &os) const
   }
 }
 
-void expl_reachset::showState(OutputStream &os, const shared_state* st) const
+void expl_reachset::showState(std::ostream &os, const shared_state* st) const
 {
   st->Print(os, 0);
 }
@@ -108,7 +108,7 @@ state_lldsm::reachset::iterator& expl_reachset
         }
       }
       return *lexorder;
-      
+
     case state_lldsm::NATURAL:
     default:
       DCASSERT(natorder);
@@ -249,7 +249,7 @@ expl_reachset::discovery_coll_iter::discovery_coll_iter(const StateLib::state_co
 // *                                                                *
 // ******************************************************************
 
-expl_reachset::lexical_db_iter::lexical_db_iter(const hldsm* hm, 
+expl_reachset::lexical_db_iter::lexical_db_iter(const hldsm* hm,
   const StateLib::state_db &s) : db_iterator(s)
 {
   long* M = new long[s.Size()];
@@ -264,7 +264,7 @@ expl_reachset::lexical_db_iter::lexical_db_iter(const hldsm* hm,
 // *                                                                *
 // ******************************************************************
 
-expl_reachset::lexical_coll_iter::lexical_coll_iter(const hldsm* hm, 
+expl_reachset::lexical_coll_iter::lexical_coll_iter(const hldsm* hm,
   const StateLib::state_coll &SC, const long* SH) : coll_iterator(SC, SH)
 {
   long* M = new long[SC.Size()];
