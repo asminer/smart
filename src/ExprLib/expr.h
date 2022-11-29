@@ -6,6 +6,7 @@
 #include "../include/shared.h"
 #include "../include/list.h"
 #include "../Utils/location.h"
+#include "../Utils/messages.h"
 #include "type.h"
 #include "result.h"
 
@@ -505,6 +506,22 @@ public:
   virtual long getUpper() const;
 };
 
+
+// ******************************************************************
+// *                                                                *
+// *                 Errors caused by an expression                 *
+// *                                                                *
+// ******************************************************************
+
+class expr_error : public error_msg {
+    public:
+        /*
+         * Start an error message caused by an expression.
+         *      @param  cause   Cause; will print its location
+         *      @param  ans     If not a null pointer, sets to Null().
+         */
+        expr_error(const expr* cause, result* ans = nullptr);
+};
 
 // ******************************************************************
 // *                                                                *

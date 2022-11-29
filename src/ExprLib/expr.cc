@@ -7,7 +7,6 @@
 #include "symbols.h"
 #include "../Streams/streams.h"
 #include "../Options/options.h"
-#include "../Utils/messages.h"
 #include "../include/list.h"
 #include "type.h"
 #include "result.h"
@@ -414,3 +413,22 @@ long expr::getUpper() const
 {
   return -1;
 }
+
+
+//
+// ******************************************************************
+//
+
+expr_error::expr_error(const expr* cause, result* ans) : error_msg("ERROR")
+{
+    if (ans) {
+        ans->setNull();
+    }
+    if (cause) {
+        Out << ' ' << cause->Where();
+    } else {
+        Out << ':';
+    }
+    newLine();
+}
+

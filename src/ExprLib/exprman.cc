@@ -209,12 +209,12 @@ expr* exprman::promote(expr* e, bool proc, bool rand, const expr* fp) const
     if (d>0) changetype = true;
   }
   if (changetype) {
-    if (promote_arg.startWarning(e->Where())) {
-      promote_arg.warn() << "Promoting argument ";
-      e->Print(promote_arg.warn(), 0);
-      promote_arg.warn() << " to type ";
-      fp->PrintType(promote_arg.warn());
-      promote_arg.stopIO();
+    if (promote_arg.start(e->Where())) {
+      promote_arg << "Promoting argument ";
+      e->Print(promote_arg.stream(), 0);
+      promote_arg << " to type ";
+      fp->PrintType(promote_arg.stream());
+      promote_arg.stop();
     }
   }
   return makeTypecast(e->Where(), proc, rand, fp, e);
@@ -393,7 +393,7 @@ exprman* Initialize_Expressions(io_environ* io, option_manager* om)
   if (builtManager)  return The_Man;
   builtManager = 1;
 
-  abstract_msg::initStatic(io);
+  // abstract_msg::initStatic(io);
   The_Man = new superman(io, om);
   InitTypes(The_Man);
   InitEngines(The_Man);

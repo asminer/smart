@@ -188,28 +188,28 @@ class typechecking_error : public error_msg {
  */
 
 template <class TYPE>
-inline warning_msg& operator<<(warning_msg &W, const TYPE& t)
+inline const warning_msg& operator<<(const warning_msg &W, const TYPE& t)
 {
     W.stream() << t;
     return W;
 }
 
 template <class TYPE>
-inline reporting_msg& operator<<(reporting_msg &R, const TYPE& t)
+inline const reporting_msg& operator<<(const reporting_msg &R, const TYPE& t)
 {
     R.stream() << t;
     return R;
 }
 
 template <class TYPE>
-inline debugging_msg& operator<<(debugging_msg &D, const TYPE& t)
+inline const debugging_msg& operator<<(const debugging_msg &D, const TYPE& t)
 {
     D.stream() << t;
     return D;
 }
 
 template <class TYPE>
-inline error_msg& operator<<(error_msg &E, const TYPE& t)
+inline const error_msg& operator<<(const error_msg &E, const TYPE& t)
 {
     E.stream() << t;
     return E;
