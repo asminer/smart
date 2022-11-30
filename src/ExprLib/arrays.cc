@@ -6,6 +6,8 @@
 #include "../Options/options.h"
 #include <stdlib.h>
 
+#include <sstream>
+
 // #define DEBUG_ACALL
 
 // ******************************************************************
@@ -181,11 +183,8 @@ void array_instance::SetCurrentReturn(expr* retval, bool rename)
   }
   if (curr) {
     // we already have a value...
-    if (em->startInternal(__FILE__, __LINE__)) {
-      em->causedBy(0);
-      em->internal() << "array reassignment?";
-      em->stopIO();
-    }
+    internal_error E(__FILE__, __LINE__);
+    E << "array reassignment?";
   }
   prev->down[lastindex] = new array_item(retval);
 
@@ -195,7 +194,7 @@ void array_instance::SetCurrentReturn(expr* retval, bool rename)
   traverse_data x(traverse_data::Compute);
   result ind;
   x.answer = &ind;
-  StringStream s;
+  std::stringstream s;
   s << Name() << "[";
   for (int i=0; i<dimension; i++) {
     DCASSERT(index_list[i]->Type());
@@ -204,7 +203,7 @@ void array_instance::SetCurrentReturn(expr* retval, bool rename)
     index_list[i]->Type()->print(s, ind);
   }
   s << "]";
-  shared_string* name = new shared_string(s.GetString());
+  shared_string* name = new shared_string(s.str().c_str());
   retval->Rename(name);
 }
 
@@ -251,15 +250,11 @@ array_item* array_instance::GetItem(expr** il, result& x)
       long ndx = prev->values->IndexOf(x);
       if (ndx<0) {
         // range error
-        if (em->startError()) {
-          em->causedBy(il[i]);
-          em->cerr() << "Bad value: ";
-          DCASSERT(il[i]->Type());
-          il[i]->Type()->print(em->cerr(), x);
-          em->cerr() << " for index " << index_list[i]->Name();
-          em->cerr() << " in array " << Name();
-          em->stopIO();
-        }
+        expr_error E(il[i], nullptr);
+        E << "Bad value: ";
+        DCASSERT(il[i]->Type());
+        il[i]->Type()->print(E.stream(), x);
+        E << " for index " << index_list[i]->Name() << " in array " << Name();
         return 0;
       }
       curr = prev->down[ndx];
@@ -317,10 +312,10 @@ arrayassign::~arrayassign()
 bool arrayassign::Print(std::ostream &s, int w) const
 {
   DCASSERT(f);
-  s.Pad(' ', w);
+  s << std::setw(w) << "";
   f->PrintHeader(s);
   s << " := ";
-  if (retval)   retval->Print(s, 0);
+  if (retval)   retval->Print(s);
   else          s << "null";
   s << ";\n";
   return true;
@@ -332,13 +327,12 @@ void arrayassign::Compute(traverse_data &td)
   expr* rv = (retval) ? (retval->Substitute(0)) : 0;
   expr* arrayval = em->makeConstant(Where(), f->Type(), 0, rv, 0);
   f->SetCurrentReturn(arrayval, true);
-  if (expr_debug.startReport()) {
-    expr_debug.report() << "executing assignment: ";
-    arrayval->Print(expr_debug.report(), 0);
-    expr_debug.report() << " := ";
-    rv->Print(expr_debug.report(), 0);
-    expr_debug.report() << "\n";
-    expr_debug.stopIO();
+  if (expr_debug.start()) {
+    expr_debug << "executing assignment: ";
+    arrayval->Print(expr_debug.stream());
+    expr_debug << " := ";
+    rv->Print(expr_debug.stream());
+    expr_debug.stop();
   }
 }
 
@@ -393,12 +387,11 @@ void acall::Compute(traverse_data &x)
   DCASSERT(0==x.aggregate);
   array_item* elem = func->GetItem(pass, *x.answer);
 
-  if (expr_debug.startReport()) {
-    expr_debug.report() << "got array element: ";
-    if (elem)   elem->Print(expr_debug.report(), 0);
-    else        expr_debug.report() << "null";
-    expr_debug.report() << "\n";
-    expr_debug.stopIO();
+  if (expr_debug.start()) {
+    expr_debug << "got array element: ";
+    if (elem)   elem->Print(expr_debug.stream());
+    else        expr_debug << "null";
+    expr_debug.stop();
   }
 
   if (elem)   elem->Compute(x, func->IsFixed());
@@ -509,59 +502,43 @@ array::~array()
 
 void array::SetCurrentReturn(expr*, bool)
 {
-  if (em->startInternal(__FILE__, __LINE__)) {
-    em->causedBy(0);
-    em->internal() << "Attempting to set return value on data-less array.";
-    em->stopIO();
-  }
+    internal_error E(__FILE__, __LINE__);
+    E << "Attempting to set return value on data-less array.";
 }
 
 array_item* array::GetCurrentReturn()
 {
-  if (em->startInternal(__FILE__, __LINE__)) {
-    em->causedBy(0);
-    em->internal() << "Attempting to obtain value from data-less array.";
-    em->stopIO();
-  }
-  return 0;
+    internal_error E(__FILE__, __LINE__);
+    E << "Attempting to obtain value from data-less array.";
+    return nullptr;
 }
 
 array_item* array::GetItem(expr**, result &x)
 {
-  if (em->startInternal(__FILE__, __LINE__)) {
-    em->causedBy(0);
-    em->internal() << "Attempting to obtain value from data-less array.";
-    em->stopIO();
-  }
-  return 0;
+    internal_error E(__FILE__, __LINE__);
+    E << "Attempting to obtain value from data-less array.";
+    return nullptr;
 }
 
 bool array::checkArrayCall(const location &W, expr** indexes, int dim) const
 {
   // check that dim matches our dimension
   if (GetDimension() != dim) {
-    if (em->startError()) {
-      em->causedBy(W);
-      em->cerr() << "Array " << Name();
-      em->cerr() << " has dimension " << GetDimension();
-      em->stopIO();
-    }
+    typechecking_error E(W);
+    E << "Array " << Name() << " has dimension " << GetDimension();
     return false;
   }
 
   // type checking
   for (int i=0; i<dim; i++) {
     if (!em->isPromotable(indexes[i]->Type(), GetIndexType(i))) {
-      if (em->startError()) {
-        em->causedBy(W);
-        em->cerr() << "Array ";
-        PrintHeader(em->cerr());
-        const type* at = GetIndexType(i);
-        DCASSERT(at);
-        em->cerr() << " expects type " << at->getName();
-        em->cerr() << " for index " << GetIndexName(i);
-        em->stopIO();
-      }
+      typechecking_error E(W);
+      E << "Array ";
+      PrintHeader(E.stream());
+      const type* at = GetIndexType(i);
+      DCASSERT(at);
+      E << " expects type " << at->getName();
+      E << " for index " << GetIndexName(i);
       return false;
     }
     indexes[i] = em->promote(indexes[i], GetIndexType(i));
@@ -638,12 +615,8 @@ expr* exprman::makeArrayAssign(const location &W,
 
   // Check return type
   if (!isPromotable(rhs->Type(), a->Type())) {
-    if (startError()) {
-      causedBy(W);
-      cerr() << "Type mismatch in assignment for array ";
-      cerr() << a->Name();
-      stopIO();
-    }
+    typechecking_error E(W);
+    E << "Type mismatch in assignment for array " << a->Name();
     Delete(rhs);
     return 0;
   }

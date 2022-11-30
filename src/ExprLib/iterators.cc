@@ -38,11 +38,10 @@ void iterator::Compute(traverse_data &x)
 
 void iterator::PrintAll(std::ostream &s) const
 {
-  s.Put(Name());
-  s.Put(" in {");
-  if (values) values->Print(s, 0);
-  else        s.Put("null");
-  s.Put('}');
+  s << Name() << " in {";
+  if (values) values->Print(s);
+  else        s << "null";
+  s << '}';
 }
 
 void iterator::ComputeCurrent(traverse_data &x)
@@ -57,12 +56,11 @@ void iterator::ComputeCurrent(traverse_data &x)
 
   current = Share( smart_cast <shared_set*> (foo.getPtr()) );
 
-  if (expr_debug.startReport()) {
-    expr_debug.report() << "computed set: ";
-    if (current)  current->Print(expr_debug.report(), 0);
-    else          expr_debug.report() << "null";
-    expr_debug.report() << "\n";
-    expr_debug.stopIO();
+  if (expr_debug.start()) {
+    expr_debug << "computed set: ";
+    if (current)  current->Print(expr_debug.stream());
+    else          expr_debug << "null";
+    expr_debug.stop();
   }
 }
 

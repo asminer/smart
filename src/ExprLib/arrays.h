@@ -39,7 +39,7 @@ public:
 protected:
   virtual ~array_item();
 public:
-  virtual bool Print(std::ostream &s, int) const;
+  virtual bool Print(std::ostream &s, int w=0) const;
   virtual bool Equals(const shared_object*) const;
   inline void Compute(traverse_data &x, bool subst) {
     if (0==e) {
