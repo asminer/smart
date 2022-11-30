@@ -247,7 +247,7 @@ public:
   inline int Length() const {
     return nt;
   }
-  virtual bool Print(std::ostream &s, int) const;
+  virtual bool Print(std::ostream &s, int w=0) const;
   virtual bool Equals(const shared_object *o) const;
 };
 

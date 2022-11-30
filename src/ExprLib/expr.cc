@@ -228,25 +228,22 @@ expr* expr::GetComponent(int i)
 void expr::PrintType(std::ostream &s) const
 {
   if (aggtype) {
-    aggtype->Print(s, 0);
+    aggtype->Print(s);
     return;
   }
   if (simple) {
-    s.Put(simple->getName());
+    s << simple->getName();
     return;
   }
   DCASSERT(0);
-  s.Put("Unknown type");
+  s << "Unknown type";
 }
 
 void expr::Compute(traverse_data &x)
 {
-  if (em->startInternal(__FILE__, __LINE__)) {
-    em->causedBy(0);
-    em->internal() << "Trying to compute uncomputable expression: ";
-    Print(em->internal(), 0);
-    em->stopIO();
-  }
+    internal_error E(__FILE__, __LINE__);
+    E << "Trying to compute uncomputable expression: ";
+    Print(E.stream());
 }
 
 const char* expr::Name() const
@@ -261,14 +258,11 @@ shared_object* expr::SharedName() const
 
 void expr::Rename(shared_object* n)
 {
-  if (em->startInternal(__FILE__, __LINE__)) {
-    em->causedBy(0);
-    em->internal() << "Trying to rename an unnamed expression: ";
-    Print(em->internal(), 0);
-    em->internal() << " to: ";
-    n->Print(em->internal(), 0);
-    em->stopIO();
-  }
+    internal_error E(__FILE__, __LINE__);
+    E << "Trying to rename an unnamed expression: ";
+    Print(E.stream());
+    E << " to: ";
+    n->Print(E.stream());
 }
 
 bool expr::Matches(const expr* sym) const
@@ -365,31 +359,27 @@ std::ostream& operator<< (std::ostream &s, const expr* e)
 
 void expr::Traverse(traverse_data &x)
 {
-  switch (x.which) {
-    case traverse_data::None:
-    case traverse_data::Block:
-        return;
+    switch (x.which) {
+        case traverse_data::None:
+        case traverse_data::Block:
+            return;
 
-    case traverse_data::GetProducts:
-        if (x.elist) {
-          x.elist->Append(this);
-        }
-        x.answer->setInt(x.answer->getInt()+1);
-        return;
+        case traverse_data::GetProducts:
+            if (x.elist) {
+                x.elist->Append(this);
+            }
+            x.answer->setInt(x.answer->getInt()+1);
+            return;
 
-    default:
-        break;
-  }
-  // bail out
-  DCASSERT(em);
-  if (em->startInternal(__FILE__, __LINE__)) {
-    em->causedBy(0);
-    em->internal() << "No traversal handler ";
-    x.Print(em->internal());
-    em->internal() << " for expression: ";
-    Print(em->internal(), 0);
-    em->stopIO();
-  }
+        default:
+            break;
+    }
+    // bail out
+    internal_error E(__FILE__, __LINE__);
+    E << "No traversal handler ";
+    x.Print(E.stream());
+    E << " for expression: ";
+    Print(E.stream());
 }
 
 // Nice, conservative default.
