@@ -51,7 +51,7 @@ void real_opt::ShowHeader(OutputStream &s) const
     s << " " << value;
 }
 
-void real_opt::ShowRange(doc_formatter* df) const
+void real_opt::ShowRange(doc_formatter &df) const
 {
     DCASSERT(df);
     df->Out() << "Legal values: reals in ";

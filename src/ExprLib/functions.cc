@@ -243,19 +243,19 @@ int function::Traverse(traverse_data &x, expr** pass, int np)
   }
 }
 
-bool function::DocumentHeader(doc_formatter* df) const
+bool function::DocumentHeader(doc_formatter &df) const
 {
   // provided in derived classes
   DCASSERT(0);
   return false;
 }
 
-void function::DocumentBehavior(doc_formatter* df) const
+void function::DocumentBehavior(doc_formatter &df) const
 {
   DCASSERT(0);
 }
 
-void function::PrintDocs(doc_formatter* df, const char*) const
+void function::PrintDocs(doc_formatter &df, const char*) const
 {
   if (!DocumentHeader(df))  return;
   df->begin_indent();
@@ -1081,7 +1081,7 @@ internal_func::internal_func(const type* t, const char* name)
   hidden = false;
 }
 
-bool internal_func::DocumentHeader(doc_formatter* df) const
+bool internal_func::DocumentHeader(doc_formatter &df) const
 {
   if (0==df)      return false;
   if (0==Name())  return false;
@@ -1095,7 +1095,7 @@ bool internal_func::DocumentHeader(doc_formatter* df) const
   return true;
 }
 
-void internal_func::DocumentBehavior(doc_formatter* df) const
+void internal_func::DocumentBehavior(doc_formatter &df) const
 {
   if (docs) df->Out() << docs;
   else      df->Out() << "no documentation";
@@ -1265,8 +1265,8 @@ public:
   virtual bool HeadersMatch(const type* t, symbol** pl, int np) const;
   virtual bool HasNameConflict(symbol** fp, int np, int* tmp) const;
 
-  virtual bool DocumentHeader(doc_formatter* df) const;
-  virtual void DocumentBehavior(doc_formatter* df) const;
+  virtual bool DocumentHeader(doc_formatter &df) const;
+  virtual void DocumentBehavior(doc_formatter &df) const;
   inline void ShowWhereDefined(std::ostream &s) const {
     if (return_expr) {
       s << Where();
@@ -1343,7 +1343,7 @@ bool user_func::HasNameConflict(symbol** fp, int np, int* tmp) const
 }
 
 
-bool user_func::DocumentHeader(doc_formatter* df) const
+bool user_func::DocumentHeader(doc_formatter &df) const
 {
   if (0==df)      return false;
   if (0==Name())  return false;
@@ -1353,7 +1353,7 @@ bool user_func::DocumentHeader(doc_formatter* df) const
   return true;
 }
 
-void user_func::DocumentBehavior(doc_formatter* df) const
+void user_func::DocumentBehavior(doc_formatter &df) const
 {
   df->Out() << "Defined " << Where();
 }

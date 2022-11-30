@@ -19,7 +19,7 @@ public:
     virtual ~int_opt();
     virtual error SetValue(long v);
     virtual void ShowHeader(OutputStream &s) const;
-    virtual void ShowRange(doc_formatter* df) const;
+    virtual void ShowRange(doc_formatter &df) const;
 };
 
 #endif

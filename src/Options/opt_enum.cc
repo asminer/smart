@@ -43,7 +43,7 @@ int option_enum::Compare(const char* n) const
     return strcmp(Name(), n);
 }
 
-bool option_enum::isApropos(const doc_formatter* df, const char* key) const
+bool option_enum::isApropos(const doc_formatter &df, const char* key) const
 {
     if (df->Matches(name, key))  return true;
     if (0==settings) return false;

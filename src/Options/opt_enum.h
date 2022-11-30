@@ -40,7 +40,7 @@ class option_enum {
         inline const option_manager* readSettings() const { return settings; }
         inline void makeSettings(const option_manager* s) { settings = s; }
 
-        bool isApropos(const doc_formatter* df, const char* keyword) const;
+        bool isApropos(const doc_formatter &df, const char* keyword) const;
 
     private:
         /// Name of the constant.

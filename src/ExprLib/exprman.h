@@ -72,7 +72,7 @@ public:
       Otherwise, if there is copyright info, then this must be overridden
       in the derived class.
   */
-  virtual void printCopyright(doc_formatter *df) const;
+  virtual void printCopyright(doc_formatter &df) const;
 
   /// Does the library have a release date.
   inline bool hasReleaseDate() const { return has_release_date; }
@@ -80,7 +80,7 @@ public:
   /** Print release date for a library.
       Default is to dump core.
   */
-  virtual void printReleaseDate(doc_formatter *df) const;
+  virtual void printReleaseDate(doc_formatter &df) const;
 
 };
 
@@ -1388,7 +1388,7 @@ public:
   virtual void printLibraryVersions(std::ostream &s) const = 0;
 
   /// Print copyright info for all registered supporting libraries.
-  virtual void printLibraryCopyrights(doc_formatter* df) const = 0;
+  virtual void printLibraryCopyrights(doc_formatter &df) const = 0;
 
 protected:
   virtual ~exprman();  // don't want user to delete one...

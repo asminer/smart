@@ -102,7 +102,7 @@ void radio_opt::ShowHeader(OutputStream &s) const
     s << ' ' << possible[which]->Name();
 }
 
-void radio_opt::ShowRange(doc_formatter* df) const
+void radio_opt::ShowRange(doc_formatter &df) const
 {
     DCASSERT(numpossible);
     df->Out() << "Legal values:";
@@ -120,7 +120,7 @@ void radio_opt::ShowRange(doc_formatter* df) const
     df->end_description();
 }
 
-bool radio_opt::isApropos(const doc_formatter* df, const char* keyword) const
+bool radio_opt::isApropos(const doc_formatter &df, const char* keyword) const
 {
     if (0==df)                          return false;
     if (df->Matches(Name(), keyword))   return true;
@@ -130,7 +130,7 @@ bool radio_opt::isApropos(const doc_formatter* df, const char* keyword) const
     return false;
 }
 
-void radio_opt::RecurseDocs(doc_formatter* df, const char* keyword) const
+void radio_opt::RecurseDocs(doc_formatter &df, const char* keyword) const
 {
     if (0==df) return;
     for (unsigned i=0; i<numpossible; i++) {

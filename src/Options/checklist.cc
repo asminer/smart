@@ -207,7 +207,7 @@ option_enum* checklist_opt::FindConstant(const char* name) const
   return 0;
 }
 
-void checklist_opt::ShowRange(doc_formatter* df) const
+void checklist_opt::ShowRange(doc_formatter &df) const
 {
   DCASSERT(df);
   df->Out() << "Legal values to be set or unset:";
@@ -235,7 +235,7 @@ void checklist_opt::Finish()
   itemlist = 0;
 }
 
-bool checklist_opt::isApropos(const doc_formatter* df, const char* keyword) const
+bool checklist_opt::isApropos(const doc_formatter &df, const char* keyword) const
 {
   if (0==df)                          return false;
   if (df->Matches(Name(), keyword))   return true;

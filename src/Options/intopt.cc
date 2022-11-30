@@ -28,7 +28,7 @@ void int_opt::ShowHeader(OutputStream &s) const
     s << " " << value;
 }
 
-void int_opt::ShowRange(doc_formatter* df) const
+void int_opt::ShowRange(doc_formatter &df) const
 {
     DCASSERT(df);
     df->Out() << "Legal values: ";

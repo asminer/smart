@@ -46,13 +46,13 @@ class option_manager {
         /** For online help and documentation.
             Show documentation of all options matching the given keyword.
         */
-        virtual void DocumentOptions(doc_formatter* df, const char* keyword)
+        virtual void DocumentOptions(doc_formatter &df, const char* keyword)
             const = 0;
 
         /** For online help and documentation.
             List all options, with their current settings.
         */
-        virtual void ListOptions(doc_formatter* df) const = 0;
+        virtual void ListOptions(doc_formatter &df) const = 0;
 
 
         /** Make, add, and return a new option of type boolean.

@@ -34,7 +34,7 @@ library::~library()
 {
 }
 
-void library::printCopyright(doc_formatter* df) const
+void library::printCopyright(doc_formatter &df) const
 {
   DCASSERT(0);
 }

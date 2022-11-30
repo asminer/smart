@@ -1140,7 +1140,7 @@ void superman::printLibraryVersions(std::ostream &s) const
   }
 }
 
-void superman::printLibraryCopyrights(doc_formatter* df) const
+void superman::printLibraryCopyrights(doc_formatter &df) const
 {
   for (int i=0; i<num_libs; i++) {
     DCASSERT(extlibs[i]);

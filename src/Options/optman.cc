@@ -93,8 +93,8 @@ public:
     if (0==SortedOptions) return 0;
     return SortedOptions[i];
   }
-  virtual void DocumentOptions(doc_formatter* df, const char* keyword) const;
-  virtual void ListOptions(doc_formatter* df) const;
+  virtual void DocumentOptions(doc_formatter &df, const char* keyword) const;
+  virtual void ListOptions(doc_formatter &df) const;
 protected:
   virtual option* addOption(option *);
 };
@@ -149,7 +149,7 @@ option* option_heap::FindOption(const char* name) const
   return 0;
 }
 
-void option_heap::DocumentOptions(doc_formatter* df, const char* keyword) const
+void option_heap::DocumentOptions(doc_formatter &df, const char* keyword) const
 {
   if (0==df)  return;
   DCASSERT(SortedOptions);
@@ -160,7 +160,7 @@ void option_heap::DocumentOptions(doc_formatter* df, const char* keyword) const
     }
 }
 
-void option_heap::ListOptions(doc_formatter* df) const
+void option_heap::ListOptions(doc_formatter &df) const
 {
   if (0==df)  return;
   DCASSERT(SortedOptions);

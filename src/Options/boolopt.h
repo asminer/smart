@@ -15,7 +15,7 @@ public:
     virtual ~bool_opt();
     virtual error SetValue(bool b);
     virtual void ShowHeader(OutputStream &s) const;
-    virtual void ShowRange(doc_formatter* df) const;
+    virtual void ShowRange(doc_formatter &df) const;
 };
 
 #endif

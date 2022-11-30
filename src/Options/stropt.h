@@ -11,7 +11,7 @@ public:
     virtual ~string_opt();
     virtual error SetValue(shared_string* v);
     virtual void ShowHeader(OutputStream &s) const;
-    virtual void ShowRange(doc_formatter* df) const;
+    virtual void ShowRange(doc_formatter &df) const;
 };
 
 #endif

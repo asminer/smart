@@ -25,7 +25,7 @@ void bool_opt::ShowHeader(OutputStream &s) const
     s << " " << value;
 }
 
-void bool_opt::ShowRange(doc_formatter* df) const
+void bool_opt::ShowRange(doc_formatter &df) const
 {
     DCASSERT(df);
     df->Out() << "Legal values: [false, true]";

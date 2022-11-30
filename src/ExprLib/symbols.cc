@@ -131,7 +131,7 @@ void symbol::Traverse(traverse_data &x)
   }
 }
 
-void symbol::PrintDocs(doc_formatter* df, const char* keyword) const
+void symbol::PrintDocs(doc_formatter &df, const char* keyword) const
 {
   if (0==df)  return;
   if (0==name)  return;
@@ -255,7 +255,7 @@ help_group::~help_group()
 {
 }
 
-void help_group::PrintDocs(doc_formatter* df, const char* keyword) const
+void help_group::PrintDocs(doc_formatter &df, const char* keyword) const
 {
   df->begin_heading();
   PrintHeader(df->Out());

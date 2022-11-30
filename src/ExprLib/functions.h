@@ -178,13 +178,13 @@ public:
 
   /** Document the header only.
   */
-  virtual bool DocumentHeader(doc_formatter* df) const;
+  virtual bool DocumentHeader(doc_formatter &df) const;
 
   /** Document the behavior only.
   */
-  virtual void DocumentBehavior(doc_formatter* df) const;
+  virtual void DocumentBehavior(doc_formatter &df) const;
 
-  virtual void PrintDocs(doc_formatter* df, const char* keyword) const;
+  virtual void PrintDocs(doc_formatter &df, const char* keyword) const;
 
   /** Does this header match the passed one?
       Used to detect duplicate or conflicting user-defined functions.
@@ -515,8 +515,8 @@ public:
   /// Set documentation for this function.
   inline void SetDocumentation(const char* d) { docs = d; }
 
-  virtual bool DocumentHeader(doc_formatter* df) const;
-  virtual void DocumentBehavior(doc_formatter* df) const;
+  virtual bool DocumentHeader(doc_formatter &df) const;
+  virtual void DocumentBehavior(doc_formatter &df) const;
 };
 
 // ******************************************************************

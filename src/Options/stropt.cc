@@ -30,7 +30,7 @@ void string_opt::ShowHeader(OutputStream &s) const
     else s << "null";
 }
 
-void string_opt::ShowRange(doc_formatter* df) const
+void string_opt::ShowRange(doc_formatter &df) const
 {
     DCASSERT(df);
     df->Out() << "Legal values: any string";

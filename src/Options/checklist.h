@@ -104,9 +104,9 @@ public:
     virtual void ShowCurrent(OutputStream &s) const;
     // These are a bit more interesting...
     virtual option_enum* FindConstant(const char* name) const;
-    virtual void ShowRange(doc_formatter* df) const;
+    virtual void ShowRange(doc_formatter &df) const;
     virtual void Finish();
-    virtual bool isApropos(const doc_formatter* df, const char* keyword) const;
+    virtual bool isApropos(const doc_formatter &df, const char* keyword) const;
 
     virtual checklist_enum* addChecklistItem(checklist_enum* grp,
                 const char* name, const char* doc, bool &link);

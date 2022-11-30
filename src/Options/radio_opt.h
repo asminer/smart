@@ -52,9 +52,9 @@ class radio_opt : public option {
         virtual void Finish();
 
         virtual void ShowHeader(OutputStream &s) const;
-        virtual void ShowRange(doc_formatter* df) const;
-        virtual bool isApropos(const doc_formatter* df, const char* keyword) const;
-        virtual void RecurseDocs(doc_formatter* df, const char* keyword) const;
+        virtual void ShowRange(doc_formatter &df) const;
+        virtual bool isApropos(const doc_formatter &df, const char* keyword) const;
+        virtual void RecurseDocs(doc_formatter &df, const char* keyword) const;
 
         virtual radio_button* addRadioButton(const char* n, const char* d, unsigned ndx);
 };

@@ -138,7 +138,7 @@ class option {
 
         virtual void ShowHeader(OutputStream &s) const = 0;
         virtual void ShowCurrent(OutputStream &s) const;
-        virtual void ShowRange(doc_formatter* df) const = 0;
+        virtual void ShowRange(doc_formatter &df) const = 0;
 
         /// Will be called when the option list is finalized.
         virtual void Finish();
@@ -147,15 +147,15 @@ class option {
         int Compare(const char* name) const;
 
         /// Determine if this option matches the given keyword.
-        virtual bool isApropos(const doc_formatter* df, const char* keyword) const;
+        virtual bool isApropos(const doc_formatter &df, const char* keyword) const;
 
         /** Write documentation header and body for this option.
             @param  df  Document formatter; output is sent here.
         */
-        void PrintDocs(doc_formatter* df, const char* keyword) const;
+        void PrintDocs(doc_formatter &df, const char* keyword) const;
 
         /// Recursively document children as appropriate.
-        virtual void RecurseDocs(doc_formatter* df, const char* keyword) const;
+        virtual void RecurseDocs(doc_formatter &df, const char* keyword) const;
 
         /*
          * Add a subscriber to the list.

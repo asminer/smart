@@ -110,13 +110,13 @@ int option::Compare(const char* n) const
   return strcmp(Name(), n);
 }
 
-bool option::isApropos(const doc_formatter* df, const char* keyword) const
+bool option::isApropos(const doc_formatter &df, const char* keyword) const
 {
   if (0==df)  return false;
   return      df->Matches(Name(), keyword);
 }
 
-void option::PrintDocs(doc_formatter* df, const char* keyword) const
+void option::PrintDocs(doc_formatter &df, const char* keyword) const
 {
   if (0==df)  return;
 #ifndef DEVELOPMENT_CODE
@@ -134,7 +134,7 @@ void option::PrintDocs(doc_formatter* df, const char* keyword) const
   df->end_indent();
 }
 
-void option::RecurseDocs(doc_formatter* df, const char* keyword) const
+void option::RecurseDocs(doc_formatter &df, const char* keyword) const
 {
 }
 

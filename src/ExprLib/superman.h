@@ -126,7 +126,7 @@ public:
 
   virtual char registerLibrary(const library* lib);
   virtual void printLibraryVersions(std::ostream &s) const;
-  virtual void printLibraryCopyrights(doc_formatter* df) const;
+  virtual void printLibraryCopyrights(doc_formatter &df) const;
 };
 
 
