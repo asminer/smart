@@ -14,7 +14,7 @@
 /**   An array of bits.
 
       Use this class if you KNOW you have an array of bits.
-*/  
+*/
 
 class bitvector {
   static const int bitwidth = sizeof(long) * 8;
@@ -24,11 +24,11 @@ class bitvector {
   unsigned long *data;
   long links;
 protected:
-  inline long Bits2Words(long bits) const { 
-    return (bits>0) ? (((bits-1)/bitwidth)+1) : 0; 
+  inline long Bits2Words(long bits) const {
+    return (bits>0) ? (((bits-1)/bitwidth)+1) : 0;
   }
 public:
-  bitvector(long s) { 
+  bitvector(long s) {
     data = 0;
     size = 0;
     if (s>0) Resize(s);
@@ -44,7 +44,7 @@ public:
     links = 1;
   }
 protected:
-  ~bitvector() { 
+  ~bitvector() {
     Resize(0);
   }
 public:
@@ -53,10 +53,10 @@ public:
   inline long numLinks() const { return links; }
   void Resize(long ns) {
     long words = Bits2Words(ns);
-    long oldwords = Bits2Words(size); 
+    long oldwords = Bits2Words(size);
     if (words != oldwords) {
       data = (unsigned long*) realloc(data, words*sizeof(long));
-    } 
+    }
     size = ns;
   }
   inline long Size() const { return size; }
@@ -73,14 +73,14 @@ public:
     assert(n>=0);
     assert(n<size);
 #endif
-    data[n/bitwidth] &= ~(msbit >> n%bitwidth); // clear bit n      
+    data[n/bitwidth] &= ~(msbit >> n%bitwidth); // clear bit n
   }
   inline bool IsSet(long n) const {
 #ifdef RANGE_CHECKING
     assert(n>=0);
     assert(n<size);
 #endif
-    return (data[n/bitwidth] & (msbit >> n%bitwidth)) > 0; 
+    return (data[n/bitwidth] & (msbit >> n%bitwidth)) > 0;
   }
   // Like set, but returns true if the bit was changed.
   inline bool SetBit_Changed(long n) {
@@ -92,7 +92,7 @@ public:
     long word = n/bitwidth;
     if (data[word] & tweak) return false;  // already set
     data[word] |= tweak; // set bit
-    return true; 
+    return true;
   }
   // Like unset, but returns true if the bit was changed.
   inline bool UnsetBit_Changed(long n) {
@@ -104,7 +104,7 @@ public:
     long word = n/bitwidth;
     if (!(data[word] & tweak)) return false;  // already unset
     data[word] &= ~tweak; // clear bit
-    return true; 
+    return true;
   }
   inline void UnsetAll() {
     memset(data, 0, Bits2Words(size)*sizeof(long));
@@ -124,7 +124,7 @@ public:
     while ((b1 <= b2) && (b1 % bitwidth > 0)) Unset(b1++);
     // do words at a time
     while (b1+bitwidthm1 <= b2) {
-      data[b1/bitwidth] = 0; 
+      data[b1/bitwidth] = 0;
       b1 += bitwidth;
     }
     // do stray bits at the end
@@ -142,7 +142,7 @@ public:
     while ((b1 <= b2) && (b1 % bitwidth > 0)) Set(b1++);
     // do words at a time
     while (b1+bitwidthm1 <= b2) {
-      data[b1/bitwidth] = ~0; // 0xFFFFFFFF; 
+      data[b1/bitwidth] = ~0; // 0xFFFFFFFF;
       b1 += bitwidth;
     }
     // do stray bits at the end
@@ -191,17 +191,17 @@ public:
   /// This = B
   inline void FillFrom(const bitvector* B) {
     for (long w = Bits2Words(Size())-1; w>=0; w--)
-      data[w] = B->data[w];  
+      data[w] = B->data[w];
   }
   /// This &= B
   inline void IntersectWith(const bitvector* B) {
     for (long w = Bits2Words(Size())-1; w>=0; w--)
-      data[w] &= B->data[w];  
+      data[w] &= B->data[w];
   }
   /// This |= B
   inline void UnionWith(const bitvector* B) {
     for (long w = Bits2Words(B->Size())-1; w>=0; w--)
-      data[w] |= B->data[w];  
+      data[w] |= B->data[w];
   }
   /// This -= B
   inline void DifferenceWith(const bitvector* B) {
@@ -244,7 +244,7 @@ public:
       return false;
     for (w--; w>=0; w--) if (data[w] != B->data[w]) return false;
     return true;
-  } 
+  }
 
   /// is This a subset of B?  (This <= B?)
   inline bool SubsetOf(const bitvector* B) const {

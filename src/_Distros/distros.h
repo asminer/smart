@@ -70,7 +70,7 @@ class discrete_pdf {
           @return     The probability that the RV takes value i:
                       Pr( X == i).
     */
-    inline double f(long i) const { 
+    inline double f(long i) const {
       if (i<Left) return 0;
       if (i>Right) return 0;
       return probs[i];
@@ -149,7 +149,7 @@ class discrete_cdf {
           @return     The probability that the RV takes value less or equal i:
                       Pr( X <= i).
     */
-    double f(long i) const { 
+    double f(long i) const {
       if (i<Left) return 0;
       if (i>Right) return 1;
       return probs[i];
@@ -216,7 +216,7 @@ class discrete_1mcdf {
           @return     The probability that the RV takes value greater than i:
                       Pr( X > i).
     */
-    double f(long i) const { 
+    double f(long i) const {
       if (i<Left) return 1;
       if (i>Right) return 0;
       return probs[i];

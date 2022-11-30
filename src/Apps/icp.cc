@@ -9,7 +9,6 @@
       (4)  Cleanup
 */
 
-#include "../Streams/streams.h"
 #include "../Options/optman.h"
 #include "../ExprLib/startup.h"
 #include "../ExprLib/exprman.h"

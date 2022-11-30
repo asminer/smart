@@ -1,6 +1,6 @@
 
 /** \file compile.h
-  
+
     Functions for use by "compiler" (i.e., parser) are here.
 */
 
@@ -53,14 +53,14 @@ const type* MakeType(bool proc, char* modif, const type* t);
       @param s    statement to add (ignored if NULL)
       @return If list is NULL, returns a new list containing s.
               Else returns list with s appended.
-              If we are at the topmost level, the statement 
+              If we are at the topmost level, the statement
               will simply be executed and not added to the list.
 */
 parser_list* AppendStatement(parser_list* list, expr* s);
 
 
 /** Add expression to a list.
-    If the list is "collapsable", then if the list contains a single null 
+    If the list is "collapsable", then if the list contains a single null
     or error expression, then we collapse the list into a single node
     containing a null or error expression.
       @param  behv  How to deal with null or error expressions?
@@ -154,7 +154,7 @@ expr* FinishOptionBlock(expr* os, parser_list* list);
 /** Build a (checkbox) option statement.
       @param  o       Option to set.
       @param  check   If true, we will check lots of boxes.
-                      If false, we will uncheck lots of boxes.  
+                      If false, we will uncheck lots of boxes.
       @param  list    List of names of boxes to be checked / unchecked.
       @return A new statement, as appropriate.
 */
@@ -195,7 +195,7 @@ int AddIterator(symbol* i);
 expr* BuildFuncStmt(symbol* f, expr* r);
 
 /** Builds a "variable" statement.
-    If we are within a converge, 
+    If we are within a converge,
         we return an assignment statement.
     If we are within a model,
         we return a measure assignment statement.
@@ -437,7 +437,7 @@ expr* BuildUnary(int op, expr* opnd);
 expr* BuildTypecast(const type* newtype, expr* opnd);
 
 /** Build a boolean constant.
-    
+
       @param  s  String to build from (i.e., "true" or "false").
         Will be free()d.
 
@@ -446,7 +446,7 @@ expr* BuildTypecast(const type* newtype, expr* opnd);
 expr* MakeBoolConst(char* s);
 
 /** Build an integer constant
-    
+
       @param  s  String to build from (i.e., "153" or "-32").
         Will be free()d.
 
@@ -455,7 +455,7 @@ expr* MakeBoolConst(char* s);
 expr* MakeIntConst(char* s);
 
 /** Build a real constant
-    
+
       @param  s  String to build from (i.e., "3.2" or "1.29e-10").
         Will be free()d.
 
@@ -464,7 +464,7 @@ expr* MakeIntConst(char* s);
 expr* MakeRealConst(char* s);
 
 /** Build a string constant
-    
+
       @param  s  String to build from.
       @return A new expression as appropriate.
 */

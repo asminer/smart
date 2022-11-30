@@ -1,7 +1,6 @@
 
 #include "lexer.h"
 #include "compile.h"
-#include "../Streams/streams.h"
 #include "../ExprLib/exprman.h"
 #include "../Options/optman.h"
 #include "parse_sm.h"

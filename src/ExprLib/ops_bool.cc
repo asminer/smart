@@ -1,6 +1,5 @@
 
 #include "ops_bool.h"
-#include "../Streams/streams.h"
 #include "exprman.h"
 #include "unary.h"
 #include "binary.h"

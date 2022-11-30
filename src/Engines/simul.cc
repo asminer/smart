@@ -6,8 +6,6 @@
 #include "../_RngLib/rng.h"
 #include "../_Timer/timerlib.h"
 
-#include "../Streams/streams.h"
-
 #include "../Options/options.h"
 #include "../Options/optman.h"
 

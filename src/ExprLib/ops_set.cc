@@ -2,7 +2,6 @@
 #include "ops_set.h"
 #include "trinary.h"
 #include "sets.h"
-#include "../Streams/streams.h"
 #include <string.h>  // splay needs memcpy
 #include <stdlib.h>
 #include "exprman.h"

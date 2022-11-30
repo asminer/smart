@@ -36,12 +36,12 @@ public:
 
   /// Find a (list of) symbol matching the given name, otherwise null.
   virtual symbol* FindSymbol(const char* name) = 0;
-  
+
   /// Remove the given symbol.  Return true if the item was in the table.
   virtual bool RemoveSymbol(symbol* s) = 0;
 
   /** Pop and return the last added symbol.
-      This only works if there is no chaining, i.e., 
+      This only works if there is no chaining, i.e.,
       symbol names are unique; if this might not be the case, we return 0.
   */
   virtual symbol* Pop() = 0;

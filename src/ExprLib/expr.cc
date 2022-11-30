@@ -5,7 +5,6 @@
 
 #include "expr.h"
 #include "symbols.h"
-#include "../Streams/streams.h"
 #include "../Options/options.h"
 #include "../include/list.h"
 #include "type.h"

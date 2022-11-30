@@ -2,7 +2,6 @@
 #include "rgr_ectl.h"
 #include "rss_indx.h"
 
-#include "../Streams/streams.h"
 #include "../include/heap.h"
 #include "../Modules/expl_ssets.h"
 

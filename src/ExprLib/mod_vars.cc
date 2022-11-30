@@ -1,6 +1,5 @@
 #include "mod_vars.h"
 #include "mod_def.h"
-#include "../Streams/streams.h"
 #include "exprman.h"
 #include "arrays.h"
 #include "measures.h"

@@ -125,7 +125,7 @@ struct LS_Vector {
     Matrix in compressed row storage format.
     Except that the diagonal elements are stored separately,
     as their negative reciprocals, in a vector.
-    This is a template struct. 
+    This is a template struct.
 */
 template <class REAL>
 struct LS_CRS_Matrix {
@@ -149,7 +149,7 @@ public:
 
 
 public:
-  
+
   inline long Start() const { return start; }
   inline long Stop() const { return stop; }
   inline long Size() const { return size; }
@@ -168,7 +168,7 @@ public:
   }
 
   /**
-      Compute y += x * (this without diagonals) 
+      Compute y += x * (this without diagonals)
   */
   template <class REAL2>
   inline void VectorMatrixMultiply(double *y, const REAL2* x) const {
@@ -210,7 +210,7 @@ struct LS_CRS_Matrix_double : public LS_CRS_Matrix<double> { } ;
     Matrix in compressed column storage format.
     Except that the diagonal elements are stored separately,
     as their negative reciprocals, in a vector.
-    This is a template struct. 
+    This is a template struct.
 */
 template <class REAL>
 struct LS_CCS_Matrix {
@@ -238,7 +238,7 @@ public:
   inline long Start() const { return start; }
   inline long Stop() const { return stop; }
   inline long Size() const { return size; }
-  
+
   /**
       Compute y += (this without diagonals) * x
   */
@@ -253,7 +253,7 @@ public:
   }
 
   /**
-      Compute y += x * (this without diagonals) 
+      Compute y += x * (this without diagonals)
   */
   template <class REAL2>
   inline void VectorMatrixMultiply(double *y, const REAL2* x) const {

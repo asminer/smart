@@ -6,7 +6,6 @@
 #include "../ExprLib/exprman.h"
 #include "../ExprLib/intervals.h"
 #include "../SymTabs/symtabs.h"
-#include "../Streams/streams.h"
 
 #include <math.h>
 
@@ -210,7 +209,7 @@ void pow_si::Compute(traverse_data &x, expr** pass, int np)
     x.answer->setReal(0);
     return;
   }
-  
+
   // deal with -infinity ^ infinity
   if (first.signInfinity()<0) {
     undefined(x, first);
@@ -263,7 +262,7 @@ void exp_si::Compute(traverse_data &x, expr** pass, int np)
       x.answer->setReal(0);
     }
     return;
-  } 
+  }
   x.answer->setReal( exp(x.answer->getReal()) );
 }
 
@@ -351,7 +350,7 @@ void sqrt_si::Compute(traverse_data &x, expr** pass, int np)
       return;
     }
   }
-  
+
   // negative square root, error (we don't have complex)
   if (em->startError()) {
     em->causedBy(x.parent);
@@ -429,7 +428,7 @@ void imax_si::Compute(traverse_data &x, expr** pass, int np)
   DCASSERT(0==x.aggregate);
   bool has_unknown = 0;
   int has_infinity = 0;
-  
+
   long max;
   SafeCompute(pass[0], x);
   if (x.answer->isNormal()) {
@@ -506,7 +505,7 @@ void rmax_si::Compute(traverse_data &x, expr** pass, int np)
   DCASSERT(0==x.aggregate);
   bool has_unknown = 0;
   int has_infinity = 0;
-  
+
   double max;
   SafeCompute(pass[0], x);
   if (x.answer->isNormal()) {
@@ -626,7 +625,7 @@ void imin_si::Compute(traverse_data &x, expr** pass, int np)
   DCASSERT(0==x.aggregate);
   bool has_unknown = 0;
   int has_infinity = 0;
-  
+
   long min;
   SafeCompute(pass[0], x);
   if (x.answer->isNormal()) {
@@ -702,7 +701,7 @@ void rmin_si::Compute(traverse_data &x, expr** pass, int np)
   DCASSERT(0==x.aggregate);
   bool has_unknown = 0;
   int has_infinity = 0;
-  
+
   double min;
   SafeCompute(pass[0], x);
   if (x.answer->isNormal()) {
@@ -789,7 +788,7 @@ int order_si::Traverse(traverse_data &x, expr** pass, int np)
   if (Kr->Left().isNormal()) {
     long kleft = long(Kr->Left().getValue());
     if (!Kr->Left().contains()) kleft++;
-    kmin = MAX(kmin, kleft); 
+    kmin = MAX(kmin, kleft);
   }
   if (Kr->Right().isNormal()) {
     long kright = long(Kr->Right().getValue());
@@ -951,7 +950,7 @@ void irorder_si::Compute(traverse_data &x, expr** pass, int np)
 
   //
   // Determine k
-  // 
+  //
   pass[0]->Compute(x);
   if (!x.answer->isNormal()) {
     x.answer->setNull();

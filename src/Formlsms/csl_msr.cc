@@ -19,15 +19,15 @@ class CSL_engine : public msr_noengine {
 protected:
   /** Engines for computing PU.
       This is a "Function call" style engine.
-      Computes a stateprobs vector: for each starting state, the 
-      probability that a path from that state satisfies p U q, 
+      Computes a stateprobs vector: for each starting state, the
+      probability that a path from that state satisfies p U q,
       or F q if p is null.
-      
+
       Parameter 0: the model
       Parameter 1: p of p U q; can be null to indicate "true"
       Parameter 2: q of p U q
       Parameter 3: time bound; use infinity to indicate "unbounded"
-      
+
       Result: a stateprobs vector.
   */
   static engtype* PU;
@@ -36,21 +36,21 @@ protected:
       This is a "Function call" style engine.
       Computes the distribution where a path from an initial state
       satisfies p U q, or F q if p is null.
-      
+
       Parameter 0: the model
       Parameter 1: p of p U q; can be null to indicate "true"
       Parameter 2: q of p U q
       Parameter 3: the initial distribution to use;
                    if null, we use an equilikely distribution
                    (useful for reverse pctl/csl stuff)
-      
+
       Result: a high-level phase-type model
   */
   static engtype* TU_generator;
 
 private:
   static engtype* ProcGen;
- 
+
   friend class init_cslmsrs;
 
 public:
@@ -94,7 +94,7 @@ protected:
     } // catch
   }
 
-  inline 
+  inline
   const stochastic_lldsm* getLLM(expr* p, traverse_data &x, result &slot) const
   {
     model_instance* mi = grabModelInstance(x, p);
@@ -106,7 +106,7 @@ protected:
     if (0==llm) return 0;
     x.answer = &slot;
     slot.setPtr(Share(llm));
-    return llm; 
+    return llm;
   }
 
   inline bool badStateset(const lldsm* m, expr* p, traverse_data &x, result &slot) const {
@@ -123,7 +123,7 @@ protected:
         em->cerr() << "Sorry, stateset in " << Name();
         em->cerr() << " must be explicit";
         em->stopIO();
-      }   
+      }
       return true;
     }
     */
@@ -133,7 +133,7 @@ protected:
       em->cerr() << "Stateset in " << Name();
       em->cerr() << " expression is from a different model";
       em->stopIO();
-    }   
+    }
     return 0;
   }
 
@@ -150,7 +150,7 @@ protected:
       em->cerr() << "Statedist in " << Name();
       em->cerr() << " expression is from a different model";
       em->stopIO();
-    }   
+    }
     return 0;
   }
 
@@ -220,7 +220,7 @@ void PF_func::Compute(traverse_data &x, expr** pass, int np)
   // slot 0 : model
   const lldsm* llm = getLLM(pass[0], x, engpass[0]);
   if (0==llm) {
-    return nullAnswer(x, ans);    
+    return nullAnswer(x, ans);
   }
 
   // slot 1 : null (true of "true U p")
@@ -234,7 +234,7 @@ void PF_func::Compute(traverse_data &x, expr** pass, int np)
   // slot 3 : time
   x.answer = &engpass[3];
   SafeCompute(pass[2], x);
-  
+
   x.answer = ans;
   launchEngine(PU, engpass, 4, x);
 }
@@ -273,7 +273,7 @@ void PU_func::Compute(traverse_data &x, expr** pass, int np)
   // slot 0 : model
   const lldsm* llm = getLLM(pass[0], x, engpass[0]);
   if (0==llm) {
-    return nullAnswer(x, ans);    
+    return nullAnswer(x, ans);
   }
 
   // slot 1 : p of "p U q"
@@ -333,7 +333,7 @@ void TF_func::Compute(traverse_data &x, expr** pass, int np)
   // slot 0 : model
   const stochastic_lldsm* llm = getLLM(pass[0], x, engpass[0]);
   if (0==llm) {
-    return nullAnswer(x, ans);    
+    return nullAnswer(x, ans);
   }
 
   // slot 1 : null (true of "true U p")
@@ -414,7 +414,7 @@ void TU_func::Compute(traverse_data &x, expr** pass, int np)
   // slot 0 : model
   const stochastic_lldsm* llm = getLLM(pass[0], x, engpass[0]);
   if (0==llm) {
-    return nullAnswer(x, ans);    
+    return nullAnswer(x, ans);
   }
 
   // slot 1 : p of "p U q"

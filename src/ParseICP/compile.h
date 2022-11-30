@@ -1,6 +1,6 @@
 
 /** \file compile.h
-  
+
     Functions for use by "compiler" (i.e., parser) are here.
 */
 
@@ -47,7 +47,7 @@ void AppendStatement(expr* s);
 expr* MakeStatementBlock(parser_list* stmts);
 
 /** Add expression to a list.
-    If the list is "collapsable", then if the list contains a single null 
+    If the list is "collapsable", then if the list contains a single null
     or error expression, then we collapse the list into a single node
     containing a null or error expression.
       @param  behv  How to deal with null or error expressions?
@@ -107,7 +107,7 @@ expr* BuildOptionStatement(option* o, char* n);
 /** Build a (checkbox) option statement.
       @param  o     Option to set.
       @param  check If true, we will check lots of boxes.
-                    If false, we will uncheck lots of boxes.  
+                    If false, we will uncheck lots of boxes.
       @param  list  List of names of boxes to be checked / unchecked.
       @return A new statement, as appropriate.
 */
@@ -286,7 +286,7 @@ expr* BuildBinary(expr* left, int op, expr* right);
 expr* BuildUnary(int op, expr* opnd);
 
 /** Build a boolean constant.
-    
+
       @param  s   String to build from (i.e., "true" or "false").
                   Will be free()d.
 
@@ -295,7 +295,7 @@ expr* BuildUnary(int op, expr* opnd);
 expr* MakeBoolConst(char* s);
 
 /** Build an integer constant
-    
+
       @param  s   String to build from (i.e., "153" or "-32").
                   Will be free()d.
 

@@ -7,7 +7,6 @@
 #include "../Options/opt_enum.h"
 
 #include "../Utils/strings.h"
-#include "../Streams/streams.h"
 #include "../SymTabs/symtabs.h"
 
 #include "../ExprLib/exprman.h"

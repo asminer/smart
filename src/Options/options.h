@@ -7,8 +7,6 @@
 #ifndef OPTIONS_H
 #define OPTIONS_H
 
-#include "../Streams/streams.h"
-
 class doc_formatter;
 class shared_string;
 

@@ -2,7 +2,6 @@
 #include "converge.h"
 #include "../Options/optman.h"
 #include "../Options/options.h"
-#include "../Streams/streams.h"
 #include "exprman.h"
 #include "symbols.h"
 #include "result.h"

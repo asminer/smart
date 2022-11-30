@@ -1,6 +1,5 @@
 
 #include "ops_misc.h"
-#include "../Streams/streams.h"
 #include "../Options/options.h"
 #include "exprman.h"
 #include "assoc.h"

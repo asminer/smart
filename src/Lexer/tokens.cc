@@ -1,6 +1,5 @@
 
 #include "tokens.h"
-#include "../Streams/streams.h"
 
 token::token()
 {

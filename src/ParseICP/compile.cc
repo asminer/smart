@@ -4,7 +4,6 @@
 #include "../Options/options.h"
 #include "../Options/optman.h"
 #include "../Utils/strings.h"
-#include "../Streams/streams.h"
 
 #include "../ExprLib/exprman.h"
 #include "../ExprLib/functions.h"

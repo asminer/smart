@@ -13,7 +13,6 @@
 #ifndef EXPRMAN_H
 #define EXPRMAN_H
 
-#include "../Streams/streams.h"
 #include "type.h"
 #include "expr.h"
 #include "../Utils/messages.h"

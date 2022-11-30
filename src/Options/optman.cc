@@ -151,25 +151,23 @@ option* option_heap::FindOption(const char* name) const
 
 void option_heap::DocumentOptions(doc_formatter &df, const char* keyword) const
 {
-  if (0==df)  return;
   DCASSERT(SortedOptions);
   for (unsigned i=0; i<NumSortedOptions; i++)
     if (SortedOptions[i]->isApropos(df, keyword)) {
-      df->Out() << "\n";
+      df.Out() << "\n";
       SortedOptions[i]->PrintDocs(df, keyword);
     }
 }
 
 void option_heap::ListOptions(doc_formatter &df) const
 {
-  if (0==df)  return;
   DCASSERT(SortedOptions);
   for (unsigned i=0; i<NumSortedOptions; i++) {
 #ifndef DEVELOPMENT_CODE
     if (SortedOptions[i]->IsUndocumented())  continue;
 #endif
-    SortedOptions[i]->ShowCurrent(df->Out());
-    df->Out() << "\n";
+    SortedOptions[i]->ShowCurrent(df.Out());
+    df.Out() << "\n";
   }
 }
 

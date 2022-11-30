@@ -1,7 +1,6 @@
 
 #include "lexer.h"
 #include "compile.h"
-#include "../Streams/streams.h"
 #include "../ExprLib/exprman.h"
 #include "parse_icp.h"
 

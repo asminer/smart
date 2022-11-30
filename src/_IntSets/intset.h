@@ -4,7 +4,7 @@
 
 
 /** Representation for a set of integers.
-    Specifically, for representing any 
+    Specifically, for representing any
     subset of the integer interval [0, n) = {0, 1, ..., n-1}.
 */
 class intset {
@@ -27,7 +27,7 @@ public:
 
   static const char* getVersion();
 
-  /** Resets the size N. 
+  /** Resets the size N.
   */
   void resetSize(long N);
 
@@ -77,16 +77,16 @@ public:
         @param  a  First element to add.
         @param  b  Last element to add.
   */
-  void addRange(long a, long b); 
+  void addRange(long a, long b);
 
   /** Removes a range of elements from the set.
-      Equivalent to calling removeElement(a), 
+      Equivalent to calling removeElement(a),
       removeElement(a+1), ..., removeElement(b).
       If b < a, then nothing is removed.
         @param  a  First element to remove.
         @param  b  Last element to remove.
   */
-  void removeRange(long a, long b); 
+  void removeRange(long a, long b);
 
   /// Add all elements to the set.
   void addAll();
@@ -127,7 +127,7 @@ public:
   */
   void assignFrom(const intset &x);
 
-  /** Assignment operator. 
+  /** Assignment operator.
       Makes this set equal to x.
       Shallow copy.
         @param  x  Another set.

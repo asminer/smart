@@ -11,7 +11,6 @@
 #define FORMALISM_H
 
 #include "../include/list.h"
-#include "../Streams/streams.h"
 #include "../SymTabs/symtabs.h"
 #include "type.h"
 

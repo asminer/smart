@@ -34,7 +34,7 @@ namespace GraphLib {
       */
       void Visit3(long k);
 
-      /** 
+      /**
         Stack-based (not recursive) SCC algorithm.
         Yanked from Sedgewick's Algorithms book (from undergrad)
         and skillfully rewritten to eliminate recursion.
@@ -45,14 +45,14 @@ namespace GraphLib {
       */
       void Visit2(long k);
 
-      /** 
+      /**
         Stack-based (not recursive) SCC algorithm.
         Yanked from Sedgewick's Algorithms book (from undergrad)
         and skillfully rewritten to eliminate recursion.
 
-        Modified significantly, added time in favor of memory reduction: 
-        We don't remember which children we've visited.   On "return" we have 
-        to re-visit all children, but this is fast for children who are already 
+        Modified significantly, added time in favor of memory reduction:
+        We don't remember which children we've visited.   On "return" we have
+        to re-visit all children, but this is fast for children who are already
         visited.  This version pushes only the state to the call stack.
       */
       void Visit1(long k);

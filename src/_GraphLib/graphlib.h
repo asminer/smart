@@ -235,7 +235,7 @@ namespace GraphLib {
 
   /**
       Helper class for classes of contiguous nodes in a graph.
-      
+
       Classes must be numbered contiguously 0, 1, ..., NC-1
       but a class can have size zero (i.e., no nodes assigned to it).
 
@@ -300,7 +300,7 @@ namespace GraphLib {
         Called by abstract_classifier when exporting.
           @param  nc      Number of classes.
           @param  starts  Array of dimension nc+1 where
-                            starts[i] is the index of the 
+                            starts[i] is the index of the
                             first node in class i.
       */
       void replace(long nc, long* starts);
@@ -326,7 +326,7 @@ namespace GraphLib {
     Abstract class for defining classes of nodes in a graph.
     Typically used for SCCs and TSCCs, such as for classifying
     states in a Markov chain.
-    
+
     For this classifer, nodes within a class do not need to be
     numbered contiguously, and we can generate a renumberer
     if we need to renumber the nodes so that they are contiguous.
@@ -367,18 +367,18 @@ namespace GraphLib {
             @return       A node_renumberer that will cause classes to
                           be contiguous.  Specifically, new node numbers
                           will be such that nodes belonging to class 0
-                          appear first, followed by nodes belonging to 
+                          appear first, followed by nodes belonging to
                           class 1, then class 2, and so on.
                           If 0, then no renumbering is necessary.
       */
       virtual node_renumberer* buildRenumbererAndStatic(static_classifier &C) const = 0;
 
     protected:
-      /* 
+      /*
           Helpers, will be needed by derived classes when exporting.
       */
 
-      inline void rebuild_classifier(static_classifier &C, long nc, 
+      inline void rebuild_classifier(static_classifier &C, long nc,
         long* sizes) const
       {
         C.rebuild(nc, sizes);
@@ -445,7 +445,7 @@ namespace GraphLib {
 
     public:
       /// Default constructor: Build an empty graph.
-      static_graph(); 
+      static_graph();
       ~static_graph();
 
       /** Fill this with a transposed copy of m.
@@ -454,7 +454,7 @@ namespace GraphLib {
           and vice versa.
       */
       void transposeFrom(const static_graph &g);
-      
+
 
       /// @return true if we can efficiently enumerate "by rows".
       inline bool isByRows() const { return is_by_rows; }
@@ -480,7 +480,7 @@ namespace GraphLib {
           determine which nodes have no outgoing edges;
           otherwise, determine nodes with no incoming edges.
             @param  x   On input: ignored.
-                        On output, set of nodes with no 
+                        On output, set of nodes with no
                         incoming/outgoing edges.
       */
       void emptyRows(intset &x) const;
@@ -507,19 +507,19 @@ namespace GraphLib {
 
       inline const long* RowPointer() const { return row_pointer; }
       inline const long* ColumnIndex() const { return column_index; }
-      inline const void* Labels() const { return label; } 
+      inline const void* Labels() const { return label; }
       inline unsigned char EdgeBytes() const { return edge_bytes; }
 
       inline long RowPointer(long s) const {
-        CHECK_RANGE(0, s, num_nodes+1); 
+        CHECK_RANGE(0, s, num_nodes+1);
         return row_pointer[s];
       }
       inline long ColumnIndex(long e) const {
-        CHECK_RANGE(0, e, num_edges); 
+        CHECK_RANGE(0, e, num_edges);
         return column_index[e];
       }
       inline const void* Label(long e) const {
-        CHECK_RANGE(0, e, num_edges); 
+        CHECK_RANGE(0, e, num_edges);
         return label + e*edge_bytes;
       }
 
@@ -550,7 +550,7 @@ namespace GraphLib {
       */
       bool is_by_rows;
 
-      
+
       friend class dynamic_graph;
   };
 
@@ -563,7 +563,7 @@ namespace GraphLib {
   /**
     Really generic, dynamic graph.
     Edges are handled using "memcpy" and the like.
-    Some useful front-end wrappers (below) are 
+    Some useful front-end wrappers (below) are
     derived from this class.
   */
   class dynamic_graph {
@@ -574,7 +574,7 @@ namespace GraphLib {
           @param  ksl   Keep self loops?  If not, they are discarded.
           @param  md    Merge duplicate edges?
       */
-      dynamic_graph(unsigned char es, bool ksl, bool md); 
+      dynamic_graph(unsigned char es, bool ksl, bool md);
       virtual ~dynamic_graph();
 
       /// @return true if we can efficiently enumerate "by rows".
@@ -631,7 +631,7 @@ namespace GraphLib {
           Currently, this assumes the graph is stored "by rows".
 
           Implementation is in sccs.cc
-  
+
             @param  nonterminal   Index to use for nonterminal SCCs
                                   (we will merge them all together),
                                   or -1 if nonterminal SCCs should be
@@ -642,28 +642,28 @@ namespace GraphLib {
                                   or -1 if each sink state should be its
                                   own SCC.
 
-            @param  cons          If true, conserve memory, at a cost of 
+            @param  cons          If true, conserve memory, at a cost of
                                   (usually, slightly) increased CPU time.
 
-            @param  sw            Where to report timing information 
+            @param  sw            Where to report timing information
                                   (nowhere if 0).
-  
 
-            @return   A classification for each node.  SCCs will be 
-                      numbered "densely" from 0 to a maximum number, with 
+
+            @return   A classification for each node.  SCCs will be
+                      numbered "densely" from 0 to a maximum number, with
                       nonterminals grouped together (if specified) and sinks
                       grouped together (if specified).  If we ask it but
-                      there are none, then those classes will be empty.  If 
-                      we specify a large index for nonterminal or sinks, 
+                      there are none, then those classes will be empty.  If
+                      we specify a large index for nonterminal or sinks,
                       and there are not enough SCCs, then there will be
                       empty classes in between.  (For example, if we
-                      specify "nonterminal = 50" and "sinks = 35", 
+                      specify "nonterminal = 50" and "sinks = 35",
                       and there are no other SCCs, then classes 0..34
                       and 36..49 will be empty.)
       */
-      abstract_classifier* determineSCCs(long nonterminal, long sinks, 
+      abstract_classifier* determineSCCs(long nonterminal, long sinks,
         bool cons, timer_hook* sw) const;
-  
+
 
       /**
           Export to a static graph.
@@ -692,7 +692,7 @@ namespace GraphLib {
       /**
           Export to two static graphs, based on node classification.
           Graphs will have the same nodes but differ in the edges:
-          all edges within a class will be copied into the first graph, 
+          all edges within a class will be copied into the first graph,
           and the others will be copied into the second graph.
           The static graphs will be stored by rows iff this graph
           is stored by rows.
@@ -706,8 +706,8 @@ namespace GraphLib {
                             but only with edges that are between two nodes
                             belonging to the same class.
                             If the graph incidence matrix is viewed as a
-                            block-structured matrix (with blocks 
-                            corresponding to classes), then this will be 
+                            block-structured matrix (with blocks
+                            corresponding to classes), then this will be
                             a block diagonal matrix.
 
 
@@ -715,7 +715,7 @@ namespace GraphLib {
                             but only with edges that are between two nodes
                             belonging to different classes.
                             If the graph incidence matrix is viewed as a
-                            block-structured matrix (with blocks 
+                            block-structured matrix (with blocks
                             corresponding to classes), then this matrix
                             will have zeroes on the block diagonals.
 
@@ -768,23 +768,23 @@ namespace GraphLib {
     protected:
       // Read-only access to internal storage
       inline long RowPointer(long s) const {
-        CHECK_RANGE(0, s, num_nodes+1); 
+        CHECK_RANGE(0, s, num_nodes+1);
         return row_pointer[s];
       }
       inline long ColumnIndex(long e) const {
-        CHECK_RANGE(0, e, num_edges); 
+        CHECK_RANGE(0, e, num_edges);
         return column_index[e];
       }
       inline long Next(long e) const {
-        CHECK_RANGE(0, e, num_edges); 
+        CHECK_RANGE(0, e, num_edges);
         return next[e];
       }
       inline const void* Label(long e) const {
-        CHECK_RANGE(0, e, num_edges); 
+        CHECK_RANGE(0, e, num_edges);
         return label + e*edge_size;
       }
       inline void* WriteLabel(long e) {
-        CHECK_RANGE(0, e, num_edges); 
+        CHECK_RANGE(0, e, num_edges);
         return label + e*edge_size;
       }
 
@@ -827,9 +827,9 @@ namespace GraphLib {
   class dynamic_digraph : public dynamic_graph {
   public:
     dynamic_digraph(bool keep_self);
-  
-    inline bool addEdge(long from, long to) { 
-      return dynamic_graph::addEdge(from, to, 0); 
+
+    inline bool addEdge(long from, long to) {
+      return dynamic_graph::addEdge(from, to, 0);
     }
   protected:
     virtual void merge_edges(void* ev, const void* nv) const;
@@ -950,7 +950,7 @@ namespace GraphLib {
   /**
     Get the name and version info of the library.
     The string should not be modified or deleted.
-  
+
     @return    Information string.
   */
   const char*  Version();

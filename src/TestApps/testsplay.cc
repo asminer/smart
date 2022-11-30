@@ -3,7 +3,6 @@
 	Test of the splay tree class.
 */
 
-#include "../Streams/streams.h" 
 #include <stdlib.h>
 #include <string.h>
 // #define DEBUG

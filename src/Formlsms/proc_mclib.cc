@@ -1,7 +1,6 @@
 
 #include "proc_mclib.h"
 
-#include "../Streams/streams.h"
 #include "../include/heap.h"
 #include "../Modules/expl_ssets.h"
 #include "../Modules/statevects.h"

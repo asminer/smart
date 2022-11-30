@@ -18,13 +18,13 @@
   Get the name and version info of the library.
   The string should not be modified or deleted.
   SV stands for "sparse vector".
-  
+
   @return    Information string.
 */
 const char*  SV_LibraryVersion();
 
 
-/**  
+/**
   Static, sparse vector data structure.
   Used for "exporting" information from
   one of the dynamic classes below.
@@ -93,7 +93,7 @@ public:
   inline long NumNonzeroes() const { return num_elements; }
   inline bool IsStatic() const { return is_static; }
   inline bool IsDynamic() const { return !is_static; }
-  
+
   /**
   Determine the value of a specified vector element.
   @param  index  The index to check.
@@ -164,7 +164,7 @@ public:
   @param  list2tree  Size at which the internal representation
         should change from a list to a tree.
         If negative, the default value will be used.
-        
+
   @param  tree2list  Size at which the internal representation
         should change from a tree to a list.
         If negative, the default value will be used.
@@ -216,7 +216,7 @@ public:
   inline long NumNonzeroes() const { return num_elements; }
   inline bool IsStatic() const { return is_static; }
   inline bool IsDynamic() const { return !is_static; }
-  
+
   /**
   Determine the value of a specified vector element.
   @param  index  The index to check.
@@ -288,7 +288,7 @@ public:
   @param  list2tree  Size at which the internal representation
         should change from a list to a tree.
         If negative, the default value will be used.
-        
+
   @param  tree2list  Size at which the internal representation
         should change from a tree to a list.
         If negative, the default value will be used.
@@ -337,7 +337,7 @@ public:
   inline long NumNonzeroes() const { return num_elements; }
   inline bool IsStatic() const { return is_static; }
   inline bool IsDynamic() const { return !is_static; }
-  
+
   /**
   Determine the value of a specified vector element.
   @param  index  The index to check.
@@ -409,7 +409,7 @@ public:
   @param  list2tree  Size at which the internal representation
         should change from a list to a tree.
         If negative, the default value will be used.
-        
+
   @param  tree2list  Size at which the internal representation
         should change from a tree to a list.
         If negative, the default value will be used.
