@@ -24,7 +24,7 @@ const int MAX_HEAP_ADD = 1024;
 
 template <class DATA>
 class HeapOfPointers {
-  DATA **data;  
+  DATA **data;
   long last;
   long size;
   bool sorted;
@@ -63,8 +63,8 @@ public:
     last = 0;
     while (last<size) {
       UpHeap(last);
-      last++; 
-    } 
+      last++;
+    }
   }
   ~HeapOfPointers() {
     Resize(0);
@@ -94,7 +94,7 @@ public:
     Swap(0, last-1);
     DownHeap(last-1);
     last--;
-    a = data[last]; 
+    a = data[last];
   }
   void Sort();
   DATA** MakeArray() {
@@ -107,7 +107,7 @@ public:
     return ret;
   }
   // for debugging
-  void show(OutputStream &s) const;
+  void show(std::ostream &s) const;
 protected:
   inline void Swap(long i, long j) {
     if (i!=j) {
@@ -164,7 +164,7 @@ void HeapOfPointers<DATA>::DownHeap(long n)
     if (xbeatsa && xbeatsb) return;  // already a heap
     if (xbeatsa) { // b is the new parent
       Swap(b,x);
-      x = b; 
+      x = b;
       continue;
     }
     if (xbeatsb) { // a is the new parent
@@ -172,7 +172,7 @@ void HeapOfPointers<DATA>::DownHeap(long n)
       x = a;
       continue;
     }
-    // Still here?  we must have a>x and b>x; 
+    // Still here?  we must have a>x and b>x;
     // New parent is max of a and b.
     if (Compare(data[a], data[b]) >= 0) {
       Swap(a,x); // a is new parent
@@ -185,23 +185,21 @@ void HeapOfPointers<DATA>::DownHeap(long n)
 }
 
 template <class DATA>
-void HeapOfPointers<DATA>::show(OutputStream &s) const
+void HeapOfPointers<DATA>::show(std::ostream &s) const
 {
   s << "Heap, by node:\n";
-  long i;
+  unsigned long i;
   for (i=0; i<last; i++) {
     s << "Node " << i << ":\n";
     s << "\tobject: " << data[i] << "\n";
-    long lc = 2*i+1;
-    long rc = lc+1;
+    unsigned long lc = 2*i+1;
+    unsigned long rc = lc+1;
     if (lc<last)
       s << "\t  left: " << data[lc] << "\n";
     if (rc<last)
       s << "\t right: " << data[rc] << "\n";
-    s.flush(); 
   }
   s << "End of heap\n";
-  s.flush();
 }
 
 
@@ -254,7 +252,7 @@ void DownHeap(DATA* D, long n)
     if (xbeatsa && xbeatsb) return;  // already a heap
     if (xbeatsa) { // b is the new parent
       SWAP(D[x], D[b]);
-      x = b; 
+      x = b;
       continue;
     }
     if (xbeatsb) { // a is the new parent
@@ -262,7 +260,7 @@ void DownHeap(DATA* D, long n)
       x = a;
       continue;
     }
-    // Still here?  we must have a>x and b>x; 
+    // Still here?  we must have a>x and b>x;
     // New parent is max of a and b.
     if (D[a] >= D[b]) {
       SWAP(D[x], D[a]); // a is new parent
@@ -339,7 +337,7 @@ void DownHeap(const DATA* D, long* perm, long n)
     if (xbeatsa && xbeatsb) return;  // already a heap
     if (xbeatsa) { // b is the new parent
       SWAP(perm[x], perm[b]);
-      x = b; 
+      x = b;
       continue;
     }
     if (xbeatsb) { // a is the new parent
@@ -347,7 +345,7 @@ void DownHeap(const DATA* D, long* perm, long n)
       x = a;
       continue;
     }
-    // Still here?  we must have a>x and b>x; 
+    // Still here?  we must have a>x and b>x;
     // New parent is max of a and b.
     if (D[perm[a]] >= D[perm[b]]) {
       SWAP(perm[x], perm[a]); // a is new parent
@@ -431,7 +429,7 @@ void DownHeapAbstract(COLL* data, long n)
     if (xbeatsa && xbeatsb) return;  // already a heap
     if (xbeatsa) { // b is the new parent
       data->Swap(b,x);
-      x = b; 
+      x = b;
       continue;
     }
     if (xbeatsb) { // a is the new parent
@@ -439,7 +437,7 @@ void DownHeapAbstract(COLL* data, long n)
       x = a;
       continue;
     }
-    // Still here?  we must have a>x and b>x; 
+    // Still here?  we must have a>x and b>x;
     // New parent is max of a and b.
     if (data->Compare(a, b) >= 0) {
       data->Swap(a,x); // a is new parent

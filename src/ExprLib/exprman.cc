@@ -34,12 +34,12 @@ library::~library()
 {
 }
 
-void library::printCopyright(doc_formatter &df) const
+void library::printCopyright(doc_formatter&) const
 {
   DCASSERT(0);
 }
 
-void library::printReleaseDate(doc_formatter*) const
+void library::printReleaseDate(doc_formatter&) const
 {
   DCASSERT(0);
 }
