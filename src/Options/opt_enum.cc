@@ -26,7 +26,7 @@ option_enum::~option_enum()
     // for now, don't delete the settings
 }
 
-void option_enum::show(OutputStream &s) const
+void option_enum::show(std::ostream &s) const
 {
     if (name)   s << name;
     else        s << "(no name)";
@@ -45,7 +45,7 @@ int option_enum::Compare(const char* n) const
 
 bool option_enum::isApropos(const doc_formatter &df, const char* key) const
 {
-    if (df->Matches(name, key))  return true;
+    if (df.Matches(name, key))  return true;
     if (0==settings) return false;
     for (unsigned n=0; n<settings->NumOptions(); n++) {
         option* rec = settings->GetOptionNumber(n);

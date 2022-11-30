@@ -96,7 +96,7 @@ void radio_opt::Finish()
     }
 }
 
-void radio_opt::ShowHeader(OutputStream &s) const
+void radio_opt::ShowHeader(std::ostream &s) const
 {
     show(s);
     s << ' ' << possible[which]->Name();
@@ -105,25 +105,24 @@ void radio_opt::ShowHeader(OutputStream &s) const
 void radio_opt::ShowRange(doc_formatter &df) const
 {
     DCASSERT(numpossible);
-    df->Out() << "Legal values:";
+    df.Out() << "Legal values:";
     unsigned i;
     unsigned maxenum = 0;
     for (i=0; i<numpossible; i++)  {
         unsigned l = strlen(possible[i]->Name());
         maxenum = MAX(maxenum, l);
     }
-    df->begin_description(maxenum);
+    df.begin_description(maxenum);
     for (i=0; i<numpossible; i++) {
-        df->item(possible[i]->Name());
-        df->Out() << possible[i]->Documentation();
+        df.item(possible[i]->Name());
+        df.Out() << possible[i]->Documentation();
     }
-    df->end_description();
+    df.end_description();
 }
 
 bool radio_opt::isApropos(const doc_formatter &df, const char* keyword) const
 {
-    if (0==df)                          return false;
-    if (df->Matches(Name(), keyword))   return true;
+    if (df.Matches(Name(), keyword))   return true;
     for (unsigned i=0; i<numpossible; i++) {
         if (possible[i]->isApropos(df, keyword)) return true;
     }
@@ -132,24 +131,23 @@ bool radio_opt::isApropos(const doc_formatter &df, const char* keyword) const
 
 void radio_opt::RecurseDocs(doc_formatter &df, const char* keyword) const
 {
-    if (0==df) return;
     for (unsigned i=0; i<numpossible; i++) {
         if (0==possible[i]->readSettings()) continue;
 
-        if (df->Matches(possible[i]->Name(), keyword)) {
+        if (df.Matches(possible[i]->Name(), keyword)) {
             // Print all options
-            df->Out() << "\nAll settings for " << possible[i]->Name() << ":\n";
-            df->begin_indent();
+            df.Out() << "\nAll settings for " << possible[i]->Name() << ":\n";
+            df.begin_indent();
             possible[i]->readSettings()->DocumentOptions(df, 0);
-            df->end_indent();
+            df.end_indent();
             continue;
         }
 
         // Ok, just print matching settings, if any
-        df->Out() << "\nMatching settings for " << possible[i]->Name() << ":\n";
-        df->begin_indent();
+        df.Out() << "\nMatching settings for " << possible[i]->Name() << ":\n";
+        df.begin_indent();
         possible[i]->readSettings()->DocumentOptions(df, keyword);
-        df->end_indent();
+        df.end_indent();
     }
 }
 

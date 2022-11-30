@@ -100,8 +100,8 @@ public:
     virtual ~checklist_opt();
     virtual unsigned NumConstants() const;
     virtual option_enum* GetConstant(unsigned i) const;
-    virtual void ShowHeader(OutputStream &s) const;
-    virtual void ShowCurrent(OutputStream &s) const;
+    virtual void ShowHeader(std::ostream &s) const;
+    virtual void ShowCurrent(std::ostream &s) const;
     // These are a bit more interesting...
     virtual option_enum* FindConstant(const char* name) const;
     virtual void ShowRange(doc_formatter &df) const;

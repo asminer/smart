@@ -22,7 +22,7 @@ option::error int_opt::SetValue(long b)
     return notifyWatchers();
 }
 
-void int_opt::ShowHeader(OutputStream &s) const
+void int_opt::ShowHeader(std::ostream &s) const
 {
     show(s);
     s << " " << value;
@@ -30,8 +30,7 @@ void int_opt::ShowHeader(OutputStream &s) const
 
 void int_opt::ShowRange(doc_formatter &df) const
 {
-    DCASSERT(df);
-    df->Out() << "Legal values: ";
-    df->Out() << "integers in [" << min << ", ..., " << max << "]\n";
+    df.Out() << "Legal values: ";
+    df.Out() << "integers in [" << min << ", ..., " << max << "]\n";
 }
 

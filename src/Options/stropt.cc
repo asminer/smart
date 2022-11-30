@@ -22,7 +22,7 @@ option::error string_opt::SetValue(shared_string* v)
     return notifyWatchers();
 }
 
-void string_opt::ShowHeader(OutputStream &s) const
+void string_opt::ShowHeader(std::ostream &s) const
 {
     show(s);
     s << ' ';
@@ -32,7 +32,6 @@ void string_opt::ShowHeader(OutputStream &s) const
 
 void string_opt::ShowRange(doc_formatter &df) const
 {
-    DCASSERT(df);
-    df->Out() << "Legal values: any string";
+    df.Out() << "Legal values: any string";
 }
 

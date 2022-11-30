@@ -44,7 +44,7 @@ option::~option()
     }
 }
 
-void option::show(OutputStream &s) const
+void option::show(std::ostream &s) const
 {
     s << '#' << name;
 }
@@ -89,7 +89,7 @@ option_enum* option::GetConstant(unsigned i) const
     return 0;
 }
 
-void option::ShowCurrent(OutputStream &s) const
+void option::ShowCurrent(std::ostream &s) const
 {
     ShowHeader(s);
 }
@@ -112,26 +112,24 @@ int option::Compare(const char* n) const
 
 bool option::isApropos(const doc_formatter &df, const char* keyword) const
 {
-  if (0==df)  return false;
-  return      df->Matches(Name(), keyword);
+  return      df.Matches(Name(), keyword);
 }
 
 void option::PrintDocs(doc_formatter &df, const char* keyword) const
 {
-  if (0==df)  return;
 #ifndef DEVELOPMENT_CODE
   if (IsUndocumented())  return;
 #endif
-  df->begin_heading();
-  ShowHeader(df->Out());
-  if (IsUndocumented())  df->Out() << " (undocumented)";
-  df->end_heading();
-  df->begin_indent();
-  df->Out() << documentation;
-  df->Out() << "\n";
+  df.begin_heading();
+  ShowHeader(df.Out());
+  if (IsUndocumented())  df.Out() << " (undocumented)";
+  df.end_heading();
+  df.begin_indent();
+  df.Out() << documentation;
+  df.Out() << "\n";
   ShowRange(df);
   RecurseDocs(df, keyword);
-  df->end_indent();
+  df.end_indent();
 }
 
 void option::RecurseDocs(doc_formatter &df, const char* keyword) const

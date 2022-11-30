@@ -9,6 +9,8 @@
 #ifndef OPT_ENUM_H
 #define OPT_ENUM_H
 
+#include <iostream>
+
 class doc_formatter;
 class option_manager;
 
@@ -30,7 +32,7 @@ class option_enum {
         inline const char* Name() const { return name; }
         inline const char* Documentation() const { return doc; }
 
-        void show(OutputStream &s) const;
+        void show(std::ostream &s) const;
 
         int Compare(const option_enum* b) const;
         int Compare(const char* name) const;

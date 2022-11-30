@@ -89,7 +89,7 @@ class option {
         inline bool IsUndocumented() const { return hidden; }
         inline void Hide() { hidden = true; }
 
-        void show(OutputStream &s) const;
+        void show(std::ostream &s) const;
 
         /** Set the value for a boolean option.
                 @param  b  Value to set.
@@ -134,8 +134,8 @@ class option {
         virtual unsigned NumConstants() const;
         virtual option_enum* GetConstant(unsigned i) const;
 
-        virtual void ShowHeader(OutputStream &s) const = 0;
-        virtual void ShowCurrent(OutputStream &s) const;
+        virtual void ShowHeader(std::ostream &s) const = 0;
+        virtual void ShowCurrent(std::ostream &s) const;
         virtual void ShowRange(doc_formatter &df) const = 0;
 
         /// Will be called when the option list is finalized.

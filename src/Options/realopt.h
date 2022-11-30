@@ -25,7 +25,7 @@ class real_opt : public option {
 
         virtual ~real_opt();
         virtual error SetValue(double b);
-        virtual void ShowHeader(OutputStream &s) const;
+        virtual void ShowHeader(std::ostream &s) const;
         virtual void ShowRange(doc_formatter &df) const;
 };
 

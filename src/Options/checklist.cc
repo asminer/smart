@@ -162,13 +162,13 @@ option_enum* checklist_opt::GetConstant(unsigned i) const
     return possible[i];
 }
 
-void checklist_opt::ShowHeader(OutputStream &s) const
+void checklist_opt::ShowHeader(std::ostream &s) const
 {
     show(s);
     s << " +/- values";
 }
 
-void checklist_opt::ShowCurrent(OutputStream &s) const
+void checklist_opt::ShowCurrent(std::ostream &s) const
 {
   show(s);
   s << " {";
@@ -209,20 +209,19 @@ option_enum* checklist_opt::FindConstant(const char* name) const
 
 void checklist_opt::ShowRange(doc_formatter &df) const
 {
-  DCASSERT(df);
-  df->Out() << "Legal values to be set or unset:";
+  df.Out() << "Legal values to be set or unset:";
   unsigned i;
   unsigned maxenum = 0;
   for (i=0; i<numpossible; i++)  {
     unsigned l = strlen(possible[i]->Name());
     maxenum = MAX(maxenum, l);
   }
-  df->begin_description(maxenum);
+  df.begin_description(maxenum);
   for (i=0; i<numpossible; i++) {
-    df->item(possible[i]->Name());
-    df->Out() << possible[i]->Documentation();
+    df.item(possible[i]->Name());
+    df.Out() << possible[i]->Documentation();
   }
-  df->end_description();
+  df.end_description();
 }
 
 void checklist_opt::Finish()
@@ -237,10 +236,9 @@ void checklist_opt::Finish()
 
 bool checklist_opt::isApropos(const doc_formatter &df, const char* keyword) const
 {
-  if (0==df)                          return false;
-  if (df->Matches(Name(), keyword))   return true;
+  if (df.Matches(Name(), keyword))   return true;
   for (unsigned i=0; i<numpossible; i++) {
-    if (df->Matches(possible[i]->Name(), keyword))  return true;
+    if (df.Matches(possible[i]->Name(), keyword))  return true;
   }
   return false;
 }

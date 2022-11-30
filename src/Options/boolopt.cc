@@ -19,7 +19,7 @@ option::error bool_opt::SetValue(bool b)
     return notifyWatchers();
 }
 
-void bool_opt::ShowHeader(OutputStream &s) const
+void bool_opt::ShowHeader(std::ostream &s) const
 {
     show(s);
     s << " " << value;
@@ -27,7 +27,6 @@ void bool_opt::ShowHeader(OutputStream &s) const
 
 void bool_opt::ShowRange(doc_formatter &df) const
 {
-    DCASSERT(df);
-    df->Out() << "Legal values: [false, true]";
+    df.Out() << "Legal values: [false, true]";
 }
 
