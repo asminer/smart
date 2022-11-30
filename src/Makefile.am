@@ -46,6 +46,7 @@ smart_SOURCES = \
   Utils/location.cc \
   Utils/messages.cc \
   Utils/outstream.cc \
+  Utils/textfmt.cc \
   Utils/sigman.cc \
   Utils/strings.cc \
   \
@@ -185,6 +186,7 @@ icp_SOURCES = \
   Utils/location.cc \
   Utils/messages.cc \
   Utils/outstream.cc \
+  Utils/textfmt.cc \
   Utils/sigman.cc \
   Utils/strings.cc \
   \
