@@ -35,12 +35,8 @@ bool bogus_expr::Equals(const shared_object* o) const
 
 void bogus_expr::Traverse(traverse_data &x)
 {
-  DCASSERT(em);
-  if (em->startInternal(__FILE__, __LINE__)) {
-    em->causedBy(0);
-    em->internal() << "Trying to traverse the " << which << " expression";
-    em->stopIO();
-  }
+    internal_error E(__FILE__, __LINE__);
+    E << "Trying to traverse the " << which << " expression";
 }
 
 

@@ -229,7 +229,7 @@ private:
   /// Unique identifier, for quick comparison of expression equality.
   int IDnum;
   /// Static member used to set the identifiers
-  static int global_IDnum;
+  static long global_IDnum;
 public:
   /** Constructor for simple types.
         @param  W     Where declared.

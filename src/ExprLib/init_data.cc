@@ -376,7 +376,7 @@ void MakeRealFormatOptions(exprman* em)
 
 void MakeSeparatorOptions(exprman* em)
 {
-  if (!em->hasIO())  return;
+  // if (!em->hasIO())  return;
   if (0==em->OptMan()) return;
 
   //

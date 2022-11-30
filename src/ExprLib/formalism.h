@@ -16,6 +16,7 @@
 
 class model_def;
 class msr_func;
+class location;
 
 class formalism : public simple_type {
   symbol_table* funcs;

@@ -112,23 +112,16 @@ void value::Traverse(traverse_data &x)
           } else if (em->BOOL == bt) {
             x.ddlib->buildSymbolicConst(val.getBool(), dd);
           } else {
-            if (em->startInternal(__FILE__, __LINE__)) {
-              em->causedBy(this);
-              em->internal() << "Unhandled type\n";
-              em->stopIO();
-            }
+            internal_error E(__FILE__, __LINE__, Where());
+            E << "Unhandled type";
           }
           x.answer->setPtr(dd);
         } // try
         catch (sv_encoder::error e) {
-          if (em->startError()) {
-            em->causedBy(this);
-            em->cerr() << "Error while building constant: ";
-            em->cerr() << sv_encoder::getNameOfError(e);
-            em->stopIO();
-          }
+          expr_error E(this, x.answer);
+          E << "Error while building constant: ";
+          E << sv_encoder::getNameOfError(e);
           Delete(dd);
-          x.answer->setNull();
         } // catch
         return;
     }

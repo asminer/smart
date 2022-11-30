@@ -7,6 +7,8 @@
 #ifndef OPTIONS_H
 #define OPTIONS_H
 
+#include <iostream>
+
 class doc_formatter;
 class shared_string;
 

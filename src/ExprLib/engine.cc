@@ -151,29 +151,14 @@ void engine::AddSubEngine(subengine* child)
     hldsm::model_type mi = (hldsm::model_type) i;
     if (child->AppliesToModelType(mi)) {
       if (children[i]) {
-        if (em->startInternal(__FILE__, __LINE__)) {
-          em->causedBy(0);
-          em->internal() << "Registering subengine for " << name;
-          em->internal() << " with existing model type " << i << "\n";
-          em->stopIO();
-        }
-        DCASSERT(0);
+        internal_error E(__FILE__, __LINE__);
+        E << "Registering subengine for " << name;
+        E << " with existing model type " << i;
       }
       children[i] = child;
     }
   } // for i
 }
-
-/*
-void engine::AddOption(option* o)
-{
-  if (0==o) return;
-  if (0==options) {
-    options = MakeOptionManager();
-  }
-  options->AddOption(o);
-}
-*/
 
 int engine::Compare(const char* name2) const
 {
@@ -536,12 +521,10 @@ bogus_engine::~bogus_engine()
 
 void bogus_engine::SolveMeasure(hldsm*, measure* what)
 {
-  if (em->startInternal(__FILE__, __LINE__)) {
-    em->causedBy(what);
-    em->internal() << "Calling a placeholder engine.";
-    em->stopIO();
-  }
-  DCASSERT(0);
+  internal_error E(__FILE__, __LINE__,
+          what ? what->Where() : location::NOWHERE()
+  );
+  E << "Calling a placeholder engine.";
   throw No_Engine;  // Probably best, if we manage to get here
 }
 

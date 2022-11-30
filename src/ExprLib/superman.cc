@@ -617,14 +617,10 @@ const type* superman::getTypeOf(unary_opcode op, const type* x) const
   if (1==num_matches)  return match->getExprType(x);
 
   // too many matches, this should not happen!
-  if (startInternal(__FILE__, __LINE__)) {
-      causedBy(0);
-      internal() << "Cannot decide on unary operation: ";
-      internal() << getOp(op) << " ";
-      if (x)  internal() << x->getName();
-      else    internal() << "notype";
-      stopIO();
-  }
+  internal_error E(__FILE__, __LINE__);
+  E << "Cannot decide on unary operation: " << getOp(op) << " ";
+  if (x)  E << x->getName();
+  else    E << "notype";
   return 0;
 }
 
@@ -657,16 +653,13 @@ const type* superman
   if (1==num_matches)  return match->getExprType(lt, rt);
 
   // too many matches, this should not happen!
-  if (startInternal(__FILE__, __LINE__)) {
-      causedBy(0);
-      internal() << "Cannot decide on binary operation: ";
-      if (lt) internal() << lt->getName();
-      else    internal() << "notype";
-      internal() << " " << getOp(op) << " ";
-      if (rt) internal() << rt->getName();
-      else    internal() << "notype";
-      stopIO();
-  }
+  internal_error E(__FILE__, __LINE__);
+  E << "Cannot decide on binary operation: ";
+  if (lt) E << lt->getName();
+  else    E << "notype";
+  E << " " << getOp(op) << " ";
+  if (rt) E << rt->getName();
+  else    E << "notype";
   return 0;
 }
 
@@ -699,19 +692,16 @@ const type* superman::getTypeOf(trinary_opcode op, const type* lt,
   if (1==num_matches)  return match->getExprType(lt, mt, rt);
 
   // too many matches, this should not happen!
-  if (startInternal(__FILE__, __LINE__)) {
-      causedBy(0);
-      internal() << "Cannot decide on trinary operation: ";
-      if (lt) internal() << lt->getName();
-      else    internal() << "notype";
-      internal() << " " << getFirst(op) << " ";
-      if (mt) internal() << mt->getName();
-      else    internal() << "notype";
-      internal() << " " << getSecond(op) << " ";
-      if (rt) internal() << rt->getName();
-      else    internal() << "notype";
-      stopIO();
-  }
+  internal_error E(__FILE__, __LINE__);
+  E << "Cannot decide on trinary operation: ";
+  if (lt) E << lt->getName();
+  else    E << "notype";
+  E << " " << getFirst(op) << " ";
+  if (mt) E << mt->getName();
+  else    E << "notype";
+  E << " " << getSecond(op) << " ";
+  if (rt) E << rt->getName();
+  else    E << "notype";
   return 0;
 }
 
@@ -744,16 +734,13 @@ const type* superman
   if (1==num_matches)  return match->getExprType(flip, lt, rt);
 
   // too many matches, this should not happen!
-  if (startInternal(__FILE__, __LINE__)) {
-      causedBy(0);
-      internal() << "Cannot decide on associative operation: ";
-      if (lt) internal() << lt->getName();
-      else    internal() << "notype";
-      internal() << " " << getOp(flip, op) << " ";
-      if (rt) internal() << rt->getName();
-      else    internal() << "notype";
-      stopIO();
-  }
+  internal_error E(__FILE__, __LINE__);
+  E << "Cannot decide on associative operation: ";
+  if (lt) E << lt->getName();
+  else    E << "notype";
+  E << " " << getOp(flip, op) << " ";
+  if (rt) E << rt->getName();
+  else    E << "notype";
   return 0;
 }
 
@@ -1020,11 +1007,9 @@ expr* superman::makeAssocOp(const location &W, assoc_opcode op,
   if (1==num_matches) {
     DCASSERT(match);
     expr* answer = match->makeExpr(W, opnds, flip, N);
-    if (0==answer && startInternal(__FILE__, __LINE__)) {
-      causedBy(W);
-      internal() << "Couldn't build associative expression for ";
-      internal() << getOp(0, op);
-      stopIO();
+    if (0==answer) {
+      internal_error E(__FILE__, __LINE__, W);
+      E << "Couldn't build associative expression for " << getOp(0, op);
     }
     return answer;
   }
@@ -1145,16 +1130,16 @@ void superman::printLibraryCopyrights(doc_formatter &df) const
   for (int i=0; i<num_libs; i++) {
     DCASSERT(extlibs[i]);
     if (!extlibs[i]->hasCopyright()) continue;
-    df->Out() << "\n";
-    df->begin_heading();
+    df.Out() << "\n";
+    df.begin_heading();
     const char* v = extlibs[i]->getVersionString();
     DCASSERT(v);
-    df->Out() << v;
+    df.Out() << v;
     if (extlibs[i]->hasReleaseDate()) {
-      df->Out() << ", released ";
+      df.Out() << ", released ";
       extlibs[i]->printReleaseDate(df);
     }
-    df->end_heading();
+    df.end_heading();
     extlibs[i]->printCopyright(df);
   }
 }

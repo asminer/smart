@@ -113,7 +113,7 @@ debugging_msg expr::expr_debug;
 debugging_msg expr::waitlist_debug;
 debugging_msg expr::model_debug;
 exprman* expr::em = 0;
-int expr::global_IDnum = 0;
+long expr::global_IDnum = 0;
 
 expr::expr(const location &W, const type* t) : shared_object()
 {
@@ -171,11 +171,8 @@ void expr::Init(const location &W, const type* st, typelist* at, const model_def
 {
   global_IDnum++;
   if (global_IDnum < 0) {
-    if (em->startInternal(__FILE__, __LINE__)) {
-      em->causedBy(W);
-      em->internal() << "Too many expressions, global ID overflow";
-      em->stopIO();
-    }
+    internal_error E(__FILE__, __LINE__, W);
+    E << "Too many expressions, global ID overflow";
   }
   IDnum = global_IDnum;
   where = W;
