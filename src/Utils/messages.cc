@@ -162,17 +162,3 @@ internal_error::~internal_error()
     signal_manager::clean_exit(1);
 }
 
-// ******************************************************************
-// *                   typechecking_error methods                   *
-// ******************************************************************
-
-typechecking_error::typechecking_error(const location &W)
-    : error_msg("ERROR")
-{
-    if (W) {
-        Out << ' ' << W;
-    }
-    Out << ':';
-    newLine();
-}
-

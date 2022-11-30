@@ -176,12 +176,6 @@ class parser_error : public error_msg {
 };
 */
 
-class typechecking_error : public error_msg {
-    public:
-        typechecking_error(const location& W);
-};
-
-
 /*
  *  Let us use all of these messages on lhs of <<.
  *

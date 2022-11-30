@@ -401,9 +401,10 @@ long expr::getUpper() const
 }
 
 
-//
 // ******************************************************************
-//
+// *                       expr_error methods                       *
+// ******************************************************************
+
 
 expr_error::expr_error(const expr* cause, result* ans) : error_msg("ERROR")
 {
@@ -415,6 +416,30 @@ expr_error::expr_error(const expr* cause, result* ans) : error_msg("ERROR")
     } else {
         Out << ':';
     }
+    newLine();
+}
+
+// ******************************************************************
+// *                   typechecking_error methods                   *
+// ******************************************************************
+
+typechecking_error::typechecking_error(const location &W)
+    : error_msg("ERROR")
+{
+    if (W) {
+        Out << ' ' << W;
+    }
+    Out << ':';
+    newLine();
+}
+
+typechecking_error::typechecking_error(const expr* x)
+    : error_msg("ERROR")
+{
+    if (x && x->Where()) {
+        Out << ' ' << x->Where();
+    }
+    Out << ':';
     newLine();
 }
 

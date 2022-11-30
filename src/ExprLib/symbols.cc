@@ -101,15 +101,10 @@ void symbol::Traverse(traverse_data &x)
           x.answer->setPtr(dd);
         }
         catch (sv_encoder::error e) {
-          if (em->startError()) {
-            em->causedBy(this);
-            em->cerr() << "Error while building state variable ";
-            em->cerr() << Name() << ": ";
-            em->cerr() << sv_encoder::getNameOfError(e);
-            em->stopIO();
-          }
+          expr_error E(this, x.answer);
+          E << "Error while building state variable " << Name() << ": ";
+          E << sv_encoder::getNameOfError(e);
           Delete(dd);
-          x.answer->setNull();
         }
         return;
     }
@@ -133,39 +128,34 @@ void symbol::Traverse(traverse_data &x)
 
 void symbol::PrintDocs(doc_formatter &df, const char* keyword) const
 {
-  if (0==df)  return;
   if (0==name)  return;
-  df->begin_heading();
-  PrintType(df->Out());
-  df->Out() << " " << name->getStr();
-  df->end_heading();
-  df->begin_indent();
-  df->Out() << "Defined " << Where();
-  df->end_indent();
+  df.begin_heading();
+  PrintType(df.Out());
+  df.Out() << " " << name->getStr();
+  df.end_heading();
+  df.begin_indent();
+  df.Out() << "Defined " << Where();
+  df.end_indent();
 }
 
 void symbol::addToWaitList(symbol* w)
 {
   DCASSERT(w);
   if (isComputed() || !OK()) return;
-  if (waitlist_debug.startReport()) {
-    waitlist_debug.report() << "Adding symbol ";
-    if (w->Name()) waitlist_debug.report() << w->Name() << " ";
-    waitlist_debug.report() << "to waiting list";
-    if (Name()) waitlist_debug.report() << " of symbol " << Name();
-    waitlist_debug.report() << "\n";
-    waitlist_debug.stopIO();
+  if (waitlist_debug.start()) {
+    waitlist_debug << "Adding symbol ";
+    if (w->Name()) waitlist_debug << w->Name() << " ";
+    waitlist_debug << "to waiting list";
+    if (Name()) waitlist_debug << " of symbol " << Name();
+    waitlist_debug.stop();
   }
 #ifdef DEVELOPMENT_CODE
   if (w->couldNotify(this)) {
-    if (em->startInternal(__FILE__, __LINE__)) {
-      em->causedBy(w);
-      em->internal() << "Circular dependency in symbol waiting lists";
-      em->newLine();
-      em->internal() << "when adding symbol ";
-      if (w->Name()) em->internal() << w->Name();
-      em->stopIO();
-    }
+    internal_error E(__FILE__, __LINE__, w->Where());
+    E << "Circular dependency in symbol waiting lists";
+    E.newLine();
+    E << "when adding symbol ";
+    if (w->Name()) E << w->Name();
   }
 #endif
   if (0==waitlist) waitlist = new List <symbol>;
@@ -176,12 +166,11 @@ void symbol::addToWaitList(symbol* w)
 void symbol::notifyFrom(const symbol* p)
 {
   if (0==p) return;
-  if (waitlist_debug.startReport()) {
-    waitlist_debug.report() << "Notifying symbol ";
-    if (Name()) waitlist_debug.report() << Name() << " ";
-    if (p->Name()) waitlist_debug.report() << "from symbol " << p->Name();
-    waitlist_debug.report() << "\n";
-    waitlist_debug.stopIO();
+  if (waitlist_debug.start()) {
+    waitlist_debug << "Notifying symbol ";
+    if (Name()) waitlist_debug << Name() << " ";
+    if (p->Name()) waitlist_debug << "from symbol " << p->Name();
+    waitlist_debug.stop();
   }
 }
 
@@ -234,8 +223,7 @@ void help_topic::setName(char* n)
 
 void help_topic::PrintHeader(std::ostream &s) const
 {
-  s << "Help topic: ";
-  s.Put(Name());
+  s << "Help topic: " << Name();
 }
 
 // ******************************************************************
@@ -257,31 +245,31 @@ help_group::~help_group()
 
 void help_group::PrintDocs(doc_formatter &df, const char* keyword) const
 {
-  df->begin_heading();
-  PrintHeader(df->Out());
-  df->end_heading();
-  df->begin_indent();
-  df->Out() << docs << "\n";
+  df.begin_heading();
+  PrintHeader(df.Out());
+  df.end_heading();
+  df.begin_indent();
+  df.Out() << docs << "\n";
   if (funcs.Length()) {
-    df->Out() << "\nRelevant functions:\n";
-    df->begin_indent();
+    df.Out() << "\nRelevant functions:\n";
+    df.begin_indent();
     for (int i=0; i<funcs.Length(); i++) {
       const function* f = funcs.ReadItem(i);
-      f->PrintHeader(df->Out(), true);
-      df->Out() << "\n";
+      f->PrintHeader(df.Out(), true);
+      df.Out() << "\n";
     }
-    df->end_indent();
+    df.end_indent();
   }
   if (options.Length()) {
-    df->Out() << "\nRelevant options:\n";
-    df->begin_indent();
+    df.Out() << "\nRelevant options:\n";
+    df.begin_indent();
     for (int i=0; i<options.Length(); i++) {
       const option* o = options.ReadItem(i);
       o->PrintDocs(df, keyword);
     }
-    df->end_indent();
+    df.end_indent();
   }
-  df->end_indent();
+  df.end_indent();
 }
 
 // ******************************************************************
@@ -425,15 +413,11 @@ symbol* exprman::makeConstant(const location &W, const type* t,
   const type* rhstype = SafeType(rhs);
 
   if (!isPromotable(rhstype, t)) {
-    if (startError()) {
-      causedBy(W);
-      cerr() << "Return type for identifier ";
-      if (name)   cerr() << name;
-      else        cerr() << "(no name)";
-      cerr() << " should be ";
-      cerr() << t->getName();
-      stopIO();
-    }
+    typechecking_error E(W);
+    E << "Return type for identifier ";
+    if (name)   E << name;
+    else        E << "(no name)";
+    E << " should be " << t->getName();
     free(name);
     return 0;
   }
@@ -455,15 +439,11 @@ symbol* exprman::makeConstant(const symbol* w,
   const type* t = SafeType(w);
 
   if (!isPromotable(rhstype, t)) {
-    if (startError()) {
-      causedBy(w);
-      cerr() << "Return type for identifier ";
-      if (w->Name())  cerr() << w->Name();
-      else            cerr() << "(no name)";
-      cerr() << " should be ";
-      cerr() << t->getName();
-      stopIO();
-    }
+    typechecking_error E(w);
+    E << "Return type for identifier ";
+    if (w->Name())  E << w->Name();
+    else            E << "(no name)";
+    E << " should be " << t->getName();
     return 0;
   }
   rhs = promote(rhs, t);

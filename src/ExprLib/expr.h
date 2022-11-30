@@ -525,6 +525,18 @@ class expr_error : public error_msg {
 
 // ******************************************************************
 // *                                                                *
+// *                      Typechecking  errors                      *
+// *                                                                *
+// ******************************************************************
+
+class typechecking_error : public error_msg {
+    public:
+        typechecking_error(const location& W);
+        typechecking_error(const expr* x);
+};
+
+// ******************************************************************
+// *                                                                *
 // *                Global functions for expressions                *
 // *                                                                *
 // ******************************************************************
