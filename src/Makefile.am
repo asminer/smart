@@ -6,7 +6,7 @@ SUBDIRS = _LSLib _RngLib _SimLib _IntSets _StateLib _GraphLib _MCLib _Meddly
 
 
 ## List executables that we build
-bin_PROGRAMS = smart icp teststrms testsplay testinit lextest
+bin_PROGRAMS = smart icp testsplay testinit lextest
 
 
 BUILT_SOURCES = \
@@ -49,9 +49,6 @@ smart_SOURCES = \
   Utils/textfmt.cc \
   Utils/sigman.cc \
   Utils/strings.cc \
-  \
-  Streams/streams.cc \
-  Streams/textfmt.cc \
   \
   Options/optman.cc \
   Options/options.cc \
@@ -190,9 +187,6 @@ icp_SOURCES = \
   Utils/sigman.cc \
   Utils/strings.cc \
   \
-  Streams/streams.cc \
-  Streams/textfmt.cc \
-  \
   Options/optman.cc \
   Options/options.cc \
   Options/opt_enum.cc \
@@ -265,19 +259,6 @@ icp_LDADD = _Meddly/src/libmeddly.la
 
 ## ============================================================
 ##
-## teststrms
-##
-## ============================================================
-
-teststrms_SOURCES = \
-  TestApps/teststrms.cc \
-  Utils/strings.cc \
-  Utils/location.cc \
-  Streams/streams.cc \
-  Streams/textfmt.cc
-
-## ============================================================
-##
 ## testsplay
 ##
 ## ============================================================
@@ -285,9 +266,7 @@ teststrms_SOURCES = \
 testsplay_SOURCES = \
   TestApps/testsplay.cc \
   Utils/strings.cc \
-  Utils/location.cc \
-  Streams/streams.cc \
-  Streams/textfmt.cc
+  Utils/location.cc
 
 ## ============================================================
 ##
@@ -311,9 +290,6 @@ lextest_SOURCES = \
   Utils/outstream.cc \
   Utils/sigman.cc \
   Utils/strings.cc \
-  \
-  Streams/streams.cc \
-  Streams/textfmt.cc \
   \
   Options/optman.cc \
   Options/options.cc \
