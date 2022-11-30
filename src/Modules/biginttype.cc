@@ -7,7 +7,7 @@
 #include "../ExprLib/assoc.h"
 #include "../SymTabs/symtabs.h"
 #include "../ExprLib/functions.h"
-#include "../Streams/textfmt.h"
+#include "../Utils/textfmt.h"
 #include "biginttype.h"
 
 #include <math.h>

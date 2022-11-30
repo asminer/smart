@@ -5,7 +5,7 @@
 #include "../ExprLib/functions.h"
 #include "../SymTabs/symtabs.h"
 #include "../Utils/strings.h"
-#include "../Streams/textfmt.h"
+#include "../Utils/textfmt.h"
 #include "../ExprLib/exprman.h"
 
 #include <iostream>

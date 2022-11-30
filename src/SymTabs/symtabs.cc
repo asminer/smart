@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include "../ExprLib/symbols.h"
 #include "symtabs.h"
-#include "../Streams/textfmt.h"
+#include "../Utils/textfmt.h"
 
 // #define DEBUG_ADD
 // #define DEBUG_REMOVE

@@ -1,6 +1,6 @@
 
 #include "../include/defines.h"
-#include "../Streams/textfmt.h"
+#include "../Utils/textfmt.h"
 #include "../include/splay.h"
 
 #include "options.h"

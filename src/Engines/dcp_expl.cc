@@ -1,7 +1,7 @@
 
 #include "dcp_expl.h"
 
-#include "../Streams/textfmt.h"
+#include "../Utils/textfmt.h"
 #include "../Options/options.h"
 #include "../ExprLib/startup.h"
 #include "../ExprLib/exprman.h"

@@ -1,7 +1,7 @@
 
 #include "../include/defines.h"
 #include "../Utils/strings.h"
-#include "../Streams/textfmt.h"
+#include "../Utils/textfmt.h"
 #include "options.h"
 #include "opt_enum.h"
 #include <stdlib.h>

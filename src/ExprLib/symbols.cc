@@ -2,7 +2,7 @@
 #include "symbols.h"
 #include "exprman.h"
 #include "../Utils/strings.h"
-#include "../Streams/textfmt.h"
+#include "../Utils/textfmt.h"
 #include "values.h"
 #include "dd_front.h"
 #include "functions.h"
@@ -70,7 +70,7 @@ void symbol::Rename(shared_object* newname)
 bool symbol::Print(std::ostream &s, int width) const
 {
   if (0==name) return false;
-  s.Put(name->getStr(), width);
+  s << formatted_string(name->getStr(), width);
   return true;
 }
 

@@ -27,7 +27,7 @@
 */
 
 #include "config.h"
-#include "../Streams/textfmt.h"
+#include "../Utils/textfmt.h"
 #include "../Options/optman.h"
 
 #include "../ExprLib/exprman.h"
