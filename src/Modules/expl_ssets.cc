@@ -5,6 +5,7 @@
 #include "../Formlsms/graph_llm.h"
 
 #include "expl_ssets.h"
+#include "expl_trissets.h"
 #include "biginttype.h"
 
 // external library
@@ -96,6 +97,19 @@ bool expl_stateset::Union(const expr* c, const char* op, const stateset* x)
   return true;
 }
 
+bool expl_stateset::Union(const stateset* x)
+{
+  if (0==data) return false;
+  const expl_stateset* ex = dynamic_cast <const expl_stateset*> (x);
+
+  if (0==ex) {
+    return false;
+  }
+
+  (*data) += *(ex->data); 
+  return true;
+}
+
 bool expl_stateset::Intersect(const expr* c, const char* op, const stateset* x)
 {
   if (0==data) return false;
@@ -156,7 +170,6 @@ bool expl_stateset::Equals(const shared_object *o) const
   
   return (*data) == *(b->data);
 }
-
 
 // ******************************************************************
 // *                                                                *

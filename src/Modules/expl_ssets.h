@@ -28,6 +28,7 @@ class expl_stateset : public stateset {
     virtual expl_stateset* DeepCopy() const;
     virtual bool Complement();
     virtual bool Union(const expr* c, const char* op, const stateset* x);
+    bool Union(const stateset* x);
     virtual bool Intersect(const expr* c, const char* op, const stateset* x);
     virtual bool Plus(const expr* c, const char* op, const stateset* x);
 
@@ -48,6 +49,7 @@ class expl_stateset : public stateset {
       DCASSERT(data);
       return *data;
     }
+
   private:
     intset* data;
 };

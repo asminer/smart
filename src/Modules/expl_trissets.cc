@@ -36,6 +36,14 @@ expl_tri_stateset::expl_tri_stateset(const state_lldsm* p, stateset* t, stateset
   falseset = dynamic_cast<expl_stateset*>(f);
 }
 
+expl_tri_stateset::expl_tri_stateset(const state_lldsm* p, const expl_stateset* t) : stateset(p)
+{
+  trueset = t->DeepCopy();
+  falseset = t->DeepCopy();
+  falseset->Complement();
+}
+
+
 expl_tri_stateset::~expl_tri_stateset()
 {
   // delete trueset;
@@ -48,6 +56,15 @@ stateset* expl_tri_stateset::DeepCopy() const
   DCASSERT(falseset);
   return new expl_tri_stateset(getParent(), trueset->DeepCopy(), falseset->DeepCopy() );
 }
+
+expl_stateset* expl_tri_stateset::computeUnknownSet() const {
+  intset t = trueset->getExplicit();
+  intset f = falseset->getExplicit();
+
+  intset u = !(t+f);
+
+  return new expl_stateset(this->getParent(), new intset(u));
+};
 
 bool expl_tri_stateset::Complement() 
 {

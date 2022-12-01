@@ -21,6 +21,7 @@ class expl_tri_stateset : public stateset {
     expl_tri_stateset(const state_lldsm* p, intset* t, intset* f);
     expl_tri_stateset(const state_lldsm* p, expl_stateset* t, expl_stateset* f);
     expl_tri_stateset(const state_lldsm* p, stateset* t, stateset* f);
+    expl_tri_stateset(const state_lldsm* p, const expl_stateset* t);
   protected:
     virtual ~expl_tri_stateset();
 
@@ -37,6 +38,7 @@ class expl_tri_stateset : public stateset {
     inline const expl_stateset* getFalseSet() const {
       return falseset;
     };
+    virtual expl_stateset* computeUnknownSet() const;
 
     virtual void getCardinality(long &card) const;
     virtual void getCardinality(result &x) const;

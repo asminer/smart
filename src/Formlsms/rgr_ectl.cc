@@ -163,14 +163,9 @@ stateset* ectl_reachgraph::EX(bool revTime, const stateset* p, trace_data* td)
   const expl_stateset* ep = dynamic_cast <const expl_stateset*> (p);
   if (0==ep) {
     const expl_tri_stateset* etp = dynamic_cast <const expl_tri_stateset*> (p);
-
-    if (0==etp) {
-      return incompatibleOperand(CTLOP);
-    }
-
+    if (0==etp) return incompatibleOperand(CTLOP);
     return new expl_tri_stateset(p->getParent(), EX(revTime, etp->getTrueSet(), td), 
                                                  AX(revTime, etp->getFalseSet()));
-
   }
 
   // ep->Print(ep->getGrandparent()->getEM()->cout(),0);
@@ -235,12 +230,67 @@ stateset* ectl_reachgraph::EU(bool revTime, const stateset* p, const stateset* q
   const expl_stateset* ep = dynamic_cast <const expl_stateset*> (p);
   const expl_stateset* eq = dynamic_cast <const expl_stateset*> (q);
 
-  const char* CTLOP = revTime 
+    const char* CTLOP = revTime 
     ?   ( p ? "ES" : "EP" )
     :   ( p ? "EU" : "EF" )
   ;
 
-  if (0==eq) return incompatibleOperand(CTLOP);
+  if (0==ep || 0==eq) {
+    const expl_tri_stateset* etp = dynamic_cast <const expl_tri_stateset*> (p);
+    const expl_tri_stateset* etq = dynamic_cast <const expl_tri_stateset*> (q);
+
+    if (0==etp) {
+      etp = new expl_tri_stateset(p->getParent(), ep);
+    } else if (0==etq) {
+      etq = new expl_tri_stateset(q->getParent(), eq);
+    } else {
+      return incompatibleOperand("hello world!");
+    }
+
+    const intset& itq = etq->getTrueSet()->getExplicit(); 
+    if (!TH) TH = new CTL_traversal(itq.getSize());
+
+    // obligations to 1
+    TH->fill_obligations(1);
+
+    // if p is specified, then restrict paths to satisfying p
+    if (p) {
+      if (0==etp)   return incompatibleOperand("hello2");
+      const intset& itp = etp->getTrueSet()->getExplicit(); 
+      TH->restrict_paths(itp);
+    }
+
+    // Explore from q states
+    TH->init_queue_from(itq);
+
+    // Traverse!
+    startTraverse(CTLOP);
+    TH->setOneStep(false);
+    traverse(revTime, *TH);
+    stopTraverse(CTLOP);
+
+    // Build answer
+    intset* answer = new intset(TH->getSize());
+    answer->removeAll();
+    TH->get_met_obligations(*answer);
+    expl_stateset *trueset = new expl_stateset(q->getParent(), answer);
+
+    expl_stateset *pset = etp->computeUnknownSet();
+    pset->Union(etp->getTrueSet());
+    expl_stateset *qset = etq->computeUnknownSet();
+    qset->Union(NULL,0,etq->getTrueSet());
+    stateset *falseset = EU(revTime, pset, qset, td);
+    falseset->Complement();
+
+    return new expl_tri_stateset(p->getParent(), trueset, falseset);
+  }
+
+
+
+
+
+
+
 
   const intset& iq = eq->getExplicit(); 
   if (!TH) TH = new CTL_traversal(iq.getSize());
