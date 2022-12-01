@@ -59,10 +59,10 @@ exprstmt::~exprstmt()
 
 bool exprstmt::Print(std::ostream &s, int w) const
 {
-  s.Pad(' ', w);
-  x->Print(s, 0);
-  s.Put(";\n");
-  return true;
+    s << std::setw(w) << "";
+    x->Print(s);
+    s << ";\n";
+    return true;
 }
 
 void exprstmt::Compute(traverse_data &td)
@@ -75,15 +75,14 @@ void exprstmt::Compute(traverse_data &td)
   result* old = td.answer;
   td.answer = &foo;
   SafeCompute(x, td);
-  if (em->hasIO()) {
-    em->cout() << "Evaluated statement ";
-    x->Print(em->cout(), 0);
-    em->cout() << ", got: ";
-    DCASSERT(x->Type());
-    x->Type()->print(em->cout(), td.answer[0]);
-    em->cout() << "\n";
-    em->cout().flush();
-  }
+
+  outputStream &cout = outputStream::globalOut();
+  cout << "Evaluated statement ";
+  x->Print(cout.stream());
+  cout << ", got: ";
+  DCASSERT(x->Type());
+  x->Type()->print(cout.stream(), td.answer[0]);
+  cout.newLine();
   td.answer = old;
 }
 
@@ -135,12 +134,12 @@ optassign_val::~optassign_val()
 
 bool optassign_val::Print(std::ostream &s, int w) const
 {
-  s.Pad(' ', w);
-  opt->show(s);
-  s.Put(' ');
-  val->Print(s, 0);
-  s.Put("\n");
-  return true;
+    s << std::setw(w) << "";
+    opt->show(s);
+    s << ' ';
+    val->Print(s);
+    s << '\n';
+    return true;
 }
 
 void optassign_val::Compute(traverse_data &td)
@@ -176,19 +175,18 @@ void optassign_val::Compute(traverse_data &td)
         break;
     }
 
-    default:
-        if (em->startInternal(__FILE__, __LINE__)) {
-          em->causedBy(this);
-          em->internal() << "Bad option type in optassign_val class";
-          em->stopIO();
-        }
+    default: {
+        internal_error E(__FILE__, __LINE__, Where());
+        E << "Bad option type in optassign_val class";
+    }
   }
 
   switch (err) {
     case option::Success:
         break;
 
-    case option::RangeError:
+    case option::RangeError: {
+
         if (em->startWarning()) {
           em->causedBy(this);
           em->warn() << "Value ";
@@ -200,13 +198,12 @@ void optassign_val::Compute(traverse_data &td)
           em->stopIO();
         }
         break;
+    }
 
-    default:
-        if (em->startInternal(__FILE__, __LINE__)) {
-          em->causedBy(this);
-          em->internal() << "Unexpected error code for option assignment";
-          em->stopIO();
-        }
+    default: {
+        internal_error E(__FILE__, __LINE__, Where());
+        E << "Unexpected error code for option assignment";
+    }
   }
 }
 

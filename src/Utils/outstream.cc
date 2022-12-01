@@ -13,6 +13,8 @@ static const unsigned RF_GENERAL = 0;
 static const unsigned RF_FIXED = 1;
 static const unsigned RF_SCIENTIFIC = 2;
 
+outputStream outputStream::Out(std::cout);
+
 // ======================================================================
 
 /// Update the stream when the option changes

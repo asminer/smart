@@ -35,8 +35,6 @@ class outputStream {
                 const char* doc);
 
 
-        // TBD: option for thousands separator
-
         /** Switch to a file with given name.
          *  The current file, if any, is closed.
          *
@@ -93,38 +91,14 @@ class outputStream {
 
 
         /*
-        //
-        // Custom put thingies here for convenience
-        //
-        void PutHex(unsigned char data);
-        void PutHex(unsigned int  data);
-        void PutHex(unsigned long data);
-        void PutMemoryCount(size_t bytes, int prec);
-
-        /// Makes comma-separated integers.
-        template <class T>
-        inline void PutInt(T data, int width=0)
-        {
-            static std::stringstream ss;
-            ss << data;
-            PutInteger(ss.str(), width);
-        }
-        void PutInteger(const std::string &integer, int width);
-
-        // For reals
-        void Put(double data, int width);
-        void Put(double data, int width, int prec);
-
-        //
-        // For options later
-        //
-        inline shared_string* & linkThousands() {
-            return thousands;
-        }
-        void setRealFormat(unsigned rf);
-        */
+         * For lack of a better place: global output stream
+         * Basically, cout but with possibility of redirection to a file.
+         */
+        static inline outputStream& globalOut() { return Out; }
 
     private:
+        static outputStream Out;
+
         unsigned indent_spaces;
 
         std::ostream &deflt;
