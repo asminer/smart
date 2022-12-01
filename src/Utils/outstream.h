@@ -56,10 +56,10 @@ class outputStream {
             return (fout.is_open()) ? fout : deflt;
         }
 
-        inline void indentMore() {
+        inline void incIndent() {
             indent_spaces += 4;
         }
-        inline void indentLess() {
+        inline void decIndent() {
             if (indent_spaces) indent_spaces -= 4;
         }
         inline void clearIndent() {

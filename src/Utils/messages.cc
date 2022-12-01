@@ -123,7 +123,7 @@ bool debugging_msg::start() const
 
 error_msg::error_msg(const char* prefix)
 {
-    Out.indentMore();
+    Out.incIndent();
     if (prefix) Out << prefix;
 }
 

@@ -3,6 +3,8 @@
 
 #include "strings.h"
 
+#include <iostream>
+
 class location {
         /*
          * Allow special locations:

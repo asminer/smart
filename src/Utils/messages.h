@@ -71,8 +71,6 @@ class warning_msg : public abstract_msg {
         static inline std::ostream& stream() {
             return Out.stream();
         }
-        static inline void indentMore() {   Out.indentMore();       }
-        static inline void indentLess() {   Out.indentLess();       }
         static inline void newLine()    {   Out.newLine();          }
         static inline void stop()       {   stream() << std::endl;  }
 };
@@ -96,8 +94,6 @@ class reporting_msg : public abstract_msg {
         bool start() const;
 
         static inline std::ostream& stream() { return Out.stream(); }
-        static inline void indentMore() {   Out.indentMore();       }
-        static inline void indentLess() {   Out.indentLess();       }
         inline void newLine() const     {   Out.newLine(prefix);    }
         static inline void stop()       {   stream() << std::endl;  }
     private:
@@ -123,8 +119,6 @@ class debugging_msg : public abstract_msg {
         bool start() const;
 
         static inline std::ostream& stream() { return Out.stream(); }
-        static inline void indentMore() {   Out.indentMore();       }
-        static inline void indentLess() {   Out.indentLess();       }
         inline void newLine() const     {   Out.newLine(prefix);    }
         static inline void stop()       {   stream() << std::endl;  }
     private:
@@ -157,8 +151,6 @@ class error_msg {
             Out.defaultOutput();
         }
         static inline std::ostream& stream() { return Out.stream(); }
-        static inline void indentMore() {   Out.indentMore();       }
-        static inline void indentLess() {   Out.indentLess();       }
         static inline void newLine()    {   Out.newLine();          }
 };
 
@@ -169,12 +161,6 @@ class internal_error : public error_msg {
         ~internal_error();  // terminates!
 };
 
-/*
-class parser_error : public error_msg {
-    public:
-        parser_error(location& W, const char* text);
-};
-*/
 
 /*
  *  Let us use all of these messages on lhs of <<.
