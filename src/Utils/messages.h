@@ -11,20 +11,20 @@ class checklist_enum;
 class location;
 
 /**
- * Base class for named messages.
+ * Base class for switchable.
  * I.e., warning messages, reporting messages, debugging messages,
  * that may be switched on and off.
  *
 */
-class abstract_msg {
+class switchable_msg {
     friend class checklist_opt;
     const char* option_name;
-    const char* name;
     bool active;
 protected:
-    inline const char* getName() const { return name; }
+    // called by initialize().
+    virtual void setName(const char* n);
 public:
-    abstract_msg(const char* optname);
+    switchable_msg(const char* optname);
 
     /**
      *  Initialize checklist item for an option.
@@ -53,7 +53,7 @@ public:
 /*
  * Warning messages.  Default to "active".
  */
-class warning_msg : public abstract_msg {
+class warning_msg : public switchable_msg {
     public:
         static outputStream Out;
     public:
@@ -76,9 +76,24 @@ class warning_msg : public abstract_msg {
 };
 
 /*
+ * Named messages.
+ * The option name must be remembered.
+ */
+class named_msg : public switchable_msg {
+        const char* name;
+        static char prefix[256];
+    protected:
+        virtual void setName(const char* n);
+        const char* setPrefix(char x) const;
+        const char* getPrefix() const { return prefix; }
+    public:
+        named_msg(const char* optname);
+};
+
+/*
  * Reporting messages.  Default to "inactive".
  */
-class reporting_msg : public abstract_msg {
+class reporting_msg : public named_msg {
     public:
         static outputStream Out;
     public:
@@ -93,17 +108,15 @@ class reporting_msg : public abstract_msg {
 
         bool start() const;
 
-        static inline std::ostream& stream() { return Out.stream(); }
-        inline void newLine() const     {   Out.newLine(prefix);    }
-        static inline void stop()       {   stream() << std::endl;  }
-    private:
-        static char prefix[256];
+        static inline std::ostream& stream() { return Out.stream();     }
+        inline void newLine() const     {   Out.newLine(getPrefix());   }
+        static inline void stop()       {   stream() << std::endl;      }
 };
 
 /*
  * Debugging messages.  Default to "inactive".
  */
-class debugging_msg : public abstract_msg {
+class debugging_msg : public named_msg {
     public:
         static outputStream Out;
     public:
@@ -118,11 +131,9 @@ class debugging_msg : public abstract_msg {
 
         bool start() const;
 
-        static inline std::ostream& stream() { return Out.stream(); }
-        inline void newLine() const     {   Out.newLine(prefix);    }
-        static inline void stop()       {   stream() << std::endl;  }
-    private:
-        static char prefix[256];
+        static inline std::ostream& stream() { return Out.stream();     }
+        inline void newLine() const     {   Out.newLine(getPrefix());   }
+        static inline void stop()       {   stream() << std::endl;      }
 };
 
 

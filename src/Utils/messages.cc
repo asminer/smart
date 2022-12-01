@@ -11,23 +11,26 @@
 
 // #define DEBUG_FILE
 
-// io_environ* abstract_msg::io = 0;
+// io_environ* switchable_msg::io = 0;
 
 // ******************************************************************
-// *                      abstract_msg methods                      *
+// *                     switchable_msg methods                     *
 // ******************************************************************
 
-abstract_msg::abstract_msg(const char* optname)
+void switchable_msg::setName(const char* n)
 {
-    name = 0;
+    // some messages don't need the name
+}
+
+switchable_msg::switchable_msg(const char* optname)
+{
     option_name = optname;
 }
 
-bool abstract_msg::initialize(const option_manager* om, checklist_enum* grp,
-        const char* n, const char* doc)
+bool switchable_msg::initialize(const option_manager* om, checklist_enum* grp,
+        const char* name, const char* doc)
 {
-    DCASSERT(0==name);
-    name = n;
+    setName(name);
     if (0==om) return false;
     option* opt = om->FindOption(option_name);
     if (0==opt) return false;
@@ -40,7 +43,7 @@ bool abstract_msg::initialize(const option_manager* om, checklist_enum* grp,
 
 outputStream warning_msg::Out(std::cerr);
 
-warning_msg::warning_msg() : abstract_msg("Warning")
+warning_msg::warning_msg() : switchable_msg("Warning")
 {
     Activate();
 }
@@ -55,12 +58,42 @@ bool warning_msg::start(const location &L) const
 }
 
 // ******************************************************************
+// *                       named_msg  methods                       *
+// ******************************************************************
+
+void named_msg::setName(const char* n)
+{
+    DCASSERT(0==name);
+    name = n;
+}
+
+const char* named_msg::setPrefix(char x) const
+{
+    prefix[0] = 'x';
+    unsigned i;
+    for (i=0; i<250; i++) {
+        if (0 == name[i]) break;
+        prefix[i+1] = name[i];
+    }
+    prefix[i++] = ':';
+    prefix[i++] = ' ';
+    prefix[i++] = 0;
+    return prefix;
+}
+
+named_msg::named_msg(const char* optname) : switchable_msg(optname)
+{
+    name = 0;
+}
+
+
+// ******************************************************************
 // *                     reporting_msg  methods                     *
 // ******************************************************************
 
 outputStream reporting_msg::Out(std::cout);
 
-reporting_msg::reporting_msg() : abstract_msg("Report")
+reporting_msg::reporting_msg() : named_msg("Report")
 {
     Deactivate();
 }
@@ -68,19 +101,7 @@ reporting_msg::reporting_msg() : abstract_msg("Report")
 bool reporting_msg::start() const
 {
     if (!isActive()) return false;
-    // Build line prefix string
-    const char* n = getName();
-    prefix[0] = 'R';
-    unsigned i;
-    for (i=0; i<250; i++) {
-        if (0 == n[i]) break;
-        prefix[i+1] = n[i];
-    }
-    prefix[i++] = ':';
-    prefix[i++] = ' ';
-    prefix[i++] = 0;
-
-    Out << prefix;
+    Out << setPrefix('R');
     return true;
 }
 
@@ -92,7 +113,7 @@ bool reporting_msg::start() const
 
 outputStream debugging_msg::Out(std::cerr);
 
-debugging_msg::debugging_msg() : abstract_msg("Debug")
+debugging_msg::debugging_msg() : named_msg("Debug")
 {
     Deactivate();
 }
@@ -100,19 +121,7 @@ debugging_msg::debugging_msg() : abstract_msg("Debug")
 bool debugging_msg::start() const
 {
     if (!isActive()) return false;
-    // Build line prefix string
-    const char* n = getName();
-    prefix[0] = 'D';
-    unsigned i;
-    for (i=0; i<250; i++) {
-        if (0 == n[i]) break;
-        prefix[i+1] = n[i];
-    }
-    prefix[i++] = ':';
-    prefix[i++] = ' ';
-    prefix[i++] = 0;
-
-    Out << prefix;
+    Out << setPrefix('D');
     return true;
 }
 
