@@ -186,17 +186,13 @@ void optassign_val::Compute(traverse_data &td)
         break;
 
     case option::RangeError: {
-
-        if (em->startWarning()) {
-          em->causedBy(this);
-          em->warn() << "Value ";
-          DCASSERT(val->Type());
-          val->Type()->print(em->warn(), foo);
-          em->warn() << " out of range for option ";
-            opt->show(em->warn());
-            em->warn() << ", ignoring";
-          em->stopIO();
-        }
+        unnamed_warning W(Where());
+        W << "Value ";
+        DCASSERT(val->Type());
+        val->Type()->print(W.stream(), foo);
+        W << " out of range for option ";
+        opt->show(W.stream());
+        W << ", ignoring";
         break;
     }
 
@@ -246,12 +242,12 @@ optassign_id::~optassign_id()
 
 bool optassign_id::Print(std::ostream &s, int w) const
 {
-  s.Pad(' ', w);
-  opt->show(s);
-  s.Put(' ');
-  val->show(s);
-  s.Put("\n");
-  return true;
+    s << std::setw(w) << "";
+    opt->show(s);
+    s << ' ';
+    val->show(s);
+    s << '\n';
+    return true;
 }
 
 void optassign_id::Compute(traverse_data &td)
@@ -265,24 +261,20 @@ void optassign_id::Compute(traverse_data &td)
     case option::Success:
         break;
 
-    case option::RangeError:
-        if (em->startWarning()) {
-          em->causedBy(this);
-          em->warn() << "Illegal value ";
-          val->show(em->warn());
-          em->warn() << " for option ";
-          opt->show(em->warn());
-          em->warn() << ", ignoring";
-          em->stopIO();
-        }
+    case option::RangeError: {
+        unnamed_warning W(Where());
+        W << "Illegal value ";
+        val->show(W.stream());
+        W << " for option ";
+        opt->show(W.stream());
+        W << ", ignoring";
         break;
+    }
 
-    default:
-        if (em->startInternal(__FILE__, __LINE__)) {
-          em->causedBy(this);
-          em->internal() << "Unexpected error code for option assignment";
-          em->stopIO();
-        }
+    default: {
+        internal_error E(__FILE__, __LINE__, Where());
+        E << "Unexpected error code for option assignment";
+    }
   }
 }
 
