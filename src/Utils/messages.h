@@ -165,11 +165,26 @@ class error_msg {
         static inline void newLine()    {   Out.newLine();          }
 };
 
+/*
+ * Fatal, internal errors.
+ * Displays info to help developers debug.
+ */
 class internal_error : public error_msg {
     public:
         internal_error(const char* sfile, unsigned sline);
         internal_error(const char* sfile, unsigned sline, const location &cause);
         ~internal_error();  // terminates!
+};
+
+/*
+ * Like warning_msg, but not part of the Warning option.
+ * Long term: replace these instances with warning_msgs.
+ */
+class unnamed_warning : public error_msg {
+    public:
+        unnamed_warning();
+        unnamed_warning(const location &cause);
+        ~unnamed_warning();
 };
 
 

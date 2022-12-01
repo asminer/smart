@@ -171,3 +171,18 @@ internal_error::~internal_error()
     signal_manager::clean_exit(1);
 }
 
+// ******************************************************************
+// *                    unnamed_warning  methods                    *
+// ******************************************************************
+
+unnamed_warning::unnamed_warning() : error_msg("WARNING:")
+{
+    newLine();
+}
+
+unnamed_warning::unnamed_warning(const location &L) : error_msg("WARNING ")
+{
+    Out << L << ':';
+    newLine();
+}
+
