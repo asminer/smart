@@ -34,14 +34,13 @@ protected:
 
   void ShowAssignments(std::ostream &s) const;
   inline void DebugIteration(const char* msg) const {
-    if (!expr_debug.startReport())  return;
-    expr_debug.report() << msg;
+    if (!expr_debug.start())  return;
+    expr_debug << msg;
     for (int i=0; i<dimension; i++) {
-      if (i) expr_debug.report() << ", ";
-      index[i]->ShowAssignment(expr_debug.report());
+      if (i) expr_debug << ", ";
+      index[i]->ShowAssignment(expr_debug.stream());
     }
-    expr_debug.report() << "\n";
-    expr_debug.stopIO();
+    expr_debug.stop();
   }
 };
 
@@ -76,19 +75,18 @@ forstmt::~forstmt()
 
 bool forstmt::Print(std::ostream &s, int w) const
 {
-  s.Pad(' ', w);
-  s.Put("for (");
-  index[0]->PrintAll(s);
-  int d;
-  for (d=1; d<dimension; d++) {
-    s.Put(", ");
-    index[d]->PrintAll(s);
-  }
-  s.Put(") {\n");
-  block->Print(s, w+2);
-  s.Pad(' ', w);
-  s.Put("}\n");
-  return true;
+    s << std::setw(w) << "";
+    s << "for (";
+    index[0]->PrintAll(s);
+    for (int d=1; d<dimension; d++) {
+        s << ", ";
+        index[d]->PrintAll(s);
+    }
+    s << ") {\n";
+    block->Print(s, w+2);
+    s << std::setw(w) << "";
+    s << "}\n";
+    return true;
 }
 
 void forstmt::Compute(traverse_data &x)
@@ -171,11 +169,8 @@ symbol* exprman::makeIterator(const location &W,
   DCASSERT(!isDefault(vals));
 
   if (0==t->getSetOfThis()) {
-    if (startError()) {
-      causedBy(W);
-      cerr() << "Illegal type for iterator " << name;
-      stopIO();
-    }
+    typechecking_error E(W);
+    E << "Illegal type for iterator " << name;
     Delete(vals);
     free(name);
     return 0;
@@ -184,11 +179,8 @@ symbol* exprman::makeIterator(const location &W,
   symbol* s;
 
   if (0==vals) {
-    if (startWarning()) {
-      causedBy(W);
-      warn() << "Empty set for iterator " << name;
-      stopIO();
-    }
+    unnamed_warning E(W);
+    E << "Empty set for iterator " << name;
     s = new iterator(W, t, name, vals);
   } else {
 
@@ -197,15 +189,12 @@ symbol* exprman::makeIterator(const location &W,
 
     // Check that the set type matches the iterator.
     if (getPromoteDistance(vt, t->getSetOfThis()) < 0) {
-      if (startError()) {
-        causedBy(W);
-        cerr() << "Type mismatch: iterator " << name;
-        cerr() << " expects set of type " << t->getName();
-        stopIO();
-      }
-      Delete(vals);
-      free(name);
-      return 0;
+        typechecking_error E(W);
+        E << "Type mismatch: iterator " << name;
+        E << " expects set of type " << t->getName();
+        Delete(vals);
+        free(name);
+        return 0;
     }
     vals = makeTypecast(W, t->getSetOfThis(), vals);
     s = new iterator(W, t, name, vals);
