@@ -321,18 +321,16 @@ opt_checker::~opt_checker()
 
 bool opt_checker::Print(std::ostream &s, int w) const
 {
-  s.Pad(' ', w);
-  opt->show(s);
-  if (check)   s.Put('+');
-  else    s.Put('-');
-  s.Put(' ');
-  vals[0]->show(s);
-  for (int i=1; i<numvals; i++) {
-    s.Put(", ");
-    vals[i]->show(s);
-  }
-  s.Put("\n");
-  return true;
+    s << std::setw(w) << "";
+    opt->show(s);
+    s << (check ? "+ " : "- ");
+    vals[0]->show(s);
+    for (int i=1; i<numvals; i++) {
+        s << ", ";
+        vals[i]->show(s);
+    }
+    s << std::endl;
+    return true;
 }
 
 void opt_checker::Compute(traverse_data &td)
@@ -382,13 +380,10 @@ expr* exprman::makeOptionStatement(const location &W,
   const type* ot = Opt2Type(this, o->Type());
   if (0==ot) {
     // we have a selection-type option, trying to plug a value.
-    if (startError()) {
-      causedBy(W);
-      cerr() << "Option ";
-      o->show(cerr());
-      cerr() << " is a selction-type option";
-      stopIO();
-    }
+    typechecking_error E(W);
+    E << "Option ";
+    o->show(E.stream());
+    E << " is a selction-type option";
     Delete(e);
     return makeError();
   }
@@ -396,14 +391,11 @@ expr* exprman::makeOptionStatement(const location &W,
   const type* et = e->Type();
   DCASSERT(et);
   if (!isPromotable(et, ot)) {
-    if (startError()) {
-      causedBy(W);
-      cerr() << "Option ";
-      o->show(cerr());
-      cerr() << " expects type " << ot->getName();
-      stopIO();
-    }
-    return makeError();
+      typechecking_error E(W);
+      E << "Option ";
+      o->show(E.stream());
+      E << " expects type " << ot->getName();
+      return makeError();
   }
 
   e = promote(e, ot);
@@ -413,70 +405,62 @@ expr* exprman::makeOptionStatement(const location &W,
 expr* exprman::makeOptionStatement(const location &W,
         option *o, option_enum *v) const
 {
-  if (0==o || 0==v) {
-    return 0;
-  }
-
-  // check option type
-  if (option::RadioButton != o->Type()) {
-    if (startError()) {
-      causedBy(W);
-      cerr() << "Option ";
-      o->show(cerr());
-      cerr() << " is not a selection-type option";
-      stopIO();
+    if (0==o || 0==v) {
+        return 0;
     }
-    return makeError();
-  }
 
-  // check option constant
-  if (v != o->FindConstant(v->Name())) {
-    // We can only get here if the caller is foobar.
-    if (startError()) {
-      causedBy(W);
-      cerr() << "Option ";
-      o->show(cerr());
-      cerr() << " cannot be set to ";
-      v->show(cerr());
-      stopIO();
+    // check option type
+    if (option::RadioButton != o->Type()) {
+        typechecking_error E(W);
+        E << "Option ";
+        o->show(E.stream());
+        E << " is not a selection-type option";
+        return makeError();
     }
-    return makeError();
-  }
-  radio_button* rb = smart_cast <radio_button*> (v);
-  DCASSERT(rb);
 
-  return new optassign_id(W, o, rb);
+    // check option constant
+    if (v != o->FindConstant(v->Name())) {
+        // We can only get here if the caller is foobar.
+        typechecking_error E(W);
+        E << "Option ";
+        o->show(E.stream());
+        E << " cannot be set to ";
+        v->show(E.stream());
+        return makeError();
+    }
+
+    radio_button* rb = smart_cast <radio_button*> (v);
+    DCASSERT(rb);
+
+    return new optassign_id(W, o, rb);
 }
 
 expr* exprman::makeOptionStatement(const location &W,
       option* o, bool check, option_enum **vlist, int nv) const
 {
-  if (0==o) {
-    delete[] vlist;
-    return 0;
-  }
-  if (0==vlist)  return 0;
-
-  // check option type
-  if (option::Checklist != o->Type()) {
-    if (startError()) {
-      causedBy(W);
-      cerr() << "Option ";
-      o->show(cerr());
-      cerr() << " is not a checklist-type option";
-      stopIO();
+    if (0==o) {
+        delete[] vlist;
+        return 0;
     }
-    return makeError();
-  }
+    if (0==vlist)  return 0;
+
+    // check option type
+    if (option::Checklist != o->Type()) {
+        typechecking_error E(W);
+        E << "Option ";
+        o->show(E.stream());
+        E << " is not a checklist-type option";
+        return makeError();
+    }
 
 #ifdef DEVELOPMENT_CODE
-  for (int i=0; i<nv; i++) {
-    if (0==vlist[i])  continue;
-    checklist_enum* foo = dynamic_cast <checklist_enum*> (vlist[i]);
-    DCASSERT(foo);
-  }
+    for (int i=0; i<nv; i++) {
+        if (0==vlist[i])  continue;
+        checklist_enum* foo = dynamic_cast <checklist_enum*> (vlist[i]);
+        DCASSERT(foo);
+    }
 #endif
 
-  return new opt_checker(W, o, check, (checklist_enum**) vlist, nv);
+    return new opt_checker(W, o, check, (checklist_enum**) vlist, nv);
 }
 
