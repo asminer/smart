@@ -81,11 +81,10 @@ void converge_stmt::Compute(traverse_data &x)
     if (!x.wantsToRepeat()) break;
   }
 
-  if (0==iters) if (em->startWarning()) {
-    em->causedBy(this);
-    em->warn() << "converge statement terminating after ";
-    em->warn() << GetMaxIters() << " iterations";
-    em->stopIO();
+  if (0==iters) {
+    unnamed_warning E(Where());
+    E << "converge statement terminating after ";
+    E << GetMaxIters() << " iterations";
   }
   if (topmost)  {
     x.which = traverse_data::Affix;
@@ -109,12 +108,10 @@ void converge_stmt::Traverse(traverse_data &x)
 
 bool converge_stmt::Print(std::ostream &s, int w) const
 {
-  s.Pad(' ', w);
-  s.Put("converge {\n");
-  block->Print(s, w+2);
-  s.Pad(' ', w);
-  s.Put("}\n");
-  return true;
+    s << std::setw(w) << "" << "converge {\n";
+    block->Print(s, w+2);
+    s << std::setw(w) << "" << "}\n";
+    return true;
 }
 
 // ******************************************************************
@@ -272,12 +269,11 @@ void guess_stmt::Traverse(traverse_data &x)
 
 bool guess_stmt::Print(std::ostream &s, int w) const
 {
-  s.Pad(' ', w);
-  s << "real " << var->Name() << " guess ";
-  if (guess)  guess->Print(s, 0);
-  else        s << "null";
-  s << ";\n";
-  return true;
+    s << std::setw(w) << "" << "real " << var->Name() << " guess ";
+    if (guess)  guess->Print(s);
+    else        s << "null";
+    s << ";\n";
+    return true;
 }
 
 void guess_stmt::Guess(traverse_data &x)
@@ -288,11 +284,10 @@ void guess_stmt::Guess(traverse_data &x)
   SafeCompute(guess, x);
   x.answer = answer;
 
-  if (converge_debug.startReport()) {
-    converge_debug.report() << "Guessing " << var->Name() << " := ";
-    var->Type()->print(converge_debug.report(), var->current);
-    converge_debug.report() << "\n";
-    converge_debug.stopIO();
+  if (converge_debug.start()) {
+    converge_debug << "Guessing " << var->Name() << " := ";
+    var->Type()->print(converge_debug.stream(), var->current);
+    converge_debug.stop();
   }
 }
 
@@ -390,12 +385,11 @@ void assign_stmt::Traverse(traverse_data &x)
 
 bool assign_stmt::Print(std::ostream &s, int w) const
 {
-  s.Pad(' ', w);
-  s << "real " << var->Name() << " := ";
-  if (rhs)  rhs->Print(s, 0);
-  else      s << "null";
-  s << ";\n";
-  return true;
+    s << std::setw(w) << "" << "real " << var->Name() << " := ";
+    if (rhs)  rhs->Print(s);
+    else      s << "null";
+    s << ";\n";
+    return true;
 }
 
 void assign_stmt::Update()
@@ -407,11 +401,10 @@ void assign_stmt::Update()
   var->was_updated = true;
   var->was_computed = true;
 
-  if (converge_debug.startReport()) {
-    converge_debug.report() << "Updating " << var->Name() << " := ";
-    var->Type()->print(converge_debug.report(), var->current);
-    converge_debug.report() << "\n";
-    converge_debug.stopIO();
+  if (converge_debug.start()) {
+    converge_debug << "Updating " << var->Name() << " := ";
+    var->Type()->print(converge_debug.stream(), var->current);
+    converge_debug.stop();
   }
 }
 
@@ -486,13 +479,13 @@ void array_guess_stmt::Traverse(traverse_data &x)
 
 bool array_guess_stmt::Print(std::ostream &s, int w) const
 {
-  s.Pad(' ', w);
-  var->PrintHeader(s);
-  s << " guess ";
-  if (guess)  guess->Print(s, 0);
-  else        s << "null";
-  s << ";\n";
-  return true;
+    s << std::setw(w) << "";
+    var->PrintHeader(s);
+    s << " guess ";
+    if (guess)  guess->Print(s);
+    else        s << "null";
+    s << ";\n";
+    return true;
 }
 
 void array_guess_stmt::Guess(traverse_data &x)
@@ -512,11 +505,10 @@ void array_guess_stmt::Guess(traverse_data &x)
   SafeCompute(guess, x);
   x.answer = answer;
 
-  if (converge_debug.startReport()) {
-    converge_debug.report() << "Guessing " << ccv->Name() << " := ";
-    var->Type()->print(converge_debug.report(), ccv->current);
-    converge_debug.report() << "\n";
-    converge_debug.stopIO();
+  if (converge_debug.start()) {
+    converge_debug << "Guessing " << ccv->Name() << " := ";
+    var->Type()->print(converge_debug.stream(), ccv->current);
+    converge_debug.stop();
   }
 }
 
@@ -638,13 +630,13 @@ void array_assign_stmt::Traverse(traverse_data &x)
 
 bool array_assign_stmt::Print(std::ostream &s, int w) const
 {
-  s.Pad(' ', w);
-  var->PrintHeader(s);
-  s << " := ";
-  if (rhs)  rhs->Print(s, 0);
-  else      s << "null";
-  s << ";\n";
-  return true;
+    s << std::setw(w) << "";
+    var->PrintHeader(s);
+    s << " := ";
+    if (rhs)  rhs->Print(s);
+    else      s << "null";
+    s << ";\n";
+    return true;
 }
 
 void array_assign_stmt::Update(converge_var* var)
@@ -656,11 +648,10 @@ void array_assign_stmt::Update(converge_var* var)
   var->was_updated = true;
   var->was_computed = true;
 
-  if (converge_debug.startReport()) {
-    converge_debug.report() << "Updating " << var->Name() << " := ";
-    var->Type()->print(converge_debug.report(), var->current);
-    converge_debug.report() << "\n";
-    converge_debug.stopIO();
+  if (converge_debug.start()) {
+    converge_debug << "Updating " << var->Name() << " := ";
+    var->Type()->print(converge_debug.stream(), var->current);
+    converge_debug.stop();
   }
 }
 
@@ -673,16 +664,13 @@ void array_assign_stmt::Update(converge_var* var)
 
 symbol* exprman::makeCvgVar(const location &W, const type* t, char* name) const
 {
-  if (0==t || !t->matches("real")) {
-    if (startError()) {
-      causedBy(W);
-      cerr() << "Converge variable " << name << " must have type real";
-      stopIO();
+    if (0==t || !t->matches("real")) {
+        typechecking_error E(W);
+        E << "Converge variable " << name << " must have type real";
+        free(name);
+        return nullptr;
     }
-    free(name);
-    return 0;
-  }
-  return new converge_var(W, name);
+    return new converge_var(W, name);
 }
 
 
@@ -697,33 +685,29 @@ expr* exprman::makeConverge(const location &W, expr* stmt, bool top) const
 expr* MakeCvgThing(const exprman* em, const location &W,
       symbol* cvgvar, expr* rhs, bool guess)
 {
-  if (0==em || em->isError(rhs))  return 0;
-  converge_var* var = dynamic_cast <converge_var*> (cvgvar);
-  if (0==var) {
-    Delete(rhs);
-    return 0;
-  }
-  const type* gt = em->SafeType(rhs);
-  if (!em->isPromotable(gt, em->REAL)) {
-    if (em->startError()) {
-      em->causedBy(W);
-      em->cerr() << "Return type for identifier " << var->Name();
-      em->cerr() << " should be ";
-      var->PrintType(em->cerr());
-      em->stopIO();
+    if (nullptr==em || em->isError(rhs))  return nullptr;
+    converge_var* var = dynamic_cast <converge_var*> (cvgvar);
+    if (nullptr==var) {
+        Delete(rhs);
+        return nullptr;
     }
-    Delete(rhs);
-    return 0;
-  }
-  rhs = em->promote(rhs, em->REAL);
-  DCASSERT(! em->isError(rhs) );
-  if (guess) {
-    var->setGuessed();
-    return new guess_stmt(W, var, rhs);
-  } else {
-    var->setDefined();
-    return new assign_stmt(W, var, rhs);
-  }
+    const type* gt = em->SafeType(rhs);
+    if (!em->isPromotable(gt, em->REAL)) {
+        typechecking_error E(W);
+        E << "Return type for identifier " << var->Name() << " should be ";
+        var->PrintType(E.stream());
+        Delete(rhs);
+        return nullptr;
+    }
+    rhs = em->promote(rhs, em->REAL);
+    DCASSERT(! em->isError(rhs) );
+    if (guess) {
+        var->setGuessed();
+        return new guess_stmt(W, var, rhs);
+    } else {
+        var->setDefined();
+        return new assign_stmt(W, var, rhs);
+    }
 }
 
 
@@ -742,33 +726,29 @@ expr* exprman::makeCvgAssign(const location &W, symbol* cvgvar, expr* rhs) const
 expr* MakeArrayThing(const exprman* em, const location &W,
       symbol* a, expr* rhs, bool guess)
 {
-  if (0==em || em->isError(rhs))  return 0;
-  array* var = dynamic_cast <array*> (a);
-  if (0==var) {
-    Delete(rhs);
-    return 0;
-  }
-  const type* gt = em->SafeType(rhs);
-  if (!em->isPromotable(gt, em->REAL)) {
-    if (em->startError()) {
-      em->causedBy(W);
-      em->cerr() << "Return type for array " << var->Name();
-      em->cerr() << " should be ";
-      var->PrintType(em->cerr());
-      em->stopIO();
+    if (nullptr==em || em->isError(rhs))  return nullptr;
+    array* var = dynamic_cast <array*> (a);
+    if (nullptr==var) {
+        Delete(rhs);
+        return nullptr;
     }
-    Delete(rhs);
-    return 0;
-  }
-  rhs = em->promote(rhs, em->REAL);
-  DCASSERT(! em->isError(rhs) );
-  if (guess) {
-    var->setGuessed();
-    return new array_guess_stmt(W, var, rhs);
-  } else {
-    var->setDefined();
-    return new array_assign_stmt(W, var, rhs);
-  }
+    const type* gt = em->SafeType(rhs);
+    if (!em->isPromotable(gt, em->REAL)) {
+        typechecking_error E(W);
+        E << "Return type for array " << var->Name() << " should be ";
+        var->PrintType(E.stream());
+        Delete(rhs);
+        return nullptr;
+    }
+    rhs = em->promote(rhs, em->REAL);
+    DCASSERT(! em->isError(rhs) );
+    if (guess) {
+        var->setGuessed();
+        return new array_guess_stmt(W, var, rhs);
+    } else {
+        var->setDefined();
+        return new array_assign_stmt(W, var, rhs);
+    }
 }
 
 

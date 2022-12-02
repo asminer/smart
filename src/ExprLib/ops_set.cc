@@ -145,13 +145,13 @@ void int_ivlexpr::Compute(traverse_data &x)
 
 bool int_ivlexpr::Print(std::ostream &s, int) const
 {
-  s.Put('{');
+  s << '{';
   left->Print(s, 0);
-  s.Put("..");
+  s << "..";
   middle->Print(s, 0);
-  s.Put("..");
+  s << "..";
   right->Print(s, 0);
-  s.Put('}');
+  s << '}';
   return true;
 }
 
@@ -296,13 +296,13 @@ void real_ivlexpr::Compute(traverse_data &x)
 
 bool real_ivlexpr::Print(std::ostream &s, int) const
 {
-  s.Put('{');
-  left->Print(s, 0);
-  s.Put("..");
-  middle->Print(s, 0);
-  s.Put("..");
-  right->Print(s, 0);
-  s.Put('}');
+  s << '{';
+  left->Print(s);
+  s << "..";
+  middle->Print(s);
+  s << "..";
+  right->Print(s);
+  s << '}';
   return true;
 }
 

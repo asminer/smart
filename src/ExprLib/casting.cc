@@ -25,7 +25,7 @@ base_conv::~base_conv()
 
 specific_conv::specific_conv(bool c)
 {
-  is_cast = c;
+    is_cast = c;
 }
 
 // ******************************************************************
@@ -37,36 +37,36 @@ specific_conv::specific_conv(bool c)
 typecast::typecast(const location &W, const type* newt, expr* x)
  : unary(W, newt, x)
 {
-  silent = false;
+    silent = false;
 }
 
 bool typecast::Print(std::ostream &s, int) const
 {
-  DCASSERT(opnd);
+    DCASSERT(opnd);
 
-  bool printed = false;
-  if (!silent) {
-    DCASSERT(Type());
-    s.Put(Type()->getName());
-    s.Put('(');
-    printed = true;
-  }
+    bool printed = false;
+    if (!silent) {
+        DCASSERT(Type());
+        s << Type()->getName();
+        s << '(';
+        printed = true;
+    }
 
-  if (opnd->Print(s, 0))  printed = true;
+    if (opnd->Print(s, 0))  printed = true;
 
-  if (!silent) s.Put(')');
+    if (!silent) s << ')';
 
-  return printed;
+    return printed;
 }
 
 void typecast::Compute(traverse_data &x)
 {
-  DCASSERT(opnd);
-  opnd->Compute(x);
+    DCASSERT(opnd);
+    opnd->Compute(x);
 }
 
 expr* typecast::buildAnother(expr* x) const
 {
-  return new typecast(Where(), Type(), x);
+    return new typecast(Where(), Type(), x);
 }
 

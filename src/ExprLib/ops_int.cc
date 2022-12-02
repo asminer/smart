@@ -294,8 +294,7 @@ void int_add_op::expression::Compute(traverse_data &x)
       if (flip && flip[i])  sum->setInfinity(-sum->signInfinity());
       // check operand for opposite sign for infinity
       if ( (sum->signInfinity()>0) != (answer>0) ) {
-        inftyMinusInfty(operands[i]);
-        sum->setNull();
+        inftyMinusInfty(operands[i], sum);
         return;
       }
     } // infinity
@@ -438,8 +437,7 @@ void int_mult_op::expression::Compute(traverse_data &x)
       operands[i]->Compute(x);
       if (prod->isNormal() || prod->isInfinity()) {
         if (0==prod->getInt()) {
-          zeroTimesInfty(operands[i]); // 0 * infinity, error
-          prod->setNull();
+          zeroTimesInfty(operands[i], prod); // 0 * infinity, error
           return;
         } else {
           // infinity * nonzero, fix sign
@@ -468,8 +466,7 @@ void int_mult_op::expression::Compute(traverse_data &x)
 
       // check for infinity
       if (prod->isInfinity()) {
-        zeroTimesInfty(operands[i]);
-        prod->setNull();
+        zeroTimesInfty(operands[i], prod);
         return;
       }
       // some kind of error, short circuit.
@@ -606,8 +603,7 @@ void int_multdiv::Compute(traverse_data &x)
         }
         // we have a zero term
         if (flip[i]) {
-          divideByZero(operands[i]); // divide by zero, bail out
-          prod->setNull();
+          divideByZero(operands[i], prod); // divide by zero, bail out
           return;  // short circuit.
         }
         // multiply by zero.
@@ -657,8 +653,7 @@ void int_multdiv::Compute(traverse_data &x)
           continue;
          }
         // infinity * 0 or infinity / 0, error
-        inftyTimesZero(flip[i], operands[i]);
-        prod->setNull();
+        inftyTimesZero(flip[i], operands[i], prod);
         return;
       } // if prod->isNormal()
       if (prod->isInfinity()) {
@@ -668,8 +663,7 @@ void int_multdiv::Compute(traverse_data &x)
           continue;
         }
         // infinity / infinity, error
-        inftyDivInfty(operands[i]);
-        prod->setNull();
+        inftyDivInfty(operands[i], prod);
         return;  // short circuit.
       } // if foo.isInfinity()
       if (prod->isUnknown()) {
@@ -694,16 +688,14 @@ void int_multdiv::Compute(traverse_data &x)
       if (prod->isNormal()) {
         if (prod->getInt())  continue;
         if (flip[i]) {
-          divideByZero(operands[i]);
-          prod->setNull();
+          divideByZero(operands[i], prod);
           return;  // short circuit.
         }
         continue;
       } // if prod->isNormal
       if (prod->isInfinity()) {
         if (flip[i])  continue;  // 0 / infinity = 0.
-        zeroTimesInfty(operands[i]);
-        prod->setNull();
+        zeroTimesInfty(operands[i], prod);
         return;
       } // if prod->isInfinity()
       prod->setNull();
@@ -840,12 +832,8 @@ void int_mod::Compute(traverse_data &x)
       x.answer->setInt( l.getInt() % r.getInt() );
     } else {
       // mod 0 error
-      if (em->startError()) {
-        em->causedBy(this);
-        em->cerr() << "Illegal operation: modulo 0";
-        em->stopIO();
-      }
-      x.answer->setNull();
+      expr_error E(this, x.answer);
+      E << "Illegal operation: modulo 0";
     }
     return;
   }
@@ -858,12 +846,8 @@ void int_mod::Compute(traverse_data &x)
     return;
   }
   if (l.isInfinity() && r.isInfinity()) {
-    if (em->startError()) {
-      em->causedBy(this);
-      em->cerr() << "Illegal operation: infty % infty";
-      em->stopIO();
-    }
-    x.answer->setNull();
+    expr_error E(this, x.answer);
+    E << "Illegal operation: infty % infty";
     return;
   }
   if (l.isNormal() && r.isInfinity()) {
@@ -873,12 +857,8 @@ void int_mod::Compute(traverse_data &x)
   }
   if (l.isInfinity() && r.isNormal()) {
     // +- infty mod b is undefined
-    if (em->startError()) {
-      em->causedBy(this);
-      em->cerr() << "Illegal operation: infty mod " << r.getInt();
-      em->stopIO();
-    }
-    x.answer->setNull();
+    expr_error E(this, x.answer);
+    E << "Illegal operation: infty mod " << r.getInt();
     return;
   }
   // still here? must be an error.

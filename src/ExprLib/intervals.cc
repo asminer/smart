@@ -201,16 +201,16 @@ interval_object::~interval_object()
 
 bool interval_object::Print(std::ostream &s, int width) const
 {
-  DCASSERT(reals);
-  result x;
-  left.getAsResult(x);
-  if (left.contains()) s.Put('['); else s.Put('(');
-  reals->print(s, x, 0, -1);
-  s << ", ";
-  right.getAsResult(x);
-  reals->print(s, x, 0, -1);
-  if (right.contains()) s.Put(']'); else s.Put(')');
-  return true;
+    DCASSERT(reals);
+    result x;
+    left.getAsResult(x);
+    s << (left.contains() ? '[' : '(');
+    reals->print(s, x, 0, -1);
+    s << ", ";
+    right.getAsResult(x);
+    reals->print(s, x, 0, -1);
+    s << (right.contains() ? ']' : ')');
+    return true;
 }
 
 bool interval_object::Equals(const shared_object *o) const

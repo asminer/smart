@@ -98,11 +98,11 @@ void binary::Traverse(traverse_data &x)
 
 bool binary::Print(std::ostream &s, int) const
 {
-  s.Put('(');
+  s << '(';
   left->Print(s, 0);
-  s.Put(em->getOp(opcode));
+  s << em->getOp(opcode);
   right->Print(s, 0);
-  s.Put(')');
+  s << ')';
   return true;
 }
 

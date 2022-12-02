@@ -105,11 +105,10 @@ void void_seq::Compute(traverse_data &x)
   for (int i=0; i<opnd_count; i++) {
     if (x.stopExecution())  return; // an error occurred.
     DCASSERT(operands[i]);
-    if (expr_debug.startReport()) {
-      expr_debug.report() << "executing: ";
-      operands[i]->Print(expr_debug.report(), 0);
-      expr_debug.report() << "\n";
-      expr_debug.stopIO();
+    if (expr_debug.start()) {
+      expr_debug << "executing: ";
+      operands[i]->Print(expr_debug.stream());
+      expr_debug.stop();
     }
     operands[i]->Compute(x);
   } // for i
@@ -325,21 +324,18 @@ bool aggregates::Print(std::ostream &s, int) const
 {
   operands[0]->Print(s, 0);
   for (int i=1; i<opnd_count; i++) {
-    s.Put(':');
+    s << ':';
     if (operands[i])  operands[i]->Print(s, 0);
-    else              s.Put("null");
+    else              s << "null";
   }
   return true;
 }
 
 assoc* aggregates::buildAnother(expr **, int) const
 {
-  if (em->startInternal(__FILE__, __LINE__)) {
-    em->causedBy(this);
-    em->internal() << "call to aggregates::buildAnother";
-    em->stopIO();
-  }
-  return 0;
+    internal_error E(__FILE__, __LINE__, Where());
+    E << "call to aggregates::buildAnother";
+    return 0;
 }
 
 // ******************************************************************

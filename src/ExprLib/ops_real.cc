@@ -278,8 +278,7 @@ void real_add::Compute(traverse_data &x)
 
       // check operand for opposite sign for infinity
       if ( (sum->signInfinity()>0) != (answer>0) ) {
-        inftyMinusInfty(operands[i]);
-        sum->setNull();
+        inftyMinusInfty(operands[i], sum);
         return;
       }
     } // infinity
@@ -456,8 +455,7 @@ void real_mult::Compute(traverse_data &x)
         // we have a zero term
         if (flip && flip[i]) {
           // divide by zero, bail out
-          divideByZero(operands[i]);
-          prod->setNull();
+          divideByZero(operands[i], prod);
           return;  // short circuit.
         }
         // multiply by zero.
@@ -507,8 +505,7 @@ void real_mult::Compute(traverse_data &x)
           continue;
          }
         // infinity * 0 or infinity / 0, error
-        inftyTimesZero(flip && flip[i], operands[i]);
-        prod->setNull();
+        inftyTimesZero(flip && flip[i], operands[i], prod);
         return;
       } // if prod->isNormal()
       if (prod->isInfinity()) {
@@ -518,8 +515,7 @@ void real_mult::Compute(traverse_data &x)
           continue;
         }
         // infinity / infinity, error
-        inftyDivInfty(operands[i]);
-        prod->setNull();
+        inftyDivInfty(operands[i], prod);
         return;  // short circuit.
       } // if foo.isInfinity()
       if (prod->isUnknown()) {
@@ -544,16 +540,14 @@ void real_mult::Compute(traverse_data &x)
       if (prod->isNormal()) {
         if (prod->getReal())  continue;
         if (flip && flip[i]) {
-          divideByZero(operands[i]);
-          prod->setNull();
+          divideByZero(operands[i], prod);
           return;  // short circuit.
         }
         continue;
       } // if prod->isNormal
       if (prod->isInfinity()) {
         if (flip && flip[i])  continue;  // 0 / infinity = 0.
-        zeroTimesInfty(operands[i]);
-        prod->setNull();
+        zeroTimesInfty(operands[i], prod);
         return;
       } // if prod->isInfinity()
       prod->setNull();

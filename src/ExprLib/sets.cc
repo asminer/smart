@@ -303,13 +303,13 @@ long objset::IndexOf(const result &x) const
 
 bool objset::Print(std::ostream &s, int) const
 {
-  s.Put('{');
-  for (long i=0; i<Size(); i++) {
-    if (i) s.Put(", ");
-    item_type->print(s, values[i]);
-  }
-  s.Put('}');
-  return true;
+    s << '{';
+    for (long i=0; i<Size(); i++) {
+        if (i) s << ", ";
+        item_type->print(s, values[i]);
+    }
+    s << '}';
+    return true;
 }
 
 bool objset::Equals(const shared_object* o) const

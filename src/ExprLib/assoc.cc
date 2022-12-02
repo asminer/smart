@@ -236,14 +236,14 @@ void flipassoc::Traverse(traverse_data &x)
 
 bool flipassoc::Print(std::ostream &s, int) const
 {
-  s.Put('(');
+  s << '(';
   if (flip && flip[0]) s << em->getOp(true, opcode);
   operands[0]->Print(s, 0);
   for (int i=1; i<opnd_count; i++) {
     s << em->getOp(flip && flip[i], opcode);
     operands[i]->Print(s, 0);
   }
-  s.Put(')');
+  s << ')';
   return true;
 }
 
@@ -276,11 +276,9 @@ expr* flipassoc::MakeAnother(expr **newx, bool* newf, int newn)
 
 expr* flipassoc::buildAnother(expr** newx, int newn) const
 {
-  if (em->startInternal(__FILE__, __LINE__)) {
-    em->internal() << "Loss of flip information in associative operator";
-    em->stopIO();
-  }
-  return 0;
+    internal_error E(__FILE__, __LINE__);
+    E << "Loss of flip information in associative operator";
+    return nullptr;
 }
 
 // ******************************************************************
