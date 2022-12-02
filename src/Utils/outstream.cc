@@ -45,6 +45,7 @@ outputStream::outputStream(std::ostream &_deflt) : deflt(_deflt)
     clearIndent();
 
     comma = 0;
+    activate();
 }
 
 outputStream::~outputStream()

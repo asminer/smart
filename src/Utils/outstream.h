@@ -2,6 +2,8 @@
 #ifndef OUTSTREAM_H
 #define OUTSTREAM_H
 
+#include "../include/defines.h"
+
 #include <string>
 #include <iostream>
 #include <fstream>
@@ -50,7 +52,12 @@ class outputStream {
          */
         void defaultOutput();
 
+        inline void activate()          { active = true; }
+        inline void deactivate()        { active = false; }
+        inline bool isActive() const    { return active; }
+
         inline std::ostream& stream() {
+            DCASSERT(active);
             return (fout.is_open()) ? fout : deflt;
         }
 
@@ -107,6 +114,8 @@ class outputStream {
         unsigned realfmt;
         shared_string* comma;
 
+        bool active;
+
         void update_real_format();
         friend class rfwatch;
 };
@@ -114,7 +123,9 @@ class outputStream {
 template <class TYPE>
 inline outputStream& operator<< (outputStream &s, const TYPE &t)
 {
-    s.stream() << t;
+    if (s.isActive()) {
+        s.stream() << t;
+    }
     return s;
 }
 

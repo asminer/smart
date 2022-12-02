@@ -90,9 +90,9 @@ void model_def::SetDotFile(result& x)
 
 void model_def::BuildModel(traverse_data &x)
 {
-  if (model_debug.startReport()) {
-    model_debug.report() << "Building model " << Name() << "\n";
-    model_debug.stopIO();
+  if (model_debug.start()) {
+    model_debug << "Building model " << Name();
+    model_debug.stop();
   }
 
   // Build new instance
@@ -103,22 +103,12 @@ void model_def::BuildModel(traverse_data &x)
   stmt_block->Compute(x);
 
   // do we want to dump a dot file
-  FILE* foo = 0;
+  outputStream temp(std::cout);
+  bool ok = false;
   if (dotfile) {
-    // check if file exists
-    foo = fopen(dotfile->getStr(), "r");
-    if (foo) {
-      // file exists
-      fclose(foo);
-      foo = 0;
-    } else {
-      // create file
-      foo = fopen(dotfile->getStr(), "w");
-    }
+      ok = temp.switchOutput(dotfile->getStr());
   }
-  DisplayStream temp(foo);
-  if (0==foo) temp.Deactivate();
-  else        temp.Activate();
+  if (!ok) temp.deactivate();
 
   FinalizeModel(temp);
 
@@ -132,43 +122,26 @@ void model_def::BuildModel(traverse_data &x)
   stmt_block->Traverse(x);
   x.which = traverse_data::Compute;
 
-  if (model_debug.startReport()) {
-    model_debug.report() << "Finished with instantiation of model ";
-    model_debug.report() << Name() << "\n";
-    model_debug.stopIO();
+  if (model_debug.start()) {
+    model_debug << "Finished with instantiation of model " << Name();
+    model_debug.stop();
   }
 }
 
 bool model_def::StartWarning(const warning_msg &who, const expr* cause) const
 {
     if (cause) {
-        return who.startWarning(cause->Where());
+        return who.start(cause->Where());
     } else {
-        return who.startWarning(location::NOWHERE());
+        return who.start(location::NOWHERE());
     }
 }
 
-void model_def::DoneWarning() const
+void model_def::DoneWarning(const warning_msg &who) const
 {
-  DCASSERT(current);
-  em->newLine();
-  em->warn() << "within model " << Name() << " built " << current->Where();
-  em->stopIO();
-}
-
-bool model_def::StartError(const expr* cause) const
-{
-  if (!em->startError())  return false;
-  em->causedBy(cause);
-  return true;
-}
-
-void model_def::DoneError() const
-{
-  DCASSERT(current);
-  em->newLine();
-  em->cerr() << "within model " << Name() << " built " << current->Where();
-  em->stopIO();
+    DCASSERT(current);
+    who.newLine();
+    who << "within model " << Name() << " built " << current->Where();
 }
 
 bool model_def::isVariableOurs(const model_var* mv,
@@ -714,6 +687,30 @@ expr* exprman::makeMeasureCall(const location &W, model_def* m,
 
   m->PromoteParams(p, np);
   return new md_acall(W, m, p, np, slot, indexes, ni);
+}
+
+// ******************************************************************
+// *                     modeldef_error methods                     *
+// ******************************************************************
+
+modeldef_error::modeldef_error(const model_def* _mod, const expr* cause)
+    : expr_error(cause)
+{
+    model = _mod;
+    DCASSERT(model);
+    DCASSERT(model->current);
+}
+
+modeldef_error::~modeldef_error()
+{
+    DCASSERT(model);
+    DCASSERT(model->current);
+
+    newLine();
+    Out << "within model " << model->Name();
+    Out << " built " << model->current->Where();
+
+    // Do we need a newline, or will the base class handle that?
 }
 
 // ******************************************************************

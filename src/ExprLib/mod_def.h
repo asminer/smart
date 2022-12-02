@@ -129,16 +129,7 @@ public:
 
   /** Finish a warning message.
   */
-  void DoneWarning() const;
-
-  /** Start an error message.
-      Returns true on success.
-  */
-  bool StartError(const expr* cause) const;
-
-  /** Finish an error message.
-  */
-  void DoneError() const;
+  void DoneWarning(const warning_msg &who) const;
 
   /** Check that a state variable belongs to this model!
       If not, a warning message is displayed.
@@ -220,7 +211,7 @@ protected:
 
       @param  s  Stream to write the model to, as a dot file.
   */
-  virtual void FinalizeModel(std::ostream &s) = 0;
+  virtual void FinalizeModel(outputStream &s) = 0;
 
   /// Call this when Finalization is successful for a high-level model.
   void ConstructionSuccess(hldsm* cm) {
@@ -237,6 +228,22 @@ protected:
 private:
   bool SameParams() const;
   void SaveParams();
+
+
+  friend class modeldef_error;
+};
+
+// ******************************************************************
+// *                                                                *
+// *                   Model construction  errors                   *
+// *                                                                *
+// ******************************************************************
+
+class modeldef_error : public expr_error {
+        const model_def* model;
+    public:
+        modeldef_error(const model_def* _mod, const expr* cause);
+        ~modeldef_error();
 };
 
 // ******************************************************************
