@@ -59,7 +59,7 @@ public:
 
   inline bool WillSubstitute() const { return substitute_value; }
 
-  virtual bool Print(std::ostream &s, int width) const;
+  virtual bool Print(std::ostream &s, int width=0) const;
 
   virtual void Traverse(traverse_data &x);
 

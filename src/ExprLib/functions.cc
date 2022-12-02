@@ -57,7 +57,7 @@ public:
   virtual ~fcall();
   virtual void Compute(traverse_data &x);
   virtual void Traverse(traverse_data &x);
-  virtual bool Print(std::ostream &s, int) const;
+  virtual bool Print(std::ostream &s, int w=0) const;
 };
 
 // ******************************************************************
@@ -144,7 +144,7 @@ void fcall::Traverse(traverse_data &x)
 bool fcall::Print(std::ostream &s, int w) const
 {
   if (0==func->Name())  return false;  // hidden?
-  if (w>0)  s.Pad(' ', w);
+  if (w>0)  s << std::setw(w) << "";
   s << func->Name();
   if (numpass) {
     s << "(";
@@ -155,13 +155,13 @@ bool fcall::Print(std::ostream &s, int w) const
       if (pass[i]) {
         prev_written = pass[i]->Print(s, 0);
       } else {
-        s.Put("null");
+        s << "null";
         prev_written = true;
       }
     }
     s << ")";
   }
-  if (w>0)  s.Put(";\n");
+  if (w>0)  s << ";\n";
   return true;
 }
 
@@ -213,12 +213,9 @@ const model_def* function::DetermineModelType(expr** pass, int np)
 
 void function::Compute(traverse_data &x)
 {
-  if (em->startInternal(__FILE__, __LINE__)) {
-    em->causedBy(0);
-    em->internal() << "Trying to compute a function expression: ";
-    Print(em->internal(), 0);
-    em->stopIO();
-  }
+    internal_error E(__FILE__, __LINE__);
+    E << "Trying to compute a function expression: ";
+    Print(E.stream());
 }
 
 void function::Traverse(traverse_data &x)
@@ -258,9 +255,9 @@ void function::DocumentBehavior(doc_formatter &df) const
 void function::PrintDocs(doc_formatter &df, const char*) const
 {
   if (!DocumentHeader(df))  return;
-  df->begin_indent();
+  df.begin_indent();
   DocumentBehavior(df);
-  df->end_indent();
+  df.end_indent();
 }
 
 bool function::HeadersMatch(const type* t, symbol** pl, int np) const
@@ -328,8 +325,8 @@ named_param::~named_param()
 bool named_param::Print(std::ostream &s, int width) const
 {
   if (symbol::Print(s, 0)) {
-    s.Put(":=");
-    if (0==pass)  s.Put("null");
+    s << ":=";
+    if (0==pass)  s << "null";
     else          pass->Print(s, 0);
     return true;
   }
@@ -423,12 +420,12 @@ bool formal_param::PrintHeader(std::ostream &s, bool hide)
   if (0==Name())  return false;
   if (hidden && hide)  return false;
   PrintType(s);
-  s.Put(' ');
-  s.Put(Name());
+  s << ' ';
+  s << Name();
   if (hasdefault) {
-    s.Put(":=");
+    s << ":=";
     if (deflt)  deflt->Print(s, 0);
-    else  s.Put("null");
+    else  s << "null";
   }
   return true;
 }
@@ -1083,22 +1080,21 @@ internal_func::internal_func(const type* t, const char* name)
 
 bool internal_func::DocumentHeader(doc_formatter &df) const
 {
-  if (0==df)      return false;
-  if (0==Name())  return false;
+    if (0==Name())  return false;
 #ifndef DEVELOPMENT_CODE
-  if (hidden)     return false;
+    if (hidden)     return false;
 #endif
-  df->begin_heading();
-  PrintHeader(df->Out(), true);
-  if (hidden)  df->Out() << " (undocumented)";
-  df->end_heading();
-  return true;
+    df.begin_heading();
+    PrintHeader(df.Out(), true);
+    if (hidden)  df.Out() << " (undocumented)";
+    df.end_heading();
+    return true;
 }
 
 void internal_func::DocumentBehavior(doc_formatter &df) const
 {
-  if (docs) df->Out() << docs;
-  else      df->Out() << "no documentation";
+  if (docs) df.Out() << docs;
+  else      df.Out() << "no documentation";
 }
 
 // ******************************************************************
@@ -1172,18 +1168,16 @@ int simple_internal
 model_instance* simple_internal
  ::grabModelInstance(traverse_data &x, expr* first) const
 {
-  if (0==first)  return 0;
-  model_instance* mi = dynamic_cast <model_instance*> (first);
-  if (mi) {
-    if (mi->NotProperInstance(x.parent, Name()))  return 0;
-    return mi;
-  }
-  // still here?  someone plugged this function into something NOT a measure.
-  if (!em->startError())  return 0;
-  em->causedBy(x.parent);
-  em->cerr() << "Function " << Name() << " is allowed only in measures";
-  em->stopIO();
-  return 0;
+    if (0==first)  return 0;
+    model_instance* mi = dynamic_cast <model_instance*> (first);
+    if (mi) {
+        if (mi->NotProperInstance(x.parent, Name()))  return 0;
+        return mi;
+    }
+    // still here?  someone plugged this function into something NOT a measure.
+    typechecking_error E(x.parent);
+    E << "Function " << Name() << " is allowed only in measures";
+    return nullptr;
 }
 
 // ******************************************************************
@@ -1218,7 +1212,7 @@ custom_internal::custom_internal(const char* name, const char* h)
 void custom_internal::PrintHeader(std::ostream &s, bool hide) const
 {
   DCASSERT(header);
-  s.Put(header);
+  s << header;
 }
 
 bool custom_internal::IsHidden(int fpnum) const
@@ -1345,17 +1339,16 @@ bool user_func::HasNameConflict(symbol** fp, int np, int* tmp) const
 
 bool user_func::DocumentHeader(doc_formatter &df) const
 {
-  if (0==df)      return false;
-  if (0==Name())  return false;
-  df->begin_heading();
-  PrintHeader(df->Out(), 0);
-  df->end_heading();
-  return true;
+    if (0==Name())  return false;
+    df.begin_heading();
+    PrintHeader(df.Out(), false);
+    df.end_heading();
+    return true;
 }
 
 void user_func::DocumentBehavior(doc_formatter &df) const
 {
-  df->Out() << "Defined " << Where();
+  df.Out() << "Defined " << Where();
 }
 
 int user_func::maxNamedParams() const
@@ -1437,17 +1430,12 @@ void top_user_func::Compute(traverse_data &x, expr** pass, int np)
     return;
   }
 
-  // first... make sure there is enough room on the stack to save params
-  if (stack_top+np > stack_size) {
-    if (em->startError()) {
-      em->cerr() << " in function " << Name() << " called ";
-      em->causedBy(x.parent);
-      em->cerr() << "Stack overflow";
-      em->stopIO();
+    // first... make sure there is enough room on the stack to save params
+    if (stack_top+np > stack_size) {
+        expr_error E(x.parent, answer);
+        E << "Stack overflow in call to function " << Name();
+        return;
     }
-    answer->setNull();
-    return;
-  }
 
   // Compute the passed parameters.
   result* startpos = stack + stack_top;
@@ -1574,7 +1562,7 @@ symbol* wrapped_user_func::instantiate()
   link->Print(em->cout(), 0);
   em->cout() << " := ";
   if (rhs) rhs->Print(em->cout(), 0); else em->cout() << "null";
-  em->cout().Put('\n');
+  em->cout() << '\n';
 #endif
   return link;
 }
@@ -1612,11 +1600,11 @@ func_stmt::~func_stmt()
 
 bool func_stmt::Print(std::ostream &s, int w) const
 {
-  s.Pad(' ', w);
-  DCASSERT(wuf);
-  wuf->showAll(s);
-  s << ";\n";
-  return true;
+    s << std::setw(w) << "";
+    DCASSERT(wuf);
+    wuf->showAll(s);
+    s << ";\n";
+    return true;
 }
 
 void func_stmt::Compute(traverse_data &x)
@@ -1688,25 +1676,23 @@ expr* exprman::makeFunctionCall(const location &W,
         break;
 
     case function::Promote_MTMismatch:
+    {
         bail_out = true;
-        if (startError()) {
-          causedBy(W);
-          cerr() << "Model parameters in call to function " << f->Name();
-          cerr() << " must have the same parent";
-          stopIO();
-        }
+        typechecking_error E(W);
+        E << "Model parameters in call to function " << f->Name();
+        E << " must have the same parent";
         break;
+    }
 
     case function::Promote_Dependent:
-        if (startWarning()) {
-          causedBy(W);
-          warn() << "Function " << f->Name();
-          warn() << " requires independent parameters.";
-          newLine();
-          warn() << "Phase-type model will be incorrect.";
-          stopIO();
-        }
+    {
+        unnamed_warning E(W);
+        E << "Function " << f->Name();
+        E << " requires independent parameters.";
+        E.newLine();
+        E << "Phase-type model will be incorrect.";
         break;
+    }
 
     default:
         bail_out = true;
@@ -1754,11 +1740,8 @@ symbol* MakeFormalParam(const exprman* em, const location &W,
   // check return type for default
   const type* dt = em->SafeType(def);
   if (!em->isPromotable(dt, t)) {
-    if (em->startError()) {
-      em->causedBy(W);
-      em->cerr() << "default type does not match parameter " << name;
-      em->stopIO();
-    }
+    typechecking_error E(W);
+    E << "default type does not match parameter " << name;
     free(name);
     Delete(def);
     return 0;
@@ -1826,29 +1809,23 @@ void ResetUserFunctionParams(const exprman* em, const location &W,
   // check if f is already an internal function
   user_func* uf = dynamic_cast <user_func*> (f);
   if (0==uf) {
-    if (em->startError()) {
-      em->causedBy(W);
-      em->cerr() << "Function declaration conflicts with existing function:";
-      em->newLine();
-      f->PrintHeader(em->cerr(), true);
-      em->cerr() << " declared internally";
-      em->stopIO();
-    }
+    typechecking_error E(W);
+    E << "Function declaration conflicts with existing function:";
+    E.newLine();
+    f->PrintHeader(E.stream(), true);
+    E << " declared internally";
     for (int i=0; i<nfp; i++) Delete(formals[i]);
     delete[] formals;
     return;
   }
   // check if f is defined already
   if (uf->isDefined()) {
-    if (em->startError()) {
-      em->causedBy(W);
-      em->cerr() << "Function ";
-      f->PrintHeader(em->cerr(), true);
-      em->cerr() << " was already defined";
-      em->newLine();
-      uf->ShowWhereDefined(em->cerr());
-      em->stopIO();
-    }
+    typechecking_error E(W);
+    E << "Function ";
+    f->PrintHeader(E.stream(), true);
+    E << " was already defined";
+    E.newLine();
+    uf->ShowWhereDefined(E.stream());
     for (int i=0; i<nfp; i++) Delete(formals[i]);
     delete[] formals;
     return;
@@ -1884,13 +1861,9 @@ expr* DefineUserFunction(const exprman* em, const location &W,
   // check if return expression matches type of f
   const type* target = uf->Type();
   if (!em->isPromotable(rhs->Type(), target)) {
-    if (em->startError()) {
-      em->causedBy(W);
-      em->cerr() << "Return type for function " << uf->Name();
-      em->cerr() << " should be ";
-      uf->PrintType(em->cerr());
-      em->stopIO();
-    }
+    typechecking_error E(W);
+    E << "Return type for function " << uf->Name() << " should be ";
+    uf->PrintType(E.stream());
     Delete(rhs);
     uf->Invalidate();
     return 0;
