@@ -174,7 +174,7 @@ public:
 	virtual void SetNextState(traverse_data &x, shared_state* ns,
 			long rhs) const;
 	virtual void SetNextUnknown(traverse_data &x, shared_state* ns) const;
-	void printBoundsError(const result &x) const;
+	void printBoundsError(const error_msg &E, const result &x) const;
 protected:
 	void ownerError(traverse_data &x) const;
 	inline void boundsError(traverse_data &x, long badval) const {

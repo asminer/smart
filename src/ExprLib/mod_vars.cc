@@ -205,20 +205,19 @@ void model_statevar::ownerError(traverse_data &x) const {
 	DCASSERT(x.current_state);
 	const hldsm* hm = x.current_state->Parent();
 	DCASSERT(hm);DCASSERT(hm->GetParent() != getParent());
-	if (hm->StartError(x.parent)) {
-		em->cerr() << "state variable " << Name()
-				<< " belongs to another model";
-		hm->DoneError();
-	}DCASSERT(x.answer);
+    hldsm_error E(hm, x.parent);
+    E << "state variable " << Name() << " belongs to another model";
+    DCASSERT(x.answer);
 	x.answer->setNull();
 }
 
-void model_statevar::printBoundsError(const result &x) const {
-	em->cerr() << "state variable " << Name() << " assigned value ";
-	em->cerr() << x.getInt() << ",";
-	em->newLine();
-	em->cerr() << "which falls out of bounds ";
-	bounds->Print(em->cerr(), 0);
+void model_statevar::printBoundsError(const error_msg &E, const result &x) const
+{
+    E << "state variable " << Name()
+      << " assigned value " << x.getInt() << ",";
+    E.newLine();
+    E << "which falls out of bounds ";
+    bounds->Print(E.stream());
 }
 
 // ******************************************************************
@@ -575,7 +574,7 @@ model_var_stmt::~model_var_stmt() {
 }
 
 bool model_var_stmt::Print(std::ostream &s, int w) const {
-	s.Pad(' ', w);
+	s << std::setw(w) << "";
 	DCASSERT(names[0]);
 	const type* t = names[0]->Type();
 	DCASSERT(t);
@@ -605,10 +604,10 @@ void model_var_stmt::Compute(traverse_data &x) {
 	for (int i = 0; i < numvars; i++) {
 		model_var* z = parent->MakeModelVar(names[i], bset.getPtr());
 		names[i]->SetLink(z);
-		if (model_debug.startReport()) {
-			model_debug.report() << "model " << parent->Name();
-			model_debug.report() << " built symbol " << z->Name() << "\n";
-			model_debug.stopIO();
+		if (model_debug.start()) {
+			model_debug << "model " << parent->Name();
+			model_debug << " built symbol " << z->Name();
+			model_debug.stop();
 		}
 	}
 }
@@ -721,7 +720,7 @@ model_varray_stmt::~model_varray_stmt() {
 }
 
 bool model_varray_stmt::Print(std::ostream &s, int w) const {
-	s.Pad(' ', w);
+	s << std::setw(w) << "";
 	DCASSERT(vars[0]);
 	const type* t = vars[0]->Type();
 	DCASSERT(t);
@@ -743,10 +742,10 @@ void model_varray_stmt::Compute(traverse_data &x) {
 		array* inst = vars[i]->MakeLink(parent, -1);
 		model_var* z = parent->MakeModelVar(inst, 0);
 		inst->SetCurrentReturn(z, true);
-		if (model_debug.startReport()) {
-			model_debug.report() << "model " << parent->Name();
-			model_debug.report() << " built symbol " << z->Name() << "\n";
-			model_debug.stopIO();
+		if (model_debug.start()) {
+			model_debug << "model " << parent->Name();
+			model_debug << " built symbol " << z->Name();
+			model_debug.stop();
 		}
 	} // for i
 }
@@ -799,36 +798,33 @@ measure_assign::~measure_assign() {
 }
 
 bool measure_assign::Print(std::ostream &s, int w) const {
-	s.Pad(' ', w);
+    s << std::setw(w) << "";
 	wrapper->PrintType(s);
-	s.Put(' ');
+	s << ' ';
 	s << wrapper->Name() << " := ";
 	if (retval)
-		retval->Print(s, 0);
+		retval->Print(s);
 	else
 		s << "null";
 	s << ";\n";
 	return true;
 }
 
-void measure_assign::Compute(traverse_data &x) {
-	DCASSERT(x.which == traverse_data::Compute);DCASSERT(x.answer);DCASSERT(parent);
-	if (x.stopExecution())
-		return;
-	if (msr_slot < 0) {
-		msr_slot = parent->FindVisible(wrapper->Name());
-		if (msr_slot < 0) {
-			if (em->startInternal(__FILE__, __LINE__)) {
-				em->causedBy(this);
-				em->internal() << "Couldn't find slot for measure "
-						<< wrapper->Name();
-				if (parent->Name())
-					em->internal() << " in model " << parent->Name();
-				em->stopIO();
-			}
-			return;
-		}
-	}
+void measure_assign::Compute(traverse_data &x)
+{
+    DCASSERT(x.which == traverse_data::Compute);DCASSERT(x.answer);DCASSERT(parent);
+    if (x.stopExecution())
+        return;
+    if (msr_slot < 0) {
+        msr_slot = parent->FindVisible(wrapper->Name());
+        if (msr_slot < 0) {
+            internal_error E(__FILE__, __LINE__, Where());
+            E << "Couldn't find slot for measure " << wrapper->Name();
+            if (parent->Name())
+                E << " in model " << parent->Name();
+            return;
+            }
+    }
 	expr* rv = 0;
 	List<symbol> *dl = 0;
 	if (retval) {
@@ -844,10 +840,10 @@ void measure_assign::Compute(traverse_data &x) {
 
 	parent->AcceptExternalSymbol(msr_slot, m);
 	wrapper->SetLink(m);
-	if (model_debug.startReport()) {
-		model_debug.report() << "Model " << parent->Name();
-		model_debug.report() << " built measure " << m->Name() << "\n";
-		model_debug.stopIO();
+	if (model_debug.start()) {
+		model_debug << "Model " << parent->Name();
+		model_debug << " built measure " << m->Name() << "\n";
+		model_debug.stop();
 	}
 
 }
@@ -897,13 +893,13 @@ measure_array_assign::~measure_array_assign() {
 }
 
 bool measure_array_assign::Print(std::ostream &s, int w) const {
-	s.Pad(' ', w);
+	s << std::setw(w);
 	wrapper->PrintType(s);
-	s.Put(' ');
+	s << ' ';
 	wrapper->PrintHeader(s);
 	s << " := ";
 	if (retval)
-		retval->Print(s, 0);
+		retval->Print(s);
 	else
 		s << "null";
 	s << ";\n";
@@ -916,16 +912,10 @@ void measure_array_assign::Compute(traverse_data &x) {
 		return;
 	if (msr_slot < 0) {
 		msr_slot = parent->FindVisible(wrapper->Name());
-		if (msr_slot < 0) {
-			if (em->startInternal(__FILE__, __LINE__)) {
-				em->causedBy(this);
-				em->internal() << "Couldn't find slot for measure "
-						<< wrapper->Name();
-				em->internal() << " in model " << parent->Name();
-				em->stopIO();
-			}
-			return;
-		}
+        internal_error E(__FILE__, __LINE__, Where());
+        E << "Couldn't find slot for measure " << wrapper->Name();
+		E << " in model " << parent->Name();
+		return;
 	}
 
 	array* inst = wrapper->MakeLink(parent, msr_slot);
@@ -942,10 +932,10 @@ void measure_array_assign::Compute(traverse_data &x) {
 		m = em->makeConstant(wrapper, rv, dl);
 	}
 	inst->SetCurrentReturn(m, true);
-	if (model_debug.startReport()) {
-		model_debug.report() << "Model " << parent->Name();
-		model_debug.report() << " built measure " << m->Name() << "\n";
-		model_debug.stopIO();
+	if (model_debug.start()) {
+		model_debug << "Model " << parent->Name();
+		model_debug << " built measure " << m->Name() << "\n";
+		model_debug.stop();
 	}
 }
 
@@ -1956,12 +1946,9 @@ void vassign_op::Traverse(traverse_data &x) {
 		rhs->Traverse(x);
 		shared_object* d = x.answer->getPtr();
 		if (0 == d) {
-			em->startError();
-			em->causedBy(rhs);
-			em->cerr() << "Couldn't build DD for ";
-			rhs->Print(em->cerr(), 0);
-			em->stopIO();
-			x.answer->setNull();
+            expr_error E(rhs, x.answer);
+			E << "Couldn't build DD for ";
+			rhs->Print(E.stream());
 			return;
 		}
 		shared_object* vv = x.ddlib->makeEdge(0);
@@ -2042,14 +2029,9 @@ expr* exprman::makeModelVarDecs(const location &W, model_def* p,
 		const formalism* ft = smart_cast <const formalism*>(p->Type());
 		DCASSERT(ft);
 		if (!ft->canDeclareType(t)) {
-			if (startError()) {
-				causedBy(W);
-				cerr() << "Cannot declare a variable of type ";
-				cerr() << t->getName();
-				cerr() << " in formalism ";
-				cerr() << ft->getName();
-				stopIO();
-			}
+            typechecking_error E(W);
+            E << "Cannot declare a variable of type " << t->getName();
+			E << " in formalism " << ft->getName();
 			bailout = 1;
 		}
 	}
@@ -2092,14 +2074,9 @@ expr* exprman::makeModelArrayDecs(const location &W, model_def* p,
 		const formalism* ft = smart_cast <const formalism*>(p->Type());
 		DCASSERT(ft);
 		if (!ft->canDeclareType(t)) {
-			if (startError()) {
-				causedBy(W);
-				cerr() << "Cannot declare a variable of type ";
-				cerr() << t->getName();
-				cerr() << " in formalism ";
-				cerr() << ft->getName();
-				stopIO();
-			}
+            typechecking_error E(W);
+			E << "Cannot declare a variable of type " << t->getName();
+			E << " in formalism " << ft->getName();
 			bailout = 1;
 		}
 	}
@@ -2127,9 +2104,9 @@ expr* exprman::makeModelArrayDecs(const location &W, model_def* p,
 expr* exprman::makeModelMeasureAssign(const location &W, model_def* p,
 		symbol* m, expr* rhs) const {
 	model_symbol* w = dynamic_cast<model_symbol*>(m);
-	if (0 == w || 0 == p || isError(rhs)) {
+	if (nullptr == w || nullptr == p || isError(rhs)) {
 		Delete(rhs);
-		return 0;
+		return nullptr;
 	}
 
 	const type* rhstype = SafeType(rhs);
@@ -2138,27 +2115,17 @@ expr* exprman::makeModelMeasureAssign(const location &W, model_def* p,
 	DCASSERT(ft);
 
 	if (!ft->isLegalMeasureType(t)) {
-		if (startError()) {
-			causedBy(W);
-			cerr() << "Cannot declare a measure of type ";
-			cerr() << t->getName();
-			cerr() << " in formalism ";
-			cerr() << ft->getName();
-			stopIO();
-		}
-		return 0;
+        typechecking_error E(W);
+        E << "Cannot declare a measure of type " << t->getName();
+		E << " in formalism " << ft->getName();
+		return nullptr;
 	}
 
 	if (!isPromotable(rhstype, t)) {
-		if (startError()) {
-			causedBy(W);
-			cerr() << "Return type for measure ";
-			cerr() << w->Name();
-			cerr() << " should be ";
-			cerr() << t->getName();
-			stopIO();
-		}
-		return 0;
+        typechecking_error E(W);
+        E << "Return type for measure " << w->Name();
+		E << " should be " << t->getName();
+		return nullptr;
 	}
 	rhs = promote(rhs, t);
 	DCASSERT(! isError(rhs) );
@@ -2168,9 +2135,9 @@ expr* exprman::makeModelMeasureAssign(const location &W, model_def* p,
 expr* exprman::makeModelMeasureArray(const location &W, model_def* p,
 		symbol* am, expr* rhs) const {
 	model_array* w = dynamic_cast<model_array*>(am);
-	if (0 == w || 0 == p || isError(rhs)) {
+	if (nullptr == w || nullptr == p || isError(rhs)) {
 		Delete(rhs);
-		return 0;
+		return nullptr;
 	}
 
 	const type* rhstype = SafeType(rhs);
@@ -2179,27 +2146,17 @@ expr* exprman::makeModelMeasureArray(const location &W, model_def* p,
 	DCASSERT(ft);
 
 	if (!ft->isLegalMeasureType(t)) {
-		if (startError()) {
-			causedBy(W);
-			cerr() << "Cannot declare a measure of type ";
-			cerr() << t->getName();
-			cerr() << " in formalism ";
-			cerr() << ft->getName();
-			stopIO();
-		}
-		return 0;
+        typechecking_error E(W);
+        E << "Cannot declare a measure of type " << t->getName();
+		E << " in formalism " << ft->getName();
+		return nullptr;
 	}
 
 	if (!isPromotable(rhstype, t)) {
-		if (startError()) {
-			causedBy(W);
-			cerr() << "Return type for measure ";
-			cerr() << w->Name();
-			cerr() << " should be ";
-			cerr() << t->getName();
-			stopIO();
-		}
-		return 0;
+        typechecking_error E(W);
+        E << "Return type for measure " << w->Name();
+		E << " should be " << t->getName();
+		return nullptr;
 	}
 	rhs = promote(rhs, t);
 	DCASSERT(! isError(rhs) );

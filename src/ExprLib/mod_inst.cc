@@ -135,24 +135,23 @@ bool hldsm::Equals(const shared_object* ptr) const
 bool hldsm::StartWarning(const warning_msg &who, const expr* cause) const
 {
     if (cause) {
-        return who.startWarning(cause->Where());
+        return who.start(cause->Where());
     } else {
-        return who.startWarning(location::NOWHERE());
+        return who.start(location::NOWHERE());
     }
 }
 
-void hldsm::DoneWarning() const
+void hldsm::DoneWarning(const warning_msg &who) const
 {
-  em->newLine();
-  em->warn() << "within model ";
-  if (Name()) em->warn() << Name();
-  else        em->warn() << "(no name)";
-  if (parent) {
-    em->warn() << " instantiated " << parent->Where();
-  }
-  em->stopIO();
+    who.newLine();
+    who << "within model " << ( Name() ? Name() : "(no name)" );
+    if (parent) {
+        who << " instantiated " << parent->Where();
+    }
+    who.stop();
 }
 
+/*
 bool hldsm::StartError(const expr* cause) const
 {
   if (!em->startError())  return false;
@@ -194,14 +193,13 @@ void hldsm::DoneError() const
   em->stopIO();
 }
 
+*/
+
 void hldsm::bailOut(const char* sfile, unsigned sline, const char* why) const
 {
-  if (em->startInternal(sfile, sline)) {
-    em->causedBy(0);
-    em->internal() << why << " for high level model ";
-    if (parent) em->internal() << parent->Name();
-    em->stopIO();
-  }
+    internal_error E(sfile, sline);
+    E << why << " for high level model ";
+    if (parent) E << parent->Name();
 }
 
 // ******************************************************************
@@ -300,6 +298,32 @@ void hldsm::partinfo::sort(model_statevar** vars)
   printf("]\n");
 #endif
 
+}
+
+
+// ******************************************************************
+// *                       hldsm_error methods                      *
+// ******************************************************************
+
+hldsm_error::hldsm_error(const model_def* _mod, const expr* cause)
+    : expr_error(cause)
+{
+    model = _mod;
+    DCASSERT(model);
+}
+
+hldsm_error::~hldsm_error()
+{
+    DCASSERT(model);
+
+    newLine();
+    Out << "within model " << ( model->Name() ? model->Name() : "(no name)" );
+
+    if (model->GetParent()) {
+        Out << " instantiated " << model->GetParent()->Where();
+    }
+
+    // Do we need a newline, or will the base class handle that?
 }
 
 

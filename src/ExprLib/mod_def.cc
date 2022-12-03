@@ -142,6 +142,7 @@ void model_def::DoneWarning(const warning_msg &who) const
     DCASSERT(current);
     who.newLine();
     who << "within model " << Name() << " built " << current->Where();
+    who.stop();
 }
 
 bool model_def::isVariableOurs(const model_var* mv,
@@ -153,10 +154,10 @@ bool model_def::isVariableOurs(const model_var* mv,
   if (StartWarning(not_our_var, cause)) {
     const type* mvt = mv->Type();
     DCASSERT(mvt);
-    em->warn() << mvt->getName() << " " << mv->Name();
-    em->warn() << " is from another model";
-    if (what) em->warn() << ", " << what;
-    DoneWarning();
+    not_our_var << mvt->getName() << " " << mv->Name();
+    not_our_var << " is from another model";
+    if (what) not_our_var << ", " << what;
+    DoneWarning(not_our_var);
   }
   return false;
 }
@@ -609,30 +610,22 @@ expr* exprman::makeMeasureCall(const location &W, model_def* m,
 
   int slot = m->FindVisible(msr_name);
   if (slot < 0) {
-    if (startError()) {
-      causedBy(W);
-      cerr() << "Measure " << msr_name;
-      cerr() << " does not exist in model ";
-      if (m->Name()) cerr() << m->Name();
-      stopIO();
-    }
-    TrashPass(p, np);
-    return makeError();
+      typechecking_error E(W);
+      E << "Measure " << msr_name << " does not exist in model ";
+      if (m->Name()) E << m->Name();
+      TrashPass(p, np);
+      return makeError();
   }
 
   const symbol* msr = m->GetSymbol(slot);
   DCASSERT(msr);
   const array* foo = dynamic_cast <const array*> (msr);
   if (foo) {
-    if (startError()) {
-      causedBy(W);
-      cerr() << "Measure " << msr->Name();
-      cerr() << " within model " << m->Name();
-      cerr() << " is an array";
-      stopIO();
-    }
-    TrashPass(p, np);
-    return makeError();
+      typechecking_error E(W);
+      E << "Measure " << msr->Name() << " within model ";
+      E << m->Name() << " is an array";
+      TrashPass(p, np);
+      return makeError();
   }
 
   m->PromoteParams(p, np);
@@ -652,31 +645,24 @@ expr* exprman::makeMeasureCall(const location &W, model_def* m,
 
   int slot = m->FindVisible(msr_name);
   if (slot < 0) {
-    if (startError()) {
-      causedBy(W);
-      cerr() << "Measure " << msr_name;
-      cerr() << " does not exist in model " << m->Name();
-      stopIO();
-    }
-    TrashPass(p, np);
-    TrashPass(indexes, ni);
-    return makeError();
+      typechecking_error E(W);
+      E << "Measure " << msr_name;
+      E << " does not exist in model " << m->Name();
+      TrashPass(p, np);
+      TrashPass(indexes, ni);
+      return makeError();
   }
 
   const symbol* foo = m->GetSymbol(slot);
   DCASSERT(foo);
   const array* msr = dynamic_cast <const array*> (foo);
   if (!msr) {
-    if (startError()) {
-      causedBy(W);
-      cerr() << "Measure " << foo->Name();
-      cerr() << " within model " << m->Name();
-      cerr() << " is not an array";
-      stopIO();
-    }
-    TrashPass(p, np);
-    TrashPass(indexes, ni);
-    return makeError();
+      typechecking_error E(W);
+      E << "Measure " << foo->Name() << " within model ";
+      E << m->Name() << " is not an array";
+      TrashPass(p, np);
+      TrashPass(indexes, ni);
+      return makeError();
   }
 
   if (!msr->checkArrayCall(W, indexes, ni)) {

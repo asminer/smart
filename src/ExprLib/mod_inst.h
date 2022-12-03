@@ -280,28 +280,28 @@ public:
 
   /** Finish a warning message.
   */
-  void DoneWarning() const;
+  void DoneWarning(const warning_msg &who) const;
 
   /** Start an error message.
       Returns true on success.
   */
-  bool StartError(const expr* cause) const;
+  // bool StartError(const expr* cause) const;
 
   /// Print an out of bounds error message, if appropriate.
-  void OutOfBoundsError(const result &x) const;
+  // void OutOfBoundsError(const result &x) const;
 
   /// Send a simple error string
-  void SendError(const char* s) const;
+  // void SendError(const char* s) const;
 
   /// Send an error value
-  void SendRealError(const result &x) const;
+  // void SendRealError(const result &x) const;
 
   /** Finish an error message.
   */
-  void DoneError() const;
+  // void DoneError() const;
 
   /// For debugging messages
-  static const exprman* getEM() { return em; }
+  // static const exprman* getEM() { return em; }
 
   /** Re-index the state variables.
       This is necessary for model hierarchies.
@@ -323,6 +323,24 @@ protected:
   /// Start an appopriate internal error message.
   void bailOut(const char* sfile, unsigned sline, const char* why) const;
 };
+
+// ******************************************************************
+// *                                                                *
+// *                    high level model  errors                    *
+// *                                                                *
+// ******************************************************************
+
+/*
+ * Error messages within high level models.
+ */
+class hldsm_error : public expr_error {
+        const hldsm* model;
+    public:
+        hldsm_error(const hldsm* _mod, const expr* cause);
+        ~hldsm_error();
+};
+
+
 
 // ******************************************************************
 // *                                                                *
