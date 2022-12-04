@@ -227,7 +227,7 @@ public:
   /// Returns true if v already had assignment in this event.
   bool setAssignment(assign_entry* &tmp, expr* rhs);
 
-  void Finalize(std::ostream &ds);
+  void Finalize(outputStream &ds);
 };
 
 // **************************************************************************
@@ -282,7 +282,7 @@ bool evm_event::setAssignment(assign_entry* &tmp, expr* rhs)
   return false;
 }
 
-void evm_event::Finalize(std::ostream &ds)
+void evm_event::Finalize(outputStream &ds)
 {
   // First, traverse "guards" to build enabling expression
   int ng;
@@ -407,11 +407,10 @@ void evm_hlm::showState(std::ostream &s, const shared_state* st) const
           continue;
 
       default:
-          if (em->startInternal(__FILE__, __LINE__)) {
-            em->causedBy(0);
-            em->internal() << "Unknown state style " << (unsigned long) StateStyle;
-            em->stopIO();
-          }
+      {
+          internal_error E(__FILE__, __LINE__);
+          E << "Unknown state style " << (unsigned long) StateStyle;
+      }
     } // switch
   } // for i
 
@@ -489,7 +488,7 @@ public:
 
 protected:
   virtual void InitModel();
-  virtual void FinalizeModel(std::ostream &ds);
+  virtual void FinalizeModel(outputStream &ds);
 };
 
 assign_entry* evm_def::tmp_arc = 0;
@@ -526,11 +525,10 @@ model_var* evm_def::MakeModelVar(const symbol* wrap, shared_object* bnds)
   DCASSERT(wrap);
   DCASSERT(0==bnds);
 
-  if (evm_debug.startReport()) {
-    evm_debug.report() << "adding ";
-    evm_debug.report() << wrap->Type()->getName();
-    evm_debug.report() << " " << wrap->Name() << "\n";
-    evm_debug.stopIO();
+  if (evm_debug.start()) {
+    evm_debug << "adding " << wrap->Type()->getName();
+    evm_debug << ' ' << wrap->Name();
+    evm_debug.stop();
   }
 
   if (wrap->Type() == intvar_type) {
@@ -571,19 +569,19 @@ void evm_def::AddRange(const expr* call, shared_set* vset, shared_set* range)
 
     if (pl->HasBounds()) {
       if (StartWarning(dup_range, call)) {
-        em->warn() << "Duplicate range for variable " << pl->Name();
-        em->warn() << ", ignoring";
-        DoneWarning();
+        dup_range << "Duplicate range for variable " << pl->Name();
+        dup_range << ", ignoring";
+        DoneWarning(dup_range);
       }
       continue;
     }
 
-    if (evm_debug.startReport()) {
-      evm_debug.report() << "setting range ";
-      range->Print(evm_debug.report(), 0);
-      evm_debug.report() << " for variable ";
-      evm_debug.report() << pl->Name() << "\n";
-      evm_debug.stopIO();
+    if (evm_debug.start()) {
+      evm_debug << "setting range ";
+      range->Print(evm_debug.stream());
+      evm_debug << " for variable ";
+      evm_debug << pl->Name() << "\n";
+      evm_debug.stop();
     }
 
     pl->SetBounds(Share(range));
@@ -597,12 +595,11 @@ void evm_def::AddEnabling(const expr* call, evm_event* t, expr* guard)
   DCASSERT(guard);
   if (!isVariableOurs(t, call, "ignoring enabling")) return;
 
-  if (evm_debug.startReport()) {
-    evm_debug.report() << "adding enabling condition for ";
-    evm_debug.report() << t->Name() << ": ";
-    guard->Print(evm_debug.report(), 0);
-    evm_debug.report().Put('\n');
-    evm_debug.stopIO();
+  if (evm_debug.start()) {
+    evm_debug << "adding enabling condition for ";
+    evm_debug << t->Name() << ": ";
+    guard->Print(evm_debug.stream());
+    evm_debug.stop();
   }
 
   t->addEnabling(guard);
@@ -619,23 +616,22 @@ void evm_def
   if (!isVariableOurs(v, call, "ignoring assignment")) return;
   if (!isVariableOurs(t, call, "ignoring assignment")) return;
 
-  if (evm_debug.startReport()) {
-    evm_debug.report() << "adding assignment for event ";
-    evm_debug.report() << t->Name() << ":   ";
-    evm_debug.report() << v->Name() << " <- ";
-    rhs->Print(evm_debug.report(), 0);
-    evm_debug.report().Put('\n');
-    evm_debug.stopIO();
+  if (evm_debug.start()) {
+    evm_debug << "adding assignment for event ";
+    evm_debug << t->Name() << ":   ";
+    evm_debug << v->Name() << " <- ";
+    rhs->Print(evm_debug.stream());
+    evm_debug.stop();
   }
 
   if (0==tmp_arc) tmp_arc = new assign_entry;
   tmp_arc->setLHS(v);
   if (t->setAssignment(tmp_arc, rhs)) {
       if (StartWarning(dup_assign, call)) {
-        em->warn() << "Duplicate assignment for " << v->Name();
-        em->warn() << " in event ";
-        em->warn() << t->Name() << ", ignoring";
-        DoneWarning();
+        dup_assign << "Duplicate assignment for " << v->Name();
+        dup_assign << " in event ";
+        dup_assign << t->Name() << ", ignoring";
+        DoneWarning(dup_assign);
       }
   }
 }
@@ -645,10 +641,10 @@ void evm_def::AddInit(const expr* call, model_var* v, long initval)
   DCASSERT(v);
   if (!isVariableOurs(v, call, "ignoring init")) return;
 
-  if (evm_debug.startReport()) {
-    evm_debug.report() << "setting initial value for ";
-    evm_debug.report() << v->Name() << " : " << initval << "\n";
-    evm_debug.stopIO();
+  if (evm_debug.start()) {
+    evm_debug << "setting initial value for ";
+    evm_debug << v->Name() << " : " << initval << "\n";
+    evm_debug.stop();
   }
 
   evm_intvar* iv = smart_cast <evm_intvar*> (v);
@@ -656,9 +652,9 @@ void evm_def::AddInit(const expr* call, model_var* v, long initval)
 
   if (iv->hasInit()) {
     if (StartWarning(dup_init, call)) {
-        em->warn() << "Duplicate initial value for " << v->Name();
-        em->warn() << ", ignoring";
-        DoneWarning();
+        dup_init << "Duplicate initial value for " << v->Name();
+        dup_init << ", ignoring";
+        DoneWarning(dup_init);
     }
     return;
   }
@@ -672,15 +668,15 @@ void evm_def::HideEvent(const expr* call, evm_event* t)
 
   if (!isVariableOurs(t, call, "ignoring hide")) return;
 
-  if (evm_debug.startReport()) {
-    evm_debug.report() << "hiding event " << t->Name() << "\n";
-    evm_debug.stopIO();
+  if (evm_debug.start()) {
+    evm_debug << "hiding event " << t->Name();
+    evm_debug.stop();
   }
 
   if (!t->hasFiringType(model_event::Unknown)) {
     if (StartWarning(dup_hide, call)) {
-      em->warn() << "Event " << t->Name() << " already designated, ignoring hide";
-      DoneWarning();
+      dup_hide << "Event " << t->Name() << " already designated, ignoring hide";
+      DoneWarning(dup_hide);
     }
     return;
   }
@@ -695,11 +691,10 @@ void evm_def::AddAssertion(expr* a)
   expr* mya = a->Substitute(0);
   mya->PreCompute();
 
-  if (evm_debug.startReport()) {
-    evm_debug.report() << "adding assertion ";
-    mya->Print(evm_debug.report(), 0);
-    evm_debug.report().Put('\n');
-    evm_debug.stopIO();
+  if (evm_debug.start()) {
+    evm_debug << "adding assertion ";
+    mya->Print(evm_debug.stream());
+    evm_debug.stop();
   }
 
   assertion_list->Append(mya);
@@ -714,15 +709,15 @@ void evm_def::InitModel()
   assertion_list = new List <expr>;
 }
 
-void evm_def::FinalizeModel(std::ostream &ds)
+void evm_def::FinalizeModel(outputStream &ds)
 {
   // Put state vars into an array
   model_statevar** svs;
   if (0==num_vars) {
     svs = 0;
-    if (StartWarning(no_vars, 0)) {
-      em->warn() << "No variables defined";
-      DoneWarning();
+    if (StartWarning(no_vars)) {
+      no_vars << "No variables defined";
+      DoneWarning(no_vars);
     }
   }  else {
     svs = new model_statevar*[num_vars];
@@ -750,9 +745,9 @@ void evm_def::FinalizeModel(std::ostream &ds)
   model_event** elist;
   if (0==num_events) {
     elist = 0;
-    if (StartWarning(no_event, 0)) {
-      em->warn() << "No events defined";
-      DoneWarning();
+    if (StartWarning(no_event)) {
+      no_event << "No events defined";
+      DoneWarning(no_event);
     }
   } else {
     elist = new model_event*[num_events];
@@ -933,9 +928,8 @@ void evm_range::Compute(traverse_data &x, expr** pass, int np)
     x.aggregate = 1;
     SafeCompute(pass[i], x);
     if (! second.isNormal() ) {
-      mdl->StartError(pass[i]);
-      em->cerr() << "Bad integer set for range, ignoring";
-      mdl->DoneError();
+      model_def::mdl_errmsg E(mdl, pass[i]);
+      E << "Bad integer set for range, ignoring";
       continue;
     }
     shared_set* rs = smart_cast<shared_set*>(second.getPtr());
@@ -1116,9 +1110,8 @@ void evm_init::Compute(traverse_data &x, expr** pass, int np)
     x.aggregate = 1;
     SafeCompute(pass[i], x);
     if (! second.isNormal() ) {
-      mdl->StartError(pass[i]);
-      em->cerr() << "Bad integer for init, ignoring";
-      mdl->DoneError();
+      model_def::mdl_errmsg E(mdl, pass[i]);
+      E << "Bad integer for init, ignoring";
       continue;
     }
 
@@ -1277,11 +1270,8 @@ bool init_evmform::execute()
 
   formalism* evm = new evm_formalism("evm", "Event & Variable Model", longdocs);
   if (!em->registerType(evm)) {
-    if (em->startInternal(__FILE__, __LINE__)) {
-      em->causedBy(0);
-      em->internal() << "Couldn't register evm type";
-      em->stopIO();
-    }
+    internal_error E(__FILE__, __LINE__);
+    E << "Couldn't register evm type";
     return false;
   }
 

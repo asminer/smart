@@ -90,7 +90,7 @@ public:
   inline bool isDiscrete() const { return discrete; }
 protected:
   virtual void InitModel();
-  virtual void FinalizeModel(std::ostream &ds);
+  virtual void FinalizeModel(outputStream &ds);
 
 };
 
@@ -131,10 +131,8 @@ model_var* markov_def::MakeModelVar(const symbol* wrap, shared_object* bnds)
     mymc->addNode();
   }
   catch (GraphLib::error e) {
-    if (StartError(wrap)) {
-      em->cerr() << e.getString() << " when adding state " << wrap->Name();
-      DoneError();
-    }
+    model_def::mdl_errmsg E(this, wrap);
+    E << e.getString() << " when adding state " << wrap->Name();
     error = true;
     return 0;
   }
@@ -159,19 +157,19 @@ void markov_def::AddInitial(const expr* cause,
   state_weight* find = initial->Find(foo);
   if (find) {
     if (StartWarning(dup_init, cause)) {
-      em->warn() << "Ignoring duplicate initial probability for state ";
-      em->warn() << foo->Name();
-      DoneWarning();
+      dup_init << "Ignoring duplicate initial probability for state ";
+      dup_init << foo->Name();
+      DoneWarning(dup_init);
     }
     return;
   }
   state_weight* sw = new state_weight(foo, weight);
   initial->Insert(sw);
 
-  if (mc_debug.startReport()) {
-    mc_debug.report() << "adding state " << foo->Name();
-    mc_debug.report() << " to initial set with weight " << weight << "\n";
-    mc_debug.stopIO();
+  if (mc_debug.start()) {
+    mc_debug << "adding state " << foo->Name();
+    mc_debug << " to initial set with weight " << weight << "\n";
+    mc_debug.stop();
   }
 }
 
@@ -186,17 +184,15 @@ void markov_def::AddEdge(const expr* cause,
   try {
     bool dup = mymc->addEdge(f->GetIndex(), t->GetIndex(), wt);
     if (dup && StartWarning(dup_arc, cause)) {
-      em->warn() << "Summing duplicate arc from state ";
-      em->warn() << f->Name() << " to " << t->Name();
-      DoneWarning();
+      dup_arc << "Summing duplicate arc from state ";
+      dup_arc << f->Name() << " to " << t->Name();
+      DoneWarning(dup_arc);
     }
   }
   catch (GraphLib::error e) {
-    if (StartError(cause)) {
-      em->cerr() << e.getString() << " when adding edge from ";
-      em->cerr() << f->Name() << " to " << t->Name();
-      DoneError();
-    }
+    model_def::mdl_errmsg E(this, cause);
+    E << e.getString() << " when adding edge from ";
+    E << f->Name() << " to " << t->Name();
     error = true;
   }
 }
@@ -213,7 +209,7 @@ void markov_def::InitModel()
   error = false;
 }
 
-void markov_def::FinalizeModel(std::ostream &ds)
+void markov_def::FinalizeModel(outputStream &ds)
 {
   model_enum* mcstate = new model_enum(0, current, statelist);
   statelist = 0;
@@ -239,9 +235,9 @@ void markov_def::FinalizeModel(std::ostream &ds)
     initial->CopyToArray(init_data);
   } else {
     init_data = 0;
-    if (StartWarning(no_init, 0)) {
-      em->warn() << "Empty initial distribution";
-      DoneWarning();
+    if (StartWarning(no_init)) {
+      no_init << "Empty initial distribution";
+      DoneWarning(no_init);
     }
   }
   delete initial;
@@ -291,7 +287,7 @@ void markov_def::FinalizeModel(std::ostream &ds)
   foo->setRSS(rss);
   foo->setPROC(init, proc);
   hldsm* bar = MakeEnumeratedModel(foo);
-  if (ds.IsActive()) foo->dumpDot(ds);
+  foo->dumpDot(ds);
   ConstructionSuccess(bar);
   mymc = 0;
 }
@@ -385,9 +381,9 @@ void mc_init::Compute(traverse_data &x, expr** pass, int np)
   markov_def* mdl = smart_cast<markov_def*>(pass[0]);
   DCASSERT(mdl);
 
-  if (model_debug.startReport()) {
-    model_debug.report() << "Calling init in model " << mdl->Name() << "\n";
-    model_debug.stopIO();
+  if (model_debug.start()) {
+    model_debug << "Calling init in model " << mdl->Name() << "\n";
+    model_debug.stop();
   }
 
   if (x.stopExecution())  return;
@@ -415,13 +411,10 @@ void mc_init::Compute(traverse_data &x, expr** pass, int np)
     // something bizarre happened...
     const type* R = pass[i]->Type(1);
     if (0==R)  continue;
-    if (em->startWarning()) {
-      em->causedBy(pass[i]);
-      em->warn() << "Ignoring weight: ";
-      R->print(em->warn(), weight);
-      em->warn() << " for state " << st->Name() << " in init";
-      em->stopIO();
-    }
+    unnamed_warning E(pass[i]->Where());
+    E << "Ignoring weight: ";
+    R->print(E.stream(), weight);
+    E << " for state " << st->Name() << " in init";
   } // for i
   x.answer = answer;
   x.aggregate = 0;
@@ -717,20 +710,14 @@ bool init_mcform::execute()
       "Continuous-time Markov chain", longdocs, false);
   ok = em->registerType(dtmc);
   if (!ok) {
-    if (em->startInternal(__FILE__, __LINE__)) {
-      em->causedBy(0);
-      em->internal() << "Couldn't register dtmc type";
-      em->stopIO();
-    }
+    internal_error E(__FILE__, __LINE__);
+    E << "Couldn't register dtmc type";
     return false;
   }
   ok = em->registerType(ctmc);
   if (!ok) {
-    if (em->startInternal(__FILE__, __LINE__)) {
-      em->causedBy(0);
-      em->internal() << "Couldn't register ctmc type";
-      em->stopIO();
-    }
+    internal_error E(__FILE__, __LINE__);
+    E << "Couldn't register ctmc type";
     return false;
   }
 

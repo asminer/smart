@@ -409,7 +409,7 @@ public:
   /** Produce a "dot" file of this model.
       Equivalent to showArcs with a style of DOT.
   */
-  void dumpDot(std::ostream &s) const;
+  void dumpDot(outputStream &s) const;
 
 
   /** For CTL model checking, is this a "fair" model?

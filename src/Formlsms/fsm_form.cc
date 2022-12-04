@@ -60,7 +60,7 @@ public:
 
 protected:
   virtual void InitModel();
-  virtual void FinalizeModel(std::ostream &ds);
+  virtual void FinalizeModel(outputStream &ds);
 
 };
 
@@ -100,10 +100,8 @@ model_var* fsm_def::MakeModelVar(const symbol* wrap, shared_object* bnds)
     mygr->addNode();
   }
   catch (GraphLib::error e) {
-    if (StartError(wrap)) {
-      em->cerr() << e.getString() << " when adding state " << wrap->Name();
-      DoneError();
-    }
+    model_def::mdl_errmsg E(this, wrap);
+    E << e.getString() << " when adding state " << wrap->Name();
     error = true;
     return 0;
   }
@@ -112,9 +110,9 @@ model_var* fsm_def::MakeModelVar(const symbol* wrap, shared_object* bnds)
   model_var* s = new model_enum_value(wrap, current, state_count);
   state_count++;
 
-  if (fsm_debug.startReport()) {
-    fsm_debug.report() << "adding state " << s->Name() << "\n";
-    fsm_debug.stopIO();
+  if (fsm_debug.start()) {
+    fsm_debug << "adding state " << s->Name() << "\n";
+    fsm_debug.stop();
   }
 
   // add to statelist (reverse order)
@@ -132,16 +130,16 @@ void fsm_def::AddInitial(const expr* cause, model_enum_value* foo)
   model_enum_value* find = initial->Insert(foo);
   if (find != foo) {
     if (StartWarning(dup_init, cause)) {
-      em->warn() << "Ignoring duplicate initialization of state ";
-      em->warn() << foo->Name();
-      DoneWarning();
+      dup_init << "Ignoring duplicate initialization of state ";
+      dup_init << foo->Name();
+      DoneWarning(dup_init);
     }
     return;
   }
 
-  if (fsm_debug.startReport()) {
-    fsm_debug.report() << "adding " << foo->Name() << " to initial set\n";
-    fsm_debug.stopIO();
+  if (fsm_debug.start()) {
+    fsm_debug << "adding " << foo->Name() << " to initial set\n";
+    fsm_debug.stop();
   }
 
 }
@@ -149,10 +147,10 @@ void fsm_def::AddInitial(const expr* cause, model_enum_value* foo)
 void fsm_def::AddEdge(const expr* c, model_enum_value* f, model_enum_value* t)
 {
   if (error) return;
-  if (fsm_debug.startReport()) {
-    fsm_debug.report() << "adding edge ";
-    fsm_debug.report() << f->Name() << " : " << t->Name() << "\n";
-    fsm_debug.stopIO();
+  if (fsm_debug.start()) {
+    fsm_debug << "adding edge ";
+    fsm_debug << f->Name() << " : " << t->Name() << "\n";
+    fsm_debug.stop();
   }
   DCASSERT(mygr);
   if (!isVariableOurs(f, c, "ignoring arc")) return;
@@ -161,17 +159,15 @@ void fsm_def::AddEdge(const expr* c, model_enum_value* f, model_enum_value* t)
   try {
     bool dup = mygr->addEdge(f->GetIndex(), t->GetIndex());
     if (dup && StartWarning(dup_arc, c)) {
-      em->warn() << "Ignoring duplicate arc from state ";
-      em->warn() << f->Name() << " to " << t->Name();
-      DoneWarning();
+      dup_arc << "Ignoring duplicate arc from state ";
+      dup_arc << f->Name() << " to " << t->Name();
+      DoneWarning(dup_arc);
     }
   }
   catch (GraphLib::error e) {
-    if (StartError(c)) {
-      em->cerr() << e.getString() << " when adding edge from " << f->Name();
-      em->cerr() << " to " << t->Name();
-      DoneError();
-    }
+    model_def::mdl_errmsg E(this, c);
+    E << e.getString() << " when adding edge from " << f->Name();
+    E << " to " << t->Name();
     error = true;
   }
 }
@@ -188,7 +184,7 @@ void fsm_def::InitModel()
   error = false;
 }
 
-void fsm_def::FinalizeModel(std::ostream &ds)
+void fsm_def::FinalizeModel(outputStream &ds)
 {
   model_enum* mcstate = new model_enum(0, current, statelist);
   statelist = 0;
@@ -218,9 +214,9 @@ void fsm_def::FinalizeModel(std::ostream &ds)
     delete[] init_data;
   } else {
     init.index = 0;
-    if (StartWarning(no_init, 0)) {
-      em->warn() << "Empty set of initial states";
-      DoneWarning();
+    if (StartWarning(no_init)) {
+      no_init << "Empty set of initial states";
+      DoneWarning(no_init);
     }
   }
   delete initial;
@@ -233,7 +229,7 @@ void fsm_def::FinalizeModel(std::ostream &ds)
   foo->setRSS(rss);
   foo->setRGR(rgr);
   hldsm* bar = MakeEnumeratedModel(foo);
-  if (ds.IsActive()) foo->dumpDot(ds);
+  foo->dumpDot(ds);
   ConstructionSuccess(bar);
   mygr = 0;
 }
@@ -594,11 +590,8 @@ bool init_fsms::execute()
   formalism* fsm = new fsm_formalism("fsm", "Finite state machine", longdocs);
   ok = em->registerType(fsm);
   if (!ok) {
-    if (em->startInternal(__FILE__, __LINE__)) {
-      em->causedBy(0);
-      em->internal() << "Couldn't register fsm type";
-      em->stopIO();
-    }
+    internal_error E(__FILE__, __LINE__);
+    E << "Couldn't register fsm type";
     return false;
   }
 

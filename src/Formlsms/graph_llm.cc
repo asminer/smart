@@ -52,7 +52,7 @@ void graph_lldsm::showArcs(bool internal) const
 {
   DCASSERT(RGR);
   if (internal) {
-    RGR->showInternal(em->cout());
+    RGR->showInternal(outputStream::globalOut().stream());
   } else {
     reachgraph::show_options opts;
     opts.ORDER = stateDisplayOrder();
@@ -61,7 +61,7 @@ void graph_lldsm::showArcs(bool internal) const
     opts.RG_ONLY = true;
     shared_state* st = new shared_state(parent);
     DCASSERT(RSS);
-    RGR->showArcs(em->cout(), opts, RSS, st);
+    RGR->showArcs(outputStream::globalOut().stream(), opts, RSS, st);
     Delete(st);
   }
 }
@@ -103,18 +103,19 @@ bool graph_lldsm::tooManyArcs(long na, std::ostream *os)
   return true;
 }
 
-void graph_lldsm::dumpDot(std::ostream &s) const
+void graph_lldsm::dumpDot(outputStream &s) const
 {
-  DCASSERT(RGR);
-  shared_state* st = new shared_state(parent);
-  DCASSERT(RSS);
-  reachgraph::show_options opts;
-  opts.ORDER = stateDisplayOrder();
-  opts.STYLE = DOT;
-  opts.NODE_NAMES = true;
-  opts.RG_ONLY = true;
-  RGR->showArcs(s, opts, RSS, st);
-  Delete(st);
+    if (!s.isActive()) return;
+    DCASSERT(RGR);
+    shared_state* st = new shared_state(parent);
+    DCASSERT(RSS);
+    reachgraph::show_options opts;
+    opts.ORDER = stateDisplayOrder();
+    opts.STYLE = DOT;
+    opts.NODE_NAMES = true;
+    opts.RG_ONLY = true;
+    RGR->showArcs(s.stream(), opts, RSS, st);
+    Delete(st);
 }
 
 bool graph_lldsm::isFairModel() const
@@ -267,38 +268,29 @@ bool graph_lldsm::reachgraph::reportCTL()
 
 void graph_lldsm::reachgraph::reportIters(const char* who, long iters)
 {
-  if (!ctl_report.startReport()) return;
-  ctl_report.report() << who << " required " << iters << " iterations\n";
-  em->stopIO();
+    if (!ctl_report.start()) return;
+    ctl_report << who << " required " << iters << " iterations";
+    ctl_report.stop();
 }
 
 void graph_lldsm::reachgraph::showError(const char* s)
 {
-  if (em->startError()) {
-    em->causedBy(0);
-    em->cerr() << s;
-    em->stopIO();
-  }
+    expr_error E(0);
+    E << s;
 }
 
 stateset* graph_lldsm::reachgraph::notImplemented(const char* op) const
 {
-  if (em->startError()) {
-    em->causedBy(0);
-    em->cerr() << "Operation " << op << " not implemented in class " << getClassName();
-    em->stopIO();
-  }
-  return 0;
+    expr_error E(0);
+    E << "Operation " << op << " not implemented in class " << getClassName();
+    return nullptr;
 }
 
 stateset* graph_lldsm::reachgraph::incompatibleOperand(const char* op) const
 {
-  if (em->startError()) {
-    em->causedBy(0);
-    em->cerr() << "Incompatible operand for " << op << " in class " << getClassName();
-    em->stopIO();
-  }
-  return 0;
+    expr_error E(0);
+    E << "Incompatible operand for " << op << " in class " << getClassName();
+    return nullptr;
 }
 
 // ******************************************************************
