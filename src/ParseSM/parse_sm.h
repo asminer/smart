@@ -100,6 +100,7 @@ public:
     DCASSERT(em);
     return em->findModifier(s);
   }
+  /*
   inline void newLine(int delta=0) {
     DCASSERT(em);
     DCASSERT(em->hasIO());
@@ -156,6 +157,7 @@ public:
     DCASSERT(em);
     em->Exit();
   }
+  */
 };
 
 #endif

@@ -61,7 +61,7 @@ void llhldsm::showState(std::ostream &s, const shared_state* x) const
   DCASSERT(foo);
   const model_enum_value* mev = smart_cast <const model_enum_value*> (foo);
   DCASSERT(mev);
-  s.Put(mev->Name());
+  s << mev->Name();
   Delete(foo);
 }
 

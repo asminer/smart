@@ -49,13 +49,10 @@ protected:
       return hlm->GetProcess();
     } // try
     catch (subengine::error e) {
-      if (em->startError()) {
-        em->causedBy(err);
-        em->cerr() << "Couldn't build reachability graph: ";
-        em->cerr() << subengine::getNameOfError(e);
-        em->stopIO();
-      }
-      return 0;
+      hldsm::mdl_errmsg E(hlm, err);
+      E << "Couldn't build reachability graph: ";
+      E << subengine::getNameOfError(e);
+      return nullptr;
     } // catch
   }
 
@@ -75,13 +72,9 @@ protected:
     stateset* ss = smart_cast <stateset*> (x.answer->getPtr());
     DCASSERT(ss);
     if (ss->getParent() != m) {
-      if (em->startError()) {
-        em->causedBy(x.parent);
-        em->cerr() << "Stateset in " << Name();
-        em->cerr() << " expression is from a different model";
-        em->stopIO();
-      }
-      return 0;
+      expr_error E(x.parent);
+      E << "Stateset in " << Name() << " expression is from a different model";
+      return nullptr;
     }
     return Share(ss);
   }

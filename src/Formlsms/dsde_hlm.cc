@@ -101,28 +101,28 @@ model_event::~model_event() {
 void model_event::display(std::ostream &s) const {
 	const int width = 16;
 	s << nameOf(FT) << " " << Name() << "\n";
-	s.Put("enabling: ", width);
+    s << std::setw(width) << "enabling: ";
 	if (enabling)
-		enabling->Print(s, 0);
+		enabling->Print(s);
 	else
 		s << "null";
 	s << "\n";
-	s.Put("next state: ", width);
+	s << std::setw(width) << "next state: ";
 	if (nextstate)
-		nextstate->Print(s, 0);
+		nextstate->Print(s);
 	else
 		s << "null";
 	s << "\n";
 	if (distro) {
-		s.Put("distro: ", width);
-		distro->Print(s, 0);
+        s << std::setw(width) << "Distro: ";
+		distro->Print(s);
 		s << "\n";
 	}
 	if (weight) {
-		s.Put("weight: ", width);
-		weight->Print(s, 0);
+        s << std::setw(width) << "weight: ";
+		weight->Print(s);
 		s << "\n";
-		s.Put("wt class: ", width);
+        s << std::setw(width) << "wt class: ";
 		s << wc << "\n";
 	}
 }
@@ -388,14 +388,10 @@ void dsde_hlm::useDefaultVarOrder() {
 	}
 
 	if (1 == num_levels) {
-		if (em->startWarning()) {
-			em->causedBy(0);
-			em->warn()
-					<< "user-specified partition groups all variables together;";
-			em->newLine();
-			em->warn() << "possibly missing call to partition()?";
-			DoneError();
-		}
+        unnamed_warning E;
+        E << "user-specified partition groups all variables together;";
+		E.newLine();
+		E << "possibly missing call to partition()?";
 	}
 
 	setPartInfo(state_data, num_vars);
@@ -413,13 +409,11 @@ void dsde_hlm::checkAssertions(traverse_data &x) {
 		assertions[i]->Compute(x);
 		if (x.answer->isNormal() && x.answer->getBool())
 			continue;  // passed
-		if (StartError(assertions[i])) {
-			em->cerr() << "Assertion ";
-			assertions[i]->Print(em->cerr(), 0);
-			em->cerr() << " failed in state ";
-			showState(em->cerr(), x.current_state);
-			DoneError();
-		}
+        mdl_errmsg E(this, assertions[i]);
+        E << "Assertion ";
+		assertions[i]->Print(E.stream());
+		E << " failed in state ";
+		showState(E.stream(), x.current_state);
 		// make sure we consistently return "false"
 		x.answer->setBool(false);
 		return;
@@ -670,23 +664,23 @@ void dsde_hlm::determineModelType() {
 			have_ignored = StartWarning(ignored_prio, 0);
 			if (!have_ignored)
 				continue;
-			em->warn() << "Ignoring priority pairs across priority levels:";
-			em->changeIndent(1);
+			ignored_prio << "Ignoring priority pairs across priority levels:";
+			ignored_prio.Out.incIndent();
 		}
-		em->newLine();
-		em->warn() << "{";
+		ignored_prio.newLine();
+		ignored_prio << '{';
 		for (int j = 0; j < display->Length(); j++) {
 			if (j)
-				em->warn() << ", ";
-			em->warn() << display->Item(j)->Name();
+				ignored_prio << ", ";
+			ignored_prio << display->Item(j)->Name();
 		} // for j
-		em->warn() << "} : " << event_data[i]->Name();
+		ignored_prio << "} : " << event_data[i]->Name();
 
 		display->Clear();
 	}
 	if (have_ignored) {
-		em->changeIndent(-1);
-		DoneWarning();
+		ignored_prio.Out.decIndent();
+		DoneWarning(ignored_prio);
 	}
 	delete display;
 
@@ -868,19 +862,19 @@ void dsde_def::SetLevelOfStateVars(const expr* call, int level,
 		DCASSERT(pl);
 		if (pl->GetPart()) {
 			if (reset_warning) {
-				em->warn() << ", " << pl->Name();
+				dup_part << ", " << pl->Name();
 			} else {
 				reset_warning = StartWarning(dup_part, call);
 				if (reset_warning) {
-					em->warn() << "Moving {" << pl->Name();
+					dup_part << "Moving {" << pl->Name();
 				}
 			}
 		}
 		pl->SetPart(level);
 	} // for z
 	if (reset_warning) {
-		em->warn() << "} into group " << level;
-		DoneWarning();
+		dup_part << "} into group " << level;
+		DoneWarning(dup_part);
 	}
 }
 
@@ -910,14 +904,14 @@ void dsde_def::PartitionVars(model_statevar** V, int nv) {
 
 	   // warning for ungrouped vars, but only if some vars have been grouped
 	if ((max_g > min_g) && group[-min_g] && StartWarning(no_part, 0)) {
-		em->warn() << "Places {";
+		no_part << "Places {";
 		for (symbol* ptr = group[-min_g]; ptr; ptr = ptr->Next()) {
 			if (ptr != group[-min_g])
-				em->warn() << ", ";
-			em->warn() << ptr->Name();
+				no_part << ", ";
+			no_part << ptr->Name();
 		}
-		em->warn() << "} default to group 0";
-		DoneWarning();
+		no_part << "} default to group 0";
+		DoneWarning(no_part);
 	}
 
 	// renumber the groups, from 1 to L
@@ -971,20 +965,20 @@ void dsde_def::SetPriorityLevel(const expr* call, int level, shared_set* tset) {
 	} // for z
 
 	if (reset.Length() && StartWarning(dup_prio, call)) {
-		em->warn() << "Reset event";
+		dup_prio << "Reset event";
 		if (reset.Length() > 1)
-			em->warn() << "s {";
+			dup_prio << "s {";
 		else
-			em->warn() << " ";
+			dup_prio << " ";
 		for (int i = 0; i < reset.Length(); i++) {
 			if (i)
-				em->warn() << ", ";
-			em->warn() << reset.Item(i)->Name();
+				dup_prio << ", ";
+			dup_prio << reset.Item(i)->Name();
 		}
 		if (reset.Length() > 1)
-			em->warn() << "}";
-		em->warn() << " to priority level " << level;
-		DoneWarning();
+			dup_prio << "}";
+		dup_prio << " to priority level " << level;
+		DoneWarning(dup_prio);
 	}
 }
 
@@ -1108,12 +1102,10 @@ void dsde_part2::Compute(traverse_data &x, expr** pass, int np) {
 		x.answer = &pnum;
 		SafeCompute(pass[i], x);
 		if (!pnum.isNormal() || pnum.getInt() <= 0) {
-			if (mdl->StartError(pass[i])) {
-				em->cerr() << "Bad group number: ";
-				em->INT->print(em->cerr(), pnum, 0);
-				em->cerr() << ", ignoring";
-				mdl->DoneError();
-			}
+            expr_error E(pass[i]);
+            E << "Bad group number: ";
+			em->INT->print(E.stream(), pnum);
+			E << ", ignoring";
 			continue;
 		}
 
@@ -1171,11 +1163,9 @@ void dsde_part3::Compute(traverse_data &x, expr** pass, int np) {
 			continue;
 
 		if (0 == pl->GetPart()) {
-			if (mdl->StartError(pass[i])) {
-				em->cerr() << "Place " << pl->Name();
-				em->cerr() << " is not yet assigned to any group";
-				mdl->DoneError();
-			}
+            expr_error E(pass[i]);
+            E << "Place " << pl->Name();
+		    E << " is not yet assigned to any group";
 			continue;
 		}
 
@@ -1228,12 +1218,10 @@ void dsde_priolevel::Compute(traverse_data &x, expr** pass, int np) {
 		x.answer = &plev;
 		SafeCompute(pass[i], x);
 		if (!plev.isNormal() || plev.getInt() <= 0) {
-			if (mdl->StartError(pass[i])) {
-				em->cerr() << "Bad priority level: ";
-				em->INT->print(em->cerr(), plev, 0);
-				em->cerr() << ", ignoring";
-				mdl->DoneError();
-			}
+            expr_error E(pass[i]);
+            E << "Bad priority level: ";
+			em->INT->print(E.stream(), plev);
+			E << ", ignoring";
 			continue;
 		}
 
