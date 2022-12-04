@@ -129,8 +129,7 @@ void separate_colls::Report(std::ostream &s) const
     total += locals[k]->ReportMemTotal();
   }
   s << "Separated " << num_levels << " substate collections require ";
-  s.PutMemoryCount(total, 2);
-  s.Put('\n');
+  s << memoryCount(total, 2) << '\n';
 }
 
 
@@ -212,8 +211,7 @@ void synchronized_colls::Report(std::ostream &s) const
 {
   size_t total = common->ReportMemTotal();
   s << "Synchronized substate collection requires ";
-  s.PutMemoryCount(total, 2);
-  s.Put('\n');
+  s << memoryCount(total, 2) << '\n';
 }
 
 
@@ -360,8 +358,7 @@ void unsynch_colls::Report(std::ostream &s) const
     total += i2s_alloc[k]*sizeof(long) + s2i_alloc[k]*sizeof(int);
   }
   s << "Shared substate collection (and index maps) requires ";
-  s.PutMemoryCount(total, 2);
-  s.Put('\n');
+  s << memoryCount(total, 2) << '\n';
 }
 
 // **************************************************************************

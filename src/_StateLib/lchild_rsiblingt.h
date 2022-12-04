@@ -172,11 +172,11 @@ public:
 		}
 
 	}
-	void show(OutputStream &s, shared_state* curr_st) {
+	void show(std::ostream &s, shared_state* curr_st) {
 		s << " state ";
-		curr_st->Print(s, 0);
+		curr_st->Print(s);
 	}
-	void showArcsTreewithOS(lchild_rsiblingt* root, OutputStream &s) {
+	void showArcsTreewithOS(lchild_rsiblingt* root, std::ostream &s) {
 		if (root == NULL)
 			return;
 

@@ -46,11 +46,10 @@ bool expl_printer::visit()
   if (comma)  out << ", ";
   else        comma = true;
   if (print_indexes) {
-    out.Put(x.current_state_index);
+    out << x.current_state_index;
   } else {
-    x.current_state->Print(out, 0);
+    x.current_state->Print(out);
   }
-  out.can_flush();  // otherwise, huge sets will overflow the buffer
   return false;
 }
 
@@ -135,9 +134,9 @@ bool expl_stateset::isEmpty() const
 bool expl_stateset::Print(std::ostream &s, int) const
 {
   expl_printer foo(getGrandparent(), s, *data, printIndexes());
-  s.Put('{');
+  s << '{';
   getParent()->visitStates(foo);
-  s.Put('}');
+  s << '}';
   return true;
 }
 

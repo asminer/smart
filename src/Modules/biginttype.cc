@@ -27,7 +27,7 @@ public:
   virtual ~gmp_lib();
   virtual const char* getVersionString() const;
   virtual bool hasFixedPointer() const { return false; }
-  virtual void printCopyright(doc_formatter* df) const;
+  virtual void printCopyright(doc_formatter &df) const;
 };
 
 gmp_lib::gmp_lib() : library(true, false)
@@ -46,13 +46,13 @@ const char* gmp_lib::getVersionString() const
   return version;
 }
 
-void gmp_lib::printCopyright(doc_formatter* df) const
+void gmp_lib::printCopyright(doc_formatter &df) const
 {
-  df->begin_indent();
-  df->Out() << "Copyright (C) 1991, 1999 Free Software Foundation, Inc.\n";
-  df->Out() << "Released under the GNU Lesser General Public License, version 2\n";
-  df->Out() << "http://gmplib.org\n";
-  df->end_indent();
+  df.begin_indent();
+  df.Out() << "Copyright (C) 1991, 1999 Free Software Foundation, Inc.\n";
+  df.Out() << "Released under the GNU Lesser General Public License, version 2\n";
+  df.Out() << "http://gmplib.org\n";
+  df.end_indent();
 }
 
 gmp_lib gmp_lib_data;
@@ -110,13 +110,13 @@ bool bigint::Print(std::ostream &s, int width) const
       buffer = newbuf;
       bufsize = newbufsize;
     } else {
-      s.Put("memory overflow");
+      s << "memory overflow";
       return true;
     }
   }
   mpz_get_str(buffer, 10, value);
 
-  s.PutInteger(buffer, width);
+  s << formatted_string(buffer, width);
   return true;
 }
 
@@ -575,8 +575,7 @@ void bigint_add::Compute(traverse_data &x)
       if (flip && flip[i])  foo.setInfinity(-foo.signInfinity());
       // check operand for opposite sign for infinity
       if ( (sum->signInfinity()>0) != (foo.signInfinity()>0) ) {
-        inftyMinusInfty(operands[i]);
-        sum->setNull();
+        inftyMinusInfty(operands[i], sum);
         x.answer = sum;
         return;
       }
@@ -701,8 +700,7 @@ void bigint_mult::Compute(traverse_data &x)
         const bigint* a = smart_cast <bigint*> (foo.getPtr());
         DCASSERT(a);
         if (0==a->cmp_si(0)) {
-          zeroTimesInfty(operands[i]); // 0 * infinity, error
-          prod->setNull();
+          zeroTimesInfty(operands[i], prod); // 0 * infinity, error
           x.answer = prod;
           return;
         }
@@ -742,8 +740,7 @@ void bigint_mult::Compute(traverse_data &x)
 
       // check for infinity
       if (foo.isInfinity()) {
-        zeroTimesInfty(operands[i]);
-        prod->setNull();
+        zeroTimesInfty(operands[i], prod);
         x.answer = prod;
         return;
       }
@@ -839,8 +836,7 @@ void bigint_multdiv::Compute(traverse_data &x)
           numer = 0;
           denom = 0;
           if (flip[i]) {
-            divideByZero(operands[i]);
-            prod->setNull();
+            divideByZero(operands[i], prod);
             x.answer = prod;
             return;  // short circuit.
           }
@@ -903,8 +899,7 @@ void bigint_multdiv::Compute(traverse_data &x)
         int asign = a->cmp_si(0);
         if (0==asign) {
           // infinity * 0 or infinity / 0, error
-          inftyTimesZero(flip[i], operands[i]);
-          prod->setNull();
+          inftyTimesZero(flip[i], operands[i], prod);
           x.answer = prod;
           return;
         } else {
@@ -916,8 +911,7 @@ void bigint_multdiv::Compute(traverse_data &x)
       if (foo.isInfinity()) {
         if (flip[i]) {
           // infinity / infinity, error
-          inftyDivInfty(operands[i]);
-          prod->setNull();
+          inftyDivInfty(operands[i], prod);
           x.answer = prod;
           return;  // short circuit.
         }
@@ -952,8 +946,7 @@ void bigint_multdiv::Compute(traverse_data &x)
         DCASSERT(a);
         if (0==a->cmp_si(0)) {
           if (flip[i]) {
-            divideByZero(operands[i]);
-            prod->setNull();
+            divideByZero(operands[i], prod);
             x.answer = prod;
             return;  // short circuit.
           }
@@ -962,8 +955,7 @@ void bigint_multdiv::Compute(traverse_data &x)
       } // if foo.isNormal
       if (foo.isInfinity()) {
         if (flip[i])  continue;  // 0 / infinity = 0.
-        zeroTimesInfty(operands[i]);
-        prod->setNull();
+        zeroTimesInfty(operands[i], prod);
         x.answer = prod;
         return;
       } // if foo.isInfinity()
@@ -1061,12 +1053,8 @@ void bigint_mod::Compute(traverse_data &x)
       x.answer->setPtr(c);
     } else {
       // mod 0 error
-      if (em->startError()) {
-        em->causedBy(this);
-        em->cerr() << "Illegal operation: modulo 0";
-        em->stopIO();
-      }
-      x.answer->setNull();
+      expr_error E(this, x.answer);
+      E << "Illegal operation: modulo 0";
     }
     return;
   }
@@ -1079,12 +1067,8 @@ void bigint_mod::Compute(traverse_data &x)
     return;
   }
   if (l.isInfinity() && r.isInfinity()) {
-    if (em->startError()) {
-      em->causedBy(this);
-      em->cerr() << "Illegal operation: infty % infty";
-      em->stopIO();
-    }
-    x.answer->setNull();
+    expr_error E(this, x.answer);
+    E << "Illegal operation: infty % infty";
     return;
   }
   if (l.isNormal() && r.isInfinity()) {
@@ -1094,12 +1078,8 @@ void bigint_mod::Compute(traverse_data &x)
   }
   if (l.isInfinity() && r.isNormal()) {
     // +- infty mod b is undefined
-    if (em->startError()) {
-      em->causedBy(this);
-      em->cerr() << "Illegal operation: infty mod " << r.getInt();
-      em->stopIO();
-    }
-    x.answer->setNull();
+    expr_error E(this, x.answer);
+    E << "Illegal operation: infty mod " << r.getInt();
     return;
   }
   // still here? must be an error.
@@ -2037,12 +2017,8 @@ void bigintdiv_si::Compute(traverse_data &x, expr** pass, int np)
     const bigint* br = smart_cast <bigint*> (r.getPtr());
     DCASSERT(br);
     if (0==br->cmp_si(0)) {
-      if (em->startError()) {
-        em->causedBy(x.parent);
-        em->cerr() << "Undefined operation (divide by 0)";
-        em->stopIO();
-      }
-      answer->setNull();
+      expr_error E(x.parent, answer);
+      E << "Undefined operation (divide by 0)";
       return;
     }
   }
@@ -2060,12 +2036,8 @@ void bigintdiv_si::Compute(traverse_data &x, expr** pass, int np)
   }
 
   if (l.isInfinity() && r.isInfinity()) {
-    if (em->startError()) {
-      em->causedBy(x.parent);
-      em->cerr() << "Undefined operation (infty / infty)";
-      em->stopIO();
-    }
-    answer->setNull();
+    expr_error E(x.parent, answer);
+    E << "Undefined operation (infty / infty)";
     return;
   }
 
