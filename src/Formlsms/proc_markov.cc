@@ -53,119 +53,116 @@ const LS_Options& markov_process::getSolverOptions()
 
 void markov_process::startTransientReport(timer& watch, double t) const
 {
-  if (!report.startReport()) return;
-  report.report() << "Starting transient solver, t=" << t << "\n";
-  report.stopIO();
-  watch.reset();
+    if (!report.start()) return;
+    report << "Starting transient solver, t=" << t << "\n";
+    report.stop();
+    watch.reset();
 }
 
 void markov_process::stopTransientReport(timer& watch, long iters) const
 {
-  if (!report.startReport()) return;
-  report.report() << "Transient solver: ";
-  report.report() << watch.elapsed_seconds() << " seconds, ";
-  report.report() << iters << " iterations\n";
-  report.stopIO();
+  if (!report.start()) return;
+  report << "Transient solver: ";
+  report << watch.elapsed_seconds() << " seconds, ";
+  report << iters << " iterations";
+  report.stop();
 }
 
 void markov_process::startSteadyReport(timer& watch) const
 {
-  if (!report.startReport()) return;
-  report.report() << "Solving steady-state distribution using ";
-  report.report() << getSolver() << "\n";
-  report.stopIO();
+  if (!report.start()) return;
+  report << "Solving steady-state distribution using " << getSolver();
+  report.stop();
   watch.reset();
 }
 
 void markov_process::stopSteadyReport(timer& watch, long iters) const
 {
-  if (!report.startReport()) return;
-  report.report() << "Solved  steady-state distribution\n";
-  report.report() << "\t" << watch.elapsed_seconds() << " seconds";
-  report.report() << " required for " << getSolver() << "\n";
+  if (!report.start()) return;
+  report << "Solved  steady-state distribution\n";
+  report << "\t" << watch.elapsed_seconds() << " seconds";
+  report << " required for " << getSolver();
   if (iters > 0) {
-    report.report() << "\t" << iters << " iterations";
-    report.report() << " required for " << getSolver() << "\n";
+    report << "\n\t" << iters << " iterations";
+    report << " required for " << getSolver();
   }
-  em->stopIO();
+  report.stop();
 }
 
 void markov_process::startTTAReport(timer& watch) const
 {
-  if (!report.startReport()) return;
-  report.report() << "Solving time to absorption using ";
-  report.report() << getSolver() << "\n";
-  report.stopIO();
+  if (!report.start()) return;
+  report << "Solving time to absorption using " << getSolver();
+  report.stop();
   watch.reset();
 }
 
 void markov_process::stopTTAReport(timer& watch, long iters) const
 {
-  if (!report.startReport()) return;
-  report.report() << "Solved  time to absorption\n";
-  report.report() << "\t" << watch.elapsed_seconds() << " seconds";
-  report.report() << " required for " << getSolver() << "\n";
+  if (!report.start()) return;
+  report << "Solved  time to absorption\n";
+  report << "\t" << watch.elapsed_seconds() << " seconds";
+  report << " required for " << getSolver();
   if (iters > 0) {
-    report.report() << "\t" << iters << " iterations";
-    report.report() << " required for " << getSolver() << "\n";
+    report << "\n\t" << iters << " iterations";
+    report << " required for " << getSolver();
   }
-  report.stopIO();
+  report.stop();
 }
 
 void markov_process::startAccumulatedReport(timer& watch, double t) const
 {
-  if (!report.startReport()) return;
-  report.report() << "Starting accumulated solver, t=" << t << "\n";
-  report.stopIO();
+  if (!report.start()) return;
+  report << "Starting accumulated solver, t=" << t;
+  report.stop();
   watch.reset();
 }
 
 void markov_process::stopAccumulatedReport(timer& watch, long iters) const
 {
-  if (!report.startReport()) return;
-  report.report() << "Accumulated solver: ";
-  report.report() << watch.elapsed_seconds() << " seconds, ";
-  report.report() << iters << " iterations\n";
-  report.stopIO();
+  if (!report.start()) return;
+  report << "Accumulated solver: ";
+  report << watch.elapsed_seconds() << " seconds, ";
+  report << iters << " iterations";
+  report.stop();
 }
 
 void markov_process::startRevTransReport(timer& watch, double t) const
 {
-  if (!report.startReport()) return;
-  report.report() << "Starting reverse transient solver, t=" << t << "\n";
-  report.stopIO();
+  if (!report.start()) return;
+  report << "Starting reverse transient solver, t=" << t;
+  report.stop();
   watch.reset();
 }
 
 void markov_process::stopRevTransReport(timer& watch, long iters) const
 {
-  if (!report.startReport()) return;
-  report.report() << "Reverse transient solver: ";
-  report.report() << watch.elapsed_seconds() << " seconds, ";
-  report.report() << iters << " iterations\n";
-  report.stopIO();
+  if (!report.start()) return;
+  report << "Reverse transient solver: ";
+  report << watch.elapsed_seconds() << " seconds, ";
+  report << iters << " iterations";
+  report.stop();
 }
 
 void markov_process::startReachAcceptReport(timer& watch) const
 {
-  if (!report.startReport()) return;
-  report.report() << "Solving `reaches accepting' probabilities using ";
-  report.report() << getSolver() << "\n";
-  report.stopIO();
+  if (!report.start()) return;
+  report << "Solving `reaches accepting' probabilities using " << getSolver();
+  report.stop();
   watch.reset();
 }
 
 void markov_process::stopReachAcceptReport(timer& watch, long iters) const
 {
-  if (!report.startReport()) return;
-  report.report() << "Solved  `reaches accepting' probabilities\n";
-  report.report() << "\t" << watch.elapsed_seconds() << " seconds";
-  report.report() << " required for " << getSolver() << "\n";
+  if (!report.start()) return;
+  report << "Solved  `reaches accepting' probabilities\n";
+  report << "\t" << watch.elapsed_seconds() << " seconds";
+  report << " required for " << getSolver();
   if (iters > 0) {
-    report.report() << "\t" << iters << " iterations";
-    report.report() << " required for " << getSolver() << "\n";
+    report << "\n\t" << iters << " iterations";
+    report << " required for " << getSolver();
   }
-  em->stopIO();
+  report.stop();
 }
 
 
@@ -200,21 +197,23 @@ markov_process::reporter::~reporter()
 
 void markov_process::reporter::start(const char* w)
 {
-  if (!report.startReport()) {
+  if (!report.start()) {
     DCASSERT(0);
     return;
   }
 
-  report.report() << w;
+  report << w;
   long written = strlen(w);
-  report.report().Pad('.', 30-written);
+  if (written < 30) {
+    report.stream() << std::setfill('.') << std::setw(30-written) << "";
+  }
   watch.reset();
 }
 
 void markov_process::reporter::stop()
 {
-  report.report() << " " << watch.elapsed_seconds() << " seconds\n";
-  report.stopIO();
+  report << " " << watch.elapsed_seconds() << " seconds";
+  report.stop();
 }
 
 

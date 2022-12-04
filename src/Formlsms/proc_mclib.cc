@@ -15,15 +15,15 @@ bool statusOK(exprman* em, const LS_Output &o, const char* who)
           return true;
 
       case LS_No_Convergence:
-          if (em->startWarning()) {
-            em->causedBy(0);
-            em->warn() << "Markov chain linear solver (for ";
-            em->warn() << who << ") did not converge";
-            em->stopIO();
-          }
+      {
+          unnamed_warning W;
+          W << "Markov chain linear solver (for ";
+          W << who << ") did not converge";
           return true;
+      }
 
       case LS_Out_Of_Memory:
+      {
           if (em->startError()) {
             em->causedBy(0);
             em->cerr() << "Insufficient memory for Markov chain ";
