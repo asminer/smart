@@ -48,6 +48,7 @@ try_gmp() {
 find_gmp() {
   try_gmp $GMP_INCLUDE $GMP_LIBRARY && return 0
   try_gmp /opt/local/include /opt/local/lib && return 0
+  try_gmp /opt/homebrew/include /opt/homebrew/lib && return 0
   try_gmp /usr/local/include /usr/local/lib && return 0
   try_gmp /usr/local/include /usr/local/lib64 && return 0
   try_gmp /usr/include /usr/lib && return 0

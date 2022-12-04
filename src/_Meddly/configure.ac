@@ -14,7 +14,7 @@ AC_PREFIX_DEFAULT([$PWD])
 
 # Checks for programs.
 AC_PROG_CXX
-AX_CXX_COMPILE_STDCXX
+AX_CXX_COMPILE_STDCXX(11)
 AC_PROG_CC
 # Add AM_PROG_AR, if we can...
 m4_ifdef([AM_PROG_AR], [AM_PROG_AR])
