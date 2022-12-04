@@ -322,24 +322,20 @@ public:
 protected:
   /// Start an appopriate internal error message.
   void bailOut(const char* sfile, unsigned sline, const char* why) const;
-};
 
-// ******************************************************************
-// *                                                                *
-// *                    high level model  errors                    *
-// *                                                                *
-// ******************************************************************
-
-/*
- * Error messages within high level models.
- */
-class hldsm_error : public expr_error {
+public:
+    /*
+     * High-level model errors
+     */
+    class mdl_errmsg : public expr_error {
         const hldsm* model;
     public:
-        hldsm_error(const hldsm* _mod, const expr* cause);
-        ~hldsm_error();
-};
+        mdl_errmsg(const hldsm* _mod, const expr* cause);
+        ~mdl_errmsg();
+    };
 
+    friend class mdl_errmsg;
+};
 
 
 // ******************************************************************
@@ -412,16 +408,16 @@ public:
 
   /** Finish a warning message.
   */
-  void DoneWarning() const;
+  void DoneWarning(const warning_msg &who) const;
 
   /** Start an error message.
       Returns true on success.
   */
-  bool StartError(const expr* cause) const;
+  // bool StartError(const expr* cause) const;
 
   /** Finish an error message.
   */
-  void DoneError() const;
+  // void DoneError() const;
 
   /** Add a symbol to our list of symbols to destroy when
       the model instance is destroyed.  Currently this
@@ -487,6 +483,18 @@ public:
   */
   bool NotProperInstance(const expr* call, const char* who) const;
 
+public:
+    /*
+     * Model (instantiated) errors
+     */
+    class mdl_errmsg : public expr_error {
+        const model_instance* model;
+    public:
+        mdl_errmsg(const model_instance* _mod, const expr* cause);
+        ~mdl_errmsg();
+    };
+
+    friend class mdl_errmsg;
 };
 
 

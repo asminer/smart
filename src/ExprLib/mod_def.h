@@ -230,20 +230,18 @@ private:
   void SaveParams();
 
 
-  friend class modeldef_error;
-};
-
-// ******************************************************************
-// *                                                                *
-// *                   Model construction  errors                   *
-// *                                                                *
-// ******************************************************************
-
-class modeldef_error : public expr_error {
+public:
+    /*
+     * Model (definition) construction errors
+     */
+    class mdl_errmsg : public expr_error {
         const model_def* model;
     public:
-        modeldef_error(const model_def* _mod, const expr* cause);
-        ~modeldef_error();
+        mdl_errmsg(const model_def* _mod, const expr* cause);
+        ~mdl_errmsg();
+    };
+
+    friend class mdl_errmsg;
 };
 
 // ******************************************************************

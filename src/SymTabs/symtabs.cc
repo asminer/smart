@@ -35,18 +35,17 @@ symbol_table::~symbol_table()
 {
 }
 
-void symbol_table::DocumentSymbols(doc_formatter* df, const char* keyword) const
+void symbol_table::DocumentSymbols(doc_formatter &df, const char* keyword) const
 {
-  if (0==df)  return;
   const symbol** list = new const symbol*[num_names];
   CopyToArray(list);
   for (long i=0; i<num_names; i++) {
     const symbol* chain = list[i];
     DCASSERT(chain);
-    if (!df->Matches(chain->Name(), keyword))  continue;
+    if (!df.Matches(chain->Name(), keyword))  continue;
     // traverse the chain, show documentation for each
     for (; chain; chain = chain->Next()) {
-      df->Out() << "\n";
+      df.Out() << "\n";
       chain->PrintDocs(df, keyword);
     }
   }
@@ -75,7 +74,7 @@ public:
   inline int Compare(const symbol_list* x) const {
     return Compare(x ? x->name : 0);
   }
-  void Show(OutputStream& s) const;
+  void Show(std::ostream &s) const;
 };
 
 symbol_list::symbol_list()
@@ -104,14 +103,14 @@ int symbol_list::Compare(const char* name2) const
   return strcmp(name, name2);
 }
 
-void symbol_list::Show(OutputStream& s) const
+void symbol_list::Show(std::ostream &s) const
 {
   if (name)   s << name;
   else        s << "no name";
   s << " : ";
   symbol* ptr;
   for (ptr=front; ptr; ptr=ptr->Next()) {
-    ptr->Print(s, 0);
+    ptr->Print(s);
     s << ", ";
   }
 }

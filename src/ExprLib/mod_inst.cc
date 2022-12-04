@@ -71,17 +71,13 @@ void lldsm::reportMemUsage(exprman* em, const char* prefix) const
 
 long lldsm::bailOut(const char* sfile, unsigned sline, const char* why) const
 {
-  if (em->startInternal(sfile, sline)) {
-    em->causedBy(0);
-    em->internal() << why << " for low level model: ";
-    em->internal() << getNameOf(Type());
+    internal_error E(sfile, sline);
+    E << why << " for low level model: " << getNameOf(Type());
     const char* cn = getClassName();
     if (cn) {
-      em->internal() << " (class " << cn << ")";
+        E << " (class " << cn << ")";
     }
-    em->stopIO();
-  }
-  return -2;
+    return -1;
 }
 
 // ******************************************************************
@@ -203,6 +199,33 @@ void hldsm::bailOut(const char* sfile, unsigned sline, const char* why) const
 }
 
 // ******************************************************************
+// *                       mdl_errmsg  methods                      *
+// ******************************************************************
+
+hldsm::mdl_errmsg::mdl_errmsg(const hldsm* _mod, const expr* cause)
+    : expr_error(cause)
+{
+    model = _mod;
+    DCASSERT(model);
+}
+
+hldsm::mdl_errmsg::~mdl_errmsg()
+{
+    DCASSERT(model);
+
+    newLine();
+    Out << "within model " << ( model->Name() ? model->Name() : "(no name)" );
+
+    if (model->GetParent()) {
+        Out << " instantiated " << model->GetParent()->Where();
+    }
+
+    // Do we need a newline, or will the base class handle that?
+}
+
+
+
+// ******************************************************************
 // *                        partinfo  methods                       *
 // ******************************************************************
 
@@ -302,32 +325,6 @@ void hldsm::partinfo::sort(model_statevar** vars)
 
 
 // ******************************************************************
-// *                       hldsm_error methods                      *
-// ******************************************************************
-
-hldsm_error::hldsm_error(const model_def* _mod, const expr* cause)
-    : expr_error(cause)
-{
-    model = _mod;
-    DCASSERT(model);
-}
-
-hldsm_error::~hldsm_error()
-{
-    DCASSERT(model);
-
-    newLine();
-    Out << "within model " << ( model->Name() ? model->Name() : "(no name)" );
-
-    if (model->GetParent()) {
-        Out << " instantiated " << model->GetParent()->Where();
-    }
-
-    // Do we need a newline, or will the base class handle that?
-}
-
-
-// ******************************************************************
 // *                                                                *
 // *                     model_instance methods                     *
 // *                                                                *
@@ -377,19 +374,20 @@ model_instance::~model_instance()
 bool model_instance::StartWarning(const warning_msg &who, const expr* cause) const
 {
     if (cause) {
-        return who.startWarning(cause->Where());
+        return who.start(cause->Where());
     } else {
-        return who.startWarning(location::NOWHERE());
+        return who.start(location::NOWHERE());
     }
 }
 
-void model_instance::DoneWarning() const
+void model_instance::DoneWarning(const warning_msg &who) const
 {
-  em->newLine();
-  em->warn() << "within model " << Name() << " instantiated " << Where();
-  em->stopIO();
+    who.newLine();
+    who << "within model " << Name() << " instantiated " << Where();
+    who.stop();
 }
 
+/*
 bool model_instance::StartError(const expr* cause) const
 {
   if (!em->startError())  return false;
@@ -403,6 +401,7 @@ void model_instance::DoneError() const
   em->cerr() << "within model " << Name() << " instantiated " << Where();
   em->stopIO();
 }
+*/
 
 
 void model_instance::AcceptSymbolOwnership(symbol* a)
@@ -411,13 +410,12 @@ void model_instance::AcceptSymbolOwnership(symbol* a)
   DCASSERT(a);
   a->LinkTo(slist);
   slist = a;
-  if (model_debug.startReport()) {
-    model_debug.report() << "Model ";
-    if (Name()) model_debug.report() << Name() << " ";
-    model_debug.report() << "accepted symbol ";
-    if (a->Name()) model_debug.report() << a->Name();
-    model_debug.report() << "\n";
-    model_debug.stopIO();
+  if (model_debug.start()) {
+    model_debug << "Model ";
+    if (Name()) model_debug << Name() << " ";
+    model_debug << "accepted symbol ";
+    if (a->Name()) model_debug << a->Name();
+    model_debug.stop();
   }
 }
 
@@ -436,30 +434,28 @@ void model_instance::AcceptMeasure(measure* m)
   ++num_accepted_msrs;
   m->SetOwner(this);
 
-  StringStream cruft;
+  std::stringstream cruft;
   cruft << Name() << "." << num_accepted_msrs;
-  m->Rename(new shared_string(cruft.GetString()));
+  m->Rename(new shared_string(cruft.str().c_str()));
 
-  if (model_debug.startReport()) {
-    model_debug.report() << "Model ";
-    if (Name()) model_debug.report() << Name() << " ";
-    model_debug.report() << "accepted measure ";
-    if (m->Name()) model_debug.report() << m->Name();
-    model_debug.report() << "\n";
-    model_debug.stopIO();
+  if (model_debug.start()) {
+    model_debug << "Model ";
+    if (Name()) model_debug << Name() << " ";
+    model_debug << "accepted measure ";
+    if (m->Name()) model_debug << m->Name();
+    model_debug.stop();
   }
 }
 
 void model_instance::GroupMeasure(measure* m)
 {
   if (0==m)  return;
-  if (model_debug.startReport()) {
-    model_debug.report() << "Grouping measure ";
-    if (m->Name()) model_debug.report() << m->Name() << " ";
-    model_debug.report() << "within model ";
-    if (Name()) model_debug.report() << Name();
-    model_debug.report() << "\n";
-    model_debug.stopIO();
+  if (model_debug.start()) {
+    model_debug << "Grouping measure ";
+    if (m->Name()) model_debug << m->Name() << " ";
+    model_debug << "within model ";
+    if (Name()) model_debug << Name();
+    model_debug.stop();
   }
   // check status of m
   m->notifyFrom(0);
@@ -484,21 +480,19 @@ void model_instance::SolveMeasure(traverse_data &x, measure* m)
   try {
     switch (et->getForm()) {
       case engtype::Single:
-          if (model_debug.startReport()) {
-            model_debug.report() << "Solving measure ";
-            if (m->Name()) model_debug.report() << m->Name();
-            model_debug.report() << "\n";
-            model_debug.stopIO();
+          if (model_debug.start()) {
+            model_debug << "Solving measure ";
+            if (m->Name()) model_debug << m->Name();
+            model_debug.stop();
           }
           et->solveMeasure(compiled, m);
           return;
 
       case engtype::Grouped: {
-          if (model_debug.startReport()) {
-            model_debug.report() << "Solving group of measures";
-            if (m->Name()) model_debug.report() << ", triggered by " << m->Name();
-            model_debug.report() << "\n";
-            model_debug.stopIO();
+          if (model_debug.start()) {
+            model_debug << "Solving group of measures";
+            if (m->Name()) model_debug << ", triggered by " << m->Name();
+            model_debug.stop();
           }
           DCASSERT(mgroups[et->getIndex()]);
           et->solveMeasures(compiled, mgroups[et->getIndex()]);
@@ -519,23 +513,21 @@ void model_instance::SolveMeasure(traverse_data &x, measure* m)
           break;  // any errors should have been reported already
 
       case subengine::No_Engine:
+      {
           m->SetNull();
-          if (StartError(x.parent)) {
-            em->cerr() << "Measure " << m->Name();
-            em->cerr() << " could not be solved, no solution engine available";
-            DoneError();
-          }
-        break;
+          expr_error E(x.parent);
+          E << "Measure " << m->Name();
+          E << " could not be solved, no solution engine available";
+          break;
+      }
 
       default:
+      {
           m->SetNull();
-          if (em->startInternal(__FILE__, __LINE__)) {
-            em->causedBy(0);
-            em->internal() << subengine::getNameOfError(ee);
-            em->internal() << " on measure ";
-            em->internal() << m->Name();
-            em->stopIO();
-          }
+          internal_error E(__FILE__, __LINE__);
+          E << subengine::getNameOfError(ee);
+          E << " on measure " << m->Name();
+      }
     } // switch
   } // catch
 }
@@ -561,12 +553,12 @@ void model_instance::Deconstruct()
 {
   if (Deleted == state)  return;
 
-  if (model_debug.startReport()) {
-    model_debug.report() << "Deleting model ";
+  if (model_debug.start()) {
+    model_debug << "Deleting model ";
     const char* n = Name();
-    if (n)  model_debug.report() << n << "\n";
-    else    model_debug.report() << "null-name\n";
-    model_debug.stopIO();
+    if (n)  model_debug << n << "\n";
+    else    model_debug << "null-name\n";
+    model_debug.stop();
   }
 
   state = Deleted;
@@ -598,37 +590,50 @@ bool model_instance
     case Ready:
         return false;
 
-    case Constructing:
-        if (em->startError()) {
-          em->causedBy(call);
-          em->cerr() << "Model ";
-          if (Name())  em->cerr() << Name() << " ";
-          em->cerr() << "is still under construction";
-          if (who)  em->cerr() << "; cannot compute " << who;
-          em->stopIO();
-        }
-        return true;
-
     case Error:
         return true;
 
+    case Constructing:
     case Deleted:
-        if (em->startError()) {
-          em->causedBy(call);
-          em->cerr() << "Model ";
-          if (Name())  em->cerr() << Name() << " ";
-          em->cerr() << "has been deleted";
-          if (who)  em->cerr() << "; cannot compute " << who;
-          em->stopIO();
-        }
+    {
+        expr_error E(call);
+        E << "Model ";
+        if (Name())  E << Name() << " ";
+        if (Deleted == state)
+            E << "has been deleted";
+        else
+            E << "is still under construction";
+        if (who)  E << "; cannot compute " << who;
         return true;
+    }
+
   } // switch
-  if (em->startInternal(__FILE__, __LINE__)) {
-    em->causedBy(call);
-    em->internal() << "Bad state for model " << Name();
-    em->stopIO();
-  }
+  internal_error E(__FILE__, __LINE__, call ? call->Where() : location::NOWHERE());
+  E << "Bad state for model " << Name();
   return true;  // Just in case
+}
+
+// ******************************************************************
+// *                       mdl_errmsg  methods                      *
+// ******************************************************************
+
+model_instance::mdl_errmsg::mdl_errmsg(const model_instance* _mod,
+        const expr* cause) : expr_error(cause)
+{
+    model = _mod;
+    DCASSERT(model);
+}
+
+model_instance::mdl_errmsg::~mdl_errmsg()
+{
+    DCASSERT(model);
+
+    newLine();
+    Out << "within model " << ( model->Name() ? model->Name() : "(no name)" );
+
+    Out << " instantiated " << model->Where();
+
+    // Do we need a newline, or will the base class handle that?
 }
 
 //
@@ -642,11 +647,11 @@ bool model_instance
 // ******************************************************************
 
 class error_lldsm : public lldsm {
-public:
-  error_lldsm();
-protected:
-  virtual ~error_lldsm();
-  const char* getClassName() const { return "error_lldsm"; }
+    public:
+        error_lldsm();
+    protected:
+        virtual ~error_lldsm();
+        virtual const char* getClassName() const { return "error_lldsm"; }
 };
 
 error_lldsm::error_lldsm() : lldsm(Error)
@@ -931,68 +936,58 @@ inline expr* Bailout(expr* ret, expr** p, int np)
 const model_def* GrabModelType(const exprman* em, const location &W,
         bool want_array, const symbol* mi)
 {
-  if (0==mi) return 0;
-  // first, check array status
-  const array* foo = dynamic_cast <const array*> (mi);
-  if (want_array != (foo != 0)) {
-    if (em->startError()) {
-      em->causedBy(W);
-      em->cerr() << mi->Name();
-      if (foo)  em->cerr() << " is an array";
-      else      em->cerr() << " is not an array";
-      em->stopIO();
+    if (0==mi) return 0;
+    // first, check array status
+    const array* foo = dynamic_cast <const array*> (mi);
+    if (want_array != (foo != 0)) {
+        typechecking_error E(W);
+        E << mi->Name();
+        if (foo)  E << " is an array";
+        else      E << " is not an array";
+        return 0;
     }
-    return 0;
-  }
-  const model_def* p = mi->GetModelType();
-  if (0==p) if (em->startError()) {
-    em->causedBy(W);
-    em->cerr() << mi->Name();
-    if (foo)  em->cerr() << " does not appear to be an array of models";
-    else      em->cerr() << " does not appear to be a model";
-    em->stopIO();
-  }
-  return p;
+    const model_def* p = mi->GetModelType();
+    if (0==p) {
+        typechecking_error E(W);
+        E << mi->Name();
+        if (foo)  E << " does not appear to be an array of models";
+        else      E << " does not appear to be a model";
+    }
+    return p;
 }
 
 int GrabMsrSlot(const exprman* em, const location &W, const model_def* p,
     symbol* mi, bool want_array, const char* msr_name)
 {
-  if (0==p || 0==msr_name) return -1;
-  int slot = p->FindVisible(msr_name);
-  if (slot < 0) {
-    if (em->startError()) {
-      em->causedBy(W);
-      em->cerr() << "Measure " << msr_name;
-      const array* foo = dynamic_cast <const array*> (mi);
-      if (foo)  em->cerr() << " does not exist in model array ";
-      else      em->cerr() << " does not exist in model ";
-      em->cerr() << mi->Name();
-      em->stopIO();
+    if (0==p || 0==msr_name) return -1;
+    int slot = p->FindVisible(msr_name);
+    if (slot < 0) {
+        typechecking_error E(W);
+        E << "Measure " << msr_name;
+        const array* foo = dynamic_cast <const array*> (mi);
+        if (foo)  E << " does not exist in model array ";
+        else      E << " does not exist in model ";
+        E << mi->Name();
+        return slot;
+    }
+
+    const symbol* msr = p->GetSymbol(slot);
+    DCASSERT(msr);
+    const array* foo = dynamic_cast <const array*> (msr);
+    bool is_array = (foo != 0);
+
+    if (want_array != is_array) {
+        typechecking_error E(W);
+        E << "Measure " << msr_name;
+        const array* foo = dynamic_cast <const array*> (mi);
+        if (foo)  E << " in model array ";
+        else      E << " in model ";
+        E << mi->Name();
+        if (is_array) E << " is an array";
+        else          E << " is not an array";
+        return -1;
     }
     return slot;
-  }
-
-  const symbol* msr = p->GetSymbol(slot);
-  DCASSERT(msr);
-  const array* foo = dynamic_cast <const array*> (msr);
-  bool is_array = (foo != 0);
-
-  if (want_array != is_array) {
-    if (em->startError()) {
-      em->causedBy(W);
-      em->cerr() << "Measure " << msr_name;
-      const array* foo = dynamic_cast <const array*> (mi);
-      if (foo)  em->cerr() << " in model array ";
-      else      em->cerr() << " in model ";
-      em->cerr() << mi->Name() << " is";
-      if (is_array) em->cerr() << " is an array";
-      else          em->cerr() << " is not an array";
-      em->stopIO();
-    }
-    return -1;
-  }
-  return slot;
 }
 
 bool OkMsrArrayCall(const exprman* em, const location &W,

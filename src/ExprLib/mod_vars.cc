@@ -205,7 +205,7 @@ void model_statevar::ownerError(traverse_data &x) const {
 	DCASSERT(x.current_state);
 	const hldsm* hm = x.current_state->Parent();
 	DCASSERT(hm);DCASSERT(hm->GetParent() != getParent());
-    hldsm_error E(hm, x.parent);
+    hldsm::mdl_errmsg E(hm, x.parent);
     E << "state variable " << Name() << " belongs to another model";
     DCASSERT(x.answer);
 	x.answer->setNull();

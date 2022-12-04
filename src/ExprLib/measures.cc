@@ -26,17 +26,16 @@ measure::measure(const expr* e, engtype* which, model_def* parent, expr* rhs)
   solve_deps = 0;
 
   parent->AcceptMeasure(this);
-  if (model_debug.startReport()) {
-    model_debug.report() << "Building submeasure " << Name() << " for expr ";
-    if (rhs) rhs->Print(model_debug.report(), 0);
-    else     model_debug.report() << "null";
-    model_debug.report() << "\n";
-    model_debug.stopIO();
+  if (model_debug.start()) {
+    model_debug << "Building submeasure " << Name() << " for expr ";
+    if (rhs) rhs->Print(model_debug.stream());
+    else     model_debug << "null";
+    model_debug.stop();
   }
   SetRHS(rhs);
-  if (model_debug.startReport()) {
-    model_debug.report() << "Done building submeasure " << Name() << "\n";
-    model_debug.stopIO();
+  if (model_debug.start()) {
+    model_debug << "Done building submeasure " << Name();
+    model_debug.stop();
   }
 }
 
@@ -127,9 +126,9 @@ void measure::Affix()
   if (Type() == em->VOID) return;
   if (!isComputed()) setComputed();
   SetSubstitution(true);
-  if (model_debug.startReport()) {
-    model_debug.report() << "Measure " << Name() << " is computed\n";
-    model_debug.stopIO();
+  if (model_debug.start()) {
+    model_debug << "Measure " << Name() << " is computed\n";
+    model_debug.stop();
   }
   notifyList();
 }
@@ -176,19 +175,16 @@ bool measure::isBlockedEngine() const
 
 void measure::classifyNow()
 {
-  if (which_engine != em->BLOCKED_ENGINE) return;
-  if (em->startInternal(__FILE__, __LINE__)) {
-    em->causedBy(this);
-    em->internal() << "No classification method for blocked measure!";
-    em->stopIO();
-  }
+    if (which_engine != em->BLOCKED_ENGINE) return;
+    internal_error E(__FILE__, __LINE__, Where());
+    E << "No classification method for blocked measure!";
 }
 
 void measure::waitDepList(List <symbol>* dl)
 {
-  if (0==dl) return;
-  for (int i=0; i<dl->Length(); i++)
-    dl->Item(i)->addToWaitList(this);
+    if (0==dl) return;
+    for (int i=0; i<dl->Length(); i++)
+        dl->Item(i)->addToWaitList(this);
 }
 
 // ******************************************************************
@@ -439,12 +435,9 @@ msr_func::~msr_func()
 
 void msr_func::Compute(traverse_data &x, expr** pass, int np)
 {
-  if (em->startInternal(__FILE__, __LINE__)) {
-    em->causedBy(0);
-    em->internal() << "Trying to compute measure-generating function: ";
-    Print(em->internal(), 0);
-    em->stopIO();
-  }
+    internal_error E(__FILE__, __LINE__);
+    E << "Trying to compute measure-generating function: ";
+    Print(E.stream());
 }
 
 int msr_func::Traverse(traverse_data &x, expr** pass, int np)
@@ -484,12 +477,9 @@ msr_noengine::~msr_noengine()
 
 void msr_noengine::Compute(traverse_data &x, expr** pass, int np)
 {
-  if (em->startInternal(__FILE__, __LINE__)) {
-    em->causedBy(0);
-    em->internal() << "No Compute() method provided for function: ";
-    Print(em->internal(), 0);
-    em->stopIO();
-  }
+    internal_error E(__FILE__, __LINE__);
+    E << "No Compute() method provided for function: ";
+    Print(E.stream(), 0);
 }
 
 measure* msr_noengine

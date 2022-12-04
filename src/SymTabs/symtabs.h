@@ -58,7 +58,7 @@ public:
   */
   virtual void CopyToArray(const symbol** list) const = 0;
 
-  void DocumentSymbols(doc_formatter* df, const char* keyword) const;
+  void DocumentSymbols(doc_formatter &df, const char* keyword) const;
 };
 
 
