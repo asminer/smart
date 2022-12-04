@@ -135,7 +135,7 @@ protected:
   bool silent;
 public:
   typecast(const location &W, const type* newt, expr* x);
-  virtual bool Print(std::ostream &s, int) const;
+  virtual bool Print(std::ostream &s, int w=0) const;
   virtual void Compute(traverse_data &x);
 protected:
   // required for unary ops

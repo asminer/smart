@@ -33,11 +33,9 @@ string_type::string_type() : simple_type("string", "String of characters", "Stri
 
 void string_type::show_normal(std::ostream &s, const result& r) const
 {
-  s.Put('"');
   shared_string* foo = smart_cast <shared_string*> (r.getPtr());
   DCASSERT(foo);
-  s.Put(foo->getStr());
-  s.Put('"');
+  s << '"' << foo->getStr() << '"';
 }
 
 void string_type::assign_normal(result& r, const char* s) const
@@ -84,7 +82,7 @@ void string_add::Compute(traverse_data &x)
   DCASSERT(x.answer);
   DCASSERT(0==x.aggregate);
   // strings are accumulated into a string stream
-  StringStream acc;
+  std::string acc;
   // Compute strings for each operand
   for (int i=0; i<opnd_count; i++) {
     DCASSERT(operands[i]);
@@ -93,11 +91,10 @@ void string_add::Compute(traverse_data &x)
     if (x.answer->isNull()) return;
     shared_string *xss = smart_cast <shared_string*> (x.answer->getPtr());
     DCASSERT(xss);
-    acc.Put(xss->getStr());
+    acc += std::string(xss->getStr());
   }
   // done, collect concatenation
-  char* answer = acc.GetString();
-  x.answer->setPtr(new shared_string(answer));
+  x.answer->setPtr(new shared_string(acc.c_str()));
 }
 
 expr* string_add::buildAnother(expr **x, bool* f, int n) const

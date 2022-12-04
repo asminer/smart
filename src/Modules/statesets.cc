@@ -48,11 +48,8 @@ bool stateset::parentsMatch(const expr* c, const char* op, stateset* A, stateset
   if (0==A || 0==B) return false;
 
   if (A->getParent() != B->getParent()) {
-    if (em->startError()) {
-      em->causedBy(c);
-      em->cerr() << "Statesets in " << op << " are from different model instances";
-      em->stopIO();
-    }
+    expr_error E(c);
+    E << "Statesets in " << op << " are from different model instances";
     return false;
   }
 
@@ -61,11 +58,8 @@ bool stateset::parentsMatch(const expr* c, const char* op, stateset* A, stateset
 
 void stateset::storageMismatchError(const expr* c, const char* op)
 {
-  if (em->startError()) {
-    em->causedBy(c);
-    em->cerr() << "Statesets in " << op << " use incompatible storage types";
-    em->stopIO();
-  }
+    expr_error E(c);
+    E << "Statesets in " << op << " use incompatible storage types";
 }
 
 // ******************************************************************

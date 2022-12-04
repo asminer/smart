@@ -170,7 +170,7 @@ bool meddly_stateset::Print(std::ostream &s, int) const
 
   shared_state* st = new shared_state(hm);
   const int* mt = mdd_wrap->firstMinterm(states);
-  s.Put('{');
+  s << '{';
   bool comma = false;
   while (mt) {
     if (comma)  s << ", ";
@@ -179,7 +179,7 @@ bool meddly_stateset::Print(std::ostream &s, int) const
     hm->showState(s, st);
     mt = mdd_wrap->nextMinterm(states);
   }
-  s.Put('}');
+  s << '}';
   Delete(st);
   return true;
 }

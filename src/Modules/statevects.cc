@@ -65,16 +65,15 @@ bool statevect_printer::visit()
   else        comma = true;
 
   if (statevect::SINDEX==display_style) {
-    out.Put(x.current_state_index);
-    out.Put(':');
+    out << x.current_state_index;
+    out << ':';
   }
   if (statevect::SSTATE==display_style) {
-    x.current_state->Print(out, 0);
-    out.Put(':');
+    x.current_state->Print(out);
+    out << ':';
   }
 
   out << myvect[x.current_state_index];
-  out.can_flush();  // otherwise, huge sets will overflow the buffer
   return false;
 }
 
@@ -331,14 +330,14 @@ bool statevect::Print(std::ostream &s, int width) const
 {
   DCASSERT(parent);
 
-  if (FULL==display_style)  s.Put('[');
-  else                      s.Put('(');
+  if (FULL==display_style)  s << '[';
+  else                      s << '(';
 
   statevect_printer foo(parent->GetParent(), s, this, display_style);
   parent->visitStates(foo);
 
-  if (FULL==display_style)  s.Put(']');
-  else                      s.Put(')');
+  if (FULL==display_style)  s << ']';
+  else                      s << ')';
 
   return true;
 }
@@ -1081,30 +1080,21 @@ void condition_si::Compute(traverse_data &x, expr** pass, int np)
   DCASSERT(ss);
 
   if (p->getParent() != ss->getParent()) {
-    if (em->startError()) {
-      em->causedBy(this);
-      em->cerr() << "State distribution and set parameters to condition()";
-      em->newLine();
-      em->cerr() << "are from different model instances";
-      em->stopIO();
-    }
     Delete(p);
     Delete(ss);
-    x.answer->setNull();
+    expr_error E(this, x.answer);
+    E << "State distribution and set parameters to condition()";
+    E.newLine();
+    E << "are from different model instances";
     return;
   }
 
   expl_stateset* e = dynamic_cast <expl_stateset*>(ss);
   if (!e) {
-
-    if (em->startError()) {
-      em->causedBy(this);
-      em->cerr() << "Sorry, condition() requires explicit statesets (for now)";
-      em->stopIO();
-    }
     Delete(p);
     Delete(ss);
-    x.answer->setNull();
+    expr_error E(this, x.answer);
+    E << "Sorry, condition() requires explicit statesets (for now)";
     return;
   }
 
@@ -1179,29 +1169,21 @@ void prob_si::Compute(traverse_data &x, expr** pass, int np)
   DCASSERT(ss);
 
   if (p->getParent() != ss->getParent()) {
-    if (em->startError()) {
-      em->causedBy(this);
-      em->cerr() << "State distribution and set parameters to prob()";
-      em->newLine();
-      em->cerr() << "are from different model instances";
-      em->stopIO();
-    }
     Delete(p);
     Delete(ss);
-    x.answer->setNull();
+    expr_error E(this, x.answer);
+    E << "State distribution and set parameters to prob()";
+    E.newLine();
+    E << "are from different model instances";
     return;
   }
 
   expl_stateset* e = dynamic_cast <expl_stateset*>(ss);
   if (!e) {
-    if (em->startError()) {
-      em->causedBy(this);
-      em->cerr() << "Sorry, prob() requires explicit statesets (for now)";
-      em->stopIO();
-    }
     Delete(p);
     Delete(ss);
-    x.answer->setNull();
+    expr_error E(this, x.answer);
+    E << "Sorry, prob() requires explicit statesets (for now)";
     return;
   }
 
@@ -1274,14 +1256,10 @@ void expected_si::Compute(traverse_data &x, expr** pass, int np)
   //
 
   if (vx->getParent() != vp->getParent()) {
-    if (em->startError()) {
-      em->causedBy(this);
-      em->cerr() << "Measure and distribution are from different model instances";
-      em->stopIO();
-    }
     Delete(vx);
     Delete(vp);
-    x.answer->setNull();
+    expr_error E(this, x.answer);
+    E << "Measure and distribution are from different model instances";
     return;
   }
 

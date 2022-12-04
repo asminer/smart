@@ -139,8 +139,8 @@ public:
   virtual ~mdd_lib();
   virtual const char* getVersionString() const;
   virtual bool hasFixedPointer() const { return false; }
-  virtual void printCopyright(doc_formatter* df) const;
-  virtual void printReleaseDate(doc_formatter* df) const;
+  virtual void printCopyright(doc_formatter &df) const;
+  virtual void printReleaseDate(doc_formatter &df) const;
 };
 
 mdd_lib::mdd_lib() : library(true, true)
@@ -157,18 +157,18 @@ const char* mdd_lib::getVersionString() const
   return version;
 }
 
-void mdd_lib::printCopyright(doc_formatter* df) const
+void mdd_lib::printCopyright(doc_formatter &df) const
 {
-  df->begin_indent();
-  df->Out() << MEDDLY::getLibraryInfo(1) << "\n";
-  df->Out() << MEDDLY::getLibraryInfo(2) << "\n";
-  df->Out() << MEDDLY::getLibraryInfo(3) << "\n";
-  df->end_indent();
+  df.begin_indent();
+  df.Out() << MEDDLY::getLibraryInfo(1) << "\n";
+  df.Out() << MEDDLY::getLibraryInfo(2) << "\n";
+  df.Out() << MEDDLY::getLibraryInfo(3) << "\n";
+  df.end_indent();
 }
 
-void mdd_lib::printReleaseDate(doc_formatter* df) const
+void mdd_lib::printReleaseDate(doc_formatter &df) const
 {
-  df->Out() << MEDDLY::getLibraryInfo(5);
+  df.Out() << MEDDLY::getLibraryInfo(5);
 }
 
 mdd_lib mdd_lib_data;
@@ -309,21 +309,21 @@ void meddly_encoder::dumpNode(std::ostream &s, shared_object* e) const
 {
   shared_ddedge* me = dynamic_cast <shared_ddedge*> (e);
   if (0==me) throw  Invalid_Edge;
-  s.Put(me->E.getNode());
+  s << me->E.getNode();
 }
 
 void meddly_encoder::showNodeGraph(std::ostream &s, shared_object* e) const
 {
   shared_ddedge* me = dynamic_cast <shared_ddedge*> (e);
   if (0==me) throw  Invalid_Edge;
-  smart_output sout(s);
+  MEDDLY::ostream_output sout(s);
   me->E.show(sout, 2);
 }
 
 void meddly_encoder::dumpForest(std::ostream &s) const
 {
   DCASSERT(F);
-  smart_output sout(s);
+  MEDDLY::ostream_output sout(s);
   F->showInfo(sout, 1);
 }
 
@@ -1047,19 +1047,17 @@ void meddly_encoder
 inline void putNodes(std::ostream &out, const char* pre, const char* f, long n)
 {
   out << "\t    ";
-  out.Put(pre, -8);
-  if (f) out.Put(f);
+  out << std::setw(8) << pre;
+  if (f) out << f;
   out << " nodes: " << n << "\n";
 }
 
 inline void putMem(std::ostream &out, const char* pre, const char* f, size_t m)
 {
   out << "\t    ";
-  out.Put(pre, -8);
-  if (f) out.Put(f);
-  out << " memory: ";
-  out.PutMemoryCount(m, 3);
-  out << "\n";
+  out << pre;
+  if (f) out << f;
+  out << " memory: " << memoryCount(m, 3) << '\n';
 }
 
 void meddly_encoder::reportStats(std::ostream &out)
@@ -1080,12 +1078,10 @@ shared_ddedge* meddly_encoder::fold(const MEDDLY::binary_opname* op,
 
   while (N>1) {
 
-    if (debug && debug->startReport()) {
-      debug->report().Put(long(N), 9);
-      debug->report() << " terms to accumulate ";
-      debug->report().Put(long(F->getCurrentNumNodes()), 10);
-      debug->report() << " forest nodes\n";
-      debug->stopIO();
+    if (debug && debug->start()) {
+      *debug << formatted_int(N, 9) << " terms to accumulate ";
+      *debug << formatted_int(F->getCurrentNumNodes(), 10) << " forest nodes";
+      debug->stop();
     }
 
     // Combine adjacent pairs
@@ -1127,12 +1123,12 @@ shared_ddedge* meddly_encoder::accumulate(const MEDDLY::binary_opname* op,
   DCASSERT(F);
 
   for (int i=1; i<N; i++) {
-    if (debug && debug->startReport()) {
-      debug->report().Put(long(N-i), 9);
-      debug->report() << " terms to accumulate ";
-      debug->report().Put(long(F->getCurrentNumNodes()), 10);
-      debug->report() << " forest nodes\n";
-      debug->stopIO();
+    if (debug && debug->start()) {
+      *debug << formatted_int(N-i, 9);
+      *debug << " terms to accumulate ";
+      *debug << formatted_int(F->getCurrentNumNodes(), 10);
+      *debug << " forest nodes";
+      debug->stop();
     }
     if (0==list[i]) continue;
     if (0==list[0]) {

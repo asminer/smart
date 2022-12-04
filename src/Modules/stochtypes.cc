@@ -88,48 +88,50 @@ void findCommonDependencies(int i, expr** elist, int N, List <symbol> &shared)
 }
 
 /// Show variable dependencies.
-void showCommonDependencies(const exprman* em, List <symbol> &shared, symbol* who)
+void showCommonDependencies(const unnamed_warning &E,
+        List <symbol> &shared, symbol* who)
 {
-  if (who)
-    em->warn() << "Common dependencies in parameters to " << who->Name() << "():";
-  else
-    em->warn() << "Common dependencies:";
-  for (int i=0; i<shared.Length(); i++) {
-    em->newLine((i>0) ? 0 : 1);
-    shared.Item(i)->Print(em->warn(), 0);
-  }
+    if (who) {
+        E << "Common dependencies in parameters to " << who->Name() << "():";
+    } else {
+        E << "Common dependencies:";
+    }
+    E.Out.incIndent();
+    for (int i=0; i<shared.Length(); i++) {
+        E.newLine();
+        shared.Item(i)->Print(E.stream());
+    }
 }
 
 /** Check for dependent arguments.
     Used for phase type functions like choose() and max().
 */
-bool haveDependencies(const exprman* em, symbol* who, expr** pass, int np)
+bool haveDependencies(symbol* who, expr** pass, int np)
 {
-  List <symbol> foo;
-  // Check for independence
-  findCommonDependencies(0, pass, np, foo);
-  if (foo.Length()) if (em->startWarning()) { // TBD: name this warning?
-    em->causedBy(0);
-    showCommonDependencies(em, foo, who);
-    em->stopIO();
-    return true;
-  }
-  return false;
+    List <symbol> foo;
+    // Check for independence
+    findCommonDependencies(0, pass, np, foo);
+    if (foo.Length()) { // TBD: name this warning?
+        unnamed_warning E;
+        showCommonDependencies(E, foo, who);
+        return true;
+    }
+    return false;
 }
 
 /**
     Out of range error message.
 */
-inline void OutOfRange(const exprman* em, const traverse_data &x, const type* t, const char* what, const char* range)
+inline void OutOfRange(const traverse_data &x, const type* t,
+        const char* what, const char* range)
 {
-    if (em->startError()) {
-      em->causedBy(x.parent);
-      em->cerr() << what;
-      DCASSERT(t);
-      t->print(em->cerr(), *x.answer);
-      em->cerr() << " out of range" << range;
-      em->stopIO();
-    }
+    expr_error E(x.parent);
+    E << what;
+    DCASSERT(t);
+    t->print(E.stream(), *x.answer);
+    E << " out of range" << range;
+    DCASSERT(x.answer);
+    x.answer->setNull();
 }
 
 // ******************************************************************
@@ -168,11 +170,9 @@ public:
   distribution(const type* rettype, const char* name, int np);
   inline bool hasNoRngStream(const char* fn, int ln, traverse_data &x) const {
     if (x.stream) return false;
-    if (em->startInternal(fn, ln)) {
-      em->causedBy(x.parent);
-      em->internal() << "Missing RNG stream in call to " << Name();
-      em->stopIO();
-    }
+    internal_error E(fn, ln,
+        x.parent ? x.parent->Where() : location::NOWHERE() );
+    E << "Missing RNG stream in call to " << Name();
     x.answer->setNull();
     return true;
   }
@@ -192,8 +192,7 @@ public:
   bernoulli(const type* rettype, const type* parmtype);
   virtual int Traverse(traverse_data &x, expr** pass, int np);
   inline void BadP(traverse_data &x) const {
-    OutOfRange(em, x, em->REAL, "bernoulli probability ", "");
-    x.answer->setNull();
+    OutOfRange(x, em->REAL, "bernoulli probability ", "");
   }
 };
 
@@ -300,8 +299,7 @@ public:
   geometric(const type* rettype, const type* parmtype);
   virtual int Traverse(traverse_data &x, expr** pass, int np);
   void BadP(traverse_data &x) const {
-    OutOfRange(em, x, em->REAL, "geometric probability ", "");
-    x.answer->setNull();
+    OutOfRange(x, em->REAL, "geometric probability ", "");
   }
 };
 
@@ -409,20 +407,15 @@ public:
   inline bool isBadParam(const char* which, traverse_data &x) const {
     DCASSERT(x.answer);
     if (x.answer->isNormal()) if (x.answer->getInt() >= 0) return false;
-    OutOfRange(em, x, em->INT, which, " for phase int");
-    x.answer->setNull();
+    OutOfRange(x, em->INT, which, " for phase int");
     return true;
   }
 
   inline void aGTb(traverse_data &x, long a, long b) const {
     DCASSERT(a>b);
-    if (em->startError()) {
-      em->causedBy(x.parent);
-      em->cerr() << "equilikely parameters a=" << a;
-      em->cerr() << ", b=" << b << " do not satisfy a<=b";
-      em->stopIO();
-    }
-    x.answer->setNull();
+    expr_error E(x.parent, x.answer);
+    E << "equilikely parameters a=" << a;
+    E << ", b=" << b << " do not satisfy a<=b";
   }
 
 };
@@ -560,8 +553,7 @@ public:
   inline bool isBadN(traverse_data &x) const {
     DCASSERT(x.answer);
     if (x.answer->isNormal()) if (x.answer->getInt() >= 0) return false;
-    OutOfRange(em, x, em->INT, "binomial parameter n=", "");
-    x.answer->setNull();
+    OutOfRange(x, em->INT, "binomial parameter n=", "");
     return true;
   }
 
@@ -571,8 +563,7 @@ public:
       double p = x.answer->getReal();
       if (p >= 0 && p <= 1) return false;
     }
-    OutOfRange(em, x, em->REAL, "binomial parameter p=", "");
-    x.answer->setNull();
+    OutOfRange(x, em->REAL, "binomial parameter p=", "");
     return true;
   }
 };
@@ -681,15 +672,11 @@ public:
   expo_dist(const type* rettype, const type* parmtype);
   virtual int Traverse(traverse_data &x, expr** pass, int np);
   inline void BadLambda(traverse_data &x) const {
-    if (em->startError()) {
-      em->causedBy(x.parent);
-      em->cerr() << "expo with parameter ";
-      DCASSERT(em->REAL);
-      em->REAL->print(em->cerr(), *x.answer);
-      em->cerr() << ", must be non-negative";
-      em->stopIO();
-    }
-    x.answer->setNull();
+    expr_error E(x.parent, x.answer);
+    E << "expo with parameter ";
+    DCASSERT(em->REAL);
+    em->REAL->print(E.stream(), *x.answer);
+    E << ", must be non-negative";
   }
 };
 
@@ -832,8 +819,7 @@ public:
   inline bool isBadN(traverse_data &x) const {
     DCASSERT(x.answer);
     if (x.answer->isNormal()) if (x.answer->getInt() >= 0) return false;
-    OutOfRange(em, x, em->INT, "erlang parameter n=", "");
-    x.answer->setNull();
+    OutOfRange(x, em->INT, "erlang parameter n=", "");
     return true;
   }
 
@@ -842,8 +828,7 @@ public:
     if (x.answer->isNormal()) {
       if (x.answer->getReal() >= 0) return false;
     }
-    OutOfRange(em, x, em->REAL, "erlang rate parameter r=", "");
-    x.answer->setNull();
+    OutOfRange(x, em->REAL, "erlang rate parameter r=", "");
     return true;
   }
 };
@@ -1238,14 +1223,13 @@ assoc* phase_add_op
   // check for parameter independence
   List <symbol> foo;
   findCommonDependencies(0, list, N, foo);
-  if (foo.Length()) if (em->startWarning()) { // TBD: name this warning?
-    em->causedBy(W);
-    em->warn() << "operands in phase-type addition are not independent;";
-    em->newLine();
-    em->warn() << "phase-type model will incorrectly treat them as such.";
-    em->newLine();
-    showCommonDependencies(em, foo, 0);
-    em->stopIO();
+  if (foo.Length()) {
+    unnamed_warning E(W);
+    E << "operands in phase-type addition are not independent;";
+    E.newLine();
+    E << "phase-type model will incorrectly treat them as such.";
+    E.newLine();
+    showCommonDependencies(E, foo, 0);
   }
 
   return new myexpr(W, anstype, list, 0, N);
@@ -1372,22 +1356,17 @@ void phase_mult_op::myexpr::Compute(traverse_data &x)
   if (x.answer->isNormal()) {
     if (discrete) newph = makeProduct(X, x.answer->getInt());
     else          newph = makeProduct(X, x.answer->getReal());
-    if (0==newph) if (em->startError()) {
-      em->causedBy(this);
-      em->cerr() << "Couldn't build phase-type product, bad constant?";
-      em->stopIO();
+    if (newph)    x.answer->setPtr(newph);
+    else {
+      expr_error E(this, x.answer);
+      E << "Couldn't build phase-type product, bad constant?";
     }
-    x.answer->setPtr(newph);
     return;
   }
 
   if (x.answer->isInfinity()) {
-    if (em->startError()) {
-      em->causedBy(this);
-      em->cerr() << "Cannot build phase-type product with infinity";
-      em->stopIO();
-    }
-    x.answer->setNull();
+    expr_error E(this);
+    E << "Cannot build phase-type product with infinity";
   }
 
   // whatever error is left, propogate it
@@ -1572,12 +1551,8 @@ void cph2dph_unif::Compute(traverse_data &x, expr** pass, int np)
   if (x.answer->isNormal()) {
     double q = x.answer->getReal();
     if (q<=0) {
-      if (em->startError()) {
-        em->causedBy(x.parent);
-        em->cerr() << "Invalid uniformization constant: " << q << " (must be positive)";
-        em->stopIO();
-      } // error
-      x.answer->setNull();
+      expr_error E(x.parent, x.answer);
+      E << "Invalid uniformization constant: " << q << " (must be positive)";
       return;
     }
     phase_hlm* ans = makeUniformized(opnd, q);
@@ -1703,7 +1678,7 @@ int max_ph::Traverse(traverse_data &x, expr** pass, int np)
   formals.promote(em, pass, np, Type());
 
   // Now, check for independence
-  if (haveDependencies(em, this, pass, np))
+  if (haveDependencies(this, pass, np))
     return Promote_Dependent;
   else
     return Promote_Success;
@@ -1755,7 +1730,7 @@ int min_ph::Traverse(traverse_data &x, expr** pass, int np)
   formals.promote(em, pass, np, Type());
 
   // Now, check for independence
-  if (haveDependencies(em, this, pass, np))
+  if (haveDependencies(this, pass, np))
     return Promote_Dependent;
   else
     return Promote_Success;
@@ -1820,7 +1795,7 @@ int order_ph::Traverse(traverse_data &x, expr** pass, int np)
   formals.promote(em, pass, np, Type());
 
   // Now, check for independence
-  if (haveDependencies(em, this, pass+1, np-1))
+  if (haveDependencies(this, pass+1, np-1))
     return Promote_Dependent;
   else
     return Promote_Success;
@@ -1905,26 +1880,17 @@ void choose_ph::Compute(traverse_data &x, expr** pass, int np)
       probarray[i] = x.answer->getReal();
       total += probarray[i];
       if (probarray[i] >= 0) continue;
-      if (em->startError()) {
-        em->causedBy(x.parent);
-        em->cerr() << "Negative probability for parameter " << i;
-        em->stopIO();
-      } // error
+      expr_error E(x.parent, x.answer);
+      E << "Negative probability for parameter " << i;
       return;
     }
-    if (em->startError()) {
-      em->causedBy(x.parent);
-      em->cerr() << "Bad probability for parameter " << i;
-      em->stopIO();
-    } // error
+    expr_error E(x.parent, x.answer);
+    E << "Bad probability for parameter " << i;
     return;
   }
   if (0==total) {
-    if (em->startError()) {
-      em->causedBy(x.parent);
-      em->cerr() << "Weights sum to zero in call to choose.";
-      em->stopIO();
-    } // error
+    expr_error E(x.parent, x.answer);
+    E << "Weights sum to zero in call to choose.";
     return;
   }
   // weights are ok, now get distributions
@@ -1948,7 +1914,7 @@ int choose_ph::Traverse(traverse_data &x, expr** pass, int np)
   formals.promote(em, pass, np, Type());
 
   // Now, check for independence
-  if (haveDependencies(em, this, pass, np))
+  if (haveDependencies(this, pass, np))
     return Promote_Dependent;
   else
     return Promote_Success;
@@ -1993,12 +1959,8 @@ void choose_rand::Compute(traverse_data &x, expr** pass, int np)
   DCASSERT(x.answer);
   expandArray(np);
   if (0==probarray) {
-    if (em->startError()) {
-      em->causedBy(x.parent);
-      em->cerr() << "Not enough memory for probability array";
-      em->stopIO();
-    }
-    x.answer->setNull();
+    expr_error E(x.parent, x.answer);
+    E << "Not enough memory for probability array";
     return;
   }
 
@@ -2008,32 +1970,20 @@ void choose_rand::Compute(traverse_data &x, expr** pass, int np)
     SafeCompute(pass[i], x);
     x.aggregate = 0;
     if (!x.answer->isNormal()) {
-      if (em->startError()) {
-        em->causedBy(x.parent);
-        em->cerr() << "Bad probability for parameter " << i;
-        em->stopIO();
-      } // error
-      x.answer->setNull();
+      expr_error E(x.parent, x.answer);
+      E << "Bad probability for parameter " << i;
       return;
     }
     if (x.answer->getReal()<0) {
-      if (em->startError()) {
-        em->causedBy(x.parent);
-        em->cerr() << "Negative probability for parameter " << i;
-        em->stopIO();
-      } // error
-      x.answer->setNull();
+      expr_error E(x.parent, x.answer);
+      E << "Negative probability for parameter " << i;
       return;
     }
     total += (probarray[i] = x.answer->getReal());
   }
   if (0==total) {
-    if (em->startError()) {
-      em->causedBy(x.parent);
-      em->cerr() << "Weights sum to zero in call to choose.";
-      em->stopIO();
-    } // error
-    x.answer->setNull();
+    expr_error E(x.parent, x.answer);
+    E << "Weights sum to zero in call to choose.";
     return;
   }
   // normalize
@@ -2271,21 +2221,21 @@ void print_range::Compute(traverse_data &x, expr** pass, int np)
   DCASSERT(1==np);
   DCASSERT(x.answer);
   x.which = traverse_data::FindRange;
-  em->cout() << "Random variable ";
+  outputStream& out = outputStream::globalOut();
+  out << "Random variable ";
   if (pass[0]) {
-    pass[0]->Print(em->cout(), 0);
+    pass[0]->Print(out.stream());
     pass[0]->Traverse(x);
   }
   else {
-    em->cout() << "null";
+    out  << "null";
     x.answer->setNull();
   }
-  em->cout() << " has range: ";
+  out << " has range: ";
   shared_object* so = x.answer->getPtr();
-  if (0==so)  em->cout() << "null";
-  else        so->Print(em->cout(), 0);
-  em->cout() << "\n";
-  em->cout().flush();
+  if (0==so)  out << "null";
+  else        so->Print(out.stream());
+  out.newLine();
   x.which = traverse_data::Compute;
   x.answer->setNull();
 }
@@ -2316,37 +2266,35 @@ void print_ph::Compute(traverse_data &x, expr** pass, int np)
   DCASSERT(x.answer);
   x.answer->setNull();
 
+  outputStream& out = outputStream::globalOut();
   SafeCompute(pass[0], x);
   shared_object* foo = (x.answer->isNormal()) ? x.answer->getPtr() : 0;
   if (0==foo) {
-    em->cout() << "null phase type\n";
-    em->cout().flush();
+    out << "null phase type\n";
     return;
   }
 
-  em->cout() << "Information for phase type ";
+  out << "Information for phase type ";
   if (0==foo) {
-    em->cout() << "null\n";
-    em->cout().flush();
+    out << "null\n";
     return;
   }
-  foo->Print(em->cout(), 0);
-  em->cout() << "\n";
+  foo->Print(out.stream());
+  out << "\n";
 
   phase_hlm* X = dynamic_cast <phase_hlm*> (foo);
   if (0==X) return;
 
-  if (X->isDiscrete()) em->cout() << "Discrete phase type";
-  else                 em->cout() << "Continuous phase type";
+  if (X->isDiscrete()) out << "Discrete phase type";
+  else                 out << "Continuous phase type";
 
-  em->cout() << ", state has dimension " << X->NumStateVars() << "\n";
+  out << ", state has dimension " << X->NumStateVars() << "\n";
 
   if (0==ProcGen) {
     ProcGen = em->findEngineType("ProcessGeneration");
   }
   if (0==ProcGen) {
-    em->cout() << "\tCouldn't build process: no engine type!\n";
-    em->cout().flush();
+    out << "\tCouldn't build process: no engine type!\n";
     return;
   }
 
@@ -2356,29 +2304,28 @@ void print_ph::Compute(traverse_data &x, expr** pass, int np)
 
   stochastic_lldsm* proc = smart_cast <stochastic_lldsm*> (X->GetProcess());
   if (0==proc) {
-    em->cout() << "\tCouldn't build process\n";
-    em->cout().flush();
+    out << "\tCouldn't build process\n";
     return;
   }
-  em->cout() << "Reachable states:\n";
+  out << "Reachable states:\n";
   proc->showStates(false);
-  em->cout() << proc->getNumStates() << " states total\n";
+  out << proc->getNumStates() << " states total\n";
 
   long goal = proc->getAcceptingState();
-  if (goal < 0) em->cout() << "No accepting state\n";
-  else          em->cout() << "Accepting state index: " << goal << "\n";
+  if (goal < 0) out << "No accepting state\n";
+  else          out << "Accepting state index: " << goal << "\n";
 
   long trap = proc->getTrapState();
-  if (trap < 0) em->cout() << "No trap state\n";
-  else          em->cout() << "Trap state index: " << trap << "\n";
+  if (trap < 0) out << "No trap state\n";
+  else          out << "Trap state index: " << trap << "\n";
 
-  em->cout() << "Initial distribution:\n    ";
+  out << "Initial distribution:\n    ";
   statedist* pi0 = proc->getInitialDistribution();
   if (pi0) {
-    pi0->Print(em->cout(), 0);
-    em->cout() << "\n";
+    pi0->Print(out.stream());
+    out.newLine();
   } else {
-    em->cout() << "(null)\n";
+    out << "(null)\n";
   }
 
 #ifdef PRINT_PHASE_CLASSES
@@ -2387,10 +2334,10 @@ void print_ph::Compute(traverse_data &x, expr** pass, int np)
 #endif
 
   proc->showProc(false);
-  em->cout() << proc->getNumArcs() << " edges total\n";
+  out << proc->getNumArcs() << " edges total\n";
 
-  em->cout() << "End of information for phase type\n\n";
-  em->cout().flush();
+  out << "End of information for phase type\n";
+  out.newLine();
 }
 
 
@@ -2423,7 +2370,7 @@ void print_ddist::Compute(traverse_data &x, expr** pass, int np)
   if (!x.answer->isNormal()) return;
   double epsilon = x.answer->getReal();
   if (epsilon <= 0) {
-    OutOfRange(em, x, em->REAL, "print_dist epsilon value ", "");
+    OutOfRange(x, em->REAL, "print_dist epsilon value ", "");
     return;
   }
 
@@ -2432,7 +2379,7 @@ void print_ddist::Compute(traverse_data &x, expr** pass, int np)
   if (x.answer->isNormal()) {
     maxsize = x.answer->getInt();
     if (maxsize <= 0) {
-      OutOfRange(em, x, em->INT, "print_dist max_size value ", "");
+      OutOfRange(x, em->INT, "print_dist max_size value ", "");
       return;
     }
   }
@@ -2442,10 +2389,10 @@ void print_ddist::Compute(traverse_data &x, expr** pass, int np)
   shared_object* foo = (x.answer->isNormal()) ? x.answer->getPtr() : 0;
   if (0==foo) return;
 
-  em->cout() << "#  PDF of ";
-  foo->Print(em->cout(), 0);
-  em->cout() << " determined to precision epsilon= " << epsilon << "\n";
-  em->cout().flush();
+  outputStream& out = outputStream::globalOut();
+  out << "#  PDF of ";
+  foo->Print(out.stream());
+  out << " determined to precision epsilon= " << epsilon << "\n";
 
   phase_hlm* X = dynamic_cast <phase_hlm*> (foo);
   if (0==X) return;
@@ -2453,11 +2400,8 @@ void print_ddist::Compute(traverse_data &x, expr** pass, int np)
 
   engtype* ProcGen = em->findEngineType("ProcessGeneration");
   if (0==ProcGen) {
-    if (em->startError()) {
-      em->causedBy(x.parent);
-      em->cerr() << "Couldn't build process: no engine type!\n";
-      em->stopIO();
-    }
+    expr_error E(x.parent);
+    E << "Couldn't build process: no engine type!\n";
     return;
   }
 
@@ -2467,25 +2411,20 @@ void print_ddist::Compute(traverse_data &x, expr** pass, int np)
 
   stochastic_lldsm* proc = smart_cast <stochastic_lldsm*> (X->GetProcess());
   if (0==proc) {
-    if (em->startError()) {
-      em->causedBy(x.parent);
-      em->cerr() << "Expected stochastic process, didn't get one\n";
-      em->stopIO();
-    }
+    expr_error E(x.parent);
+    E << "Expected stochastic process, didn't get one\n";
     return;
   }
 
   discrete_pdf dist;
 
-  em->cout() << "#\n";
-  em->cout().flush();
+  out << "#\n";
 
   bool ok = proc->computeDiscreteTTA(epsilon, maxsize, dist);
   x.answer->setBool(ok);
 
   if (!ok) {
-    em->cout() << "# error, bailing out\n";
-    em->cout().flush();
+    out << "# error, bailing out\n";
     return;
   }
 
@@ -2495,27 +2434,25 @@ void print_ddist::Compute(traverse_data &x, expr** pass, int np)
   //
   // Print distribution
   //
-  em->cout() << "# N        Prob(reach acceptance at time N)\n";
-  em->cout().flush();
+  out << "# N        Prob(reach acceptance at time N)\n";
   for (long i=dist.left_trunc(); i<=dist.right_trunc(); i++) {
-    em->cout() << "  ";
-    em->cout().Put(i, -9);
-    em->cout() << dist.f(i) << "\n";
-    em->cout().flush();
+    out << "  ";
+    out << formatted_int(i, -9);
+    out << dist.f(i) << "\n";
   }
   if (dist.f_infinity()) {
-    em->cout() << "#infinity ";
-    em->cout() << dist.f_infinity() << "\n";
+    out << "#infinity ";
+    out << dist.f_infinity() << "\n";
   }
 
   //
   // Compute mean and variance from PDF
   //
-  em->cout() << "#\n#  Stats determined directly from PDF:\n";
+  out << "#\n#  Stats determined directly from PDF:\n";
   if (dist.f_infinity()) {
-    em->cout() << "#  E[X]  : infinity\n";
-    em->cout() << "#  E[X^2]: infinity\n";
-    em->cout() << "#  Var[X]: infinity\n";
+    out << "#  E[X]  : infinity\n";
+    out << "#  E[X^2]: infinity\n";
+    out << "#  Var[X]: infinity\n";
   } else {
     double mean = 0.0;
     double mom2 = 0.0;
@@ -2525,16 +2462,15 @@ void print_ddist::Compute(traverse_data &x, expr** pass, int np)
       mean += mpt;
       mom2 += i * mpt;
     }
-    em->cout() << "#  E[X]  : " << mean << "\n";
-    em->cout() << "#  E[X^2]: " << mom2 << "\n";
+    out << "#  E[X]  : " << mean << "\n";
+    out << "#  E[X^2]: " << mom2 << "\n";
     // hopefully more stable computation of variance
     for (long i=dist.left_trunc(); i<=dist.right_trunc(); i++) {
       double vpt = (i-mean);
       var += vpt * vpt * dist.f(i);
     }
-    em->cout() << "#  Var[X]: " << var << "\n";
+    out << "#  Var[X]: " << var << "\n";
   }
-  em->cout().flush();
 }
 
 // ******************************************************************
@@ -2567,7 +2503,7 @@ void print_cdist::Compute(traverse_data &x, expr** pass, int np)
   if (!x.answer->isNormal()) return;
   double dt = x.answer->getReal();
   if (dt <= 0) {
-    OutOfRange(em, x, em->REAL, "print_dist dt value ", " (should be positive)");
+    OutOfRange(x, em->REAL, "print_dist dt value ", " (should be positive)");
     return;
   }
 
@@ -2575,7 +2511,7 @@ void print_cdist::Compute(traverse_data &x, expr** pass, int np)
   if (!x.answer->isNormal()) return;
   double epsilon = x.answer->getReal();
   if (epsilon <= 0) {
-    OutOfRange(em, x, em->REAL, "print dist epsilon value ", "");
+    OutOfRange(x, em->REAL, "print dist epsilon value ", "");
     return;
   }
 
@@ -2584,7 +2520,7 @@ void print_cdist::Compute(traverse_data &x, expr** pass, int np)
   if (x.answer->isNormal()) {
     maxsize = x.answer->getInt();
     if (maxsize <= 0) {
-      OutOfRange(em, x, em->INT, "print_dist max_size value ", "");
+      OutOfRange(x, em->INT, "print_dist max_size value ", "");
       return;
     }
   }
@@ -2594,12 +2530,12 @@ void print_cdist::Compute(traverse_data &x, expr** pass, int np)
   shared_object* foo = (x.answer->isNormal()) ? x.answer->getPtr() : 0;
   if (0==foo) return;
 
-  em->cout() << "#  PDF of ";
-  foo->Print(em->cout(), 0);
-  em->cout() << ", determined using\n";
-  em->cout() << "#\t dt= " << dt << "\n";
-  em->cout() << "#\t epsilon= " << epsilon << "\n";
-  em->cout().flush();
+  outputStream& out = outputStream::globalOut();
+  out << "#  PDF of ";
+  foo->Print(out.stream());
+  out << ", determined using\n";
+  out << "#\t dt= " << dt << "\n";
+  out << "#\t epsilon= " << epsilon << "\n";
 
   phase_hlm* X = dynamic_cast <phase_hlm*> (foo);
   if (0==X) return;
@@ -2607,11 +2543,8 @@ void print_cdist::Compute(traverse_data &x, expr** pass, int np)
 
   engtype* ProcGen = em->findEngineType("ProcessGeneration");
   if (0==ProcGen) {
-    if (em->startError()) {
-      em->causedBy(x.parent);
-      em->cerr() << "Couldn't build process: no engine type!\n";
-      em->stopIO();
-    }
+    expr_error E(x.parent);
+    E << "Couldn't build process: no engine type!\n";
     return;
   }
 
@@ -2621,11 +2554,8 @@ void print_cdist::Compute(traverse_data &x, expr** pass, int np)
 
   stochastic_lldsm* proc = smart_cast <stochastic_lldsm*> (X->GetProcess());
   if (0==proc) {
-    if (em->startError()) {
-      em->causedBy(x.parent);
-      em->cerr() << "Expected stochastic process, didn't get one\n";
-      em->stopIO();
-    }
+    expr_error E(x.parent);
+    E << "Expected stochastic process, didn't get one\n";
     return;
   }
 
@@ -2642,28 +2572,26 @@ void print_cdist::Compute(traverse_data &x, expr** pass, int np)
   //
   // Print distribution
   //
-  em->cout() << "# t        PDF at t\n";
-  em->cout().flush();
+  out << "# t        PDF at t\n";
   for (long i=dist.left_trunc(); i<=dist.right_trunc(); i++) {
-    em->cout() << "  ";
-    em->cout().Put(i*dt, -9);
-    em->cout() << dist.f(i) << "\n";
-    em->cout().flush();
+    out << "  ";
+    out << formatted_real(i*dt, -9);
+    out << dist.f(i) << "\n";
   }
   if (dist.f_infinity()) {
-    em->cout() << "#infinity ";
-    em->cout() << dist.f_infinity() << "\n";
+    out << "#infinity ";
+    out << dist.f_infinity() << "\n";
   }
 
   //
   // Compute mean and variance from PDF
   //
-  em->cout() << "#\n#  Stats determined directly from PDF:\n";
-  em->cout() << "#  (quantization error may be significant)\n";
+  out << "#\n#  Stats determined directly from PDF:\n";
+  out << "#  (quantization error may be significant)\n";
   if (dist.f_infinity()) {
-    em->cout() << "#  E[X]  : infinity\n";
-    em->cout() << "#  E[X^2]: infinity\n";
-    em->cout() << "#  Var[X]: infinity\n";
+    out << "#  E[X]  : infinity\n";
+    out << "#  E[X^2]: infinity\n";
+    out << "#  Var[X]: infinity\n";
   } else {
     double mean = 0.0;
     double mom2 = 0.0;
@@ -2674,17 +2602,16 @@ void print_cdist::Compute(traverse_data &x, expr** pass, int np)
       mean += mpt;
       mom2 += t * mpt;
     }
-    em->cout() << "#  E[X]  : " << mean << "\n";
-    em->cout() << "#  E[X^2]: " << mom2 << "\n";
+    out << "#  E[X]  : " << mean << "\n";
+    out << "#  E[X^2]: " << mom2 << "\n";
     // hopefully more stable computation of variance
     for (long i=dist.left_trunc(); i<=dist.right_trunc(); i++) {
       double t = i * dt;
       double vpt = (t-mean);
       var += vpt * vpt * dist.f(i) * dt;
     }
-    em->cout() << "#  Var[X]: " << var << "\n";
+    out << "#  Var[X]: " << var << "\n";
   }
-  em->cout().flush();
 }
 
 
@@ -2712,29 +2639,29 @@ void print_deps::Compute(traverse_data &x, expr** pass, int np)
   DCASSERT(x.answer);
   x.answer->setNull();
 
+  outputStream& out = outputStream::globalOut();
+
   if (0==pass[0]) {
-    em->cout() << "null distribution\n";
-    em->cout().flush();
+    out << "null distribution\n";
     return;
   }
-  em->cout() << "Phase type distribution ";
-  pass[0]->Print(em->cout(), 0);
+  out << "Phase type distribution ";
+  pass[0]->Print(out.stream());
 
   List <symbol> dlist;
   int numdeps = pass[0]->BuildSymbolList(traverse_data::GetVarDeps, 0, &dlist);
   if (numdeps) {
-    em->cout() << " has " << numdeps << " variable dependencies:\n";
+    out << " has " << numdeps << " variable dependencies:\n";
   } else {
-    em->cout() << " has no variable dependencies\n";
+    out << " has no variable dependencies\n";
   }
   for (int i=0; i<numdeps; i++) {
-    em->cout() << "\t";
+    out << "\t";
     const symbol* item = dlist.ReadItem(i);
-    item->Print(em->cout(), 0);
-    if (item->Type()->getModifier() != PHASE) em->cout() << " (ignored)";
-    em->cout() << "\n";
+    item->Print(out.stream());
+    if (item->Type()->getModifier() != PHASE) out << " (ignored)";
+    out << "\n";
   }
-  em->cout().flush();
 }
 
 
@@ -2850,26 +2777,17 @@ void int2phint::converter::Compute(traverse_data &x)
       return;
     }
     // must be -infinity
-    if (em->startError()) {
-      em->causedBy(x.parent);
-      em->cerr() << "integer -" << type::getInfinityString();
-      em->cerr() << " cannot be converted to type phase int";
-      em->stopIO();
-    }
-    x.answer->setNull();
+    expr_error E(x.parent, x.answer);
+    E << "integer " << type::getMinusInfinityString();
+    E << " cannot be converted to type phase int";
     return;
   }
 
   if (x.answer->isNormal()) {
     long a = x.answer->getInt();
     if (a<0) {
-      if (em->startError()) {
-        em->causedBy(x.parent);
-        em->cerr() << "integer " << a;
-        em->cerr() << " cannot be converted to type phase int";
-        em->stopIO();
-      }
-      x.answer->setNull();
+      expr_error E(x.parent, x.answer);
+      E << "integer " << a << " cannot be converted to type phase int";
     } else {
       shared_object* X = makeConst(a);
       x.answer->setPtr(X);
@@ -2968,13 +2886,9 @@ void real2phreal::converter::Compute(traverse_data &x)
       return;
     }
     // must be -infinity
-    if (em->startError()) {
-      em->causedBy(x.parent);
-      em->cerr() << "real -" << type::getInfinityString();
-      em->cerr() << " cannot be converted to type phase real";
-      em->stopIO();
-    }
-    x.answer->setNull();
+    expr_error E(x.parent, x.answer);
+    E << "real -" << type::getMinusInfinityString();
+    E << " cannot be converted to type phase real";
     return;
   }
 
@@ -2982,15 +2896,12 @@ void real2phreal::converter::Compute(traverse_data &x)
     if (0.0==x.answer->getReal()) {
       shared_object* X = makeZero(false);
       x.answer->setPtr(X);
-      return;
     } else {
-      if (em->startError()) {
-        em->causedBy(x.parent);
-        em->cerr() << "real " << x.answer->getReal();
-        em->cerr() << " cannot be converted to type phase real";
-        em->stopIO();
-      }
+      expr_error E(x.parent, x.answer);
+      E << "real " << x.answer->getReal();
+      E << " cannot be converted to type phase real";
     }
+    return;
   }
   x.answer->setNull();
 }
@@ -3079,13 +2990,9 @@ ph2rand::converter
 void ph2rand::converter::Compute(traverse_data &x)
 {
   if (!precomputed) {
-    if (em->startInternal(__FILE__, __LINE__)) {
-      em->causedBy(this);
-      em->internal() << "Expression not precomputed: ";
-      Print(em->internal(), 0);
-      em->stopIO();
-    }
-    exit(1);
+    internal_error E(__FILE__, __LINE__, Where());
+    E << "Expression not precomputed: ";
+    Print(E.stream());
   }
   DCASSERT(x.answer);
   if (cached) cached->Sample(x);
@@ -3187,13 +3094,9 @@ phint2randreal::converter
 void phint2randreal::converter::Compute(traverse_data &x)
 {
   if (!precomputed) {
-    if (em->startInternal(__FILE__, __LINE__)) {
-      em->causedBy(this);
-      em->internal() << "Expression not precomputed: ";
-      Print(em->internal(), 0);
-      em->stopIO();
-    }
-    exit(1);
+    internal_error E(__FILE__, __LINE__, Where());
+    E << "Expression not precomputed: ";
+    Print(E.stream());
   }
   DCASSERT(x.answer);
   if (cached) {
