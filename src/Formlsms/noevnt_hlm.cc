@@ -116,16 +116,15 @@ void no_event_model::SetState(int* indexes)
 
 void no_event_model::ShowCurrentState(std::ostream &s) const
 {
-  s.Put('[');
+  s << '[';
   for (int i=0; i<num_vars; i++) {
-    if (i) s.Put(", ");
+    if (i) s << ", ";
     varlist[i]->Compute(x[0]);
-    s.Put(varlist[i]->Name());
-    s.Put(" = ");
+    s << varlist[i]->Name() << " = ";
     DCASSERT(varlist[i]->Type());
     varlist[i]->Type()->print(s, foo);
   }
-  s.Put(']');
+  s << ']';
 }
 
 void no_event_model::reindexStateVars(int &start)

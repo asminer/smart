@@ -330,7 +330,7 @@ public:
     class mdl_errmsg : public expr_error {
         const hldsm* model;
     public:
-        mdl_errmsg(const hldsm* _mod, const expr* cause);
+        mdl_errmsg(const hldsm* _mod, const expr* cause=0);
         ~mdl_errmsg();
     };
 

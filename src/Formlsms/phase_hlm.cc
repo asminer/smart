@@ -81,11 +81,11 @@ void phase_dist::showState(std::ostream &s, const shared_state* x) const
 {
   DCASSERT(x);
   if (isAcceptingState(x)) {
-    s.Put('a');
+    s << 'a';
     return;
   }
   if (isTrapState(x)) {
-    s.Put('t');
+    s << 't';
     return;
   }
   s << x->get(state_index);
@@ -440,7 +440,7 @@ inf_or_zero_ph::inf_or_zero_ph(bool d, bool inf) : phase_dist(d)
 
 bool inf_or_zero_ph::Print(std::ostream  &s, int) const
 {
-  if (infty)   s << type::getInfinityString();
+  if (infty)   s << type::getPlusInfinityString();
   else         s << 0;
   return true;
 }
@@ -975,7 +975,7 @@ bool erlang_cph::Print(std::ostream &s, int) const
 {
   switch (n) {
     case 0:
-      s.Put('0');
+      s << '0';
       break;
 
     case 1:
@@ -1150,12 +1150,12 @@ void phase_cross::reindexStateVars(int &start)
 void phase_cross::showState(std::ostream &s, const shared_state* x) const
 {
   DCASSERT(x);
-  s.Put('[');
+  s << '[';
   for (int i=0; i<num_opnds; i++) {
     if (i) s << ", ";
     opnds[i]->showState(s, x);
   }
-  s.Put(']');
+  s << ']';
 }
 
 void phase_cross::getInitialState(shared_state* s) const
@@ -1208,12 +1208,12 @@ phase_addition::phase_addition(phase_hlm** A, int N) : phase_cross(A, N)
 
 bool phase_addition::Print(std::ostream &s, int) const
 {
-  s.Put('(');
+  s << '(';
   for (int i=0; i<num_opnds; i++) {
     if (i) s << " + ";
     opnds[i]->Print(s, 0);
   }
-  s.Put(')');
+  s << ')';
   return true;
 }
 
@@ -1479,10 +1479,10 @@ void dph_multiply::reindexStateVars(int &start)
 void dph_multiply::showState(std::ostream &s, const shared_state* x) const
 {
   DCASSERT(x);
-  s.Put('[');
+  s << '[';
   original->showState(s, x);
   s << ", " << x->get(state_index);
-  s.Put(']');
+  s << ']';
 }
 
 bool dph_multiply::Print(std::ostream &s, int) const
@@ -1746,12 +1746,8 @@ void cph_uniformize::Sample(traverse_data &x)
   //
   // TBD - not sure how to do this yet
   //
-
-  if (StartError(0)) {
-    SendError("Cannot sample a uniformized cph, sorry");
-    DoneError();
-  }
-  DCASSERT(0);
+  internal_error E(__FILE__, __LINE__);
+  E << "Cannot sample a uniformized cph, sorry";
 }
 
 long cph_uniformize::setSourceState(const shared_state* s)
@@ -1770,10 +1766,8 @@ double cph_uniformize::getOutgoingFromSource(long e, shared_state* t)
     // add self loop if necessary
     //
     if (total_outgoing > 1.0) {
-      if (StartError(0)) {
-        SendError("Uniformization constant too small");
-        DoneError();
-      }
+      mdl_errmsg E(this);
+      E << "Uniformization constant too small";
       return -1;
     }
     if (total_outgoing == 1.0) return -1;
@@ -1825,11 +1819,8 @@ void cph_embedded::Sample(traverse_data &x)
   // TBD - not sure how to do this yet
   //
 
-  if (StartError(0)) {
-    SendError("Cannot sample an embedded cph, sorry");
-    DoneError();
-  }
-  DCASSERT(0);
+  internal_error E(__FILE__, __LINE__);
+  E << "Cannot sample an embedded cph, sorry";
 }
 
 
@@ -1979,19 +1970,19 @@ void phase_choice::showState(std::ostream &s, const shared_state* x) const
     s << ", ";
     opnds[i]->showState(s, x);
   }
-  s.Put(']');
+  s << ']';
 }
 
 bool phase_choice::Print(std::ostream &s, int) const
 {
   s << "choose(";
-  s.Put('(');
+  s << '(';
   for (int i=0; i<num_opnds; i++) {
     if (i) s << ", ";
     opnds[i]->Print(s, 0);
     s << " : " << prob[i];
   }
-  s.Put(')');
+  s << ')';
   return true;
 }
 
@@ -2183,7 +2174,7 @@ bool phase_order::Print(std::ostream &s, int) const
     if (i) s << ", ";
     opnds[i]->Print(s, 0);
   }
-  s.Put(')');
+  s << ')';
   return true;
 }
 

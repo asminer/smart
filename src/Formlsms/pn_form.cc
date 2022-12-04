@@ -137,7 +137,7 @@ public:
   }
 
   void Compile(const exprman* em);
-  void WriteDotArc(std::ostream &ds, void* tname) const;
+  void WriteDotArc(outputStream &ds, void* tname) const;
 protected:
   // true iff there was a duplicate
   bool addWhere(expr* x, expr* &a, List <expr>* & as);
@@ -190,37 +190,27 @@ void arc_entry::Compile(const exprman* em)
     firing = MakeVarUpdate(em, Share(place), Share(input), Share(output));
 }
 
-void arc_entry::WriteDotArc(std::ostream &ds, void* t) const
+void arc_entry::WriteDotArc(outputStream &ds, void* t) const
 {
-  if (!ds.IsActive()) return;
+  if (!ds.isActive()) return;
   if (input) {
-    ds << "\tp";
-    ds.PutAddr(place);
-    ds << " -> t";
-    ds.PutAddr(t);
+    ds << "\tp" << place << " -> t" << t;
     ds << " [label=\"";
-    input->Print(ds, 0);
+    input->Print(ds.stream());
     ds << "\"]\n";
   }
   if (output) {
-    ds << "\tt";
-    ds.PutAddr(t);
-    ds << " -> p";
-    ds.PutAddr(place);
+    ds << "\tt" << t << " -> p" << place;
     ds << " [label=\"";
-    output->Print(ds, 0);
+    output->Print(ds.stream());
     ds << "\"]\n";
   }
   if (inhibit) {
-    ds << "\tp";
-    ds.PutAddr(place);
-    ds << " -> t";
-    ds.PutAddr(t);
+    ds << "\tp" << place << " -> t" << t;
     ds << " [label=\"";
-    inhibit->Print(ds, 0);
+    inhibit->Print(ds.stream());
     ds << "\", arrowhead=odot]\n";
   }
-  ds.can_flush();
 }
 
 bool arc_entry::addWhere(expr* x, expr* &a, List <expr>* & as)
@@ -304,7 +294,7 @@ public:
   bool hasGuards() const;
 
   /// Builds a list of enabling expressions, and a list of firing expressions.
-  void compile(std::ostream &ds);
+  void compile(outputStream &ds);
 
   /// Get the number of enabling expressions
   int getNumEnablingExpr() const;
@@ -341,7 +331,7 @@ public:
 
   /// Builds the enabling and firing expressions.
   /// Transition cannot be modified once finalized.
-  void Finalize(std::ostream &ds);
+  void Finalize(outputStream &ds);
 
 protected:
   inline arc_entry* UniqueInsert(arc_entry* &tmp) {
@@ -441,14 +431,13 @@ void transition::disable()
   is_disabled = true;
 }
 
-void transition::compile(std::ostream &ds)
+void transition::compile(outputStream &ds)
 {
   if (is_disabled) return;
   if (is_compiled) return;
   is_compiled = true;
 
-  ds << "\tt";
-  ds.PutAddr(this);
+  ds << "\tt" << this;
   ds << " [shape=box, label=\"" << Name() << "\"];\n";
   DCASSERT(build_data);
   if (build_data->arclist) {
@@ -474,7 +463,7 @@ void transition::compile(std::ostream &ds)
 }
 
 
-void transition::Finalize(std::ostream &ds)
+void transition::Finalize(outputStream &ds)
 {
   if (!is_compiled) compile(ds);
 
@@ -607,8 +596,8 @@ public:
 
 void petri_hlm::showTokens(std::ostream &s, bool un, int tk)
 {
-  if (un) s.Put('?');
-  else    s.Put(tk);
+  if (un) s << '?';
+  else    s << tk;
 }
 
 unsigned petri_hlm::MarkingStyle;
@@ -659,11 +648,10 @@ void petri_hlm::showState(std::ostream &s, const shared_state* st) const
           continue;
 
       default:
-          if (em->startInternal(__FILE__, __LINE__)) {
-            em->causedBy(0);
-            em->internal() << "Unknown marking style " << (unsigned long) MarkingStyle;
-            em->stopIO();
-          }
+      {
+          internal_error E(__FILE__, __LINE__);
+          E << "Unknown marking style " << (unsigned) MarkingStyle;
+      }
     } // switch
   } // for i
 
@@ -757,7 +745,7 @@ public:
 
 protected:
   virtual void InitModel();
-  virtual void FinalizeModel(std::ostream &ds);
+  virtual void FinalizeModel(outputStream &ds);
 
 
   /** Builds an incidence matrix if the Petri Net is a regular
@@ -810,11 +798,10 @@ model_var* petri_def::MakeModelVar(const symbol* wrap, shared_object* bnds)
   DCASSERT(wrap);
   DCASSERT(0==bnds);
 
-  if (pn_debug.startReport()) {
-    pn_debug.report() << "adding ";
-    pn_debug.report() << wrap->Type()->getName();
-    pn_debug.report() << " " << wrap->Name() << "\n";
-    pn_debug.stopIO();
+  if (pn_debug.start()) {
+    pn_debug << "adding " << wrap->Type()->getName();
+    pn_debug << " " << wrap->Name();
+    pn_debug.stop();
   }
 
   if (wrap->Type() == place_type) {
@@ -849,31 +836,30 @@ void petri_def::AddInit(const expr* call, model_var* v, int tokens)
 
   if (0==tokens) {
     if (StartWarning(zero_init, call)) {
-      em->warn() << "Ignoring initialization: zero tokens for place ";
-      em->warn() << pl->Name();
-      DoneWarning();
+      zero_init << "Ignoring initialization: zero tokens for place ";
+      zero_init << pl->Name();
+      DoneWarning(zero_init);
     }
     return;
   }
 
   if (tokens < 0) {
-    StartError(call);
-    em->cerr() << "Bad value: " << tokens << " for initialization of place ";
-    em->cerr() << pl->Name();
-    DoneError();
+    mdl_errmsg E(this, call);
+    E << "Bad value: " << tokens << " for initialization of place ";
+    E << pl->Name();
     return;
   }
 
-  if (pn_debug.startReport()) {
-    pn_debug.report() << "adding " << tokens << " tokens to place ";
-    pn_debug.report() << pl->Name() << " in initial marking\n";
-    pn_debug.stopIO();
+  if (pn_debug.start()) {
+    pn_debug << "adding " << tokens << " tokens to place ";
+    pn_debug << pl->Name() << " in initial marking";
+    pn_debug.stop();
   }
 
   if (pl->hasInit()) {
     if (StartWarning(dup_init, call)) {
-      em->warn() << "Summing duplicate initialization for place " << pl->Name();
-      DoneWarning();
+      dup_init << "Summing duplicate initialization for place " << pl->Name();
+      DoneWarning(dup_init);
     }
   }
   pl->addInit(tokens);
@@ -885,10 +871,10 @@ void petri_def::AddBound(const expr* call, shared_set* pset, int upper)
 
   if (upper < 1) {
     if (StartWarning(zero_bound, call)) {
-      em->warn() << "Ignoring upper bound of " << upper;
-      em->warn() << " tokens for places ";
-      pset->Print(em->warn(), 0);
-      DoneWarning();
+      zero_bound << "Ignoring upper bound of " << upper;
+      zero_bound << " tokens for places ";
+      pset->Print(zero_bound.stream());
+      DoneWarning(zero_bound);
     }
     return;
   }
@@ -901,18 +887,17 @@ void petri_def::AddBound(const expr* call, shared_set* pset, int upper)
     DCASSERT(pl);
     if (!isVariableOurs(pl, call, "ignoring bound")) continue;
 
-    if (pn_debug.startReport()) {
-      pn_debug.report() << "setting " << upper;
-      pn_debug.report() << " upper bound on tokens in place ";
-      pn_debug.report() << pl->Name() << "\n";
-      pn_debug.stopIO();
+    if (pn_debug.start()) {
+      pn_debug << "setting " << upper;
+      pn_debug << " upper bound on tokens in place " << pl->Name();
+      pn_debug.stop();
     }
 
     if (pl->hasUpper()) {
       if (StartWarning(dup_bound, call)) {
-        em->warn() << "Duplicate bound for place " << pl->Name();
-        em->warn() << ", taking smaller";
-        DoneWarning();
+        dup_bound << "Duplicate bound for place " << pl->Name();
+        dup_bound << ", taking smaller";
+        DoneWarning(dup_bound);
       }
     }
     pl->addUpper(upper);
@@ -928,12 +913,11 @@ void petri_def
   if (!isVariableOurs(t, call, "ignoring arc")) return;
   if (0==card) card = Share(ONE);
 
-  if (pn_debug.startReport()) {
-    pn_debug.report() << "adding   input   arc ";
-    pn_debug.report() << pl->Name() << " : " << t->Name() << " : ";
-    card->Print(pn_debug.report(), 0);
-    pn_debug.report().Put('\n');
-    pn_debug.stopIO();
+  if (pn_debug.start()) {
+    pn_debug << "adding   input   arc ";
+    pn_debug << pl->Name() << " : " << t->Name() << " : ";
+    card->Print(pn_debug.stream());
+    pn_debug.stop();
   }
 
   if (0==tmp_arc) tmp_arc = new arc_entry;
@@ -942,10 +926,10 @@ void petri_def
 
   if (dup) if (StartWarning(dup_arc, call)) {
     // Duplicate entry, give warning
-    em->warn() << "Summing cardinalities on duplicate arc";
-    em->newLine();
-    em->warn() << "from " << pl->Name() << " to " << t->Name();
-    DoneWarning();
+    dup_arc << "Summing cardinalities on duplicate arc";
+    dup_arc.newLine();
+    dup_arc << "from " << pl->Name() << " to " << t->Name();
+    DoneWarning(dup_arc);
   }
 }
 
@@ -958,12 +942,11 @@ void petri_def
   if (!isVariableOurs(pl, call, "ignoring arc")) return;
   if (0==card) card = Share(ONE);
 
-  if (pn_debug.startReport()) {
-    pn_debug.report() << "adding  output   arc ";
-    pn_debug.report() << t->Name() << " : " << pl->Name() << " : ";
-    card->Print(pn_debug.report(), 0);
-    pn_debug.report().Put('\n');
-    pn_debug.stopIO();
+  if (pn_debug.start()) {
+    pn_debug << "adding  output   arc ";
+    pn_debug << t->Name() << " : " << pl->Name() << " : ";
+    card->Print(pn_debug.stream());
+    pn_debug.stop();
   }
 
   if (0==tmp_arc) tmp_arc = new arc_entry;
@@ -972,10 +955,10 @@ void petri_def
 
   if (dup) if (StartWarning(dup_arc, call)) {
     // Duplicate entry, give warning
-    em->warn() << "Summing cardinalities on duplicate arc";
-    em->newLine();
-    em->warn() << "from " << t->Name() << " to " << pl->Name();
-    DoneWarning();
+    dup_arc << "Summing cardinalities on duplicate arc";
+    dup_arc.newLine();
+    dup_arc << "from " << t->Name() << " to " << pl->Name();
+    DoneWarning(dup_arc);
   }
 }
 
@@ -988,12 +971,11 @@ void petri_def
   if (!isVariableOurs(t, call, "ignoring arc")) return;
   if (0==card) card = Share(ONE);
 
-  if (pn_debug.startReport()) {
-    pn_debug.report() << "adding inhibitor arc ";
-    pn_debug.report() << pl->Name() << " : " << t->Name() << " : ";
-    card->Print(pn_debug.report(), 0);
-    pn_debug.report().Put('\n');
-    pn_debug.stopIO();
+  if (pn_debug.start()) {
+    pn_debug << "adding inhibitor arc ";
+    pn_debug << pl->Name() << " : " << t->Name() << " : ";
+    card->Print(pn_debug.stream());
+    pn_debug.stop();
   }
 
   if (0==tmp_arc) tmp_arc = new arc_entry;
@@ -1002,10 +984,10 @@ void petri_def
 
   if (dup) if (StartWarning(dup_arc, call)) {
     // Duplicate entry, give warning
-    em->warn() << "Summing cardinalities on duplicate arc";
-    em->newLine();
-    em->warn() << "from " << pl->Name() << " to " << t->Name();
-    DoneWarning();
+    dup_arc << "Summing cardinalities on duplicate arc";
+    dup_arc.newLine();
+    dup_arc << "from " << pl->Name() << " to " << t->Name();
+    DoneWarning(dup_arc);
   }
 }
 
@@ -1015,19 +997,18 @@ void petri_def::AddGuard(const expr* call, transition* t, expr* guard)
   DCASSERT(guard);
   if (!isVariableOurs(t, call, "ignoring guard")) return;
 
-  if (pn_debug.startReport()) {
-    pn_debug.report() << "adding guard ";
-    pn_debug.report() << t->Name() << " : ";
-    guard->Print(pn_debug.report(), 0);
-    pn_debug.report().Put('\n');
-    pn_debug.stopIO();
+  if (pn_debug.start()) {
+    pn_debug << "adding guard ";
+    pn_debug << t->Name() << " : ";
+    guard->Print(pn_debug.stream());
+    pn_debug.stop();
   }
 
   bool dup = t->addGuard(guard);
 
   if (dup) if (StartWarning(dup_guard, call)) {
-    em->warn() << "Merging guards on transition " << t->Name();
-    DoneWarning();
+    dup_guard << "Merging guards on transition " << t->Name();
+    DoneWarning(dup_guard);
   }
 }
 
@@ -1036,16 +1017,16 @@ void petri_def::HideTransition(const expr* call, transition* t)
   DCASSERT(t);
   if (!isVariableOurs(t, call, "ignoring hide")) return;
 
-  if (pn_debug.startReport()) {
-    pn_debug.report() << "hiding transition " << t->Name() << "\n";
-    pn_debug.stopIO();
+  if (pn_debug.start()) {
+    pn_debug << "hiding transition " << t->Name() << "\n";
+    pn_debug.stop();
   }
 
   if (!t->hasFiringType(model_event::Unknown)) {
     if (StartWarning(dup_fire, call)) {
-      em->warn() << "Ignoring duplicate firing/hiding assignment ";
-      em->warn() << "for transition " << t->Name();
-      DoneWarning();
+      dup_fire << "Ignoring duplicate firing/hiding assignment ";
+      dup_fire << "for transition " << t->Name();
+      DoneWarning(dup_fire);
     }
     return;
   }
@@ -1059,19 +1040,18 @@ void petri_def::AddFiring(const expr* call, transition* t, expr* dist)
   DCASSERT(dist);
   if (!isVariableOurs(t, call, "ignoring firing distribution")) return;
 
-  if (pn_debug.startReport()) {
-    pn_debug.report() << "adding firing ";
-    pn_debug.report() << t->Name() << " : ";
-    dist->Print(pn_debug.report(), 0);
-    pn_debug.report().Put('\n');
-    pn_debug.stopIO();
+  if (pn_debug.start()) {
+    pn_debug << "adding firing ";
+    pn_debug << t->Name() << " : ";
+    dist->Print(pn_debug.stream());
+    pn_debug.stop();
   }
 
   if (!t->hasFiringType(model_event::Unknown)) {
     if (StartWarning(dup_fire, call)) {
-      em->warn() << "Ignoring duplicate firing/hiding assignment ";
-      em->warn() << "for transition " << t->Name();
-      DoneWarning();
+      dup_fire << "Ignoring duplicate firing/hiding assignment ";
+      dup_fire << "for transition " << t->Name();
+      DoneWarning(dup_fire);
     }
     return;
   }
@@ -1089,12 +1069,9 @@ void petri_def::AddFiring(const expr* call, transition* t, expr* dist)
 
   // Check for negative support
   if (io->Left().getSign()<0) {
-    if (StartError(call)) {
-      em->cerr() << "Firing distribution for transition ";
-      em->cerr() << t->Name();
-      em->cerr() << " has negative support";
-      DoneError();
-    }
+    mdl_errmsg E(this, call);
+    E << "Firing distribution for transition ";
+    E << t->Name() << " has negative support";
     return;
   }
 
@@ -1115,20 +1092,19 @@ void petri_def::AddWeight(const expr* call, transition* t, expr* wt, int wc)
   DCASSERT(wt);
   if (!isVariableOurs(t, call, "ignoring weight")) return;
 
-  if (pn_debug.startReport()) {
-    pn_debug.report() << "adding weight ";
-    pn_debug.report() << "( class " << wc << ") ";
-    pn_debug.report() << t->Name() << " : ";
-    wt->Print(pn_debug.report(), 0);
-    pn_debug.report().Put('\n');
-    pn_debug.stopIO();
+  if (pn_debug.start()) {
+    pn_debug << "adding weight ";
+    pn_debug << "( class " << wc << ") ";
+    pn_debug << t->Name() << " : ";
+    wt->Print(pn_debug.stream());
+    pn_debug.stop();
   }
 
   if (t->getWeightClass()) {
     if (StartWarning(dup_weight, call)) {
-      em->warn() << "Ignoring duplicate weight assignment for transition ";
-      em->warn() << t->Name();
-      DoneWarning();
+      dup_weight << "Ignoring duplicate weight assignment for transition ";
+      dup_weight << t->Name();
+      DoneWarning(dup_weight);
     }
     return;
   }
@@ -1143,11 +1119,10 @@ void petri_def::AddAssertion(expr* a)
   expr* mya = a->Substitute(0);
   mya->PreCompute();
 
-  if (pn_debug.startReport()) {
-    pn_debug.report() << "adding assertion ";
-    mya->Print(pn_debug.report(), 0);
-    pn_debug.report().Put('\n');
-    pn_debug.stopIO();
+  if (pn_debug.start()) {
+    pn_debug << "adding assertion ";
+    mya->Print(pn_debug.stream());
+    pn_debug.stop();
   }
 
   assertion_list->Append(mya);
@@ -1484,13 +1459,13 @@ bool petri_def::ReducePetriNet(std::vector<transition*>& tvec, place_sv** parray
 }
 
 
-void petri_def::FinalizeModel(std::ostream &ds)
+void petri_def::FinalizeModel(outputStream &ds)
 {
   // "compile" the places
   if (0==num_places) {
-    if (StartWarning(no_place, 0)) {
-      em->warn() << "No places defined";
-      DoneWarning();
+    if (StartWarning(no_place)) {
+      no_place << "No places defined";
+      DoneWarning(no_place);
     }
   }
 
@@ -1507,20 +1482,20 @@ void petri_def::FinalizeModel(std::ostream &ds)
   }
   DCASSERT(0==places);
 
-  if (!has_init) if (StartWarning(no_init, 0)) {
-    em->warn() << "No initial marking given, assuming zero";
-    DoneWarning();
+  if (!has_init) if (StartWarning(no_init)) {
+    no_init << "No initial marking given, assuming zero";
+    DoneWarning(no_init);
   }
 
   PartitionVars((model_statevar**) parray, num_places);
 
-  ds << "digraph pn {\n";
-  for (int i=0; i<num_places; i++) {
-    model_statevar* p = smart_cast <model_statevar*> (parray[i]);
-    ds << "\tp";
-    ds.PutAddr(p);
-    ds << " [shape=circle, label=\"" << p->Name() << "\"];\n";
-    ds.can_flush();
+  if (ds.isActive()) {
+    ds << "digraph pn {\n";
+    for (int i=0; i<num_places; i++) {
+        model_statevar* p = smart_cast <model_statevar*> (parray[i]);
+        ds << "\tp" << p;
+        ds << " [shape=circle, label=\"" << p->Name() << "\"];\n";
+    }
   }
 
   // "compile" the transitions
@@ -1529,9 +1504,9 @@ void petri_def::FinalizeModel(std::ostream &ds)
   int num_dead_trans = 0;
   if (0==num_trans) {
     elist = 0;
-    if (StartWarning(no_trans, 0)) {
-      em->warn() << "No transitions defined";
-      DoneWarning();
+    if (StartWarning(no_trans)) {
+      no_trans << "No transitions defined";
+      DoneWarning(no_trans);
     }
   } else {
 #if 0
@@ -1623,39 +1598,38 @@ void petri_def::FinalizeModel(std::ostream &ds)
           elist[i]->setNondeterministic();
     }
   } // for i
-  if (has_undef && (has_timed || has_immed)) if (StartWarning(no_fire, 0)) {
-    em->warn() << "No firing distributions given for transitions:";
-    em->newLine(1);
-    em->warn() << "{";
+  if (has_undef && (has_timed || has_immed)) if (StartWarning(no_fire)) {
+    no_fire << "No firing distributions given for transitions:";
+    no_fire.Out.incIndent();
+    no_fire.newLine();
+    no_fire << '{';
     bool printed = false;
     for (int i=0; i<num_trans; i++)
       if (elist[i]->hasFiringType(model_event::Nondeterm)) {
-        if (printed) em->warn() << ", ";
-        em->warn() << elist[i]->Name();
+        if (printed) no_fire << ", ";
+        no_fire << elist[i]->Name();
         printed = true;
     }
-    em->warn() << "}";
-    em->changeIndent(-1);
-    DoneWarning();
+    no_fire << '}';
+    DoneWarning(no_fire);
   }
-  if (without_wt) if (StartWarning(no_weight, 0)) {
-    em->warn() << "No weight given for immediate transitions:";
-    em->newLine(1);
-    em->warn() << "{";
+  if (without_wt) if (StartWarning(no_weight)) {
+    no_weight << "No weight given for immediate transitions:";
+    no_weight.Out.incIndent();
+    no_weight << '{';
     bool printed = false;
     for (int i=0; i<num_trans; i++)
       if (elist[i]->hasFiringType(model_event::Immediate))
         if (0==elist[i]->getWeight()) {
-          if (printed) em->warn() << ", ";
-          em->warn() << elist[i]->Name();
+          if (printed) no_weight << ", ";
+          no_weight << elist[i]->Name();
           printed = true;
         }
-    em->warn() << "}";
-    em->changeIndent(-1);
-    DoneWarning();
+    no_weight << '}';
+    DoneWarning(no_weight);
   }
 
-  ds << "}\n";
+  if (ds.isActive()) ds << "}\n";
 
   petri_hlm* build = new petri_hlm(current, parray, num_places,
     elist, num_trans, dlist, num_dead_trans);
@@ -1769,11 +1743,10 @@ void pn_init::Compute(traverse_data &x, expr** pass, int np)
     x.aggregate = 1;
     SafeCompute(pass[i], x);
     if (! second.isNormal() || second.getInt() < 0) {
-      mdl->StartError(pass[i]);
-      em->cerr() << "Bad token value: ";
-      em->INT->print(em->cerr(), second, 0);
-      em->cerr() << " for token initialization, ignoring";
-      mdl->DoneError();
+      model_def::mdl_errmsg E(mdl, pass[i]);
+      E << "Bad token value: ";
+      em->INT->print(E.stream(), second, 0);
+      E << " for token initialization, ignoring";
       continue;
     }
 
@@ -1827,11 +1800,10 @@ void pn_bound::Compute(traverse_data &x, expr** pass, int np)
     x.aggregate = 1;
     SafeCompute(pass[i], x);
     if (! second.isNormal() || second.getInt() < 0) {
-      mdl->StartError(pass[i]);
-      em->cerr() << "Bad token value: ";
-      em->INT->print(em->cerr(), second, 0);
-      em->cerr() << " for place bound, ignoring";
-      mdl->DoneError();
+      model_def::mdl_errmsg E(mdl, pass[i]);
+      E << "Bad token value: ";
+      em->INT->print(E.stream(), second, 0);
+      E << " for place bound, ignoring";
       continue;
     }
 
@@ -1917,11 +1889,8 @@ void pn_arcs::Compute(traverse_data &x, expr** pass, int np)
       mdl->AddOutput(pass[i], t, pl, card);
       continue;
     }
-    if (em->startInternal(__FILE__, __LINE__)) {
-      em->causedBy(pass[i]);
-      em->internal() << "Bad parameter for pn function arcs\n";
-      em->stopIO();
-    }
+    internal_error E(__FILE__, __LINE__, pass[i]->Where());
+    E << "Bad parameter for pn function arcs\n";
   }
   x.answer = answer;
   x.aggregate = 0;
@@ -2364,11 +2333,9 @@ void pn_weight2::Compute(traverse_data &x, expr** pass, int np)
   DCASSERT(t);
   int wc = t->getWeightClass();
   if (0==wc) {
-    if (mdl->StartError(pass[1])) {
-      em->cerr() << "Transition " << t->Name();
-      em->cerr() << " has no weight class yet";
-      mdl->DoneError();
-    }
+    model_def::mdl_errmsg E(mdl, pass[1]);
+    E << "Transition " << t->Name();
+    E << " has no weight class yet";
     wc = mdl->NewWeightClass();
   }
 
@@ -2560,10 +2527,8 @@ void pn_rate::Compute(traverse_data &x, expr** pass, int np)
   model_instance* mi = grabModelInstance(x, pass[0]);
   DCASSERT(mi);
   if (t->getParent() != mi) {
-    if (mi->StartError(x.parent)) {
-      em->cerr() << "transition " << t->Name() << " belongs to another model";
-      mi->DoneError();
-    }
+    model_instance::mdl_errmsg E(mi, x.parent);
+    E << "transition " << t->Name() << " belongs to another model";
     x.answer->setNull();
     return;
   }
@@ -2859,11 +2824,8 @@ bool init_pnform::execute()
 
   formalism* pn = new petri_formalism("pn", "Petri net", longdocs);
   if (!em->registerType(pn)) {
-    if (em->startInternal(__FILE__, __LINE__)) {
-      em->causedBy(0);
-      em->internal() << "Couldn't register pn type";
-      em->stopIO();
-    }
+    internal_error E(__FILE__, __LINE__);
+    E << "Couldn't register pn type";
     return false;
   }
 
