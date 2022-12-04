@@ -84,13 +84,10 @@ protected:
       return hlm->GetProcess();
     } // try
     catch (subengine::error e) {
-      if (em->startError()) {
-        em->causedBy(err);
-        em->cerr() << "Couldn't build reachability graph: ";
-        em->cerr() << subengine::getNameOfError(e);
-        em->stopIO();
-      }
-      return 0;
+      hldsm::mdl_errmsg E(hlm, err);
+      E << "Couldn't build reachability graph: ";
+      E << subengine::getNameOfError(e);
+      return nullptr;
     } // catch
   }
 
@@ -128,13 +125,9 @@ protected:
     }
     */
     if (ss->getParent() == m) return false;
-    if (em->startError()) {
-      em->causedBy(x.parent);
-      em->cerr() << "Stateset in " << Name();
-      em->cerr() << " expression is from a different model";
-      em->stopIO();
-    }
-    return 0;
+    expr_error E(x.parent);
+    E << "Stateset in " << Name() << " expression is from a different model";
+    return true;
   }
 
   inline bool badStatedist(const lldsm* m, expr* p, traverse_data &x, result &slot) const {
@@ -145,13 +138,9 @@ protected:
     statedist* sd = smart_cast <statedist*> (slot.getPtr());
     DCASSERT(sd);
     if (sd->getParent() == m) return false;
-    if (em->startError()) {
-      em->causedBy(x.parent);
-      em->cerr() << "Statedist in " << Name();
-      em->cerr() << " expression is from a different model";
-      em->stopIO();
-    }
-    return 0;
+    expr_error E(x.parent);
+    E << "Statedist in " << Name() << " expression is from a different model";
+    return true;
   }
 
   inline void launchEngine(engtype* et, result* pass, int np, traverse_data &x) const {
@@ -160,13 +149,9 @@ protected:
       else      throw subengine::No_Engine;
     }
     catch (subengine::error e) {
-      if (em->startError()) {
-        em->causedBy(x.parent);
-        em->cerr() << "Couldn't compute " << Name() << ": ";
-        em->cerr() << subengine::getNameOfError(e);
-        em->stopIO();
-      }
-      x.answer->setNull();
+      expr_error E(x.parent, x.answer);
+      E << "Couldn't compute " << Name() << ": ";
+      E << subengine::getNameOfError(e);
     }
   }
 
@@ -363,15 +348,10 @@ void TF_func::Compute(traverse_data &x, expr** pass, int np)
   if (tta->GetProcessType() == llm_type) return;
 
   // Report the type mismatch here
-  if (em->startError()) {
-    em->causedBy(x.parent);
-    em->cerr() << "Underlying distribution is ";
-    em->cerr() << nameType(tta->GetProcessType());
-    em->cerr() << " instead of " << nameType(llm_type);
-    em->stopIO();
-  }
-
-  x.answer->setNull();
+  expr_error E(x.parent, x.answer);
+  E << "Underlying distribution is ";
+  E << nameType(tta->GetProcessType());
+  E << " instead of " << nameType(llm_type);
 }
 
 // *****************************************************************
@@ -446,15 +426,10 @@ void TU_func::Compute(traverse_data &x, expr** pass, int np)
   if (tta->GetProcessType() == llm_type) return;
 
   // Report the type mismatch here
-  if (em->startError()) {
-    em->causedBy(x.parent);
-    em->cerr() << "Underlying distribution is ";
-    em->cerr() << nameType(tta->GetProcessType());
-    em->cerr() << " instead of " << nameType(llm_type);
-    em->stopIO();
-  }
-
-  x.answer->setNull();
+  expr_error E(x.parent, x.answer);
+  E << "Underlying distribution is ";
+  E << nameType(tta->GetProcessType());
+  E << " instead of " << nameType(llm_type);
 }
 
 

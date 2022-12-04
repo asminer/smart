@@ -790,10 +790,8 @@ temporal_quantifier_op::temporal_quantifier_op(exprman::unary_opcode op)
  : unary_op(op)
 {
   if ((op != exprman::uop_forall) && (op != exprman::uop_exists)) {
-    em->startInternal(__FILE__, __LINE__);
-    em->causedBy(0);
-    em->cerr() << "Bad operator " << em->getOp(op) << " in temporal_quantifier_op";
-    em->stopIO();
+    internal_error E(__FILE__, __LINE__);
+    E << "Bad operator " << em->getOp(op) << " in temporal_quantifier_op";
   }
 }
 
@@ -821,10 +819,10 @@ unary* temporal_quantifier_op::makeExpr(const location &W, expr* x) const
         return new temporal_E(W, t, x);
 
     default:
-        em->startInternal(__FILE__, __LINE__);
-        em->causedBy(0);
-        em->cerr() << "Bad operator " << em->getOp(getOpcode()) << " in temporal_quantifier_op";
-        em->stopIO();
+    {
+        internal_error E(__FILE__, __LINE__, W);
+        E << "Bad operator " << em->getOp(getOpcode()) << " in temporal_quantifier_op";
+    }
   }
   // shouldn't get here
   return 0;
@@ -852,10 +850,8 @@ temporal_unarypath_op::temporal_unarypath_op(exprman::unary_opcode op)
  : unary_op(op)
 {
   if ((op != exprman::uop_future) && (op != exprman::uop_globally) && (op != exprman::uop_next)) {
-    em->startInternal(__FILE__, __LINE__);
-    em->causedBy(0);
-    em->cerr() << "Bad operator " << em->getOp(op) << " in temporal_unarypath_op";
-    em->stopIO();
+    internal_error E(__FILE__, __LINE__);
+    E << "Bad operator " << em->getOp(op) << " in temporal_unarypath_op";
   }
 }
 
@@ -890,10 +886,10 @@ unary* temporal_unarypath_op::makeExpr(const location &W, expr* x) const
         return new temporal_X(W, t, x);
 
     default:
-        em->startInternal(__FILE__, __LINE__);
-        em->causedBy(0);
-        em->cerr() << "Bad operator " << em->getOp(getOpcode()) << " in temporal_unarypath_op";
-        em->stopIO();
+    {
+        internal_error E(__FILE__, __LINE__, W);
+        E << "Bad operator " << em->getOp(getOpcode()) << " in temporal_unarypath_op";
+    }
   }
   // shouldn't get here
   return 0;
@@ -927,10 +923,8 @@ temporal_binarypath_op::temporal_binarypath_op(exprman::binary_opcode op)
 {
   // TBD - should we add release, weak until?
   if (op != exprman::bop_until) {
-    em->startInternal(__FILE__, __LINE__);
-    em->causedBy(0);
-    em->cerr() << "Bad operator " << em->getOp(op) << " in temporal_binarypath_op";
-    em->stopIO();
+    internal_error E(__FILE__, __LINE__);
+    E << "Bad operator " << em->getOp(op) << " in temporal_binarypath_op";
   }
 }
 
@@ -1024,10 +1018,10 @@ binary* temporal_binarypath_op::makeExpr(const location &W, expr* left,
     // Weak until would go here
 
     default:
-        em->startInternal(__FILE__, __LINE__);
-        em->causedBy(0);
-        em->cerr() << "Bad operator " << em->getOp(getOpcode()) << " in temporal_binarypath_op";
-        em->stopIO();
+    {
+        internal_error E(__FILE__, __LINE__, W);
+        E << "Bad operator " << em->getOp(getOpcode()) << " in temporal_binarypath_op";
+    }
   }
   // shouldn't get here
   return 0;

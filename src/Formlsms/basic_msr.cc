@@ -61,13 +61,10 @@ proc_noengine ::BuildProc(hldsm* hlm, bool states_only, const expr* err)
   } // try
 
   catch (subengine::error e) {
-      if (em->startError()) {
-        em->causedBy(err);
-        em->cerr() << "Couldn't build ";
-        em->cerr() << (states_only ? "state space: " : "underlying process: ");
-        em->cerr() << subengine::getNameOfError(e);
-        em->stopIO();
-      }
+      expr_error E(err);
+      E << "Couldn't build ";
+      E << (states_only ? "state space: " : "underlying process: ");
+      E << subengine::getNameOfError(e);
       return 0;
   } // catch
 }
@@ -489,11 +486,8 @@ void numlevels_si::Compute(traverse_data &x, expr** pass, int np)
   }
 
   if (!hlm->buildPartInfo()) {
-    if (em->startError()) {
-      em->causedBy(x.parent);
-      em->cerr() << "Couldn't build variable order";
-      em->stopIO();
-    }
+    expr_error E(x.parent);
+    E << "Couldn't build variable order";
   }
 
   const dsde_hlm* dsm = smart_cast <const dsde_hlm*> (hlm);
@@ -1012,10 +1006,11 @@ void showlevels_si::Compute(traverse_data &x, expr** pass, int np)
   model_instance* mi = grabModelInstance(x, pass[0]);
   hldsm* hlm = mi ? mi->GetCompiledModel() : 0;
 
+  std::ostream& out = outputStream::globalOut().stream();
+
   switch (hlm->Type()) {
     case hldsm::Enumerated:
-        em->cout() << "Level 1:\n\tstate\n";
-        em->cout().flush();
+        out << "Level 1:\n\tstate\n";
         return;
 
     case hldsm::Asynch_Events:
@@ -1028,38 +1023,33 @@ void showlevels_si::Compute(traverse_data &x, expr** pass, int np)
   }
 
   if (!hlm->buildPartInfo()) {
-    if (em->startError()) {
-      em->causedBy(x.parent);
-      em->cerr() << "Couldn't build variable order";
-      em->stopIO();
-    }
+    expr_error E(x.parent);
+    E << "Couldn't build variable order";
   }
 
   const dsde_hlm* dsm = smart_cast <const dsde_hlm*> (hlm);
   DCASSERT(dsm);
 
   if (!dsm->hasPartInfo()) {
-    em->cout() << "Level 1:\n\t";
+    out << "Level 1:\n\t";
     bool printed = false;
     for (int i=0; i<dsm->getNumStateVars(); i++) {
-      if (printed)  em->cout() << ", ";
+      if (printed)  out << ", ";
       else          printed = true;
-      em->cout() << dsm->readStateVar(i)->Name();
+      out << dsm->readStateVar(i)->Name();
     } // for i
-    em->cout() << "\n";
-    em->cout().flush();
+    out << "\n";
   } else {
     const hldsm::partinfo& foo = dsm->getPartInfo();
     for (int k=foo.num_levels; k; k--) {
-      em->cout() << "Level " << k << ":\n\t";
+      out << "Level " << k << ":\n\t";
       bool printed = false;
       for (int p=foo.pointer[k]; p>foo.pointer[k-1]; p--) {
-        if (printed)  em->cout() << ", ";
+        if (printed)  out << ", ";
         else          printed = true;
-        em->cout() << foo.variable[p]->Name();
+        out << foo.variable[p]->Name();
       }  // for p
-      em->cout() << "\n";
-      em->cout().flush();
+      out << "\n";
     } // for k
   }
 }
@@ -1091,7 +1081,7 @@ void showevents_si::Compute(traverse_data &x, expr** pass, int np)
     smart_cast<const dsde_hlm*> (mi ? mi->GetCompiledModel() : 0);
 
   if (hlm) {
-    hlm->showEvents(em->cout());
+    hlm->showEvents(outputStream::globalOut().stream());
   }
 }
 
@@ -1128,16 +1118,15 @@ void showvars_si::Compute(traverse_data &x, expr** pass, int np)
         const model_statevar* sv = hlm->readStateVar(i);
         nw = MAX(nw, strlen(sv->Name()));
       }
-      em->cout().Put("State variable", nw);
-      em->cout().Put("index", 10);
-      em->cout().Put("substate", 10);
-      em->cout().Put('\n');
+      std::ostream &out = outputStream::globalOut().stream();
+      out << std::setw(nw) << "State variable";
+      out << std::setw(10) << "index";
+      out << std::setw(10) << "substate" << '\n';
       for (long i=0; i<ans; i++) {
         const model_statevar* sv = hlm->readStateVar(i);
-        em->cout().Put(sv->Name(), nw);
-        em->cout().Put(long(sv->GetIndex()), 10);
-        em->cout().Put(long(sv->GetPart()), 10);
-        em->cout().Put('\n');
+        out << std::setw(nw) << sv->Name();
+        out << std::setw(10) << sv->GetIndex();
+        out << std::setw(10) << sv->GetPart() << '\n';
       } // for i
   }
 }
