@@ -3,7 +3,7 @@
 # See the README file for more details.
 #
 
-AC_PREREQ([2.71])
+AC_PREREQ(2.59)
 AC_INIT([smartpack],[3.4.1],[asminer@iastate.edu],[smartpack],[http://smart.cs.iastate.edu])
 AM_INIT_AUTOMAKE([-Wall foreign parallel-tests color-tests subdir-objects])
 # Allow silent builds, and make it the default, if we can:
@@ -14,7 +14,7 @@ AC_CONFIG_MACRO_DIR([m4])
 
 # Check for programs
 AC_PROG_CXX
-AX_CXX_COMPILE_STDCXX
+AX_CXX_COMPILE_STDCXX(11)
 AM_PROG_LEX
 AC_PROG_YACC
 # Use AM_PROG_AR if we can...
