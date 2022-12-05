@@ -5,6 +5,8 @@
 
 #include "gen_meddly.h"
 
+#include "../Utils/sigman.h"
+
 #include "../Options/options.h"
 #include "../Options/optman.h"
 
@@ -112,11 +114,11 @@ void mxd_fsm_finish::RunEngine(hldsm* hm, result &states_only)
   DCASSERT(glm);
 
   timer watch;
-  if (Report().startReport()) {
-    Report().report() << "Finishing FSM using Meddly\n";
-    Report().report() << "\tUsing ";
-    Report().report() << ( potential ? "potential edges\n" : "actual edges\n" );
-    Report().stopIO();
+  if (report.start()) {
+    report << "Finishing FSM using Meddly\n";
+    report << "\tUsing ";
+    report << ( potential ? "potential edges\n" : "actual edges\n" );
+    report.stop();
   }
 
   meddly_monolithic_rg* rgr = pm->computeMinimumTrace()
@@ -127,10 +129,10 @@ void mxd_fsm_finish::RunEngine(hldsm* hm, result &states_only)
   glm->setRGR( rgr );
 
 
-  if (Report().startReport()) {
-    Report().report() << "Finished  FSM using Meddly, took ";
-    Report().report() << watch.elapsed_seconds() << " seconds\n";
-    Report().stopIO();
+  if (report.start()) {
+    report << "Finished  FSM using Meddly, took ";
+    report << watch.elapsed_seconds() << " seconds\n";
+    report.stop();
   }
 
   lm->setCompletionEngine(0);
@@ -194,11 +196,11 @@ void mxd_mc_finish::RunEngine(hldsm* hm, result &states_only)
   DCASSERT(slm);
 
   timer watch;
-  if (Report().startReport()) {
-    Report().report() << "Finishing CTMC using Meddly\n";
-    Report().report() << "\tUsing ";
-    Report().report() << ( potential ? "potential edges\n" : "actual edges\n" );
-    Report().stopIO();
+  if (report.start()) {
+    report << "Finishing CTMC using Meddly\n";
+    report << "\tUsing ";
+    report << ( potential ? "potential edges\n" : "actual edges\n" );
+    report.stop();
   }
 
   //
@@ -265,10 +267,10 @@ void mxd_mc_finish::RunEngine(hldsm* hm, result &states_only)
   LS_Vector initial;
   slm->setPROC(initial, PROC);
 
-  if (Report().startReport()) {
-    Report().report() << "Finished  CTMC using Meddly, took ";
-    Report().report() << watch.elapsed_seconds() << " seconds\n";
-    Report().stopIO();
+  if (report.start()) {
+    report << "Finished  CTMC using Meddly, took ";
+    report << watch.elapsed_seconds() << " seconds\n";
+    report.stop();
   }
 
   lm->setCompletionEngine(0);
@@ -332,23 +334,20 @@ protected:
   virtual void postprocess(dsde_hlm &m, meddly_varoption &x) { }
 
   inline static void checkTerm(const char* errstr, const hldsm &hm) {
-    if (!em->caughtTerm()) return;
-    if (hm.StartError(0)) {
-      em->cerr() << "signal caught during " << errstr;
-      hm.DoneError();
-    }
+    int sig = signal_manager::theSigMan().caughtSignal();
+    if (0==sig) return;
+    hldsm::errmsg E(&hm);
+    E << "caught signal " << sig << " during " << errstr;
     throw Terminated;
   }
 
   inline static void convert(MEDDLY::error ce, const char* errstr,
                               const hldsm &hm)
   {
-    if (hm.StartError(0)) {
-      em->cerr() << errstr << " in Meddly with error code:";
-      em->newLine();
-      em->cerr() << ce.getName();
-      hm.DoneError();
-    }
+    hldsm::errmsg E(&hm);
+    E << errstr << " in Meddly with error code:";
+    E.newLine();
+    E << ce.getName();
     switch (ce.getCode()) {
       case MEDDLY::error::INSUFFICIENT_MEMORY:  throw  Out_Of_Memory;
       default:                                  throw  Engine_Failed;
@@ -357,9 +356,9 @@ protected:
 
   inline bool startGen(const hldsm &hm) const {
     if (!meddly_procgen::startGen(hm, "reachability set")) return false;
-    Report().report() << " using Meddly: ";
-    Report().report() << getAlgName() << " algorithm, ";
-    Report().report() << getStyleName() << " vars.\n";
+    report << " using Meddly: ";
+    report << getAlgName() << " algorithm, ";
+    report << getStyleName() << " vars.\n";
     return true;
   }
 
@@ -457,11 +456,11 @@ void meddly_implicitgen::RunEngine(hldsm* hm, result &states_only)
 
 void meddly_implicitgen::buildNextStateFunc(meddly_varoption &x)
 {
-  if (Debug().startReport()) {
-    Debug().report() << "Updating event DDs\n";
-    Debug().stopIO();
+  if (debug.start()) {
+    debug << "Updating event DDs\n";
+    debug.stop();
   }
-  x.updateEvents(Debug(), 0);
+  x.updateEvents(debug, 0);
 
   const dsde_hlm &m = x.getParent();
   shared_ddedge* N = smart_cast<shared_ddedge*>(x.make_mxd_constant(false));
@@ -471,28 +470,26 @@ void meddly_implicitgen::buildNextStateFunc(meddly_varoption &x)
     MEDDLY::dd_edge enable = x.getEventEnabling(e);
 
 #ifdef DEBUG_DETAILS
-    if (Debug().startReport()) {
-      Debug().report() << "Enabling DD for event ";
-      Debug().report() << m.readEvent(e)->Name();
-      Debug().report() << " DD edge: " << enable.getNode() << "\n";
-      Debug().report().flush();
-      smart_output Drep(Debug().report());
+    if (debug.start()) {
+      debug << "Enabling DD for event ";
+      debug << m.readEvent(e)->Name();
+      debug << " DD edge: " << enable.getNode() << "\n";
+      MEDDLY::ostream_output Drep(Debug().report());
       enable.show(Drep, 2);
-      Debug().stopIO();
+      debug.stop();
     }
 #endif
 
     MEDDLY::dd_edge firing = x.getEventFiring(e);
 
 #ifdef DEBUG_DETAILS
-    if (Debug().startReport()) {
-      Debug().report() << "Next-state DD for event ";
-      Debug().report() << m.readEvent(e)->Name();
-      Debug().report() << " DD edge: " << firing.getNode() << "\n";
-      Debug().report().flush();
-      smart_output Drep(Debug().report());
+    if (debug.start()) {
+      debug << "Next-state DD for event ";
+      debug << m.readEvent(e)->Name();
+      debug << " DD edge: " << firing.getNode() << "\n";
+      MEDDLY::ostream_output Drep(Debug().report());
       firing.show(Drep, 2);
-      Debug().stopIO();
+      debug.stop();
     }
 #endif
 
@@ -502,14 +499,13 @@ void meddly_implicitgen::buildNextStateFunc(meddly_varoption &x)
     firing *= enable;
 
 #ifdef DEBUG_EVENT_NSFS
-    if (Debug().startReport()) {
-      Debug().report() << "(final) next-state DD for event ";
-      Debug().report() << m.readEvent(e)->Name();
-      Debug().report() << " DD edge: " << firing.getNode() << "\n";
-      Debug().report().flush();
-      smart_output Drep(Debug().report());
+    if (debug.start()) {
+      debug << "(final) next-state DD for event ";
+      debug << m.readEvent(e)->Name();
+      debug << " DD edge: " << firing.getNode() << "\n";
+      MEDDLY::ostream_output Drep(Debug().report());
       firing.show(Drep, 2);
-      Debug().stopIO();
+      debug.stop();
     }
 #endif
 
@@ -526,10 +522,8 @@ void meddly_implicitgen::preprocess(dsde_hlm &m)
 {
   // Check partition
   if (!m.buildPartInfo()) {
-    if (m.StartError(0)) {
-      em->cerr() << "Saturation requires a structured model (try partitioning)";
-      m.DoneError();
-    }
+    hldsm::errmsg E(&m);
+    E << "Saturation requires a structured model (try partitioning)";
     throw Engine_Failed;
   }
 
@@ -551,7 +545,6 @@ void meddly_implicitgen::preprocess(dsde_hlm &m)
       if (m.readEvent(e)->dependsOnVar(z))
         em->cout() << m.readStateVar(z)->Name() << " ";
     em->cout() << "\n";
-    em->cout().flush();
 #endif
   }
 
@@ -560,10 +553,8 @@ void meddly_implicitgen::preprocess(dsde_hlm &m)
     DCASSERT(part.num_levels>0);
     int* foo = (int*) realloc(event_order, m.getNumEvents() * sizeof(int));
     if (0==foo) {
-      if (m.StartError(0)) {
-        em->cerr() << "Not enough memory for event ordering";
-        m.DoneError();
-      }
+      hldsm::errmsg E(&m);
+      E << "Not enough memory for event ordering";
       throw Out_Of_Memory;
     }
     event_order = foo;
@@ -587,14 +578,12 @@ void meddly_implicitgen::preprocess(dsde_hlm &m)
       break;
 
     default:
-      if (em->startInternal(__FILE__, __LINE__)) {
-        em->causedBy(0);
-        em->internal() << "Bad value for order policy: " << (unsigned long) order_policy;
-        em->stopIO();
-      };
-      // shouldn't get here
-      throw Engine_Failed;
-  };
+    {
+        internal_error E(__FILE__, __LINE__);
+        E << "Bad value for order policy: " << (unsigned) order_policy;
+        throw Engine_Failed;
+    }
+  }
 
 #ifdef DEBUG_DEPENDENCIES
   em->cout() << "Using event order:\n\t" << event_order[0]->Name();
@@ -674,86 +663,83 @@ void meddly_implicitgen::buildRSS(meddly_varoption &x)
   timer watch;
   timer subwatch;
   if (startGen(x.getParent())) {
-    Report().stopIO();
+    report.stop();
   }
 
   //
   // Build the initial state set, and other initializations
   //
-  if (Report().startReport()) {
-    Report().report() << "Initializing forests\n";
-    Report().stopIO();
+  if (report.start()) {
+    report << "Initializing forests\n";
+    report.stop();
   }
 
   try {
     x.initializeVars();
 
-    if (Report().startReport()) {
-      Report().report() << "Initialized  forests, took ";
-      Report().report() << watch.elapsed_seconds() << " seconds\n";
-      Report().stopIO();
+    if (report.start()) {
+      report << "Initialized  forests, took ";
+      report << watch.elapsed_seconds() << " seconds\n";
+      report.stop();
     }
 
-    x.initializeEvents(Debug());
+    x.initializeEvents(debug);
 
     //
     // Build next-state function
     //
-    if (Report().startReport()) {
-      Report().report() << "Building next-state function\n";
+    if (report.start()) {
+      report << "Building next-state function\n";
       subwatch.reset();
-      Report().stopIO();
+      report.stop();
     }
 
     buildNextStateFunc(x);
 
-    if (Report().startReport()) {
-      Report().report() << "Built    next-state function, took ";
-      Report().report() << subwatch.elapsed_seconds() << " seconds\n";
+    if (report.start()) {
+      report << "Built    next-state function, took ";
+      report << subwatch.elapsed_seconds() << " seconds\n";
   #ifdef DEBUG_FINAL_NSF
-      Report().report() << "DD edge: " << getNSF().getNode() << "\n";
-      Report().report().flush();
-      smart_output Rrep(Report().report());
+      report << "DD edge: " << getNSF().getNode() << "\n";
+      MEDDLY::ostream_output Rrep(report.stream());
       getNSF().show(Rrep, 2);
-      Report().report() << "Initial state: " << x.getInitial().getNode() << "\n";
-      Report().report().flush();
+      report << "Initial state: " << x.getInitial().getNode() << "\n";
       x.getInitial().show(Rrep, 2);
   #endif
   #ifdef DEBUG_REFCOUNTS
-      Report().report() << "Forest:\n";
-      Report().report().flush();
+      report << "Forest:\n";
       getNSF().getForest()->showInfo(Rrep, 1);
       fflush(Report().Freport());
   #endif
-      Report().stopIO();
+      report.stop();
     }
 
     //
     // Generate reachability set
     //
-    if (Report().startReport()) {
-      Report().report() << "Building reachability set\n";
-      Report().stopIO();
+    if (report.start()) {
+      report << "Building reachability set\n";
+      report.stop();
       subwatch.reset();
     }
 
     generateRSS(x, subwatch);
 
-    if (Report().startReport()) {
-      Report().report() << "Built    reachability set, took ";
-      Report().report() << subwatch.elapsed_seconds() << " seconds\n";
-      Report().stopIO();
+    if (report.start()) {
+      report << "Built    reachability set, took ";
+      report << subwatch.elapsed_seconds() << " seconds\n";
+      report.stop();
     }
 
     if (stopGen(false, x.getParent(), watch)) {
-      reportGen(false, Report().report());
-      x.reportStats(Report().report());
-      Report().stopIO();
+      reportGen(false, report.stream());
+      x.reportStats(report.stream());
+      report.stop();
     }
   } // try
 
   catch (subengine::error status) {
-    if (stopGen(true, x.getParent(), watch)) Report().stopIO();
+    if (stopGen(true, x.getParent(), watch)) report.stop();
     throw status;
   }
 }
@@ -1104,35 +1090,35 @@ void meddly_otfsat::buildRSS(meddly_varoption &x)
   timer watch;
   timer subwatch;
   if (startGen(x.getParent())) {
-    Report().stopIO();
+    report.stop();
   }
 
   //
   // Build the initial state set, and other initializations
   //
-  if (Report().startReport()) {
-    Report().report() << "Initializing forests\n";
-    Report().stopIO();
+  if (report.start()) {
+    report << "Initializing forests\n";
+    report.stop();
   }
 
   try {
     x.initializeVars();
 
-    if (Report().startReport()) {
-      Report().report() << "Initialized  forests, took ";
-      Report().report() << watch.elapsed_seconds() << " seconds\n";
-      Report().stopIO();
+    if (report.start()) {
+      report << "Initialized  forests, took ";
+      report << watch.elapsed_seconds() << " seconds\n";
+      report.stop();
     }
 
-    x.initializeEvents(Debug());
+    x.initializeEvents(debug);
 
     //
     // Build next-state function
     //
-    if (Report().startReport()) {
-      Report().report() << "Initializing next-state function builder\n";
+    if (report.start()) {
+      report << "Initializing next-state function builder\n";
       subwatch.reset();
-      Report().stopIO();
+      report.stop();
     }
 
     MEDDLY::satotf_opname::otf_relation* NSF = buildNSF(x);
@@ -1140,34 +1126,34 @@ void meddly_otfsat::buildRSS(meddly_varoption &x)
 
     NSF->confirm(x.getInitial());
 
-    if (Report().startReport()) {
-      Report().report() << "Initialized  next-state function builder, took ";
-      Report().report() << subwatch.elapsed_seconds() << " seconds\n";
-      Report().stopIO();
+    if (report.start()) {
+      report << "Initialized  next-state function builder, took ";
+      report << subwatch.elapsed_seconds() << " seconds\n";
+      report.stop();
     }
 
     //
     // Generate reachability set
     //
-    if (Report().startReport()) {
-      Report().report() << "Building reachability set\n";
-      Report().stopIO();
+    if (report.start()) {
+      report << "Building reachability set\n";
+      report.stop();
       subwatch.reset();
     }
 
     generateRSS(x, NSF);
 
-    if (Report().startReport()) {
-      Report().report() << "Built    reachability set, took ";
-      Report().report() << subwatch.elapsed_seconds() << " seconds\n";
-      Report().stopIO();
+    if (report.start()) {
+      report << "Built    reachability set, took ";
+      report << subwatch.elapsed_seconds() << " seconds\n";
+      report.stop();
     }
 
     if (stopGen(false, x.getParent(), watch)) {
-      reportGen(false, Report().report());
-      x.reportStats(Report().report());
-      Report().report() << "\tMinterms:\t" << NSF->mintermMemoryUsage() << "  bytes\n";
-      Report().stopIO();
+      reportGen(false, report.stream());
+      x.reportStats(report.stream());
+      report << "\tMinterms:\t" << NSF->mintermMemoryUsage() << "  bytes\n";
+      report.stop();
     }
 
     clearMeddlyComputeTable(x, *NSF);
@@ -1176,8 +1162,8 @@ void meddly_otfsat::buildRSS(meddly_varoption &x)
     x.getNumStates(numstates);
     if (!numstates.isNormal()) {
       //
-      // TBD: Error, can we print something and exit cleanly here?
-      em->cout() << "CANNOT COMPUTE\n";
+      internal_error E(__FILE__, __LINE__);
+      E << "CANNOT COMPUTE";
       delete NSF;
       return;
     }
@@ -1202,7 +1188,6 @@ void meddly_otfsat::buildRSS(meddly_varoption &x)
       em->cout() << ns;
     }
     em->cout() << " TECHNIQUES SEQUENTIAL_PROCESSING DECISION_DIAGRAMS\n";
-    em->cout().flush();
 
     //
     // Compute maximum tokens in any place
@@ -1210,7 +1195,6 @@ void meddly_otfsat::buildRSS(meddly_varoption &x)
     long max_tokens_in_place = computeMaxTokensInPlace(x, *NSF);
     em->cout() << "STATE_SPACE MAX_TOKEN_IN_PLACE " << max_tokens_in_place;
     em->cout() << " TECHNIQUES SEQUENTIAL_PROCESSING DECISION_DIAGRAMS\n";
-    em->cout().flush();
 
     //
     // Compute the maximum number of tokens in a marking
@@ -1218,7 +1202,6 @@ void meddly_otfsat::buildRSS(meddly_varoption &x)
     long max_tokens_per_marking = computeMaxTokensPerMarking(x, *NSF);
     em->cout() << "STATE_SPACE MAX_TOKEN_PER_MARKING " << max_tokens_per_marking;
     em->cout() << " TECHNIQUES SEQUENTIAL_PROCESSING DECISION_DIAGRAMS\n";
-    em->cout().flush();
 
     // Build a monolithic transition relation
     NSF->bindExtensibleVariables();
@@ -1231,13 +1214,11 @@ void meddly_otfsat::buildRSS(meddly_varoption &x)
     bigint num_dup_transitions = computeNumTransitions(x.getStates(), *NSF, true);
     num_dup_transitions.Print(em->cout(), 0);
     em->cout() << " TECHNIQUES SEQUENTIAL_PROCESSING DECISION_DIAGRAMS\n";
-    em->cout().flush();
 
     em->cout() << "STATE_SPACE UNIQUE TRANSITIONS ";
     bigint num_transitions = computeNumTransitions(x.getStates(), *NSF, false);
     num_transitions.Print(em->cout(), 0);
     em->cout() << " TECHNIQUES SEQUENTIAL_PROCESSING DECISION_DIAGRAMS\n";
-    em->cout().flush();
 #else
     const MEDDLY::dd_edge& states = x.getStates();
     double num_transitions = NSF->getArcCount(states, true);
@@ -1248,7 +1229,6 @@ void meddly_otfsat::buildRSS(meddly_varoption &x)
     em->cout() << "STATE_SPACE UNIQUE TRANSITIONS ";
     em->cout() << num_transitions;
     em->cout() << " TECHNIQUES SEQUENTIAL_PROCESSING DECISION_DIAGRAMS\n";
-    em->cout().flush();
 #endif
 
     MEDDLY::node_handle mxd = NSF->getBoundedMonolithicNSF();
@@ -1264,7 +1244,7 @@ void meddly_otfsat::buildRSS(meddly_varoption &x)
   } // try
 
   catch (subengine::error status) {
-    if (stopGen(true, x.getParent(), watch)) Report().stopIO();
+    if (stopGen(true, x.getParent(), watch)) report.stop();
     throw status;
   }
 }
@@ -1290,7 +1270,7 @@ meddly_otfsat::buildNSF(meddly_varoption &x)
   // FOR NOW!
   // TBD!
 
-  return x.buildNSF_OTF(Debug());
+  return x.buildNSF_OTF(debug);
 }
 
 void meddly_otfsat::generateRSS(meddly_varoption &x,
@@ -1433,35 +1413,35 @@ void meddly_otfimplsat::buildRSS(meddly_varoption &x)
   timer watch;
   timer subwatch;
   if (startGen(x.getParent())) {
-    Report().stopIO();
+    report.stop();
   }
 
   //
   // Build the initial state set, and other initializations
   //
-  if (Report().startReport()) {
-    Report().report() << "Initializing forests\n";
-    Report().stopIO();
+  if (report.start()) {
+    report << "Initializing forests\n";
+    report.stop();
   }
 
   try {
     x.initializeVars();
 
-    if (Report().startReport()) {
-      Report().report() << "Initialized  forests, took ";
-      Report().report() << watch.elapsed_seconds() << " seconds\n";
-      Report().stopIO();
+    if (report.start()) {
+      report << "Initialized  forests, took ";
+      report << watch.elapsed_seconds() << " seconds\n";
+      report.stop();
     }
 
-    x.initializeEvents(Debug());
+    x.initializeEvents(debug);
 
     //
     // Build next-state function
     //
-    if (Report().startReport()) {
-      Report().report() << "Initializing next-state function builder\n";
+    if (report.start()) {
+      report << "Initializing next-state function builder\n";
       subwatch.reset();
-      Report().stopIO();
+      report.stop();
     }
 
     #ifndef TEST_HYB
@@ -1475,30 +1455,28 @@ void meddly_otfimplsat::buildRSS(meddly_varoption &x)
 
     HYB_NSF->setConfirmedStates(x.getInitial());
     #endif
-    if (Report().startReport()) {
-      Report().report() << "Initialized  next-state function builder, took ";
-      Report().report() << subwatch.elapsed_seconds() << " seconds\n";
-      Report().stopIO();
+    if (report.start()) {
+      report << "Initialized  next-state function builder, took ";
+      report << subwatch.elapsed_seconds() << " seconds\n";
+      report.stop();
     }
 
 #ifdef MCC_DEADLOCK
     em->cout() << "Building potential deadlock states... ";
-    MEDDLY::dd_edge pot_deadlocks = x.buildPotentialDeadlockStates_IMPLICIT(Debug());
+    MEDDLY::dd_edge pot_deadlocks = x.buildPotentialDeadlockStates_IMPLICIT(debug);
     em->cout() << "done\n";
 
     em->cout() << "Is a deadlock state reachable? ";
-    em->cout().flush();
     // em->cout() << IMPL_NSF->hasDeadlock(x.getInitial()) << "\n";
     em->cout() << IMPL_NSF->isReachable(x.getInitial(), pot_deadlocks) << "\n";
-    em->cout().flush();
 #else
 
     //
     // Generate reachability set
     //
-    if (Report().startReport()) {
-      Report().report() << "Building reachability set\n";
-      Report().stopIO();
+    if (report.start()) {
+      report << "Building reachability set\n";
+      report.stop();
       subwatch.reset();
     }
 
@@ -1516,29 +1494,29 @@ void meddly_otfimplsat::buildRSS(meddly_varoption &x)
     em->cout() << "Initial state node (after RSS generation): " << x.getInitial().getNode() << "\n";
 #endif
 
-    if (Report().startReport()) {
-      Report().report() << "Built reachability set, took ";
-      Report().report() << subwatch.elapsed_seconds() << " seconds\n";
-      smart_output Drep(Report().report());
+    if (report.start()) {
+      report << "Built reachability set, took ";
+      report << subwatch.elapsed_seconds() << " seconds\n";
+      MEDDLY::ostream_output Drep(report.stream());
       MEDDLY::operation::showAllComputeTables(Drep,3);
-      Report().stopIO();
+      report.stop();
     }
 
 #ifdef ONLY_STATE_SPACE
     if (stopGen(false, x.getParent(), watch)) {
-      reportGen(false, Report().report());
-      x.reportStats(Report().report());
-      // Report().report() << "\tMinterms:\t" << NSF->mintermMemoryUsage() << "  bytes\n";
-      Report().stopIO();
+      reportGen(false, report.stream());
+      x.reportStats(report.stream());
+      // report << "\tMinterms:\t" << NSF->mintermMemoryUsage() << "  bytes\n";
+      report.stop();
     }
     // return;
 #else
 
     if (stopGen(false, x.getParent(), watch)) {
-      reportGen(false, Report().report());
-      x.reportStats(Report().report());
-      // Report().report() << "\tMinterms:\t" << NSF->mintermMemoryUsage() << "  bytes\n";
-      Report().stopIO();
+      reportGen(false, report.stream());
+      x.reportStats(report.stream());
+      // report << "\tMinterms:\t" << NSF->mintermMemoryUsage() << "  bytes\n";
+      report.stop();
     }
 
     // Convert extensible variables to bounded
@@ -1564,7 +1542,6 @@ void meddly_otfimplsat::buildRSS(meddly_varoption &x)
       em->cout() << ns;
     }
     em->cout() << " TECHNIQUES SEQUENTIAL_PROCESSING DECISION_DIAGRAMS\n";
-    em->cout().flush();
 #endif
 
     // Build a monolithic transition relation from implicit relation
@@ -1583,7 +1560,6 @@ void meddly_otfimplsat::buildRSS(meddly_varoption &x)
     long max_tokens_in_place = computeMaxTokensInPlace(x, IMPL_NSF);
     em->cout() << "STATE_SPACE MAX_TOKEN_IN_PLACE " << max_tokens_in_place;
     em->cout() << " TECHNIQUES SEQUENTIAL_PROCESSING IMPLICIT RELATIONS DECISION_DIAGRAMS\n";
-    em->cout().flush();
 
     //
     // Compute the maximum number of tokens in a marking
@@ -1591,7 +1567,6 @@ void meddly_otfimplsat::buildRSS(meddly_varoption &x)
     long max_tokens_per_marking = computeMaxTokensPerMarking(x, IMPL_NSF);
     em->cout() << "STATE_SPACE MAX_TOKEN_PER_MARKING " << max_tokens_per_marking;
     em->cout() << " TECHNIQUES SEQUENTIAL_PROCESSING IMPLICIT RELATIONS DECISION_DIAGRAMS\n";
-    em->cout().flush();
 
     //
     // Compute number of arcs using implicit relations
@@ -1600,7 +1575,6 @@ void meddly_otfimplsat::buildRSS(meddly_varoption &x)
     em->cout() << "STATE_SPACE TRANSITIONS ";
     num_transitions.Print(em->cout(), 0);
     em->cout() << " TECHNIQUES SEQUENTIAL_PROCESSING IMPLICIT RELATIONS DECISION_DIAGRAMS\n";
-    em->cout().flush();
 #endif
 
 #if MCC_UPPER_BOUNDS
@@ -1632,7 +1606,7 @@ void meddly_otfimplsat::buildRSS(meddly_varoption &x)
   } // try
 
   catch (subengine::error status) {
-    if (stopGen(true, x.getParent(), watch)) Report().stopIO();
+    if (stopGen(true, x.getParent(), watch)) report.stop();
     throw status;
   }
 
@@ -1672,14 +1646,14 @@ meddly_otfimplsat::buildNSF(meddly_varoption &x)
 {
   // FOR NOW!
   // TBD!
-  return x.buildNSF_IMPLICIT(Debug());
+  return x.buildNSF_IMPLICIT(debug);
 }
 
 MEDDLY::sathyb_opname::hybrid_relation*
 meddly_otfimplsat::buildNSFWithHybrid(meddly_varoption &x)
 {
 
-  return x.buildNSF_HYBRID(Debug());
+  return x.buildNSF_HYBRID(debug);
 }
 
 void meddly_otfimplsat::generateRSS(meddly_varoption &x,
@@ -2218,12 +2192,12 @@ void meddly_iterative::reportGen(bool err, std::ostream &s) const
 void meddly_iterative::initGen()
 {
   iterations = 0;
-  em->waitTerm();
+  signal_manager::theSigMan().waitTermination();
 }
 
 void meddly_iterative::doneGen()
 {
-  em->resumeTerm();
+  signal_manager::theSigMan().resumeTermination();
 }
 
 // **************************************************************************
@@ -2264,11 +2238,9 @@ void meddly_frontier::generateRSS(meddly_varoption &x, timer &w)
   S->E = x.getInitial();
   while (F.getNode()) {
     iterations++;
-    if (Debug().startReport()) {
-      Debug().report() << "Starting iteration ";
-      Debug().report().Put(iterations, 5);
-      Debug().report() << ":\n";
-      Debug().stopIO();
+    if (debug.start()) {
+      debug << "Starting iteration " << formatted_int(iterations, 5) << ":\n";
+      debug.stop();
     }
     // compute N(F)
     try {
@@ -2278,9 +2250,9 @@ void meddly_frontier::generateRSS(meddly_varoption &x, timer &w)
     catch (MEDDLY::error ce) {
       convert(ce, "post-image", x.getParent());
     }
-    if (Debug().startReport()) {
-      Debug().report() << "\tdone F:=N(F)\n";
-      Debug().stopIO();
+    if (debug.start()) {
+      debug << "\tdone F:=N(F)\n";
+      debug.stop();
     }
     // subtract S
     try {
@@ -2290,12 +2262,11 @@ void meddly_frontier::generateRSS(meddly_varoption &x, timer &w)
     catch (MEDDLY::error ce) {
       convert(ce, "set difference", x.getParent());
     }
-    if (Debug().startReport()) {
-      Debug().report() << "\tdone F:=F-S  ";
-      double card = F.getCardinality();
-      Debug().report().Put(card, 13);
-      Debug().report() << " states in frontier set\n";
-      Debug().stopIO();
+    if (debug.start()) {
+      debug << "\tdone F:=F-S  ";
+      debug << formatted_real(F.getCardinality(), 13);
+      debug << " states in frontier set\n";
+      debug.stop();
     }
     // add F to S
     try {
@@ -2307,16 +2278,15 @@ void meddly_frontier::generateRSS(meddly_varoption &x, timer &w)
     catch (MEDDLY::error ce) {
       convert(ce, "set union", x.getParent());
     }
-    if (Debug().startReport()) {
-      Debug().report() << "\tdone S:=S+F  ";
-      double card = S->E.getCardinality();
-      Debug().report().Put(card, 13);
-      Debug().report() << " reachable states so far";
-      Debug().newLine();
+    if (debug.start()) {
+      debug << "\tdone S:=S+F  ";
+      debug << formatted_real(F.getCardinality(), 13);
+      debug << " reachable states so far";
+      debug.newLine();
       long nodes = x.getMddForest()->getCurrentNumNodes();
-      Debug().report() << nodes << " nodes in forest, ";
-      Debug().report() << w.elapsed_seconds() << " seconds total time\n";
-      Debug().stopIO();
+      debug << nodes << " nodes in forest, ";
+      debug << w.elapsed_seconds() << " seconds total time\n";
+      debug.stop();
     }
   } // while F
   x.setStates(S);
@@ -2362,11 +2332,9 @@ void meddly_nextall::generateRSS(meddly_varoption &x, timer &w)
   S->E = x.getInitial();
   while (S->E != Old) {
     iterations++;
-    if (Debug().startReport()) {
-      Debug().report() << "Starting iteration ";
-      Debug().report().Put(iterations, 5);
-      Debug().report() << ":\n";
-      Debug().stopIO();
+    if (debug.start()) {
+      debug << "Starting iteration " << formatted_int(iterations, 5) << ":\n";
+      debug.stop();
     }
     Old = S->E;
     // compute S = N(S)
@@ -2378,9 +2346,9 @@ void meddly_nextall::generateRSS(meddly_varoption &x, timer &w)
     catch (MEDDLY::error ce) {
       convert(ce, "post-image", x.getParent());
     }
-    if (Debug().startReport()) {
-      Debug().report() << "\tdone S':=N(S)\n";
-      Debug().stopIO();
+    if (debug.start()) {
+      debug << "\tdone S':=N(S)\n";
+      debug.stop();
     }
     // compute S = Old + S
     try {
@@ -2391,16 +2359,15 @@ void meddly_nextall::generateRSS(meddly_varoption &x, timer &w)
     catch (MEDDLY::error ce) {
       convert(ce, "set union", x.getParent());
     }
-    if (Debug().startReport()) {
-      Debug().report() << "\tdone S:=S+S'  ";
-      double card = S->E.getCardinality();
-      Debug().report().Put(card, 13);
-      Debug().report() << " reachable states so far";
-      Debug().newLine();
+    if (debug.start()) {
+      debug << "\tdone S:=S+S'  ";
+      debug << formatted_real(S->E.getCardinality(), 13);
+      debug << " reachable states so far";
+      debug.newLine();
       long nodes = x.getMddForest()->getCurrentNumNodes();
-      Debug().report() << nodes << " nodes in forest, ";
-      Debug().report() << w.elapsed_seconds() << " seconds total time\n";
-      Debug().stopIO();
+      debug << nodes << " nodes in forest, ";
+      debug << w.elapsed_seconds() << " seconds total time\n";
+      debug.stop();
     }
   } // while F
   x.setStates(S);

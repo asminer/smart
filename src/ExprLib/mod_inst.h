@@ -270,7 +270,7 @@ protected:
 public:
 
   // shared object requirements:
-  virtual bool Print(std::ostream &, int) const;
+  virtual bool Print(std::ostream &, int w=0) const;
   virtual bool Equals(const shared_object*) const;
 
   /** Start a warning message.

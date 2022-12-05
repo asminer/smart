@@ -32,14 +32,14 @@ process_generator::~process_generator()
 
 bool process_generator::startGen(const hldsm& mdl, const char* whatproc)
 {
-  if (report.startReport()) {
-    report.report() << "Generating " << whatproc;
+  if (report.start()) {
+    report << "Generating " << whatproc;
     report.newLine();
-    report.report() << "for ";
+    report << "for ";
     if (mdl.Name()) {
-      report.report() << "model " << mdl.Name();
+      report << "model " << mdl.Name();
     } else {
-      mdl.Print(report.report(), 0);
+      mdl.Print(report.stream());
     }
     return true;
   }
@@ -49,18 +49,18 @@ bool process_generator::startGen(const hldsm& mdl, const char* whatproc)
 bool process_generator::stopGen(bool err, const hldsm& mdl,
                                 const char* pr, const timer &w)
 {
-  if (report.startReport()) {
-    if (err)  report.report() << "Incomplete ";
-    else      report.report() << "Generated  ";
-    report.report() << pr << " for ";
+  if (report.start()) {
+    if (err)  report << "Incomplete ";
+    else      report << "Generated  ";
+    report << pr << " for ";
     if (mdl.Name()) {
-      report.report() << "model " << mdl.Name();
+      report << "model " << mdl.Name();
     } else {
-      mdl.Print(report.report(), 0);
+      mdl.Print(report.stream());
     }
-    report.report() << "\n\t" << w.elapsed_seconds() << " seconds ";
-    if (err)  report.report() << "until error\n";
-    else      report.report() << "required for generation\n";
+    report << "\n\t" << w.elapsed_seconds() << " seconds ";
+    if (err)  report << "until error\n";
+    else      report << "required for generation\n";
     return true;
   }
   return false;
@@ -68,14 +68,14 @@ bool process_generator::stopGen(bool err, const hldsm& mdl,
 
 bool process_generator::startCompact(const hldsm& mdl, const char* whatproc)
 {
-  if (report.startReport()) {
-    report.report() << "Finalizing " << whatproc;
+  if (report.start()) {
+    report << "Finalizing " << whatproc;
     report.newLine();
-    report.report() << "for ";
+    report << "for ";
     if (mdl.Name()) {
-      report.report() << "model " << mdl.Name();
+      report << "model " << mdl.Name();
     } else {
-      mdl.Print(report.report(), 0);
+      mdl.Print(report.stream());
     }
     return true;
   }
@@ -85,15 +85,15 @@ bool process_generator::startCompact(const hldsm& mdl, const char* whatproc)
 bool process_generator
 ::stopCompact(const char* name, const char* wp, const timer &w, const lldsm* p)
 {
-  if (report.startReport()) {
-    report.report() << "Finalized  " << wp;
+  if (report.start()) {
+    report << "Finalized  " << wp;
     if (name) {
-      report.report() << " for model " << name << "\n";
+      report << " for model " << name << "\n";
     } else {
-      report.report() << "\n";
+      report << "\n";
     }
-    report.report() << "\t" << w.elapsed_seconds();
-    report.report() << " seconds required for finalization\n";
+    report << "\t" << w.elapsed_seconds();
+    report << " seconds required for finalization\n";
     if (p) p->reportMemUsage(em, "\t");
     return true;
   }
