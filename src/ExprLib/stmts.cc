@@ -59,7 +59,7 @@ exprstmt::~exprstmt()
 
 bool exprstmt::Print(std::ostream &s, int w) const
 {
-    s << std::setw(w) << "";
+    s << padding(w);
     x->Print(s);
     s << ";\n";
     return true;
@@ -134,7 +134,7 @@ optassign_val::~optassign_val()
 
 bool optassign_val::Print(std::ostream &s, int w) const
 {
-    s << std::setw(w) << "";
+    s << padding(w);
     opt->show(s);
     s << ' ';
     val->Print(s);
@@ -242,7 +242,7 @@ optassign_id::~optassign_id()
 
 bool optassign_id::Print(std::ostream &s, int w) const
 {
-    s << std::setw(w) << "";
+    s << padding(w);
     opt->show(s);
     s << ' ';
     val->show(s);
@@ -321,7 +321,7 @@ opt_checker::~opt_checker()
 
 bool opt_checker::Print(std::ostream &s, int w) const
 {
-    s << std::setw(w) << "";
+    s << padding(w);
     opt->show(s);
     s << (check ? "+ " : "- ");
     vals[0]->show(s);

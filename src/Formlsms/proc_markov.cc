@@ -205,7 +205,7 @@ void markov_process::reporter::start(const char* w)
   report << w;
   long written = strlen(w);
   if (written < 30) {
-    report.stream() << std::setfill('.') << std::setw(30-written) << "";
+    report << padding(30-written, '.');
   }
   watch.reset();
 }

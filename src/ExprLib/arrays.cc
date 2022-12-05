@@ -312,7 +312,7 @@ arrayassign::~arrayassign()
 bool arrayassign::Print(std::ostream &s, int w) const
 {
   DCASSERT(f);
-  s << std::setw(w) << "";
+  s << padding(w);
   f->PrintHeader(s);
   s << " := ";
   if (retval)   retval->Print(s);

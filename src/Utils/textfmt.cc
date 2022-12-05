@@ -1,6 +1,7 @@
 
 #include "../include/defines.h"
 #include "textfmt.h"
+#include "outstream.h"
 
 #include <iomanip>
 #include <cstring>
@@ -79,9 +80,9 @@ void doc_formatter::item(const char* s)
     left += desc_width+item_sep;
     FlushText();
     left = old_left;
-    out << std::setw(left) << "";
+    out << padding(left);
     out << std::setw(desc_width) << std::left << s << std::right;
-    out << std::setw(item_sep) << "";
+    out << padding(item_sep);
 }
 
 void doc_formatter::end_description()
@@ -125,7 +126,7 @@ void doc_formatter::FlushText()
         if (ignore_marg) {
             ignore_marg = false;
         } else {
-            out << std::setw(left) << "";
+            out << padding(left);
         }
         //
         // write first word, regardless of length

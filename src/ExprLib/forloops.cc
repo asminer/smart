@@ -75,8 +75,7 @@ forstmt::~forstmt()
 
 bool forstmt::Print(std::ostream &s, int w) const
 {
-    s << std::setw(w) << "";
-    s << "for (";
+    s << padding(w) << "for (";
     index[0]->PrintAll(s);
     for (int d=1; d<dimension; d++) {
         s << ", ";
@@ -84,8 +83,7 @@ bool forstmt::Print(std::ostream &s, int w) const
     }
     s << ") {\n";
     block->Print(s, w+2);
-    s << std::setw(w) << "";
-    s << "}\n";
+    s << padding(w) << "}\n";
     return true;
 }
 

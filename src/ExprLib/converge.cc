@@ -108,9 +108,9 @@ void converge_stmt::Traverse(traverse_data &x)
 
 bool converge_stmt::Print(std::ostream &s, int w) const
 {
-    s << std::setw(w) << "" << "converge {\n";
+    s << padding(w) << "converge {\n";
     block->Print(s, w+2);
-    s << std::setw(w) << "" << "}\n";
+    s << padding(w) << "}\n";
     return true;
 }
 
@@ -269,7 +269,7 @@ void guess_stmt::Traverse(traverse_data &x)
 
 bool guess_stmt::Print(std::ostream &s, int w) const
 {
-    s << std::setw(w) << "" << "real " << var->Name() << " guess ";
+    s << padding(w) << "real " << var->Name() << " guess ";
     if (guess)  guess->Print(s);
     else        s << "null";
     s << ";\n";
@@ -385,7 +385,7 @@ void assign_stmt::Traverse(traverse_data &x)
 
 bool assign_stmt::Print(std::ostream &s, int w) const
 {
-    s << std::setw(w) << "" << "real " << var->Name() << " := ";
+    s << padding(w) << "real " << var->Name() << " := ";
     if (rhs)  rhs->Print(s);
     else      s << "null";
     s << ";\n";
@@ -479,7 +479,7 @@ void array_guess_stmt::Traverse(traverse_data &x)
 
 bool array_guess_stmt::Print(std::ostream &s, int w) const
 {
-    s << std::setw(w) << "";
+    s << padding(w);
     var->PrintHeader(s);
     s << " guess ";
     if (guess)  guess->Print(s);
@@ -630,7 +630,7 @@ void array_assign_stmt::Traverse(traverse_data &x)
 
 bool array_assign_stmt::Print(std::ostream &s, int w) const
 {
-    s << std::setw(w) << "";
+    s << padding(w);
     var->PrintHeader(s);
     s << " := ";
     if (rhs)  rhs->Print(s);

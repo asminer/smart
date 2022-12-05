@@ -574,7 +574,7 @@ model_var_stmt::~model_var_stmt() {
 }
 
 bool model_var_stmt::Print(std::ostream &s, int w) const {
-	s << std::setw(w) << "";
+	s << padding(w);
 	DCASSERT(names[0]);
 	const type* t = names[0]->Type();
 	DCASSERT(t);
@@ -720,7 +720,7 @@ model_varray_stmt::~model_varray_stmt() {
 }
 
 bool model_varray_stmt::Print(std::ostream &s, int w) const {
-	s << std::setw(w) << "";
+	s << padding(w);
 	DCASSERT(vars[0]);
 	const type* t = vars[0]->Type();
 	DCASSERT(t);
@@ -798,7 +798,7 @@ measure_assign::~measure_assign() {
 }
 
 bool measure_assign::Print(std::ostream &s, int w) const {
-    s << std::setw(w) << "";
+    s << padding(w);
 	wrapper->PrintType(s);
 	s << ' ';
 	s << wrapper->Name() << " := ";

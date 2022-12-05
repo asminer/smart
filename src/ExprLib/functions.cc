@@ -144,8 +144,7 @@ void fcall::Traverse(traverse_data &x)
 bool fcall::Print(std::ostream &s, int w) const
 {
   if (0==func->Name())  return false;  // hidden?
-  if (w>0)  s << std::setw(w) << "";
-  s << func->Name();
+  s << padding(w) << func->Name();
   if (numpass) {
     s << "(";
     bool prev_written = false;
@@ -1600,7 +1599,7 @@ func_stmt::~func_stmt()
 
 bool func_stmt::Print(std::ostream &s, int w) const
 {
-    s << std::setw(w) << "";
+    s << padding(w);
     DCASSERT(wuf);
     wuf->showAll(s);
     s << ";\n";
