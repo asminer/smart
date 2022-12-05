@@ -275,21 +275,15 @@ stateset* ectl_reachgraph::EU(bool revTime, const stateset* p, const stateset* q
     TH->get_met_obligations(*answer);
     expl_stateset *trueset = new expl_stateset(q->getParent(), answer);
 
-    expl_stateset *pset = etp->computeUnknownSet();
-    pset->Union(etp->getTrueSet());
-    expl_stateset *qset = etq->computeUnknownSet();
-    qset->Union(NULL,0,etq->getTrueSet());
+    expl_stateset *pset = etp->getFalseSet()->DeepCopy();
+    pset->Complement();
+    expl_stateset *qset = etq->getFalseSet()->DeepCopy();
+    qset->Complement();
     stateset *falseset = EU(revTime, pset, qset, td);
     falseset->Complement();
 
     return new expl_tri_stateset(p->getParent(), trueset, falseset);
   }
-
-
-
-
-
-
 
 
   const intset& iq = eq->getExplicit(); 
