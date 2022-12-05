@@ -185,6 +185,26 @@ class formatted_string {
         std::ostream& show(std::ostream &s) const;
 };
 
+/*
+ * Write an array.
+ */
+template <class DATA>
+class element_writer {
+        const DATA* array;
+        unsigned elements;
+    public:
+        inline element_writer(const DATA* a, unsigned e) {
+            array = a;
+            elements = e;
+        }
+        std::ostream& show(std::ostream &s) const {
+            if (elements) s << array[0];
+            for (unsigned i=1; i<elements; i++) {
+                s << ", " << array[i];
+            }
+            return s;
+        }
+};
 
 
 inline std::ostream& operator<< (std::ostream &s, memoryCount m)
@@ -206,6 +226,13 @@ inline std::ostream& operator<< (std::ostream &s, formatted_string m)
 {
     return m.show(s);
 }
+
+template <class DATA>
+inline std::ostream& operator<< (std::ostream &s, element_writer <DATA> m)
+{
+    return m.show(s);
+}
+
 
 //
 // TBD: how to tie thousands separator to a std::ostream&

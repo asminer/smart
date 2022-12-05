@@ -397,12 +397,12 @@ public:
   void showArcsCOV(bool internal) const;
   /** Compare number of edges with option.
         @param  ns    Number of states
-        @param  os    If not null, display "too many arcs" message as appropriate.
+        @param  os    Display "too many arcs" message as appropriate.
         @return true  iff the number of edges exceeds the option.
   */
-  static bool tooManyArcs(long na, std::ostream *os);
+  static bool tooManyArcs(long na, std::ostream &os);
 
-  inline bool tooManyArcs(std::ostream *os) const {
+  inline bool tooManyArcs(std::ostream &os) const {
     return tooManyArcs(getNumArcs(), os);
   }
 

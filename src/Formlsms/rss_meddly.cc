@@ -48,11 +48,8 @@ bool meddly_reachset::createVars(MEDDLY::variable** v, int nv)
     return true;
   }
   catch (MEDDLY::error de) {
-    if (em->startError()) {
-      em->causedBy(0);
-      em->cerr() << "Error creating domain: " << de.getName();
-      em->stopIO();
-    }
+    expr_error E(0);
+    E << "Error creating domain: " << de.getName();
     return false;
   }
 }

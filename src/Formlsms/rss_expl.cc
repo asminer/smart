@@ -70,11 +70,10 @@ void expl_reachset::showInternal(std::ostream &os) const
       ptr = state_collection->GetRawState(state_handle[i], bytes);
     }
     for (long b=0; b<bytes; b++) {
-      os.Put(' ');
-      os.PutHex(ptr[b]);
+      os << ' ';
+      os << std::hex << ptr[b] << std::dec;
     }
-    os.Put('\n');
-    os.flush();
+    os << '\n';
   }
 }
 

@@ -299,12 +299,12 @@ public:
   virtual void showState(std::ostream &s, const shared_state* x) const;
   inline void showTile(std::ostream &s, bool un, int t) const {
     if (un) {
-      s.Put('?');
+      s << '?';
     } else if (0==t) {
-      s.Put('_');
+      s << '_';
     } else {
       DCASSERT(tileset[t]);
-      s.Put(tileset[t]->Name());
+      s << tileset[t]->Name();
     }
   }
 
@@ -431,18 +431,19 @@ void tam_hlm::setGlues(warning_msg &warn, tam_glue** gs, int ng)
     break;
   }
   if (all_ok) return;
-  StartWarning(warn, 0);
-  em->warn() << "These glue types have no strength defined, using default of 0:";
-  em->newLine(1);
+  StartWarning(warn);
+  warn << "These glue types have no strength defined, using default of 0:";
+  warn.Out.incIndent();
+  warn.newLine();
   bool printed = false;
   for (int i=0; i<num_glues; i++) {
     if (0==glueset[i]) continue;
     if (glueset[i]->hasStrengthDefined()) continue;
-    if (printed) em->warn() << ", "; else printed = true;
-    em->warn() << glueset[i]->Name();
+    if (printed) warn << ", "; else printed = true;
+    warn << glueset[i]->Name();
   }
-  em->changeIndent(-1);
-  DoneWarning();
+  warn.Out.decIndent();
+  DoneWarning(warn);
 }
 
 
@@ -467,9 +468,10 @@ void tam_hlm::setTiles(warning_msg &warn, tam_tile** ts, int nt)
     break;
   }
   if (all_ok) return;
-  StartWarning(warn, 0);
-  em->warn() << "These tiles have no glue on any border:";
-  em->newLine(1);
+  StartWarning(warn);
+  warn << "These tiles have no glue on any border:";
+  warn.Out.incIndent();
+  warn.newLine();
   bool printed = false;
   for (int i=0; i<num_tiles; i++) {
     if (0==tileset[i]) continue;
@@ -477,11 +479,11 @@ void tam_hlm::setTiles(warning_msg &warn, tam_tile** ts, int nt)
     if (tileset[i]->getEast()) continue;
     if (tileset[i]->getSouth()) continue;
     if (tileset[i]->getWest()) continue;
-    if (printed) em->warn() << ", "; else printed = true;
-    em->warn() << tileset[i]->Name();
+    if (printed) warn << ", "; else printed = true;
+    warn << tileset[i]->Name();
   }
-  em->changeIndent(-1);
-  DoneWarning();
+  warn.Out.decIndent();
+  DoneWarning(warn);
 }
 
 bool tam_hlm::Export(std::ostream &s) const
@@ -570,7 +572,7 @@ public:
 
 protected:
   virtual void InitModel();
-  virtual void FinalizeModel(std::ostream &ds);
+  virtual void FinalizeModel(outputStream &ds);
 
   template <class SYMB>
   static inline SYMB** list2array(SYMB* front, int size) {
@@ -653,11 +655,11 @@ model_var* tam_def::MakeModelVar(const symbol* wrap, shared_object* bnds)
   DCASSERT(wrap);
   DCASSERT(0==bnds);
 
-  if (tam_debug.startReport()) {
-    tam_debug.report() << "adding ";
-    tam_debug.report() << wrap->Type()->getName();
-    tam_debug.report() << " " << wrap->Name() << "\n";
-    tam_debug.stopIO();
+  if (tam_debug.start()) {
+    tam_debug << "adding ";
+    tam_debug << wrap->Type()->getName();
+    tam_debug << " " << wrap->Name();
+    tam_debug.stop();
   }
 
   if (wrap->Type() == tile_type) {
@@ -685,29 +687,27 @@ void tam_def::setStrength(const expr* cause, tam_glue* g, const result &s)
   if (!isVariableOurs(g, cause, "ignoring strength assignment")) return;
 
   if (!s.isNormal() || s.getInt()>2 || s.getInt()<1) {
-    if (StartError(cause)) {
-      em->cerr() << "Bad strength ";
-      DCASSERT(em->INT);
-      em->INT->print(em->cerr(), s);
-      em->cerr() << " for glue " << g->Name() << ", ignoring";
-      DoneError();
-    }
+    mdl_errmsg E(this, cause);
+    E << "Bad strength ";
+    DCASSERT(em->INT);
+    em->INT->print(E.stream(), s);
+    E << " for glue " << g->Name() << ", ignoring";
     return;
   }
 
   if (g->hasStrengthDefined()) {
     if (StartWarning(dup_gluedef, cause)) {
-      em->warn() << "Duplicate strength assignment for glue ";
-      em->warn() << g->Name() << ", ignoring";
-      DoneWarning();
+      dup_gluedef << "Duplicate strength assignment for glue ";
+      dup_gluedef << g->Name() << ", ignoring";
+      DoneWarning(dup_gluedef);
     }
     return;
   }
 
-  if (tam_debug.startReport()) {
-    tam_debug.report() << "setting strength ";
-    tam_debug.report() << g->Name() << " : " << s.getInt() << "\n";
-    tam_debug.stopIO();
+  if (tam_debug.start()) {
+    tam_debug << "setting strength ";
+    tam_debug << g->Name() << " : " << s.getInt();
+    tam_debug.stop();
   }
 
   g->setStrength(s.getInt());
@@ -738,18 +738,18 @@ void tam_def::setBorder(const expr* cause, int b, tam_tile* t, tam_glue* g)
 
   if (current) {
     if (StartWarning(dup_tiledef, cause)) {
-      em->warn() << "Tile " << t->Name() << " already has ";
-      em->warn() << nameOf(b) << " glue " << g->Name();
-      em->warn() << ", ignoring duplicate assignment";
-      DoneWarning();
+      dup_tiledef << "Tile " << t->Name() << " already has ";
+      dup_tiledef << nameOf(b) << " glue " << g->Name();
+      dup_tiledef << ", ignoring duplicate assignment";
+      DoneWarning(dup_tiledef);
     }
     return;
   }
 
-  if (tam_debug.startReport()) {
-    tam_debug.report() << "setting tile " << t->Name() << " ";
-    tam_debug.report() << nameOf(b) << " glue to " << g->Name() << "\n";
-    tam_debug.stopIO();
+  if (tam_debug.start()) {
+    tam_debug << "setting tile " << t->Name() << " ";
+    tam_debug << nameOf(b) << " glue to " << g->Name();
+    tam_debug.stop();
   }
 
   switch (b) {
@@ -765,18 +765,18 @@ void tam_def::setBoardSize(const expr* cause, long xl, long xh,
 {
   if (board_is_set) {
     if (StartWarning(dup_board, cause)) {
-      em->warn() << "Duplicate board specification, ignoring";
-      DoneWarning();
+      dup_board << "Duplicate board specification, ignoring";
+      DoneWarning(dup_board);
     }
     return;
   }
   if ((xl > xh) || (yl > yh)) {
     if (StartWarning(empty_board, cause)) {
-      em->warn() << "Empty board specification [";
-      em->warn() << xl << ".." << xh << "]x[";
-      em->warn() << yl << ".." << yh;
-      em->warn() <<"], ignoring";
-      DoneWarning();
+      empty_board << "Empty board specification [";
+      empty_board << xl << ".." << xh << "]x[";
+      empty_board << yl << ".." << yh;
+      empty_board << "], ignoring";
+      DoneWarning(empty_board);
     }
     return;
   }
@@ -787,11 +787,11 @@ void tam_def::setBoardSize(const expr* cause, long xl, long xh,
   y_high = yh;
   board_is_set = true;
 
-  if (tam_debug.startReport()) {
-    tam_debug.report() << "setting board dimension [";
-    tam_debug.report() << x_low << ".." << x_high << "]x[";
-    tam_debug.report() << y_low << ".." << y_high << "]\n";
-    tam_debug.stopIO();
+  if (tam_debug.start()) {
+    tam_debug << "setting board dimension [";
+    tam_debug << x_low << ".." << x_high << "]x[";
+    tam_debug << y_low << ".." << y_high << "]";
+    tam_debug.stop();
   }
 
   // Allocate board
@@ -808,20 +808,16 @@ void tam_def::setInit(const expr* cause, long x, long y, tam_tile* t)
   if (!isVariableOurs(t, cause, "ignoring initialization")) return;
 
   if (!board_is_set) {
-    if (StartError(cause)) {
-      em->cerr() << "Board not specified before initialization, ignoring";
-      DoneError();
-    }
+    mdl_errmsg E(this, cause);
+    E << "Board not specified before initialization, ignoring";
     return;
   }
 
   if (x < x_low || x > x_high || y < y_low || y > y_high) {
-    if (StartError(cause)) {
-      em->cerr() << "Square (" << x << ", " << y << ") not in [";
-      em->cerr() << x_low << ".." << x_high << "]x[";
-      em->cerr() << y_low << ".." << y_high << "], ignoring initialization";
-      DoneError();
-    }
+    mdl_errmsg E(this, cause);
+    E << "Square (" << x << ", " << y << ") not in [";
+    E << x_low << ".." << x_high << "]x[";
+    E << y_low << ".." << y_high << "], ignoring initialization";
     return;
   }
 
@@ -830,19 +826,19 @@ void tam_def::setInit(const expr* cause, long x, long y, tam_tile* t)
 
   if (sq->hasInit()) {
     if (StartWarning(dup_init, cause)) {
-      em->warn() << "Duplicate initialization of square (";
-      em->warn() << x << ", " << y << "), ignoring";
-      DoneWarning();
+      dup_init << "Duplicate initialization of square (";
+      dup_init << x << ", " << y << "), ignoring";
+      DoneWarning(dup_init);
     }
     return;
   }
 
   sq->setInit(t);
 
-  if (tam_debug.startReport()) {
-    tam_debug.report() << "setting initial configuration of ";
-    tam_debug.report() << sq->Name() << " to " << t->Name() << "\n";
-    tam_debug.stopIO();
+  if (tam_debug.start()) {
+    tam_debug << "setting initial configuration of ";
+    tam_debug << sq->Name() << " to " << t->Name() << "\n";
+    tam_debug.stop();
   }
 
 }
@@ -850,20 +846,16 @@ void tam_def::setInit(const expr* cause, long x, long y, tam_tile* t)
 void tam_def::setPriority(const expr* cause, long x, long y, long p)
 {
   if (!board_is_set) {
-    if (StartError(cause)) {
-      em->cerr() << "Board not specified before priority assignment, ignoring";
-      DoneError();
-    }
+    mdl_errmsg E(this, cause);
+    E << "Board not specified before priority assignment, ignoring";
     return;
   }
 
   if (x < x_low || x > x_high || y < y_low || y > y_high) {
-    if (StartError(cause)) {
-      em->cerr() << "Square (" << x << ", " << y << ") not in [";
-      em->cerr() << x_low << ".." << x_high << "]x[";
-      em->cerr() << y_low << ".." << y_high << "], ignoring initialization";
-      DoneError();
-    }
+    mdl_errmsg E(this, cause);
+    E << "Square (" << x << ", " << y << ") not in [";
+    E << x_low << ".." << x_high << "]x[";
+    E << y_low << ".." << y_high << "], ignoring initialization";
     return;
   }
 
@@ -872,19 +864,19 @@ void tam_def::setPriority(const expr* cause, long x, long y, long p)
 
   if (sq->hasPrio()) {
     if (StartWarning(dup_prio, cause)) {
-      em->warn() << "Duplicate priority assignment for square (";
-      em->warn() << x << ", " << y << "), ignoring";
-      DoneWarning();
+      dup_prio << "Duplicate priority assignment for square (";
+      dup_prio << x << ", " << y << "), ignoring";
+      DoneWarning(dup_prio);
     }
     return;
   }
 
   sq->setPrio(p);
 
-  if (tam_debug.startReport()) {
-    tam_debug.report() << "setting priority of ";
-    tam_debug.report() << sq->Name() << " to " << p << "\n";
-    tam_debug.stopIO();
+  if (tam_debug.start()) {
+    tam_debug << "setting priority of ";
+    tam_debug << sq->Name() << " to " << p;
+    tam_debug.stop();
   }
 }
 
@@ -896,16 +888,16 @@ void tam_def::InitModel()
   board = 0;
 }
 
-void tam_def::FinalizeModel(std::ostream &ds)
+void tam_def::FinalizeModel(outputStream &ds)
 {
   //
   // Compact glue, tile lists
   //
   DCASSERT(num_tiles >= 0);
   if (0==num_tiles) {
-    if (StartWarning(empty_tileset, 0)) {
-      em->warn() << "No tiles defined";
-      DoneWarning();
+    if (StartWarning(empty_tileset)) {
+      empty_tileset << "No tiles defined";
+      DoneWarning(empty_tileset);
     }
   }
   tam_glue** glueset = list2array(smart_cast<tam_glue*>(glues), num_glues);
@@ -917,9 +909,9 @@ void tam_def::FinalizeModel(std::ostream &ds)
   // build state variables
   //
   if (!board_is_set) {
-    if (StartWarning(empty_board, 0)) {
-      em->warn() << "No board specification; using default 1x1 board";
-      DoneWarning();
+    if (StartWarning(empty_board)) {
+      empty_board << "No board specification; using default 1x1 board";
+      DoneWarning(empty_board);
     }
     setBoardSize(0, 0, 0, 0, 0);
   }
@@ -1214,13 +1206,11 @@ protected:
     SafeCompute(p, x);
     x.answer = answer;
     if (!tmp.isNormal()) {
-      if (m->StartError(p)) {
-        em->cerr() << "Bad value ";
-        em->INT->print(em->cerr(), tmp);
-        em->cerr() << " for " << who << ", ignoring board specification";
-        m->DoneError();
-      }
-      return false;
+        model_def::mdl_errmsg E(m, p);
+        E << "Bad value ";
+        em->INT->print(E.stream(), tmp);
+        E << " for " << who << ", ignoring board specification";
+        return false;
     }
     L = tmp.getInt();
     return true;
@@ -1272,12 +1262,10 @@ protected:
       return true;
     }
 
-    if (m->StartError(p)) {
-      em->cerr() << "Bad " << who << " value ";
-      em->INT->print(em->cerr(), I);
-      em->cerr() << ", ignoring initialization";
-      m->DoneError();
-    }
+    model_def::mdl_errmsg E(m, p);
+    E << "Bad " << who << " value ";
+    em->INT->print(E.stream(), I);
+    E << ", ignoring initialization";
     return false;
   }
 };
@@ -1345,12 +1333,10 @@ protected:
       return true;
     }
 
-    if (m->StartError(p)) {
-      em->cerr() << "Bad " << who << " value ";
-      em->INT->print(em->cerr(), I);
-      em->cerr() << ", ignoring priority assignment";
-      m->DoneError();
-    }
+    model_def::mdl_errmsg E(m, p);
+    E << "Bad " << who << " value ";
+    em->INT->print(E.stream(), I);
+    E << ", ignoring priority assignment";
     return false;
   }
 };
@@ -1424,7 +1410,7 @@ void tam_export::Compute(traverse_data &x, expr** pass, int np)
   model_instance* mi = grabModelInstance(x, pass[0]);
   tam_hlm* m = mi ? smart_cast <tam_hlm*> (mi->GetCompiledModel()) : 0;
   if (m) {
-    x.answer->setBool(m->Export(em->cout()));
+    x.answer->setBool(m->Export(outputStream::globalOut().stream()));
   } else {
     x.answer->setBool(false);
   }
@@ -1491,11 +1477,8 @@ bool init_tamform::execute()
 
   formalism* tam = new tam_formalism("tam", "Tile assembly Model", longdocs);
   if (!em->registerType(tam)) {
-    if (em->startInternal(__FILE__, __LINE__)) {
-      em->causedBy(0);
-      em->internal() << "Couldn't register tam type";
-      em->stopIO();
-    }
+    internal_error E(__FILE__, __LINE__);
+    E << "Couldn't register tam type";
     return false;
   }
 

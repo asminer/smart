@@ -85,20 +85,14 @@ void graph_lldsm::showArcsCOV(bool internal) const
     //Delete(st);
   }
 }
-bool graph_lldsm::tooManyArcs(long na, std::ostream *os)
+bool graph_lldsm::tooManyArcs(long na, std::ostream &os)
 {
   if (na>=0) {
     if ((0==max_arc_display) || (na <= max_arc_display)) return false;
-    if (os) {
-      *os << "Too many arcs; to display, increase option ";
-      *os << MAX_ARC_DISPLAY_OPTION << ".\n";
-      os->flush();
-    }
+    os << "Too many arcs; to display, increase option ";
+    os << MAX_ARC_DISPLAY_OPTION << ".\n";
   } else {
-    if (os) {
-      *os << "Too many arcs.\n";
-      os->flush();
-    }
+    os << "Too many arcs.\n";
   }
   return true;
 }

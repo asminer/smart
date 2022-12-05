@@ -8,7 +8,7 @@
 
 #include "show_graph.h"
 
-bool statusOK(exprman* em, const LS_Output &o, const char* who)
+bool statusOK(const LS_Output &o, const char* who)
 {
     switch (o.status) {
       case LS_Success:
@@ -24,58 +24,49 @@ bool statusOK(exprman* em, const LS_Output &o, const char* who)
 
       case LS_Out_Of_Memory:
       {
-          if (em->startError()) {
-            em->causedBy(0);
-            em->cerr() << "Insufficient memory for Markov chain ";
-            em->cerr() << who << " solver";
-            em->stopIO();
-          }
+          expr_error E(0);
+          E << "Insufficient memory for Markov chain " << who << " solver";
           return false;
+      }
 
       case LS_Wrong_Format:
-          if (em->startError()) {
-            em->causedBy(0);
-            em->cerr() << "Wrong matrix format for Markov chain linear solver";
-            em->stopIO();
-          }
+      {
+          expr_error E(0);
+          E << "Wrong matrix format for Markov chain linear solver";
           return false;
+      }
 
       default:
-          if (em->startInternal(__FILE__, __LINE__)) {
-            em->causedBy(0);
-            em->internal() << "Unexpected error";
-            em->stopIO();
-          }
+      {
+          internal_error E(__FILE__, __LINE__);
+          E << "Unexpected error in Markov chain solver";
+      }
     } // switch
     return false;
 }
 
-bool status(exprman* em, MCLib::error e, const char* who)
+bool status(MCLib::error e, const char* who)
 {
     switch (e.getCode()) {
       case MCLib::error::Out_Of_Memory:
-          if (em->startError()) {
-            em->causedBy(0);
-            em->cerr() << "Insufficient memory for Markov chain ";
-            em->cerr() << who << " solver";
-            em->stopIO();
-          }
+      {
+          expr_error E(0);
+          E << "Insufficient memory for Markov chain " << who << " solver";
           break;
+      }
 
       case MCLib::error::Null_Vector:
-          if (em->startError()) {
-            em->causedBy(0);
-            em->cerr() << "Initial probability vector required for Markov chain solver";
-            em->stopIO();
-          }
+      {
+          expr_error E(0);
+          E << "Initial probability vector required for Markov chain solver";
           break;
+      }
 
       default:
-        if (em->startInternal(__FILE__, __LINE__)) {
-            em->causedBy(0);
-            em->internal() << "Unexpected error: " << e.getString();
-            em->stopIO();
-        }
+      {
+          internal_error E(__FILE__, __LINE__);
+          E << "Unexpected error for Markov chain solver: " << e.getString();
+      }
     } // switch
     return false;
 }
@@ -157,11 +148,8 @@ GraphLib::node_renumberer* mclib_process::initChain(GraphLib::dynamic_graph *g)
   }
 
   if (0==chain) {
-    if (em->startInternal(__FILE__, __LINE__)) {
-        em->causedBy(0);
-        em->internal() << "Couldn't convert graph to Markov chain: bad graph type?\n";
-        em->stopIO();
-    }
+    internal_error E(__FILE__, __LINE__);
+    E << "Couldn't convert graph to Markov chain: bad graph type?\n";
   }
 
   //
@@ -410,12 +398,8 @@ bool mclib_process
     return true;
   }
   catch (MCLib::error e) {
-    if (em->startInternal(__FILE__, __LINE__)) {
-      em->causedBy(0);
-      em->internal() << "Unexpected error: ";
-      em->internal() << e.getString();
-      em->stopIO();
-    }
+    internal_error E(__FILE__, __LINE__);
+    E << "Unexpected error: " << e.getString();
     return false;
   }
 }
@@ -456,12 +440,8 @@ bool mclib_process::computeAccumulated(double t, const double* p0, double* n,
     return true;
   }
   catch (MCLib::error e) {
-    if (em->startInternal(__FILE__, __LINE__)) {
-      em->causedBy(0);
-      em->internal() << "Unexpected error: ";
-      em->internal() << e.getString();
-      em->stopIO();
-    }
+    internal_error E(__FILE__, __LINE__);
+    E << "Unexpected error: " << e.getString();
     return false;
   }
 }
@@ -482,10 +462,10 @@ bool mclib_process::computeSteadyState(double* probs) const
     initial->ExportTo(ls_init);
     chain->computeInfinityDistribution(ls_init, probs, getSolverOptions(), outdata);
     stopSteadyReport(w, outdata.num_iters);
-    return statusOK(em, outdata, "steady-state");
+    return statusOK(outdata, "steady-state");
   }
   catch (MCLib::error e) {
-    return status(em, e, "steady-state");
+    return status(e, "steady-state");
   }
 }
 
@@ -506,10 +486,10 @@ bool mclib_process::computeTimeInStates(const double* p0, double* x) const
     startTTAReport(w);
     chain->computeTTA(p0vect, x, getSolverOptions(), outdata);
     stopTTAReport(w, outdata.num_iters);
-    return statusOK(em, outdata, "time in states");
+    return statusOK(outdata, "time in states");
   }
   catch (MCLib::error e) {
-    return status(em, e, "time in states");
+    return status(e, "time in states");
   }
 }
 
@@ -530,10 +510,10 @@ bool mclib_process::computeClassProbs(const double* p0, double* x) const
     startTTAReport(w);
     chain->computeFirstRecurrentProbs(p0vect, x, getSolverOptions(), outdata);
     stopTTAReport(w, outdata.num_iters);
-    return statusOK(em, outdata, "class probabilities");
+    return statusOK(outdata, "class probabilities");
   }
   catch (MCLib::error e) {
-    return status(em, e, "class probabilities");
+    return status(e, "class probabilities");
   }
 }
 
@@ -546,11 +526,8 @@ bool mclib_process::randomTTA(rng_stream &st, long &state, const stateset* F,
   DCASSERT(final);
   DCASSERT(chain);
   if (chain->isContinuous()) {
-    if (em->startInternal(__FILE__, __LINE__)) {
-      em->causedBy(0);
-      em->internal() << "Can't simulate discrete-time random walk on a CTMC.";
-      em->stopIO();
-    }
+    internal_error E(__FILE__, __LINE__);
+    E << "Can't simulate discrete-time random walk on a CTMC.";
     return false;
   }
 
@@ -559,12 +536,8 @@ bool mclib_process::randomTTA(rng_stream &st, long &state, const stateset* F,
     return true;
   }
   catch (MCLib::error e) {
-    if (em->startError()) {
-      em->causedBy(0);
-      em->cerr() << "Couldn't simulate DTMC random walk: ";
-      em->cerr() << e.getString();
-      em->stopIO();
-    }
+    expr_error E(0);
+    E << "Couldn't simulate DTMC random walk: " << e.getString();
     return false;
   }
 }
@@ -577,11 +550,8 @@ bool mclib_process::randomTTA(rng_stream &st, long &state, const stateset* F,
   const expl_stateset* final = dynamic_cast <const expl_stateset*> (F);
   DCASSERT(chain);
   if (chain->isDiscrete()) {
-    if (em->startInternal(__FILE__, __LINE__)) {
-      em->causedBy(0);
-      em->internal() << "Can't simulate continuous-time random walk on a DTMC.";
-      em->stopIO();
-    }
+    internal_error E(__FILE__, __LINE__);
+    E << "Can't simulate continuous-time random walk on a DTMC.";
     return false;
   }
 
@@ -590,12 +560,8 @@ bool mclib_process::randomTTA(rng_stream &st, long &state, const stateset* F,
     return true;
   }
   catch (MCLib::error e) {
-    if (em->startError()) {
-      em->causedBy(0);
-      em->cerr() << "Couldn't simulate CTMC random walk: ";
-      em->cerr() << e.getString();
-      em->stopIO();
-    }
+    expr_error E(0);
+    E << "Couldn't simulate CTMC random walk: " << e.getString();
     return false;
   }
 }
@@ -611,11 +577,8 @@ bool mclib_process::computeDiscreteTTA(double epsilon, long maxsize,
 {
   DCASSERT(chain);
   if (chain->isContinuous()) {
-    if (em->startInternal(__FILE__, __LINE__)) {
-      em->causedBy(0);
-      em->internal() << "Can't compute discrete TTA on a CTMC.";
-      em->stopIO();
-    }
+    internal_error E(__FILE__, __LINE__);
+    E << "Can't compute discrete TTA on a CTMC.";
     return false;
   }
 
@@ -645,12 +608,8 @@ bool mclib_process::computeDiscreteTTA(double epsilon, long maxsize,
     return true;
   }
   catch (MCLib::error e) {
-    if (em->startError()) {
-      em->causedBy(0);
-      em->cerr() << "Couldn't compute discrete TTA: ";
-      em->cerr() << e.getString();
-      em->stopIO();
-    }
+    expr_error E(0);
+    E << "Couldn't compute discrete TTA: " << e.getString();
     return false;
   }
 }
@@ -663,11 +622,8 @@ bool mclib_process::computeContinuousTTA(double dt, double epsilon,
 {
   DCASSERT(chain);
   if (chain->isDiscrete()) {
-    if (em->startInternal(__FILE__, __LINE__)) {
-      em->causedBy(0);
-      em->internal() << "Can't compute continuous TTA on a DTMC.";
-      em->stopIO();
-    }
+    internal_error E(__FILE__, __LINE__);
+    E << "Can't compute continuous TTA on a DTMC.";
     return false;
   }
 
@@ -692,12 +648,8 @@ bool mclib_process::computeContinuousTTA(double dt, double epsilon,
     return true;
   }
   catch (MCLib::error e) {
-    if (em->startError()) {
-      em->causedBy(0);
-      em->cerr() << "Couldn't compute continuous TTA: ";
-      em->cerr() << e.getString();
-      em->stopIO();
-    }
+    expr_error E(0);
+    E << "Couldn't compute continuous TTA: " << e.getString();
     return false;
   }
 }
@@ -730,10 +682,10 @@ bool mclib_process::reachesAccept(double* x) const
     startReachAcceptReport(w);
     chain->computeProbsToReach(target, x, 0, getSolverOptions(), outdata);
     stopReachAcceptReport(w, outdata.num_iters);
-    return statusOK(em, outdata, "reaches accept");
+    return statusOK(outdata, "reaches accept");
   }
   catch (MCLib::error e) {
-    return status(em, e, "reaches accept");
+    return status(e, "reaches accept");
   }
 }
 
@@ -775,12 +727,8 @@ bool mclib_process::reachesAcceptBy(double t, double* x) const
     return true;
   }
   catch (MCLib::error e) {
-    if (em->startInternal(__FILE__, __LINE__)) {
-      em->causedBy(0);
-      em->internal() << "Unexpected error: ";
-      em->internal() << e.getString();
-      em->stopIO();
-    }
+    internal_error E(__FILE__, __LINE__);
+    E << "Unexpected error: " << e.getString();
     return false;
   }
 }
@@ -809,8 +757,8 @@ void mclib_process::showProc(std::ostream &os,
   long na = chain->getNumEdges();
   long num_states = chain->getNumStates();
 
-  if (state_lldsm::tooManyStates(num_states, &os))  return;
-  if (graph_lldsm::tooManyArcs(na, &os))            return;
+  if (state_lldsm::tooManyStates(num_states, os))  return;
+  if (graph_lldsm::tooManyArcs(na, os))            return;
 
   if (graph_lldsm::TRIPLES == opt.STYLE) {
     os << "#states " << num_states << "\n";

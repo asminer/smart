@@ -276,7 +276,7 @@ public:
   /** Start a warning message.
       Returns true on success.
   */
-  bool StartWarning(const warning_msg &who, const expr* cause) const;
+  bool StartWarning(const warning_msg &who, const expr* cause=0) const;
 
   /** Finish a warning message.
   */

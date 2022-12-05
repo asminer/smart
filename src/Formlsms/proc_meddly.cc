@@ -40,8 +40,8 @@ void meddly_process::showProc(std::ostream &os,
   const graph_lldsm::reachgraph::show_options &opt,
   state_lldsm::reachset* RSS, shared_state* st) const
 {
-  if (getParent()->tooManyStates(&os))  return;
-  if (getParent()->tooManyArcs(&os))    return;
+  if (getParent()->tooManyStates(os))  return;
+  if (getParent()->tooManyArcs(os))    return;
 
   meddly_reachset* mrss = smart_cast <meddly_reachset*> (RSS);
   DCASSERT(mrss);
@@ -130,7 +130,7 @@ void meddly_process::showProc(std::ostream &os,
       } else {
         tmt = proc->getIterUnprimedMinterm();
       }
-      os.Put('\t');
+      os << '\t';
 
       float rate = 0;
       proc->getIterValue(rate);
@@ -163,11 +163,9 @@ void meddly_process::showProc(std::ostream &os,
               os << " : " << rate;
             }
       } // switch
-      os.Put('\n');
+      os << '\n';
 
     } // for iterator
-
-    os.flush();
 
   } // for I
 
@@ -180,7 +178,6 @@ void meddly_process::showInternal(std::ostream &os) const
 {
   os << "Internal process representation (using MEDDLY):\n";
   mxd_wrap->showNodeGraph(os, proc);
-  os.flush();
 }
 
 void meddly_process::getNumClasses(long &count) const

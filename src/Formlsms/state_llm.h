@@ -293,13 +293,13 @@ public:
 
   /** Compare number of states with option.
         @param  ns    Number of states
-        @param  os    If not null, display "too many states" message as appropriate.
+        @param  os    Display "too many states" message as appropriate.
         @return true  iff the number of states exceeds the option.
   */
-  static bool tooManyStates(long ns, std::ostream *os);
+  static bool tooManyStates(long ns, std::ostream &os);
 
   /// Check if reachable states has too many states
-  inline bool tooManyStates(std::ostream *os) const {
+  inline bool tooManyStates(std::ostream &os) const {
     return tooManyStates(getNumStates(), os);
   }
 

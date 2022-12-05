@@ -30,8 +30,9 @@ stochastic_lldsm::~stochastic_lldsm()
 void stochastic_lldsm::showProc(bool internal) const
 {
   DCASSERT(PROC);
+  std::ostream &out = outputStream::globalOut().stream();
   if (internal) {
-    PROC->showInternal(em->cout());
+    PROC->showInternal(out);
   } else {
     reachgraph::show_options opts;
     opts.ORDER = graph_lldsm::stateDisplayOrder();
@@ -40,7 +41,7 @@ void stochastic_lldsm::showProc(bool internal) const
     opts.RG_ONLY = false;
     shared_state* st = new shared_state(parent);
     DCASSERT(RSS);
-    PROC->showProc(em->cout(), opts, RSS, st);
+    PROC->showProc(out, opts, RSS, st);
     Delete(st);
   }
 }
@@ -53,9 +54,10 @@ bool stochastic_lldsm::isFairModel() const
 void stochastic_lldsm::showClasses() const
 {
   DCASSERT(PROC);
+  std::ostream &out = outputStream::globalOut().stream();
   shared_state* st = new shared_state(parent);
   DCASSERT(RSS);
-  PROC->showClasses(em->cout(), RSS, st);
+  PROC->showClasses(out, RSS, st);
   Delete(st);
 }
 
@@ -221,11 +223,8 @@ bool stochastic_lldsm::process::Equals(const shared_object* o) const
 
 void stochastic_lldsm::process::showError(const char* s)
 {
-  if (em->startError()) {
-    em->causedBy(0);
-    em->cerr() << s;
-    em->stopIO();
-  }
+    expr_error E(0);
+    E << s;
 }
 
 

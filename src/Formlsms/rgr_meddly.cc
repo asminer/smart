@@ -129,8 +129,8 @@ void meddly_monolithic_rg::showInternal(std::ostream &os) const
 void meddly_monolithic_rg::showArcs(std::ostream &os, const show_options &opt,
       state_lldsm::reachset* RSS, shared_state* st) const
 {
-  if (getParent()->tooManyStates(&os))  return;
-  if (getParent()->tooManyArcs(&os))    return;
+  if (getParent()->tooManyStates(os))  return;
+  if (getParent()->tooManyArcs(os))    return;
 
   meddly_reachset* mrss = smart_cast <meddly_reachset*> (RSS);
   DCASSERT(mrss);
@@ -214,7 +214,7 @@ void meddly_monolithic_rg::showArcs(std::ostream &os, const show_options &opt,
       } else {
         tmt = edges->getIterUnprimedMinterm();
       }
-      os.Put('\t');
+      os << '\t';
 
       switch (opt.STYLE) {
         case graph_lldsm::DOT:
@@ -234,11 +234,9 @@ void meddly_monolithic_rg::showArcs(std::ostream &os, const show_options &opt,
               os << mrss->getMintermIndex(tmt);
             }
       } // switch
-      os.Put('\n');
+      os << '\n';
 
     } // for iterator
-
-    os.flush();
 
   } // for I
 

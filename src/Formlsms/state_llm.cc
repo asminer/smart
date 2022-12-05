@@ -36,15 +36,16 @@ const char* state_lldsm::getClassName() const
 void state_lldsm::showStates(bool internal) const
 {
   DCASSERT(RSS);
+  std::ostream &out = outputStream::globalOut().stream();
   if (internal) {
-    RSS->showInternal(em->cout());
+    RSS->showInternal(out);
   } else {
     long num_states;
     RSS->getNumStates(num_states);
-    if (tooManyStates(num_states, &(em->cout()))) return;
+    if (tooManyStates(num_states, out)) return;
 
     shared_state* st = new shared_state(parent);
-    RSS->showStates(em->cout(), stateDisplayOrder(), st);
+    RSS->showStates(out, stateDisplayOrder(), st);
     Delete(st);
   }
 }
@@ -55,29 +56,24 @@ void state_lldsm::showStatesCOV(bool internal) const
   //  RSS->showInternal(em->cout());
   } else {
 //long num_states;
-  int num_states= CG->getNumState(CG,0);
+    int num_states= CG->getNumState(CG,0);
   //  RSS->getNumStates(num_states);
-    if (tooManyStates(num_states, &(em->cout()))) return;
+    std::ostream &out = outputStream::globalOut().stream();
+    if (tooManyStates(num_states, out)) return;
 
   //  shared_state* st = new shared_state(parent);
     CG->getNumState(CG,1);
   //  Delete(st);
   }
 }
-bool state_lldsm::tooManyStates(long ns, std::ostream* os)
+bool state_lldsm::tooManyStates(long ns, std::ostream &os)
 {
   if (ns>=0) {
     if ((0==max_state_display) || (ns <= max_state_display)) return false;
-    if (os) {
-      *os << "Too many states; to display, increase option ";
-      *os << max_state_display_option << ".\n";
-      os->flush();
-    }
+    os << "Too many states; to display, increase option ";
+    os << max_state_display_option << ".\n";
   } else {
-    if (os) {
-      *os << "Too many states.\n";
-      os->flush();
-    }
+    os << "Too many states.\n";
   }
   return true;
 }

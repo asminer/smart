@@ -96,8 +96,8 @@ void grlib_reachgraph::showInternal(std::ostream &os) const
 void grlib_reachgraph::showArcs(std::ostream &os, const show_options &opt,
   state_lldsm::reachset* RSS, shared_state* st) const
 {
-  if (state_lldsm::tooManyStates(OutEdges.getNumNodes(), &os))    return;
-  if (graph_lldsm::tooManyArcs(OutEdges.getNumEdges(), &os))      return;
+  if (state_lldsm::tooManyStates(OutEdges.getNumNodes(), os))    return;
+  if (graph_lldsm::tooManyArcs(OutEdges.getNumEdges(), os))      return;
 
   bool by_rows = (graph_lldsm::INCOMING != opt.STYLE);
   const GraphLib::static_graph &Edges = by_rows ? OutEdges : InEdges;
@@ -127,11 +127,8 @@ void grlib_reachgraph
   const expl_stateset* src_ess = dynamic_cast <const expl_stateset*> (src_ss);
   const expl_stateset* dest_ess = dynamic_cast <const expl_stateset*> (dest_ss);
   if (0==src_ess || 0==dest_ess) {
-    if (em->startError()) {
-      em->causedBy(0);
-      em->cerr() << "Explicit reachability graph expecting explicit statesets for path count";
-      em->stopIO();
-    }
+    expr_error E(0);
+    E << "Explicit reachability graph expecting explicit statesets for path count";
     count.setNull();
     return;
   }
@@ -142,9 +139,9 @@ void grlib_reachgraph
   // build backward set from dest, with card "nb".
   //
   timer sw;
-  if (numpaths_report.startReport()) {
-    numpaths_report.report() << "Building backward set\n";
-    numpaths_report.stopIO();
+  if (numpaths_report.start()) {
+    numpaths_report << "Building backward set";
+    numpaths_report.stop();
   }
 
   const long num_states = InEdges.getNumNodes();
@@ -157,10 +154,10 @@ void grlib_reachgraph
   TH->get_met_obligations(back);
   long nb = back.cardinality();
 
-  if (numpaths_report.startReport()) {
-    numpaths_report.report() << "Built    backward set, took " << sw.elapsed_seconds();
-    numpaths_report.report() << " seconds\n";
-    numpaths_report.stopIO();
+  if (numpaths_report.start()) {
+    numpaths_report << "Built    backward set, took " << sw.elapsed_seconds();
+    numpaths_report << " seconds";
+    numpaths_report.stop();
   }
 
   //
@@ -170,9 +167,9 @@ void grlib_reachgraph
   bigint acc;
 
   sw.reset();
-  if (numpaths_report.startReport()) {
-    numpaths_report.report() << "Counting paths\n";
-    numpaths_report.stopIO();
+  if (numpaths_report.start()) {
+    numpaths_report << "Counting paths";
+    numpaths_report.stop();
   }
 
   // Initialize paths
@@ -284,26 +281,26 @@ void grlib_reachgraph
     acc.add(acc, *paths[s]);
   } // for s
 
-  if (numpaths_report.startReport()) {
-    numpaths_report.report() << "Counted  paths, took ";
-    numpaths_report.report() << sw.elapsed_seconds() << " seconds\n";
-    numpaths_report.stopIO();
+  if (numpaths_report.start()) {
+    numpaths_report << "Counted  paths, took ";
+    numpaths_report << sw.elapsed_seconds() << " seconds";
+    numpaths_report.stop();
   }
 
   // cleanup
   sw.reset();
-  if (numpaths_report.startReport()) {
-    numpaths_report.report() << "Cleaning up\n";
-    numpaths_report.stopIO();
+  if (numpaths_report.start()) {
+    numpaths_report << "Cleaning up";
+    numpaths_report.stop();
   }
   delete[] stack;
   for (long i=0; i<num_states; i++) Delete(paths[i]);
   delete[] paths;
   delete[] shortpc;
-  if (numpaths_report.startReport()) {
-    numpaths_report.report() << "Cleanup took ";
-    numpaths_report.report() << sw.elapsed_seconds() << " seconds\n";
-    numpaths_report.stopIO();
+  if (numpaths_report.start()) {
+    numpaths_report << "Cleanup took ";
+    numpaths_report << sw.elapsed_seconds() << " seconds";
+    numpaths_report.stop();
   }
 
   if (acc.cmp_si(0) < 0) {
@@ -348,11 +345,11 @@ void grlib_reachgraph::showRawMatrix(std::ostream &os, const GraphLib::static_gr
 
   os << "      size: " << E.getNumNodes() << "\n";
   os << "      " << rptr << ": [";
-  os.PutArray(E.RowPointer(), E.getNumNodes()+1);
+  os << element_writer<long>(E.RowPointer(), E.getNumNodes()+1);
   os << "]\n";
 
   os << "      " << cind << ": [";
-  os.PutArray(E.ColumnIndex(), E.getNumEdges());
+  os << element_writer<long>(E.ColumnIndex(), E.getNumEdges());
   os << "]\n";
 }
 

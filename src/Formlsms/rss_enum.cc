@@ -43,14 +43,12 @@ void enum_reachset::getNumStates(long &ns) const
 void enum_reachset::showInternal(std::ostream &os) const
 {
   os << "state_handle: [";
-  os.PutArray(state_handle, states->NumValues());
+  os << element_writer<long>(state_handle, states->NumValues());
   os << "]\n";
   for (long i=0; i<states->NumValues(); i++) {
     const model_enum_value* st = states->ReadValue(i);
     os << "State " << i << " internal: (index " << st->GetIndex() << ") ";
-    os.Put(st->Name());
-    os << "\n";
-    os.flush();
+    os << st->Name() << '\n';
   } // for i
 }
 
@@ -58,7 +56,7 @@ void enum_reachset::showState(std::ostream &os, const shared_state* st) const
 {
   long i = st->get(states->GetIndex());
   const model_enum_value* mev = states->ReadValue(state_handle[i]);
-  os.Put(mev->Name());
+  os << mev->Name();
 }
 
 state_lldsm::reachset::iterator& enum_reachset
