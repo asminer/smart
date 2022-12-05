@@ -118,6 +118,14 @@ protected:
   }
 
   void waitDepList(List <symbol>* dl);
+
+public:
+    class errmsg : public error_msg {
+            measure* cause;
+        public:
+            errmsg(measure *m);
+            ~errmsg();
+    };
 };
 
 

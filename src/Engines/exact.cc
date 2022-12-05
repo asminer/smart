@@ -64,14 +64,10 @@ protected:
     }
 
     inline bool infinitySubtract(measure* m) {
-      if (em->startError()) {
-        em->causedBy(m);
-        em->cerr() << "Undefined operation (infty-infty) while computing ";
-        em->cerr() << m->Name();
-        em->stopIO();
-      }
-      ans.setNull();
-      return true;
+        measure::errmsg E(m);
+        E << "Undefined operation (infty-infty)";
+        ans.setNull();
+        return true;
     }
   };
 
@@ -91,41 +87,37 @@ protected:
   void GenerateProc(hldsm* m) const;
 
   inline bool startMsrs(const char* what, const char* name) {
-    if (eng_report.startReport()) {
-      eng_report.report() << "Computing ";
-      if (what) eng_report.report() << what << " ";
-      eng_report.report() << "measures";
-      if (name) eng_report.report() << " for model " << name;
-      eng_report.report().Put('\n');
+    if (eng_report.start()) {
+      eng_report << "Computing ";
+      if (what) eng_report << what << " ";
+      eng_report << "measures";
+      if (name) eng_report << " for model " << name;
+      // Don't stop, in case we want to add more
       return true;
     }
     return false;
   }
   inline bool stopMsrs(int count, const char* what, const char* name, const timer &w) {
-    if (eng_report.startReport()) {
-      eng_report.report() << "Computed  ";
-      if (what) eng_report.report() << what << " ";
-      eng_report.report() << "measures";
-      if (name) eng_report.report() << " for model " << name;
-      eng_report.report().Put('\n');
+    if (eng_report.start()) {
+      eng_report << "Computed  ";
+      if (what) eng_report << what << " ";
+      eng_report << "measures";
+      if (name) eng_report << " for model " << name;
+      eng_report << '\n';
       if (count) {
-         eng_report.report() << "\t" << count << " measures computed\n";
+         eng_report << "\t" << count << " measures computed\n";
       }
-      eng_report.report() << "\t" << w.elapsed_seconds();
-      eng_report.report() << " seconds required for measure computation\n";
+      eng_report << "\t" << w.elapsed_seconds();
+      eng_report << " seconds required for measure computation";
+      // Don't stop, in case we want to add more
       return true;
     }
     return false;
   }
 
   inline void infinitySubtract(measure* m) const {
-    if (em->startError()) {
-      em->causedBy(m);
-      em->cerr() << "Undefined operation (infty-infty) while computing ";
-      em->cerr() << m->Name();
-      em->stopIO();
-    }
-    m->SetNull();
+    measure::errmsg E(m);
+    E << "Undefined operation (infty-infty)";
   }
 };
 
@@ -302,9 +294,9 @@ void mcex_steady::SolveMeasures(hldsm* mdl, set_of_measures* list)
 {
   DCASSERT(mdl);
   DCASSERT(AppliesToModelType(mdl->Type()));
-  if (eng_debug.startReport()) {
-    eng_debug.report() << "Running exact steady-state engine\n";
-    eng_debug.stopIO();
+  if (eng_debug.start()) {
+    eng_debug << "Running exact steady-state engine";
+    eng_debug.stop();
   }
   DCASSERT(mdl);
   GenerateProc(mdl);
@@ -327,7 +319,7 @@ void mcex_steady::SolveMeasures(hldsm* mdl, set_of_measures* list)
     long count = 0;
     timer w;
     if (startMsrs("steady-state", mdl->Name())) {
-      em->stopIO();
+      eng_report.stop();
     }
     for (measure* m = list->popMeasure(); m; m=list->popMeasure()) {
       if (em->STATEDIST == m->Type()) {
@@ -369,13 +361,13 @@ void mcex_steady::SolveMeasures(hldsm* mdl, set_of_measures* list)
       m->SetNull();
     } // for m
     if (stopMsrs(count, "steady-state", mdl->Name(), w)) {
-      em->stopIO();
+      eng_report.stop();
     }
   }
   free(p);
-  if (eng_debug.startReport()) {
-    eng_debug.report() << "Finished exact steady-state engine\n";
-    eng_debug.stopIO();
+  if (eng_debug.start()) {
+    eng_debug << "Finished exact steady-state engine";
+    eng_debug.stop();
   }
   if (!ok) throw Engine_Failed;
 }
@@ -406,9 +398,9 @@ void mcex_trans::SolveMeasures(hldsm* mdl, set_of_measures* list)
 {
   DCASSERT(mdl);
   DCASSERT(AppliesToModelType(mdl->Type()));
-  if (eng_debug.startReport()) {
-    eng_debug.report() << "Running exact transient engine\n";
-    eng_debug.stopIO();
+  if (eng_debug.start()) {
+    eng_debug << "Running exact transient engine";
+    eng_debug.stop();
   }
   DCASSERT(mdl);
   GenerateProc(mdl);
@@ -454,10 +446,10 @@ void mcex_trans::SolveMeasures(hldsm* mdl, set_of_measures* list)
     DCASSERT(dt >= 0);
     if (dt) {
       dist = 0;
-      if (eng_debug.startReport()) {
-        eng_debug.report() << "time = " << tm->GetTime();
-        eng_debug.report() << ", delta = " << dt << "\n";
-        eng_debug.stopIO();
+      if (eng_debug.start()) {
+        eng_debug << "time = " << tm->GetTime();
+        eng_debug << ", delta = " << dt;
+        eng_debug.stop();
       }
       ok = proc->computeTransient(dt, p, aux1, aux2);
       last_time = tm->GetTime();
@@ -502,9 +494,9 @@ void mcex_trans::SolveMeasures(hldsm* mdl, set_of_measures* list)
   free(p);
   free(aux1);
   free(aux2);
-  if (eng_debug.startReport()) {
-    eng_debug.report() << "Finished exact transient engine\n";
-    eng_debug.stopIO();
+  if (eng_debug.start()) {
+    eng_debug << "Finished exact transient engine";
+    eng_debug.stop();
   }
   if (!ok) throw Engine_Failed;
 }
@@ -535,9 +527,9 @@ void mcex_acc::SolveMeasures(hldsm* mdl, set_of_measures* list)
 {
   DCASSERT(mdl);
   DCASSERT(AppliesToModelType(mdl->Type()));
-  if (eng_debug.startReport()) {
-    eng_debug.report() << "Running exact accumulated engine\n";
-    eng_debug.stopIO();
+  if (eng_debug.start()) {
+    eng_debug << "Running exact accumulated engine";
+    eng_debug.stop();
   }
   DCASSERT(mdl);
   GenerateProc(mdl);
@@ -582,10 +574,10 @@ void mcex_acc::SolveMeasures(hldsm* mdl, set_of_measures* list)
     double dt = tm->GetTime() - last_start;
     DCASSERT(dt >= 0);
     if (dt) {
-      if (eng_debug.startReport()) {
-        eng_debug.report() << "time = " << tm->GetTime();
-        eng_debug.report() << ", delta = " << dt << "\n";
-        eng_debug.stopIO();
+      if (eng_debug.start()) {
+        eng_debug << "time = " << tm->GetTime();
+        eng_debug << ", delta = " << dt;
+        eng_debug.stop();
       }
       ok = proc->computeTransient(dt, p0, aux1, aux2);
       last_start = tm->GetTime();
@@ -617,9 +609,9 @@ void mcex_acc::SolveMeasures(hldsm* mdl, set_of_measures* list)
   free(n);
   free(aux1);
   free(aux2);
-  if (eng_debug.startReport()) {
-    eng_debug.report() << "Finished exact accumulated engine\n";
-    eng_debug.stopIO();
+  if (eng_debug.start()) {
+    eng_debug << "Finished exact accumulated engine";
+    eng_debug.stop();
   }
   if (!ok) throw Engine_Failed;
 }
@@ -650,9 +642,9 @@ void mcex_infacc::SolveMeasures(hldsm* mdl, set_of_measures* list)
 {
   DCASSERT(mdl);
   DCASSERT(AppliesToModelType(mdl->Type()));
-  if (eng_debug.startReport()) {
-    eng_debug.report() << "Running exact infinite accumulation engine\n";
-    eng_debug.stopIO();
+  if (eng_debug.start()) {
+    eng_debug << "Running exact infinite accumulation engine";
+    eng_debug.stop();
   }
   DCASSERT(mdl);
   GenerateProc(mdl);
@@ -702,10 +694,10 @@ void mcex_infacc::SolveMeasures(hldsm* mdl, set_of_measures* list)
     double dt = tm->GetTime() - last_time;
     DCASSERT(dt >= 0);
     if (dt || not_computed) {
-      if (eng_debug.startReport()) {
-        eng_debug.report() << "time = " << tm->GetTime();
-        eng_debug.report() << ", delta = " << dt << "\n";
-        eng_debug.stopIO();
+      if (eng_debug.start()) {
+        eng_debug << "time = " << tm->GetTime();
+        eng_debug << ", delta = " << dt;
+        eng_debug.stop();
       }
       ok = proc->computeTransient(dt, p0, aux1, aux2);
       last_time = tm->GetTime();
@@ -737,9 +729,9 @@ void mcex_infacc::SolveMeasures(hldsm* mdl, set_of_measures* list)
   free(n);
   free(aux1);
   free(aux2);
-  if (eng_debug.startReport()) {
-    eng_debug.report() << "Finished exact infinite accumulation engine\n";
-    eng_debug.stopIO();
+  if (eng_debug.start()) {
+    eng_debug << "Finished exact infinite accumulation engine";
+    eng_debug.stop();
   }
   if (!ok) throw Engine_Failed;
 }
@@ -782,15 +774,15 @@ void exact_ph_analyze::RunEngine(hldsm* foo, result &fls)
   phase_hlm* X = smart_cast <phase_hlm*> (foo);
   DCASSERT(X);
 
-  if (eng_debug.startReport()) {
+  if (eng_debug.start()) {
     if (avg_only) {
-      eng_debug.report() << "Computing average for a ";
+      eng_debug << "Computing average for a ";
     } else {
-      eng_debug.report() << "Computing variance for a ";
+      eng_debug << "Computing variance for a ";
     }
-    eng_debug.report() << ((X->isDiscrete()) ? "Discrete" : "Continuous");
-    eng_debug.report() << " phase type\n";
-    eng_debug.stopIO();
+    eng_debug << ((X->isDiscrete()) ? "Discrete" : "Continuous");
+    eng_debug << " phase type";
+    eng_debug.stop();
   }
 
   //
@@ -839,9 +831,9 @@ void exact_ph_analyze::RunEngine(hldsm* foo, result &fls)
   //
 
   timer watch;
-  if (eng_report.startReport()) {
-    eng_report.report() << "Computing time spent in states\n";
-    eng_report.stopIO();
+  if (eng_report.start()) {
+    eng_report << "Computing time spent in states";
+    eng_report.stop();
   }
 
   statedist* initial = proc->getInitialDistribution();
@@ -852,9 +844,9 @@ void exact_ph_analyze::RunEngine(hldsm* foo, result &fls)
     throw Engine_Failed;
   }
 
-  if (eng_report.startReport()) {
-    eng_report.report() << "computation took " << watch.elapsed_seconds() << " seconds\n";
-    eng_report.stopIO();
+  if (eng_report.start()) {
+    eng_report << "computation took " << watch.elapsed_seconds() << " seconds";
+    eng_report.stop();
   }
 
   //
@@ -917,9 +909,9 @@ void exact_ph_analyze::RunEngine(hldsm* foo, result &fls)
       //        v Qzz = -2sigma
       //      by using 2sigma as the initial distribution
       //
-      if (eng_report.startReport()) {
-        eng_report.report() << "Computing variance by state\n";
-        eng_report.stopIO();
+      if (eng_report.start()) {
+        eng_report << "Computing variance by state";
+        eng_report.stop();
         watch.reset();
       }
 
@@ -945,9 +937,9 @@ void exact_ph_analyze::RunEngine(hldsm* foo, result &fls)
         throw Engine_Failed;
       }
 
-      if (eng_report.startReport()) {
-        eng_report.report() << "computation took " << watch.elapsed_seconds() << " seconds\n";
-        eng_report.stopIO();
+      if (eng_report.start()) {
+        eng_report << "computation took " << watch.elapsed_seconds() << " seconds";
+        eng_report.stop();
       }
 
       //

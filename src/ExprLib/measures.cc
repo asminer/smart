@@ -188,6 +188,29 @@ void measure::waitDepList(List <symbol>* dl)
 }
 
 // ******************************************************************
+
+measure::errmsg::errmsg(measure* c) : error_msg("ERROR")
+{
+    cause = c;
+
+    if (cause) {
+        Out << ' ' << cause->Where();
+    } else {
+        Out << ':';
+    }
+    newLine();
+}
+
+measure::errmsg::~errmsg()
+{
+    if (cause) {
+        newLine();
+        Out << "while computing measure " << cause->Name();
+        cause->setNull();
+    }
+}
+
+// ******************************************************************
 // *                                                                *
 // *                      time_measure methods                      *
 // *                                                                *

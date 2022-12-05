@@ -95,11 +95,8 @@ void TU_generate::RunEngine(result* pass, int np, traverse_data &x)
   // Make sure it is a stochastic model
   stochastic_lldsm* sm = dynamic_cast <stochastic_lldsm*>(pass[0].getPtr());
   if (0==sm) {
-    if (em->startError()) {
-      em->causedBy(x.parent);
-      em->cerr() << "TU distribution requires a stochastic model\n";
-      em->stopIO();
-    }
+    expr_error E(x.parent);
+    E << "TU distribution requires a stochastic model";
     throw Engine_Failed;
   }
 
@@ -107,12 +104,11 @@ void TU_generate::RunEngine(result* pass, int np, traverse_data &x)
   bool discrete;
   switch (sm->Type()) {
     case lldsm::GSP:
-      if (em->startError()) {
-        em->causedBy(x.parent);
-        em->cerr() << "TU distribution requires an underlying Markov chain\n";
-        em->stopIO();
-      }
-      throw Engine_Failed;
+    {
+        expr_error E(x.parent);
+        E << "TU distribution requires an underlying Markov chain";
+        throw Engine_Failed;
+    }
 
     case lldsm::DTMC:
       discrete = true;
@@ -173,12 +169,11 @@ void TU_generate::RunEngine(result* pass, int np, traverse_data &x)
     tta = makeTTA(discrete, initial, q, 0, sm->copyPROC());
   }
   if (0==tta) {
-    if (em->startInternal(__FILE__, __LINE__)) {
-      em->causedBy(x.parent);
-      em->internal() << "Couldn't build TTA phase model\n";
-      em->stopIO();
-    }
-    throw Engine_Failed;
+      internal_error E(__FILE__, __LINE__,
+              x.parent ? x.parent->Where() : location::NOWHERE()
+      );
+      E << "Couldn't build TTA phase model";
+      throw Engine_Failed;
   }
 
   x.answer->setPtr(tta);
