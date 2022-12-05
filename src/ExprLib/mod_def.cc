@@ -676,10 +676,10 @@ expr* exprman::makeMeasureCall(const location &W, model_def* m,
 }
 
 // ******************************************************************
-// *                       mdl_errmsg methods                       *
+// *                         errmsg methods                         *
 // ******************************************************************
 
-model_def::mdl_errmsg::mdl_errmsg(const model_def* _mod, const expr* cause)
+model_def::errmsg::errmsg(const model_def* _mod, const expr* cause)
     : expr_error(cause)
 {
     model = _mod;
@@ -687,7 +687,7 @@ model_def::mdl_errmsg::mdl_errmsg(const model_def* _mod, const expr* cause)
     DCASSERT(model->current);
 }
 
-model_def::mdl_errmsg::~mdl_errmsg()
+model_def::errmsg::~errmsg()
 {
     DCASSERT(model);
     DCASSERT(model->current);

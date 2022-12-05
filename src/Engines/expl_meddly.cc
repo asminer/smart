@@ -111,7 +111,7 @@ public:
   // edge_minterms(meddly_monolithic_rg &r, minterm_pool &m, int alloc_size, bool needs_rates);
   ~edge_minterms();
 
-  void reportStats(DisplayStream &out, const char* name="reachability graph") const;
+  void reportStats(std::ostream &out, const char* name="reachability graph") const;
 
   inline shared_ddedge* shareProc() { return Share(Edges); }
 
@@ -221,12 +221,11 @@ edge_minterms::~edge_minterms()
 #endif
 }
 
-void edge_minterms::reportStats(DisplayStream &out, const char* who) const
+void edge_minterms::reportStats(std::ostream &out, const char* who) const
 {
   out << "\tBatch for " << who << " required ";
   size_t batchmem = 2*alloc*sizeof(int);
-  out.PutMemoryCount(batchmem, 3);
-  out << "\n";
+  out << memoryCount(batchmem, 3) << "\n";
 #ifdef MEASURE_STATS
   if (num_batches) {
     out << "\t\t# batches: " << num_batches << "\n";
@@ -492,7 +491,7 @@ public:
   edge_2001_cmds(meddly_encoder &w, int bs);
   ~edge_2001_cmds();
 
-  void reportStats(DisplayStream &out, const char* name) const;
+  void reportStats(std::ostream &out, const char* name) const;
 
   // copy into meddly forest
   shared_ddedge* shareProc();
@@ -752,15 +751,13 @@ edge_2001_cmds::~edge_2001_cmds()
 #endif
 }
 
-void edge_2001_cmds::reportStats(DisplayStream &out, const char* name) const
+void edge_2001_cmds::reportStats(std::ostream &out, const char* name) const
 {
 #ifdef MEASURE_STATS
   out << "\tMatrix diagram report for " << name << ":\n";
   out << "\t\t" << numnonzeroes << " elements added\n";
-  out << "\t\tCurrent memory: ";
-  out.PutMemoryCount(memused, 3);
-  out << "\n\t\tMaximum memory: ";
-  out.PutMemoryCount(maxused, 3);
+  out << "\t\tCurrent memory: " << memoryCount(memused, 3);
+  out << "\n\t\tMaximum memory: " << memoryCount(maxused, 3);
   out << "\n\t\tCurrent nodes: " << currnodes << "\n";
   out << "\t\tMaximum nodes: " << peaknodes << "\n";
   if (num_batches) {
@@ -1210,7 +1207,7 @@ class real_2001_cmds {
     /// destructor
     ~real_2001_cmds();
 
-    void reportStats(DisplayStream &out, const char* name) const;
+    void reportStats(std::ostream &out, const char* name) const;
 
     shared_ddedge* shareProc();
 
@@ -1531,15 +1528,13 @@ real_2001_cmds::~real_2001_cmds()
 #endif
 }
 
-void real_2001_cmds::reportStats(DisplayStream &out, const char* name) const
+void real_2001_cmds::reportStats(std::ostream &out, const char* name) const
 {
 #ifdef MEASURE_STATS
   out << "Matrix diagram report for " << name << ":\n";
   out << "\t\t" << numnonzeroes << " elements added\n";
-  out << "\t\tCurrent memory: ";
-  out.PutMemoryCount(memused, 3);
-  out << "\n\t\tMaximum memory: ";
-  out.PutMemoryCount(maxused, 3);
+  out << "\t\tCurrent memory: " << memoryCount(memused, 3);
+  out << "\n\t\tMaximum memory: " << memoryCount(maxused, 3);
   out << "\n\t\tCurrent nodes: " << currnodes << "\n";
   out << "\t\tMaximum nodes: " << peaknodes << "\n";
   if (num_batches) {
@@ -1886,7 +1881,7 @@ public:
   int* getUnexplored(shared_state *);
   bool addState(const shared_state *, int* &id);
 
-  inline void reportStats(DisplayStream &out, const char* name) const { }
+  inline void reportStats(std::ostream &out, const char* name) const { }
   inline shared_ddedge* shareS() { DCASSERT(0); return 0; }
 
   // hook for cool stuff
@@ -1985,11 +1980,10 @@ public:
   int* getUnexplored(shared_state *);
   bool addState(const shared_state *, int* &id);
 
-  inline void reportStats(DisplayStream &out, const char* name) const {
+  inline void reportStats(std::ostream &out, const char* name) const {
     out << "\tBatch for " << name << " required ";
     size_t batchmem = alloc*sizeof(int);
-    out.PutMemoryCount(batchmem, 3);
-    out << "\n";
+    out << memoryCount(batchmem, 3) << "\n";
 #ifdef MEASURE_STATS
     if (num_batches) {
       out << "\t\t# batches: " << num_batches << "\n";
@@ -2156,7 +2150,7 @@ public:
   int* getUnexplored(shared_state *);
 
 #ifdef MEASURE_STATS
-  inline void reportStats(DisplayStream &out, const char* name) const {
+  inline void reportStats(std::ostream &out, const char* name) const {
     mt_sr_stategroup::reportStats(out, name);
     if (iterator_resets) {
       out << "\t\t#iterator resets: " << iterator_resets << "\n";
@@ -2323,7 +2317,7 @@ class gen_wrapper_templ {
       }
     }
 
-    void reportStats(DisplayStream &out, const char* proc) {
+    void reportStats(std::ostream &out, const char* proc) {
       DCASSERT(RSS);
       RSS->reportStats(out);
       if (minterms)   minterms->reportStats(out);
@@ -2376,13 +2370,11 @@ class gen_wrapper_templ {
 
       shared_ddedge* rg = edges->shareProc();
       if (0==rg) {
-        if (hm.StartError(0)) {
-          if (PROC) {
-            hm.SendError("Could not obtain final MC");
-          } else {
-            hm.SendError("Could not obtain final RG");
-          }
-          hm.DoneError();
+        hldsm::errmsg E(&hm);
+        if (PROC) {
+            E << "Could not obtain final MC";
+        } else {
+            E << "Could not obtain final RG";
         }
         // So we don't try to rebuild later
         hm.SetProcess(MakeErrorModel());
@@ -2448,9 +2440,9 @@ class gen_wrapper_templ {
     }
 
     inline void clearVanishing(debugging_msg &debug) {
-      if (debug.startReport()) {
-        debug.report() << "Eliminating vanishing states\n";
-        debug.stopIO();
+      if (debug.start()) {
+        debug << "Eliminating vanishing states\n";
+        debug.stop();
       }
       DCASSERT(vanishing);
       vanishing->clear();
@@ -2499,9 +2491,9 @@ class gen_wrapper_templ {
     //
 
     inline void eliminateVanishing(debugging_msg &debug) {
-      if (debug.startReport()) {
-        debug.report() << "Eliminating vanishing states\n";
-        debug.stopIO();
+      if (debug.start()) {
+        debug << "Eliminating vanishing states\n";
+        debug.stop();
       }
       DCASSERT(vanishing);
       // edges->eliminateVanishing();
@@ -2599,14 +2591,12 @@ public:
 protected:
   inline bool startGen(const hldsm &hm, const char* proc) const {
     if (!meddly_procgen::startGen(hm, proc)) return false;
-    em->report() << "\n";
-    em->newLine();
-    em->report() << "Using Meddly: ";
-    showAlgorithm(em->report());
-    em->report() << getStyleName() << " vars.";
-    showMatrix(em->report());
-    em->report() << "\n";
-    em->report() << "\tMax batch: " << batch_size << "\n";
+    report.newLine();
+    report << "Using Meddly: ";
+    showAlgorithm(report.stream());
+    report << getStyleName() << " vars.";
+    showMatrix(report.stream());
+    report << "\n\tMax batch: " << batch_size << "\n";
     return true;
   }
 
@@ -2646,41 +2636,43 @@ private:
     //
     timer watch;
     if (startGen(hm, "reachability set")) {
-      em->stopIO();
+        report.stop();
     }
+
+    signal_manager& tsm = signal_manager::theSigMan();
+    tsm.waitTermination();
 
     //
     // Generate, in a try block
     //
     try {
-      em->waitTerm();
-      G.generateRG(Debug(), hm);
+      G.generateRG(debug, hm);
 
       // Reporting
       if (meddly_procgen::stopGen(false, hm, "reachability set", watch)) {
-        G.reportStats(em->report(), 0);
-        em->stopIO();
+        G.reportStats(report.stream(), 0);
+        report.stop();
       }
 
       // Set process
       G.startProcess(hm, this);
 
       // Cleanup
-      em->resumeTerm();
+      tsm.resumeTermination();
       return;
     }
     catch (subengine::error e) {
       // Reporting
       if (meddly_procgen::stopGen(true, hm, "reachability set", watch)) {
-        G.reportStats(em->report(), 0);
-        em->stopIO();
+        G.reportStats(report.stream(), 0);
+        report.stop();
       }
 
       // Set process
       hm.SetProcess(MakeErrorModel());
 
       // Cleanup
-      em->resumeTerm();
+      tsm.resumeTermination();
       throw;
     }
   }
@@ -2693,41 +2685,43 @@ private:
     //
     timer watch;
     if (startGen(hm, "reachability graph")) {
-      em->stopIO();
+        report.stop();
     }
+
+    signal_manager& tsm = signal_manager::theSigMan();
+    tsm.waitTermination();
 
     //
     // Generate, in a try block
     //
     try {
-      em->waitTerm();
-      G.generateRG(Debug(), hm);
+      G.generateRG(debug, hm);
 
       // Reporting
       if (meddly_procgen::stopGen(false, hm, "reachability graph", watch)) {
-        G.reportStats(em->report(), "reachability graph");
-        em->stopIO();
+        G.reportStats(report.stream(), "reachability graph");
+        report.stop();
       }
 
       // Set process
       G.finishProcess(hm);
 
       // Cleanup
-      em->resumeTerm();
+      tsm.resumeTermination();
       return;
     }
     catch (subengine::error e) {
       // Reporting
       if (meddly_procgen::stopGen(true, hm, "reachability graph", watch)) {
-        G.reportStats(em->report(), "reachability graph");
-        em->stopIO();
+        G.reportStats(report.stream(), "reachability graph");
+        report.stop();
       }
 
       // Set process
       hm.SetProcess(MakeErrorModel());
 
       // Cleanup
-      em->resumeTerm();
+      tsm.resumeTermination();
       throw;
     }
   }
@@ -2739,23 +2733,24 @@ private:
     //
     timer watch;
     if (startGen(hm, "Markov chain")) {
-      em->stopIO();
+      report.stop();
     }
+
+    signal_manager& tsm = signal_manager::theSigMan();
+    tsm.waitTermination();
 
     //
     // Generate, in a try block
     //
     try {
 
-      em->waitTerm();
-
       switch (remove_vanishing) {
         case BY_PATH:
-          G.generateMC(Debug(), hm);
+          G.generateMC(debug, hm);
           break;
 
         case BY_SUBGRAPH:
-          G.generateSMP(Debug(), hm);
+          G.generateSMP(debug, hm);
           break;
 
         default:
@@ -2764,29 +2759,29 @@ private:
 
       // Reporting
       if (meddly_procgen::stopGen(false, hm, "Markov chain", watch)) {
-        G.reportStats(em->report(), "Markov chain");
-        em->stopIO();
+        G.reportStats(report.stream(), "Markov chain");
+        report.stop();
       }
 
       // Set process
       G.finishProcess(hm);
 
       // Cleanup
-      em->resumeTerm();
+      tsm.resumeTermination();
       return;
     }
     catch (subengine::error e) {
       // Reporting
       if (meddly_procgen::stopGen(true, hm, "Markov chain", watch)) {
-        G.reportStats(em->report(), "Markov chain");
-        em->stopIO();
+        G.reportStats(report.stream(), "Markov chain");
+        report.stop();
       }
 
       // Set process
       hm.SetProcess(MakeErrorModel());
 
       // Cleanup
-      em->resumeTerm();
+      tsm.resumeTermination();
       throw;
     }
   }
@@ -2824,17 +2819,15 @@ meddly_explgen::buildRSSPolicies() const
 
 void meddly_explgen::preprocess(dsde_hlm &m)
 {
-  if (m.buildPartInfo()) return;
-  if (m.StartError(0)) {
-    em->cerr() << "Meddly requires a structured model (try partitioning)";
-    m.DoneError();
-  }
-  throw Engine_Failed;
+    if (m.buildPartInfo()) return;
+    hldsm::errmsg E(&m);
+    E << "Meddly requires a structured model (try partitioning)";
+    throw Engine_Failed;
 }
 
 bool meddly_explgen::AppliesToModelType(hldsm::model_type mt) const
 {
-  return (hldsm::Asynch_Events == mt);
+    return (hldsm::Asynch_Events == mt);
 }
 
 void meddly_explgen::RunEngine(hldsm* hm, result &states_only)

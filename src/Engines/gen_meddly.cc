@@ -65,7 +65,7 @@ int* minterm_pool::allocMinterm()
   return answer;
 }
 
-void minterm_pool::reportStats(DisplayStream &out) const
+void minterm_pool::reportStats(std::ostream &out) const
 {
   out << "\t" << used << " minterms used, required ";
   size_t batchmem = (term_depth+2)*sizeof(int)*used + alloc*sizeof(int*);
@@ -165,7 +165,7 @@ char* meddly_varoption::buildVarName(const hldsm::partinfo &part, int k)
   return s.GetString();
 }
 
-void meddly_varoption::reportStats(DisplayStream &out) const
+void meddly_varoption::reportStats(std::ostream &out) const
 {
   ms.reportStats(out);
   if (mxd_wrap) mxd_wrap->reportStats(out);
@@ -382,7 +382,7 @@ public:
 
   virtual bool hasChangedLevels(const dd_edge &s, bool* cl);
 
-  virtual void reportStats(DisplayStream &out) const;
+  virtual void reportStats(std::ostream &out) const;
 
 protected: // in the following, dd is an mxd edge.
   void encodeExpr(expr* e, dd_edge &dd, const char *what, const char* who);
@@ -499,7 +499,7 @@ bool bounded_varoption::hasChangedLevels(const dd_edge &s, bool* cl)
 
 
 
-void bounded_varoption::reportStats(DisplayStream &out) const
+void bounded_varoption::reportStats(std::ostream &out) const
 {
   meddly_varoption::reportStats(out);
   if (mtmxd_wrap) mtmxd_wrap->reportStats(out);
@@ -2358,7 +2358,7 @@ public:
   virtual ~substate_varoption();
   virtual void initializeVars();
   virtual void initializeEvents(debugging_msg &d);
-  virtual void reportStats(DisplayStream &out) const;
+  virtual void reportStats(std::ostream &out) const;
 
   //
   // TBD - for now
@@ -2753,7 +2753,7 @@ substate_varoption::initializeEvents(debugging_msg &d)
   d.stopIO();
 }
 
-void substate_varoption::reportStats(DisplayStream &out) const
+void substate_varoption::reportStats(std::ostream &out) const
 {
   meddly_varoption::reportStats(out);
   DCASSERT(colls);

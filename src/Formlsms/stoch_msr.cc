@@ -211,7 +211,7 @@ void baseat_si::mymsr::classifyNow()
   }
 
   if (illegal_time) {
-    model_instance::mdl_errmsg E(owner, attime);
+    model_instance::errmsg E(owner, attime);
     E << "Bad time: ";
     em->REAL->print(E.stream(), foo);
     E << " for " << name;
@@ -354,7 +354,7 @@ void baseacc_si::mymsr::classifyNow()
     illegal_time = true;
   }
   if (illegal_time) {
-    model_instance::mdl_errmsg E(owner, acct1);
+    model_instance::errmsg E(owner, acct1);
     E << "Bad time: ";
     em->REAL->print(E.stream(), t1);
     E << " for parameter t1 in " << name;
@@ -371,7 +371,7 @@ void baseacc_si::mymsr::classifyNow()
     illegal_time = true;
   }
   if (illegal_time) {
-    model_instance::mdl_errmsg E(owner, acct2);
+    model_instance::errmsg E(owner, acct2);
     E << "Bad time: ";
     em->REAL->print(E.stream(), t2);
     E << " for parameter t2 in " << name;
@@ -381,7 +381,7 @@ void baseacc_si::mymsr::classifyNow()
 
   // Check t1 <= t2
   if (t2.isNormal() && t2.getReal() < t1.getReal()) {
-    model_instance::mdl_errmsg E(owner, acct2);
+    model_instance::errmsg E(owner, acct2);
     E << "Times not in order: t1=";
     em->REAL->print(E.stream(), t1);
     E << ", t2=";

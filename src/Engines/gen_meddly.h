@@ -79,9 +79,7 @@ public:
   }
 
   inline void showMinterm(std::ostream &s, const int* m) const {
-    s.Put('[');
-    s.PutArray(m, term_depth);
-    s.Put(']');
+    s << '[' << element_writer<int>(m, term_depth) << ']';
   }
 
   inline void showMinterm(FILE*s, const int* m) const {
@@ -96,7 +94,7 @@ public:
     return 0==memcmp(m1+1, m2+1, (term_depth-1) * sizeof(int));
   }
 
-  void reportStats(DisplayStream &out) const;
+  void reportStats(std::ostream &out) const;
 };
 
 //==========================================================================================
@@ -240,7 +238,7 @@ public:
 
 
   /// Show stats on completion
-  virtual void reportStats(DisplayStream &s) const;
+  virtual void reportStats(std::ostream &s) const;
 
 
   // TBD - redesign everything above here

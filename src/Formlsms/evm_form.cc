@@ -928,7 +928,7 @@ void evm_range::Compute(traverse_data &x, expr** pass, int np)
     x.aggregate = 1;
     SafeCompute(pass[i], x);
     if (! second.isNormal() ) {
-      model_def::mdl_errmsg E(mdl, pass[i]);
+      model_def::errmsg E(mdl, pass[i]);
       E << "Bad integer set for range, ignoring";
       continue;
     }
@@ -1110,7 +1110,7 @@ void evm_init::Compute(traverse_data &x, expr** pass, int np)
     x.aggregate = 1;
     SafeCompute(pass[i], x);
     if (! second.isNormal() ) {
-      model_def::mdl_errmsg E(mdl, pass[i]);
+      model_def::errmsg E(mdl, pass[i]);
       E << "Bad integer for init, ignoring";
       continue;
     }

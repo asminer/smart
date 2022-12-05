@@ -4,6 +4,7 @@
  States are "indexed" by a unique identifier.
  */
 #include "../_StateLib/lchild_rsiblingt.h"
+#include "../Utils/sigman.h"
 #include <set>
 #include <string>
 
@@ -62,10 +63,8 @@ void generateRGt(debugging_msg &debug, dsde_hlm &dsm, RG &rg) {
 			dsm.GetInitialState(i, curr_st);
 			dsm.checkVanishing(x);
 			if (!xans.isNormal()) {
-				if (dsm.StartError(0)) {
-					dsm.SendError("Couldn't determine vanishing / tangible");
-					dsm.DoneError();
-				}
+                hldsm::errmsg E(&dsm, 0);
+                E << "Couldn't determine vanishing / tangible";
 				throw subengine::Engine_Failed;
 			}
 			UID id;
@@ -73,11 +72,10 @@ void generateRGt(debugging_msg &debug, dsde_hlm &dsm, RG &rg) {
 			if (!xans.getBool()) {
 				rg.addInitial(id);
 			}
-			if (debug.startReport()) {
-				debug.report() << "Adding initial ";
-				rg.show(debug.report(), xans.getBool(), id, curr_st);
-				debug.report() << "\n";
-				debug.stopIO();
+			if (debug.start()) {
+				debug << "Adding initial ";
+				rg.show(debug.stream(), xans.getBool(), id, curr_st);
+				debug.stop();
 			}
 			if (!newinit)
 				continue;
@@ -95,17 +93,16 @@ void generateRGt(debugging_msg &debug, dsde_hlm &dsm, RG &rg) {
 		bool valid_from = false;
 		bool current_is_vanishing = false;
 
+        signal_manager& TSM = signal_manager::theSigMan();
+
 		// Combined tangible + vanishing explore loop!
 		for (;;) {
 			//
 			// Check for signals
 			//
-			if (debug.caughtTerm()) {
-				if (dsm.StartError(0)) {
-					dsm.SendError(
-							"Process construction prematurely terminated");
-					dsm.DoneError();
-				}
+            if (TSM.caughtSignal()) {
+                hldsm::errmsg E(&dsm);
+                E << "Process construction prematurely terminated";
 				throw subengine::Terminated;
 			}
 
@@ -126,16 +123,15 @@ void generateRGt(debugging_msg &debug, dsde_hlm &dsm, RG &rg) {
 				// find next tangible to explore; if none, break out
 				if (rg.hasUnexploredTangible()) {
 					from_id = exp_id = rg.getUnexploredTangible(curr_st);
-					valid_from = true;
+					// valid_from = true;
 				} else {
 					break;  // done exploring!
 				}
 			}
-			if (debug.startReport()) {
-				debug.report() << "Exploring ";
-				rg.show(debug.report(), current_is_vanishing, exp_id, curr_st);
-				debug.report() << "\n";
-				debug.stopIO();
+			if (debug.start()) {
+				debug << "Exploring ";
+				rg.show(debug.stream(), current_is_vanishing, exp_id, curr_st);
+				debug.stop();
 			}
 
 			//
@@ -147,12 +143,10 @@ void generateRGt(debugging_msg &debug, dsde_hlm &dsm, RG &rg) {
 				dsm.makeTangibleEnabledList(x, &enabled);
 			if (!x.answer->isNormal()) {
 				DCASSERT(1 == enabled.Length());
-				if (dsm.StartError(0)) {
-					dsm.SendError("Bad enabling expression for event ");
-					dsm.SendError(enabled.Item(0)->Name());
-					dsm.SendError(" during process generation");
-					dsm.DoneError();
-				}
+
+                hldsm::errmsg E(&dsm);
+                E << "Bad enabling expression for event ";
+				E << enabled.Item(0)->Name() << " during process generation";
 				throw subengine::Engine_Failed;
 			}
 
@@ -171,13 +165,10 @@ void generateRGt(debugging_msg &debug, dsde_hlm &dsm, RG &rg) {
 					t->getNextstate()->Compute(x);
 				}
 				if (!xans.isNormal()) {
-					if (dsm.StartError(0)) {
-						dsm.SendError("Bad next-state expression for event ");
-						dsm.SendError(t->Name());
-						dsm.SendError(" during process generation");
-						dsm.OutOfBoundsError(xans);
-						dsm.DoneError();
-					}
+                    hldsm::errmsg E(&dsm);
+				    E << "Bad next-state expression for event ";
+				    E << t->Name() << " during process generation";
+					E.outOfBoundsError(xans);
 					throw subengine::Engine_Failed;
 				}
 
@@ -188,11 +179,8 @@ void generateRGt(debugging_msg &debug, dsde_hlm &dsm, RG &rg) {
 				dsm.checkVanishing(x);
 				SWAP(x.current_state, x.next_state);
 				if (!xans.isNormal()) {
-					if (dsm.StartError(0)) {
-						dsm.SendError(
-								"Couldn't determine vanishing / tangible");
-						dsm.DoneError();
-					}
+                    hldsm::errmsg E(&dsm);
+                    E << "Couldn't determine vanishing / tangible";
 					throw subengine::Engine_Failed;
 				}
 
@@ -207,12 +195,11 @@ void generateRGt(debugging_msg &debug, dsde_hlm &dsm, RG &rg) {
 				//
 				// Debug info
 				//
-				if (debug.startReport()) {
-					debug.report() << "\t via event " << t->Name() << " to ";
-					rg.show(debug.report(), next_is_vanishing, next_id,
+				if (debug.start()) {
+					debug << "\t via event " << t->Name() << " to ";
+					rg.show(debug.stream(), next_is_vanishing, next_id,
 							next_st);
-					debug.report() << "\n";
-					debug.stopIO();
+					debug.stop();
 				}
 
 				//
@@ -244,9 +231,9 @@ void generateRGt(debugging_msg &debug, dsde_hlm &dsm, RG &rg) {
 
 		} // infinite loop
 
-		if (debug.startReport()) {
-			debug.report() << "Done exploring\n";
-			debug.stopIO();
+		if (debug.start()) {
+			debug << "Done exploring";
+			debug.stop();
 		}
 
 		//
@@ -388,18 +375,17 @@ List<model_event> calcEnabledTransition(dsde_hlm &dsm, shared_state* curr_st,
 
 	UID from_id;
 	cg.makeIllegalID(from_id);
-	bool valid_from = false;
+	// bool valid_from = false;
 	current_is_vanishing = false;
+    signal_manager& TSM = signal_manager::theSigMan();
 	for (;;) {
 		//
 		// Check for signals
 		//
-		if (debug.caughtTerm()) {
-			if (dsm.StartError(0)) {
-				dsm.SendError("Process construction prematurely terminated");
-				dsm.DoneError();
-			}
-			throw subengine::Terminated;
+        if (TSM.caughtSignal()) {
+            hldsm::errmsg E(&dsm);
+            E << "Process construction prematurely terminated";
+            throw subengine::Terminated;
 		}
 
 		//
@@ -419,15 +405,14 @@ List<model_event> calcEnabledTransition(dsde_hlm &dsm, shared_state* curr_st,
 			// find next tangible to explore; if none, break out
 			if (cg.hasUnexploredTangible()) {
 				from_id = exp_id = cg.getUnexploredTangible(curr_st);
-				valid_from = true;
+				// valid_from = true;
 			} else {
 				break;  // done exploring!
 			}
 		}
-		if (debug.startReport()) {
-			debug.report() << "Exploring 1111";
-			debug.report() << "\n";
-			debug.stopIO();
+		if (debug.start()) {
+			debug << "Exploring 1111";
+			debug.stop();
 		}
 
 		//
@@ -464,9 +449,9 @@ lchild_rsiblingt* generateCGT(debugging_msg &debug, dsde_hlm &dsm,
 			}
 			printf("$^11$\n");
 		}
-		if (debug.startReport()) {
-			debug.report() << "NOT FIRST TIME " << "\n";
-			debug.stopIO();
+		if (debug.start()) {
+			debug << "NOT FIRST TIME ";
+			debug.stop();
 			if (node->val != NULL) {
 				node->PrintState(node);
 
@@ -478,9 +463,9 @@ lchild_rsiblingt* generateCGT(debugging_msg &debug, dsde_hlm &dsm,
 		next_st->fillFrom(newcur);
 		for (int i = 0; i < newcur->getNumStateVars(); i++) {
 			if (newcur->omega(i)) {
-				if (debug.startReport()) {
-					debug.report() << "OMEGA RECIVED HERE!!!! " << "\n";
-					debug.stopIO();
+				if (debug.start()) {
+					debug << "OMEGA RECIVED HERE!!!! ";
+					debug.stop();
 
 				}
 
@@ -504,6 +489,8 @@ lchild_rsiblingt* generateCGT(debugging_msg &debug, dsde_hlm &dsm,
 	x.current_state = curr_st;
 	x.next_state = next_st;
 
+    signal_manager& TSM = signal_manager::theSigMan();
+
 	try {
 
 		//
@@ -520,11 +507,8 @@ lchild_rsiblingt* generateCGT(debugging_msg &debug, dsde_hlm &dsm,
 				dsm.GetInitialState(i, curr_st);
 				dsm.checkVanishing(x);
 				if (!xans.isNormal()) {
-					if (dsm.StartError(0)) {
-						dsm.SendError(
-								"Couldn't determine vanishing / tangible");
-						dsm.DoneError();
-					}
+                    hldsm::errmsg E(&dsm);
+                    E << "Couldn't determine vanishing / tangible";
 					throw subengine::Engine_Failed;
 				}
 
@@ -535,11 +519,11 @@ lchild_rsiblingt* generateCGT(debugging_msg &debug, dsde_hlm &dsm,
 //					rg.addInitial(id);
 //				}
 //
-				// if (debug.startReport()) {
-				// 	debug.report() << "COV Adding initial ";
-				// 	rg.show(debug.report(), xans.getBool(), id, curr_st);
-				// 	debug.report() << "\nThe id is :" << id << "\n";
-				// 	debug.stopIO();
+				// if (debug.start()) {
+				// 	debug << "COV Adding initial ";
+				// 	rg.show(debug.stream(), xans.getBool(), id, curr_st);
+				// 	debug << "\nThe id is :" << id;
+				// 	debug.stop();
 				// }
 //				if (!newinit)
 //					continue;
@@ -564,9 +548,9 @@ lchild_rsiblingt* generateCGT(debugging_msg &debug, dsde_hlm &dsm,
 				printf("]\n");
 
 				printf("ListCount%d\n", slist->Length());//node->ListOfState.Append(curr_st);
-				if (debug.startReport()) {
-					debug.report() << "CALLING FIRST TIME " << "\n";
-					debug.stopIO();
+				if (debug.start()) {
+					debug << "CALLING FIRST TIME ";
+					debug.stop();
 					if (node->val != NULL) {
 						node->PrintState(node);
 
@@ -596,14 +580,11 @@ lchild_rsiblingt* generateCGT(debugging_msg &debug, dsde_hlm &dsm,
 				//
 				// Check for signals
 				//
-				if (debug.caughtTerm()) {
-					if (dsm.StartError(0)) {
-						dsm.SendError(
-								"Process construction prematurely terminated");
-						dsm.DoneError();
-					}
-					throw subengine::Terminated;
-				}
+                if (TSM.caughtSignal()) {
+                    hldsm::errmsg E(&dsm);
+                    E << "Process construction prematurely terminated";
+                    throw subengine::Terminated;
+		        }
 
 				//
 				// Get next state to explore, with priority to vanishings.
@@ -611,10 +592,9 @@ lchild_rsiblingt* generateCGT(debugging_msg &debug, dsde_hlm &dsm,
 				// UID exp_id;
 				bool unexploredvanishflag = false;
 				bool unexploredtangibleflag = false;
-				if (debug.startReport()) {
-					debug.report() << "COv HEre in else part of recursive ";
-					debug.report() << "\n";
-					debug.stopIO();
+				if (debug.start()) {
+					debug << "COv HEre in else part of recursive ";
+					debug.stop();
 					if (node->val != NULL) {
 						node->PrintState(node);
 
@@ -647,40 +627,35 @@ lchild_rsiblingt* generateCGT(debugging_msg &debug, dsde_hlm &dsm,
 				}
 				if (current_is_vanishing) {
 					dsm.makeVanishingEnabledList(x, &enabled);
-					/*					if (debug.startReport()) {
-					 debug.report() << "IS VANISH ";
+					/*					if (debug.start()) {
+					 debug << "IS VANISH ";
 
-					 debug.report() << "\n";
-					 debug.stopIO();
+					 debug.stop();
 					 }*/
 				} else {
 					dsm.makeTangibleEnabledListCov(x, &enabled, boolflag);
-//					if (debug.startReport()) {
-//						debug.report() << "IS TANGIBLE ";
+//					if (debug.start()) {
+//						debug << "IS TANGIBLE ";
 //
-//						debug.report() << "\n";
-//						debug.stopIO();
+//						debug.stop();
 //					}
 				}
 				if (!x.answer->isNormal()) {
 					DCASSERT(1 == enabled.Length());
-					if (dsm.StartError(0)) {
-						dsm.SendError("Bad enabling expression for event ");
-						dsm.SendError(enabled.Item(0)->Name());
-						dsm.SendError(" during process generation");
-						dsm.DoneError();
-					}
+                    hldsm::errmsg E(&dsm);
+				    E << "Bad enabling expression for event ";
+				    E << enabled.Item(0)->Name();
+					E << " during process generation";
 					throw subengine::Engine_Failed;
 				}
 
 				//
 				// Traverse enabled events
 				//
-				if (debug.startReport()) {
-					debug.report() << "COV number of enabled transition "
+				if (debug.start()) {
+					debug << "COV number of enabled transition "
 							<< enabled.Length();
-					debug.report() << "\n";
-					debug.stopIO();
+					debug.stop();
 					if (node->val != NULL) {
 						node->PrintState(node);
 
@@ -764,9 +739,9 @@ lchild_rsiblingt* generateCGT(debugging_msg &debug, dsde_hlm &dsm,
 										printf("$^66$\n" );
 									}
 					if (isRepeated<CG, UID>(slist, next_st,level)) {
-						if (debug.startReport()) {
-							debug.report() << "REPEATED!! \n";
-							debug.stopIO();
+						if (debug.start()) {
+							debug << "REPEATED!!";
+							debug.stop();
 						}
 						printf("*AfterRepeated**[ %d", next_st->get(0));
 						for (int n = 1; n < next_st->getNumStateVars(); n++)
@@ -777,9 +752,9 @@ lchild_rsiblingt* generateCGT(debugging_msg &debug, dsde_hlm &dsm,
 					}
 					else{
 					isLessthanNodeUpdate<CG, UID>(slist, next_st,level);
-					if (debug.startReport()) {
-						debug.report() << "isLessthanNodeUpdate!! \n";
-						debug.stopIO();
+					if (debug.start()) {
+						debug << "isLessthanNodeUpdate!!";
+						debug.stop();
 					}
 					printf("*isLessthanNodeUpdate**[ %d", next_st->get(0));
 					for (int n = 1; n < next_st->getNumStateVars(); n++)
@@ -787,21 +762,17 @@ lchild_rsiblingt* generateCGT(debugging_msg &debug, dsde_hlm &dsm,
 					printf("]\n");
 					//slist->Append(next_st);
 					//printf("*APPEND**[ %d", next_st->get(0));
-//					if (debug.startReport()) {
-//						debug.report() << "Got NEW STATE " << "\n";
-//						rg.show(debug.report(), 0, 0, next_st);
-//						debug.stopIO();
+//					if (debug.start()) {
+//						debug << "Got NEW STATE " << "\n";
+//						rg.show(debug.stream(), 0, 0, next_st);
+//						debug.stop();
 //					}
 
 					if (!xans.isNormal()) {
-						if (dsm.StartError(0)) {
-							dsm.SendError(
-									"Bad next-state expression for event ");
-							dsm.SendError(t->Name());
-							dsm.SendError(" during process generation");
-							dsm.OutOfBoundsError(xans);
-							dsm.DoneError();
-						}
+                        hldsm::errmsg E(&dsm);
+					    E << "Bad next-state expression for event ";
+						E << t->Name() << " during process generation";
+						E.outOfBoundsError(xans);
 						throw subengine::Engine_Failed;
 					}
 
@@ -812,11 +783,8 @@ lchild_rsiblingt* generateCGT(debugging_msg &debug, dsde_hlm &dsm,
 					dsm.checkVanishing(x);
 					SWAP(x.current_state, x.next_state);
 					if (!xans.isNormal()) {
-						if (dsm.StartError(0)) {
-							dsm.SendError(
-									"Couldn't determine vanishing / tangible");
-							dsm.DoneError();
-						}
+                        hldsm::errmsg E(&dsm);
+						E << "Couldn't determine vanishing / tangible";
 						throw subengine::Engine_Failed;
 					}
 
@@ -833,8 +801,8 @@ lchild_rsiblingt* generateCGT(debugging_msg &debug, dsde_hlm &dsm,
 							next_st);
 					newnode->val = new shared_state(&dsm);
 					newnode->val->fillFrom(next_st);
-					if (debug.startReport()) {
-						debug.report() << "\t COV via event " << t->Name()
+					if (debug.start()) {
+						debug << "\t COV via event " << t->Name()
 								<< " to ";
 
 						if (node->val != NULL) {
@@ -842,16 +810,15 @@ lchild_rsiblingt* generateCGT(debugging_msg &debug, dsde_hlm &dsm,
 
 						}
 
-						//debug.report() <<next_st->omega(0)<<"\n";
-						debug.stopIO();
+						//debug <<next_st->omega(0)<<"\n";
+						debug.stop();
 					}
 					//TODO NEEED TO MOVE TO BEST PLACE
 //					if (next_st->omega(0)) {
-//						if (debug.startReport()) {
-//							debug.report() << "\t COV IS OMEGA ";
+//						if (debug.start()) {
+//							debug << "\t COV IS OMEGA ";
 //
-//							debug.report() << "\n";
-//							debug.stopIO();
+//							debug.stop();
 //						}
 //					}
 					//
@@ -900,9 +867,9 @@ lchild_rsiblingt* generateCGT(debugging_msg &debug, dsde_hlm &dsm,
 										}
 										printf("$^77$\n" );
 									}
-					if (debug.startReport()) {
-						debug.report() << "Recursion Call " << "\n";
-						debug.stopIO();
+					if (debug.start()) {
+						debug << "Recursion Call ";
+						debug.stop();
 					}
 					//level++;
 					generateCGT<CG, UID>(debug, dsm, slist, newnode, false,
@@ -912,9 +879,9 @@ lchild_rsiblingt* generateCGT(debugging_msg &debug, dsde_hlm &dsm,
 					sh.empty();
 			} // infinite loop
 
-			if (debug.startReport()) {
-				debug.report() << "COV Done exploring\n";
-				debug.stopIO();
+			if (debug.start()) {
+				debug << "COV Done exploring";
+				debug.stop();
 			}
 			printf("LLL%d\n", slist->Length());
 			//
@@ -988,6 +955,8 @@ void generateSMPt(debugging_msg &debug, dsde_hlm &dsm, SMP &smp) {
 	x.current_state = curr_st;
 	x.next_state = next_st;
 
+    signal_manager& TSM = signal_manager::theSigMan();
+
 	try {
 
 		//
@@ -997,20 +966,18 @@ void generateSMPt(debugging_msg &debug, dsde_hlm &dsm, SMP &smp) {
 			double wt = dsm.GetInitialState(i, curr_st);
 			dsm.checkVanishing(x);
 			if (!xans.isNormal()) {
-				if (dsm.StartError(0)) {
-					dsm.SendError("Couldn't determine vanishing / tangible");
-					dsm.DoneError();
-				}
+                hldsm::errmsg E(&dsm);
+                E << "Couldn't determine vanishing / tangible";
 				throw subengine::Engine_Failed;
 			}
 			UID id;
 			bool newinit = smp.add(xans.getBool(), curr_st, id);
 			smp.addInitial(xans.getBool(), id, wt);
-			if (debug.startReport()) {
-				debug.report() << "Adding initial ";
-				smp.show(debug.report(), xans.getBool(), id, curr_st);
-				debug.report() << " wt " << wt << "\n";
-				debug.stopIO();
+			if (debug.start()) {
+				debug << "Adding initial ";
+				smp.show(debug.stream(), xans.getBool(), id, curr_st);
+				debug << " wt " << wt;
+				debug.stop();
 			}
 			if (!newinit)
 				continue;
@@ -1034,14 +1001,11 @@ void generateSMPt(debugging_msg &debug, dsde_hlm &dsm, SMP &smp) {
 			//
 			// Check for signals
 			//
-			if (debug.caughtTerm()) {
-				if (dsm.StartError(0)) {
-					dsm.SendError(
-							"Process construction prematurely terminated");
-					dsm.DoneError();
-				}
-				throw subengine::Terminated;
-			}
+            if (TSM.caughtSignal()) {
+                hldsm::errmsg E(&dsm);
+                E << "Process construction prematurely terminated";
+                throw subengine::Terminated;
+	        }
 
 			//
 			// Get next state to explore, with priority to vanishings.
@@ -1063,12 +1027,11 @@ void generateSMPt(debugging_msg &debug, dsde_hlm &dsm, SMP &smp) {
 					break;  // done exploring!
 				}
 			}
-			if (debug.startReport()) {
-				debug.report() << "Exploring ";
-				smp.show(debug.report(), current_is_vanishing, from_id,
+			if (debug.start()) {
+				debug << "Exploring ";
+				smp.show(debug.stream(), current_is_vanishing, from_id,
 						curr_st);
-				debug.report() << "\n";
-				debug.stopIO();
+				debug.stop();
 			}
 
 			//
@@ -1080,12 +1043,10 @@ void generateSMPt(debugging_msg &debug, dsde_hlm &dsm, SMP &smp) {
 				dsm.makeTangibleEnabledList(x, &enabled);
 			if (!x.answer->isNormal()) {
 				DCASSERT(1 == enabled.Length());
-				if (dsm.StartError(0)) {
-					dsm.SendError("Bad enabling expression for event ");
-					dsm.SendError(enabled.Item(0)->Name());
-					dsm.SendError(" during process generation");
-					dsm.DoneError();
-				}
+                hldsm::errmsg E(&dsm);
+                E << "Bad enabling expression for event ";
+				E << enabled.Item(0)->Name();
+				E << " during process generation";
 				throw subengine::Engine_Failed;
 			}
 
@@ -1104,13 +1065,10 @@ void generateSMPt(debugging_msg &debug, dsde_hlm &dsm, SMP &smp) {
 				next_st->fillFrom(curr_st);
 				t->getNextstate()->Compute(x);
 				if (!xans.isNormal()) {
-					if (dsm.StartError(0)) {
-						dsm.SendError("Bad next-state expression for event ");
-						dsm.SendError(t->Name());
-						dsm.SendError(" during process generation");
-						dsm.OutOfBoundsError(xans);
-						dsm.DoneError();
-					}
+                    hldsm::errmsg E(&dsm);
+                    E << "Bad next-state expression for event ";
+					E << t->Name() << " during process generation";
+					E.outOfBoundsError(xans);
 					throw subengine::Engine_Failed;
 				}
 
@@ -1134,17 +1092,15 @@ void generateSMPt(debugging_msg &debug, dsde_hlm &dsm, SMP &smp) {
 					if (xans.isNormal() && xans.getReal() > 0.0) {
 						weight = xans.getReal();
 					} else {
-						if (dsm.StartError(0)) {
-							dsm.SendError("Bad value ");
-							dsm.SendRealError(xans);
-							if (current_is_vanishing) {
-								dsm.SendError(" for weight of event ");
-							} else {
-								dsm.SendError(" for rate of event ");
-							}
-							dsm.SendError(t->Name());
-							dsm.DoneError();
+                        hldsm::errmsg E(&dsm);
+                        E << "Bad value ";
+                        E.sendReal(xans);
+						if (current_is_vanishing) {
+							E << " for weight of event ";
+						} else {
+							E << " for rate of event ";
 						}
+					    E << t->Name();
 						throw subengine::Engine_Failed;
 					}
 
@@ -1157,11 +1113,8 @@ void generateSMPt(debugging_msg &debug, dsde_hlm &dsm, SMP &smp) {
 				dsm.checkVanishing(x);
 				SWAP(x.current_state, x.next_state);
 				if (!xans.isNormal()) {
-					if (dsm.StartError(0)) {
-						dsm.SendError(
-								"Couldn't determine vanishing / tangible");
-						dsm.DoneError();
-					}
+                    hldsm::errmsg E(&dsm);
+                    E << "Couldn't determine vanishing / tangible";
 					throw subengine::Engine_Failed;
 				}
 
@@ -1176,14 +1129,13 @@ void generateSMPt(debugging_msg &debug, dsde_hlm &dsm, SMP &smp) {
 				//
 				// Debug info
 				//
-				if (debug.startReport()) {
-					debug.report() << "\t via event " << t->Name();
+				if (debug.start()) {
+					debug << "\t via event " << t->Name();
 					if (!smp.statesOnly())
-						debug.report() << " (" << weight << ")";
-					debug.report() << " to ";
-					smp.show(debug.report(), next_is_vanishing, to_id, next_st);
-					debug.report() << "\n";
-					debug.stopIO();
+						debug << " (" << weight << ")";
+					debug << " to ";
+					smp.show(debug.stream(), next_is_vanishing, to_id, next_st);
+					debug.stop();
 				}
 
 				//
@@ -1220,9 +1172,9 @@ void generateSMPt(debugging_msg &debug, dsde_hlm &dsm, SMP &smp) {
 
 		} // infinite loop
 
-		if (debug.startReport()) {
-			debug.report() << "Done exploring\n";
-			debug.stopIO();
+		if (debug.start()) {
+			debug << "Done exploring";
+			debug.stop();
 		}
 
 		//
@@ -1297,6 +1249,8 @@ void generateMCt(debugging_msg &debug, dsde_hlm &dsm, MC &mc) {
 	x.answer = &xans;
 	x.next_state = 0;
 
+    signal_manager& TSM = signal_manager::theSigMan();
+
 	try {
 		//
 		// Find and insert the initial states
@@ -1310,10 +1264,8 @@ void generateMCt(debugging_msg &debug, dsde_hlm &dsm, MC &mc) {
 			}
 			dsm.checkVanishing(x);
 			if (!xans.isNormal()) {
-				if (dsm.StartError(0)) {
-					dsm.SendError("Couldn't determine vanishing / tangible");
-					dsm.DoneError();
-				}
+                hldsm::errmsg E(&dsm);
+                E << "Couldn't determine vanishing / tangible";
 				throw subengine::Engine_Failed;
 			}
 
@@ -1321,19 +1273,17 @@ void generateMCt(debugging_msg &debug, dsde_hlm &dsm, MC &mc) {
 				//
 				// Vanishing, "push"
 				//
-				if (debug.startReport()) {
-					debug.report() << "Pushing initial vanishing ";
-					mc.show(debug.report(), statelist[curr]);
-					debug.report() << " wt " << weightlist[curr] << "\n";
-					debug.stopIO();
+				if (debug.start()) {
+					debug << "Pushing initial vanishing ";
+					mc.show(debug.stream(), statelist[curr]);
+					debug << " wt " << weightlist[curr];
+					debug.stop();
 				}
 				// isvanlist[curr] = true;
 				curr++;
 				if (curr >= BUFSIZE) {
-					if (dsm.StartError(0)) {
-						dsm.SendError("Vanishing stack overflow");
-						dsm.DoneError();
-					}
+                    hldsm::errmsg E(&dsm);
+                    E << "Vanishing stack overflow";
 					throw subengine::Engine_Failed;
 				}
 				continue;
@@ -1344,11 +1294,11 @@ void generateMCt(debugging_msg &debug, dsde_hlm &dsm, MC &mc) {
 			UID id;
 			mc.add(false, statelist[curr], id);
 			mc.addInitial(false, id, weightlist[curr]);
-			if (debug.startReport()) {
-				debug.report() << "Adding initial ";
-				mc.show(debug.report(), false, id, statelist[curr]);
-				debug.report() << " wt " << weightlist[curr] << "\n";
-				debug.stopIO();
+			if (debug.start()) {
+				debug << "Adding initial ";
+				mc.show(debug.stream(), false, id, statelist[curr]);
+				debug << " wt " << weightlist[curr];
+				debug.stop();
 			}
 		} // for i
 
@@ -1364,14 +1314,11 @@ void generateMCt(debugging_msg &debug, dsde_hlm &dsm, MC &mc) {
 			//
 			// Check for signals
 			//
-			if (debug.caughtTerm()) {
-				if (dsm.StartError(0)) {
-					dsm.SendError(
-							"Process construction prematurely terminated");
-					dsm.DoneError();
-				}
-				throw subengine::Terminated;
-			}
+            if (TSM.caughtSignal()) {
+                hldsm::errmsg E(&dsm);
+                E << "Process construction prematurely terminated";
+                throw subengine::Terminated;
+	        }
 
 			//
 			// Get next state to explore, with priority to vanishing stack
@@ -1390,12 +1337,11 @@ void generateMCt(debugging_msg &debug, dsde_hlm &dsm, MC &mc) {
 					break;  // Done exploring!
 				}
 			}
-			if (debug.startReport()) {
-				debug.report() << "Exploring ";
-				mc.show(debug.report(), current_is_vanishing, fromID,
+			if (debug.start()) {
+				debug << "Exploring ";
+				mc.show(debug.stream(), current_is_vanishing, fromID,
 						statelist[curr]);
-				debug.report() << "\n";
-				debug.stopIO();
+				debug.stop();
 			}
 
 			//
@@ -1408,12 +1354,10 @@ void generateMCt(debugging_msg &debug, dsde_hlm &dsm, MC &mc) {
 				dsm.makeTangibleEnabledList(x, &enabled);
 			if (!x.answer->isNormal()) {
 				DCASSERT(1 == enabled.Length());
-				if (dsm.StartError(0)) {
-					dsm.SendError("Bad enabling expression for event ");
-					dsm.SendError(enabled.Item(0)->Name());
-					dsm.SendError(" during process generation");
-					dsm.DoneError();
-				}
+                hldsm::errmsg E(&dsm);
+                E << "Bad enabling expression for event ";
+				E << enabled.Item(0)->Name();
+				E << " during process generation";
 				throw subengine::Engine_Failed;
 			}
 
@@ -1436,10 +1380,8 @@ void generateMCt(debugging_msg &debug, dsde_hlm &dsm, MC &mc) {
 				//
 				next++;
 				if (next >= BUFSIZE) {
-					if (dsm.StartError(0)) {
-						dsm.SendError("Vanishing stack overflow");
-						dsm.DoneError();
-					}
+                    hldsm::errmsg E(&dsm);
+                    E << "Vanishing stack overflow";
 					throw subengine::Engine_Failed;
 				}
 
@@ -1450,13 +1392,10 @@ void generateMCt(debugging_msg &debug, dsde_hlm &dsm, MC &mc) {
 				statelist[next]->fillFrom(statelist[curr]);
 				t->getNextstate()->Compute(x);
 				if (!xans.isNormal()) {
-					if (dsm.StartError(0)) {
-						dsm.SendError("Bad next-state expression for event ");
-						dsm.SendError(t->Name());
-						dsm.SendError(" during process generation");
-						dsm.OutOfBoundsError(xans);
-						dsm.DoneError();
-					}
+                    hldsm::errmsg E(&dsm);
+                    E << "Bad next-state expression for event ";
+                    E << t->Name() << " during process generation";
+                    E.outOfBoundsError(xans);
 					throw subengine::Engine_Failed;
 				}
 
@@ -1482,17 +1421,15 @@ void generateMCt(debugging_msg &debug, dsde_hlm &dsm, MC &mc) {
 					if (xans.isNormal() && xans.getReal() > 0.0) {
 						weightlist[next] = xans.getReal();
 					} else {
-						if (dsm.StartError(0)) {
-							dsm.SendError("Bad value ");
-							dsm.SendRealError(xans);
-							if (current_is_vanishing) {
-								dsm.SendError(" for weight of event ");
-							} else {
-								dsm.SendError(" for rate of event ");
-							}
-							dsm.SendError(t->Name());
-							dsm.DoneError();
+                        hldsm::errmsg E(&dsm);
+                        E << "Bad value ";
+                        E.sendReal(xans);
+						if (current_is_vanishing) {
+							E << " for weight of event ";
+						} else {
+							E << " for rate of event ";
 						}
+						E << t->Name();
 						throw subengine::Engine_Failed;
 					}
 
@@ -1501,15 +1438,14 @@ void generateMCt(debugging_msg &debug, dsde_hlm &dsm, MC &mc) {
 				//
 				// Debug info
 				//
-				if (debug.startReport()) {
-					debug.report() << "\t via event " << t->Name();
+				if (debug.start()) {
+					debug << "\t via event " << t->Name();
 					if (!mc.statesOnly()) {
-						debug.report() << " (" << weightlist[next] << ")";
+						debug << " (" << weightlist[next] << ")";
 					}
-					debug.report() << " to ";
-					mc.show(debug.report(), statelist[next]);
-					debug.report() << "\n";
-					debug.stopIO();
+					debug << " to ";
+					mc.show(debug.stream(), statelist[next]);
+					debug.stop();
 				}
 			} // for enabled event e
 
@@ -1547,11 +1483,8 @@ void generateMCt(debugging_msg &debug, dsde_hlm &dsm, MC &mc) {
 				x.current_state = statelist[i];
 				dsm.checkVanishing(x);
 				if (!xans.isNormal()) {
-					if (dsm.StartError(0)) {
-						dsm.SendError(
-								"Couldn't determine vanishing / tangible");
-						dsm.DoneError();
-					}
+                    hldsm::errmsg E(&dsm);
+					E << "Couldn't determine vanishing / tangible";
 					throw subengine::Engine_Failed;
 				}
 				next_is_vanishing = xans.getBool();
@@ -1590,14 +1523,13 @@ void generateMCt(debugging_msg &debug, dsde_hlm &dsm, MC &mc) {
 					if (!mc.statesOnly()) {
 						mc.addTTEdge(fromID, toID, weightlist[i]);
 
-						if (debug.startReport()) {
-							debug.report() << "Adding MC edge from ";
-							mc.show(debug.report(), fromID);
-							debug.report() << " rate " << weightlist[i]
+						if (debug.start()) {
+							debug << "Adding MC edge from ";
+							mc.show(debug.stream(), fromID);
+							debug << " rate " << weightlist[i]
 									<< " to ";
-							mc.show(debug.report(), toID);
-							debug.report() << "\n";
-							debug.stopIO();
+							mc.show(debug.stream(), toID);
+							debug.stop();
 						}
 					}
 				}
@@ -1606,9 +1538,9 @@ void generateMCt(debugging_msg &debug, dsde_hlm &dsm, MC &mc) {
 
 		} // infinite loop
 
-		if (debug.startReport()) {
-			debug.report() << "Done exploring\n";
-			debug.stopIO();
+		if (debug.start()) {
+			debug << "Done exploring";
+			debug.stop();
 		}
 
 		//

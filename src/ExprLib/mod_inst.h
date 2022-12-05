@@ -287,9 +287,6 @@ public:
   */
   // bool StartError(const expr* cause) const;
 
-  /// Print an out of bounds error message, if appropriate.
-  // void OutOfBoundsError(const result &x) const;
-
   /// Send a simple error string
   // void SendError(const char* s) const;
 
@@ -327,14 +324,18 @@ public:
     /*
      * High-level model errors
      */
-    class mdl_errmsg : public expr_error {
+    class errmsg : public expr_error {
         const hldsm* model;
     public:
-        mdl_errmsg(const hldsm* _mod, const expr* cause=0);
-        ~mdl_errmsg();
+        errmsg(const hldsm* _mod, const expr* cause=0);
+        ~errmsg();
+
+        /// Print an out of bounds error message, if appropriate.
+        void outOfBoundsError(const result &x) const;
+        void sendReal(const result &x) const;
     };
 
-    friend class mdl_errmsg;
+    friend class errmsg;
 };
 
 
@@ -487,14 +488,12 @@ public:
     /*
      * Model (instantiated) errors
      */
-    class mdl_errmsg : public expr_error {
+    class errmsg : public expr_error {
         const model_instance* model;
     public:
-        mdl_errmsg(const model_instance* _mod, const expr* cause);
-        ~mdl_errmsg();
+        errmsg(const model_instance* _mod, const expr* cause);
+        ~errmsg();
     };
-
-    friend class mdl_errmsg;
 };
 
 

@@ -131,7 +131,7 @@ model_var* markov_def::MakeModelVar(const symbol* wrap, shared_object* bnds)
     mymc->addNode();
   }
   catch (GraphLib::error e) {
-    model_def::mdl_errmsg E(this, wrap);
+    model_def::errmsg E(this, wrap);
     E << e.getString() << " when adding state " << wrap->Name();
     error = true;
     return 0;
@@ -190,7 +190,7 @@ void markov_def::AddEdge(const expr* cause,
     }
   }
   catch (GraphLib::error e) {
-    model_def::mdl_errmsg E(this, cause);
+    model_def::errmsg E(this, cause);
     E << e.getString() << " when adding edge from ";
     E << f->Name() << " to " << t->Name();
     error = true;

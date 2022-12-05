@@ -1766,7 +1766,7 @@ double cph_uniformize::getOutgoingFromSource(long e, shared_state* t)
     // add self loop if necessary
     //
     if (total_outgoing > 1.0) {
-      mdl_errmsg E(this);
+      errmsg E(this);
       E << "Uniformization constant too small";
       return -1;
     }

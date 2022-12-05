@@ -100,7 +100,7 @@ model_var* fsm_def::MakeModelVar(const symbol* wrap, shared_object* bnds)
     mygr->addNode();
   }
   catch (GraphLib::error e) {
-    model_def::mdl_errmsg E(this, wrap);
+    model_def::errmsg E(this, wrap);
     E << e.getString() << " when adding state " << wrap->Name();
     error = true;
     return 0;
@@ -165,7 +165,7 @@ void fsm_def::AddEdge(const expr* c, model_enum_value* f, model_enum_value* t)
     }
   }
   catch (GraphLib::error e) {
-    model_def::mdl_errmsg E(this, c);
+    model_def::errmsg E(this, c);
     E << e.getString() << " when adding edge from " << f->Name();
     E << " to " << t->Name();
     error = true;

@@ -199,17 +199,17 @@ void hldsm::bailOut(const char* sfile, unsigned sline, const char* why) const
 }
 
 // ******************************************************************
-// *                       mdl_errmsg  methods                      *
+// *                         errmsg  methods                        *
 // ******************************************************************
 
-hldsm::mdl_errmsg::mdl_errmsg(const hldsm* _mod, const expr* cause)
+hldsm::errmsg::errmsg(const hldsm* _mod, const expr* cause)
     : expr_error(cause)
 {
     model = _mod;
     DCASSERT(model);
 }
 
-hldsm::mdl_errmsg::~mdl_errmsg()
+hldsm::errmsg::~errmsg()
 {
     DCASSERT(model);
 
@@ -223,6 +223,24 @@ hldsm::mdl_errmsg::~mdl_errmsg()
     // Do we need a newline, or will the base class handle that?
 }
 
+void hldsm::errmsg::outOfBoundsError(const result &x) const
+{
+    if (!x.isOutOfBounds()) return;
+    const model_statevar* mv
+        = smart_cast <const model_statevar*> (x.getOutOfBounds());
+    DCASSERT(mv);
+    Out << ":";
+    newLine();
+    mv->printBoundsError(*this, x);
+}
+
+void hldsm::errmsg::sendReal(const result &x) const
+{
+    DCASSERT(model);
+    DCASSERT(model->em);
+    DCASSERT(model->em->REAL);
+    model->em->REAL->print(stream(), x);
+}
 
 
 // ******************************************************************
@@ -614,17 +632,17 @@ bool model_instance
 }
 
 // ******************************************************************
-// *                       mdl_errmsg  methods                      *
+// *                         errmsg  methods                        *
 // ******************************************************************
 
-model_instance::mdl_errmsg::mdl_errmsg(const model_instance* _mod,
+model_instance::errmsg::errmsg(const model_instance* _mod,
         const expr* cause) : expr_error(cause)
 {
     model = _mod;
     DCASSERT(model);
 }
 
-model_instance::mdl_errmsg::~mdl_errmsg()
+model_instance::errmsg::~errmsg()
 {
     DCASSERT(model);
 

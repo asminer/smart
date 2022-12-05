@@ -49,7 +49,7 @@ protected:
       return hlm->GetProcess();
     } // try
     catch (subengine::error e) {
-      hldsm::mdl_errmsg E(hlm, err);
+      hldsm::errmsg E(hlm, err);
       E << "Couldn't build reachability graph: ";
       E << subengine::getNameOfError(e);
       return nullptr;

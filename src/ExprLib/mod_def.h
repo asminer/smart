@@ -234,14 +234,14 @@ public:
     /*
      * Model (definition) construction errors
      */
-    class mdl_errmsg : public expr_error {
+    class errmsg : public expr_error {
         const model_def* model;
     public:
-        mdl_errmsg(const model_def* _mod, const expr* cause);
-        ~mdl_errmsg();
+        errmsg(const model_def* _mod, const expr* cause);
+        ~errmsg();
     };
 
-    friend class mdl_errmsg;
+    friend class errmsg;
 };
 
 // ******************************************************************

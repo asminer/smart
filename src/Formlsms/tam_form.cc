@@ -687,7 +687,7 @@ void tam_def::setStrength(const expr* cause, tam_glue* g, const result &s)
   if (!isVariableOurs(g, cause, "ignoring strength assignment")) return;
 
   if (!s.isNormal() || s.getInt()>2 || s.getInt()<1) {
-    mdl_errmsg E(this, cause);
+    errmsg E(this, cause);
     E << "Bad strength ";
     DCASSERT(em->INT);
     em->INT->print(E.stream(), s);
@@ -808,13 +808,13 @@ void tam_def::setInit(const expr* cause, long x, long y, tam_tile* t)
   if (!isVariableOurs(t, cause, "ignoring initialization")) return;
 
   if (!board_is_set) {
-    mdl_errmsg E(this, cause);
+    errmsg E(this, cause);
     E << "Board not specified before initialization, ignoring";
     return;
   }
 
   if (x < x_low || x > x_high || y < y_low || y > y_high) {
-    mdl_errmsg E(this, cause);
+    errmsg E(this, cause);
     E << "Square (" << x << ", " << y << ") not in [";
     E << x_low << ".." << x_high << "]x[";
     E << y_low << ".." << y_high << "], ignoring initialization";
@@ -846,13 +846,13 @@ void tam_def::setInit(const expr* cause, long x, long y, tam_tile* t)
 void tam_def::setPriority(const expr* cause, long x, long y, long p)
 {
   if (!board_is_set) {
-    mdl_errmsg E(this, cause);
+    errmsg E(this, cause);
     E << "Board not specified before priority assignment, ignoring";
     return;
   }
 
   if (x < x_low || x > x_high || y < y_low || y > y_high) {
-    mdl_errmsg E(this, cause);
+    errmsg E(this, cause);
     E << "Square (" << x << ", " << y << ") not in [";
     E << x_low << ".." << x_high << "]x[";
     E << y_low << ".." << y_high << "], ignoring initialization";
@@ -1206,7 +1206,7 @@ protected:
     SafeCompute(p, x);
     x.answer = answer;
     if (!tmp.isNormal()) {
-        model_def::mdl_errmsg E(m, p);
+        model_def::errmsg E(m, p);
         E << "Bad value ";
         em->INT->print(E.stream(), tmp);
         E << " for " << who << ", ignoring board specification";
@@ -1262,7 +1262,7 @@ protected:
       return true;
     }
 
-    model_def::mdl_errmsg E(m, p);
+    model_def::errmsg E(m, p);
     E << "Bad " << who << " value ";
     em->INT->print(E.stream(), I);
     E << ", ignoring initialization";
@@ -1333,7 +1333,7 @@ protected:
       return true;
     }
 
-    model_def::mdl_errmsg E(m, p);
+    model_def::errmsg E(m, p);
     E << "Bad " << who << " value ";
     em->INT->print(E.stream(), I);
     E << ", ignoring priority assignment";

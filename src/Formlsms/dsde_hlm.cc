@@ -409,7 +409,7 @@ void dsde_hlm::checkAssertions(traverse_data &x) {
 		assertions[i]->Compute(x);
 		if (x.answer->isNormal() && x.answer->getBool())
 			continue;  // passed
-        mdl_errmsg E(this, assertions[i]);
+        errmsg E(this, assertions[i]);
         E << "Assertion ";
 		assertions[i]->Print(E.stream());
 		E << " failed in state ";

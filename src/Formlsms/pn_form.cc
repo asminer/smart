@@ -844,7 +844,7 @@ void petri_def::AddInit(const expr* call, model_var* v, int tokens)
   }
 
   if (tokens < 0) {
-    mdl_errmsg E(this, call);
+    errmsg E(this, call);
     E << "Bad value: " << tokens << " for initialization of place ";
     E << pl->Name();
     return;
@@ -1069,7 +1069,7 @@ void petri_def::AddFiring(const expr* call, transition* t, expr* dist)
 
   // Check for negative support
   if (io->Left().getSign()<0) {
-    mdl_errmsg E(this, call);
+    errmsg E(this, call);
     E << "Firing distribution for transition ";
     E << t->Name() << " has negative support";
     return;
@@ -1743,7 +1743,7 @@ void pn_init::Compute(traverse_data &x, expr** pass, int np)
     x.aggregate = 1;
     SafeCompute(pass[i], x);
     if (! second.isNormal() || second.getInt() < 0) {
-      model_def::mdl_errmsg E(mdl, pass[i]);
+      model_def::errmsg E(mdl, pass[i]);
       E << "Bad token value: ";
       em->INT->print(E.stream(), second, 0);
       E << " for token initialization, ignoring";
@@ -1800,7 +1800,7 @@ void pn_bound::Compute(traverse_data &x, expr** pass, int np)
     x.aggregate = 1;
     SafeCompute(pass[i], x);
     if (! second.isNormal() || second.getInt() < 0) {
-      model_def::mdl_errmsg E(mdl, pass[i]);
+      model_def::errmsg E(mdl, pass[i]);
       E << "Bad token value: ";
       em->INT->print(E.stream(), second, 0);
       E << " for place bound, ignoring";
@@ -2333,7 +2333,7 @@ void pn_weight2::Compute(traverse_data &x, expr** pass, int np)
   DCASSERT(t);
   int wc = t->getWeightClass();
   if (0==wc) {
-    model_def::mdl_errmsg E(mdl, pass[1]);
+    model_def::errmsg E(mdl, pass[1]);
     E << "Transition " << t->Name();
     E << " has no weight class yet";
     wc = mdl->NewWeightClass();
@@ -2527,7 +2527,7 @@ void pn_rate::Compute(traverse_data &x, expr** pass, int np)
   model_instance* mi = grabModelInstance(x, pass[0]);
   DCASSERT(mi);
   if (t->getParent() != mi) {
-    model_instance::mdl_errmsg E(mi, x.parent);
+    model_instance::errmsg E(mi, x.parent);
     E << "transition " << t->Name() << " belongs to another model";
     x.answer->setNull();
     return;

@@ -323,7 +323,7 @@ protected:
   // Called after we are done state generation
   virtual void doneGen() { };
 
-  virtual void reportGen(bool err, DisplayStream &s) const { };
+  virtual void reportGen(bool err, std::ostream &s) const { };
 
   void buildNextStateFunc(meddly_varoption &x);
 
@@ -2190,7 +2190,7 @@ public:
   meddly_iterative();
   virtual ~meddly_iterative();
 protected:
-  virtual void reportGen(bool err, DisplayStream &s) const;
+  virtual void reportGen(bool err, std::ostream &s) const;
   virtual void initGen();
   virtual void doneGen();
 };
@@ -2207,7 +2207,7 @@ meddly_iterative::~meddly_iterative()
 {
 }
 
-void meddly_iterative::reportGen(bool err, DisplayStream &s) const
+void meddly_iterative::reportGen(bool err, std::ostream &s) const
 {
   if (0==iterations) return;
   s << "\t" << iterations;
