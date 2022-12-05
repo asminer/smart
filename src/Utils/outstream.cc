@@ -362,4 +362,15 @@ std::ostream& formatted_string::show(std::ostream &s) const
     }
 }
 
+// ======================================================================
+
+std::ostream& padding::show(std::ostream &s) const
+{
+    for (unsigned i=0; i<count; i++) {
+        s << fill;
+    }
+    return s;
+}
+
+
 

@@ -206,6 +206,19 @@ class element_writer {
         }
 };
 
+/*
+ * Padding
+ */
+class padding {
+        unsigned count;
+        char fill;
+    public:
+        inline padding(unsigned n, char f=' ') {
+            count = n;
+            fill = f;
+        }
+        std::ostream& show(std::ostream &s) const;
+};
 
 inline std::ostream& operator<< (std::ostream &s, memoryCount m)
 {
@@ -231,6 +244,11 @@ template <class DATA>
 inline std::ostream& operator<< (std::ostream &s, element_writer <DATA> m)
 {
     return m.show(s);
+}
+
+inline std::ostream& operator<< (std::ostream &s, padding p)
+{
+    return p.show(s);
 }
 
 

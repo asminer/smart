@@ -44,16 +44,16 @@ public:
 		} else {
 			s << "tangible  state# ";
 		}
-		s.Put(id, 4);
+		s << formatted_int(id, 4);
 		s << " : ";
-		curr_st->Print(s, 0);
+		curr_st->Print(s);
 	}
 	static inline void show(std::ostream &s, long id) {
 		s << " state# " << id;
 	}
 	static inline void show(std::ostream &s, const shared_state* curr_st) {
 		s << " state ";
-		curr_st->Print(s, 0);
+		curr_st->Print(s);
 	}
 
 	static inline void makeIllegalID(long &id) {
@@ -82,9 +82,9 @@ public:
 		return tan_unexp++;
 	}
 	inline void clearVanishing(debugging_msg &debug) {
-		if (debug.startReport()) {
-			debug.report() << "Eliminating vanishing states\n";
-			debug.stopIO();
+		if (debug.start()) {
+			debug << "Eliminating vanishing states";
+			debug.stop();
 		}
 		vandb.Clear();
 		van_unexp = 0;
@@ -216,17 +216,10 @@ public:
 			throw subengine::Out_Of_Memory;
 
 		default:
-			if (model.StartError(0)) {
-				if (x) {
-					model.SendError("Couldn't ");
-					model.SendError(x);
-					model.SendError(" in process: ");
-				} else {
-					model.SendError("While building process: ");
-				}
-				model.SendError(e.getString());
-				model.DoneError();
-			}
+            hldsm::errmsg E(&model);
+            if (x)  E << "Couldn't " << x << " in process: ";
+            else    E << "While building process: ";
+		    E << e.getString();
 			throw subengine::Engine_Failed;
 		} // switch e
 	}
@@ -381,17 +374,16 @@ protected:
 			MCLib::vanishing_chain* smp) const;
 
 	inline void initial_distro(const LS_Vector &init) const {
-		if (!Debug().startReport())
-			return;
-		Debug().report() << "Built initial distribution [";
+		if (!debug.start()) return;
+		debug << "Built initial distribution [";
 		for (long z = 0; z < init.size; z++) {
 			DCASSERT(init.index); DCASSERT(init.f_value);
 			if (z)
-				Debug().report() << ", ";
-			Debug().report() << init.index[z] << ":" << init.f_value[z];
+				debug << ", ";
+			debug << init.index[z] << ":" << init.f_value[z];
 		}
-		Debug().report() << "]\n";
-		Debug().stopIO();
+		debug << ']';
+		debug.stop();
 	}
 };
 
@@ -429,10 +421,8 @@ void as_procgen::RunEngine(hldsm* hm, result &statesonly) {
 
 	state_lldsm* slm = dynamic_cast<state_lldsm*>(lm);
 	if (lm && (0 == slm)) {
-		hm->StartError(0);
-		hm->SendError(
-				"Couldn't complete process, unknown type for partial process");
-		hm->DoneError();
+        hldsm::errmsg E(hm);
+        E << "Couldn't complete process, unknown type for partial process";
 		lm->setCompletionEngine(0);
 		return;
 	}
@@ -475,9 +465,8 @@ void as_procgen::RunEngine(hldsm* hm, result &statesonly) {
 	timer watch;
 	if (startGen(*hm, the_proc)) {
 		if (!rss->IsStatic())
-			Report().report() << " using " << statelib->getDBMethod();
-		Report().report() << "\n";
-		Report().stopIO();
+            report << " using " << statelib->getDBMethod();
+		report.stop();
 	}
 
 	// set initial distribution
@@ -487,10 +476,12 @@ void as_procgen::RunEngine(hldsm* hm, result &statesonly) {
 	init.f_value = 0;
 	init.d_value = 0;
 
+    signal_manager &tsm = signal_manager::theSigMan();
+	tsm.waitTermination();
+
 	// Generate process
 	dsde_hlm* dsm = smart_cast <dsde_hlm*>(hm);
 	DCASSERT(dsm);
-	em->waitTerm();
 	bool procOK = true;
 	error bailOut = Engine_Failed;
 	try {
@@ -506,28 +497,23 @@ void as_procgen::RunEngine(hldsm* hm, result &statesonly) {
 	// Report on generation
 	if (stopGen(!procOK, *hm, the_proc, watch)) {
 		if (!rss->IsStatic()) {
-			Report().report().Put('\t');
-			Report().report().PutMemoryCount(rss->ReportMemTotal(), 3);
-			Report().report() << " required for state space construction\n";
-			Report().report() << "\t" << rss->Size() << " states generated\n";
+			report << '\t' << memoryCount(rss->ReportMemTotal(), 3);
+			report << " required for state space construction\n";
+			report << '\t' << rss->Size() << " states generated\n";
 		}
 		if (rg) {
-			Report().report().Put('\t');
-			Report().report().PutMemoryCount(rg->getMemTotal(), 3);
-			Report().report()
-					<< " required for reachability graph construction\n";
-			Report().report() << "\t" << rg->getNumEdges() << " graph edges\n";
+            report << '\t' << memoryCount(rg->getMemTotal(), 3);
+			report << " required for reachability graph construction\n";
+			report << "\t" << rg->getNumEdges() << " graph edges\n";
 		}
 		if (vc) {
-			Report().report().Put('\t');
-			Report().report().PutMemoryCount(vc->getMemTotal(), 3);
-			Report().report() << " required for Markov chain construction\n";
-			Report().report() << "\t" << vc->TT().getNumEdges()
-					<< " Markov chain edges\n";
+			report << '\t' << memoryCount(vc->getMemTotal(), 3);
+			report << " required for Markov chain construction\n";
+			report << "\t" << vc->TT().getNumEdges() << " Markov chain edges\n";
 		}
-		Report().stopIO();
+	    report.stop();
 	}
-	em->resumeTerm();
+    tsm.resumeTermination();
 
 	// Did we succeed so far?
 	if (!procOK) {
@@ -563,8 +549,7 @@ void as_procgen::RunEngine(hldsm* hm, result &statesonly) {
 
 	// Start reporting on compaction
 	if (startCompact(*hm, the_proc)) {
-		Report().report() << "\n";
-		Report().stopIO();
+		report.stop();
 		watch.reset();
 	}
 
@@ -584,7 +569,7 @@ void as_procgen::RunEngine(hldsm* hm, result &statesonly) {
 
 	// Report on compaction
 	if (stopCompact(hm->Name(), the_proc, watch, lm)) {
-		Report().stopIO();
+		report.stop();
 	}
 
 	// We've generated the entire process now.
@@ -599,12 +584,12 @@ void as_procgen::generateRG(dsde_hlm* dsm, StateLib::state_db* tandb,
 
 	if (rg) {
 		indexed_reachgraph myrg(*tandb, *vandb, *rg);
-		generateRGt<indexed_reachgraph, long>(Debug(), *dsm, myrg);
+		generateRGt<indexed_reachgraph, long>(debug, *dsm, myrg);
 		myrg.exportInitial(s0);
 		myrg.finish();
 	} else {
 		indexed_statedbs myrs(*tandb, *vandb);
-		generateRGt<indexed_statedbs, long>(Debug(), *dsm, myrs);
+		generateRGt<indexed_statedbs, long>(debug, *dsm, myrs);
 	}
 
 	delete vandb;
@@ -626,11 +611,11 @@ void as_procgen::generateMC(dsde_hlm* dsm, StateLib::state_db* tandb,
 
 		switch (remove_vanishing) {
 		case BY_PATH:
-			generateMCt<indexed_smp, long>(Debug(), *dsm, mysmp);
+			generateMCt<indexed_smp, long>(debug, *dsm, mysmp);
 			break;
 
 		case BY_SUBGRAPH:
-			generateSMPt<indexed_smp, long>(Debug(), *dsm, mysmp);
+			generateSMPt<indexed_smp, long>(debug, *dsm, mysmp);
 			break;
 
 		default:
@@ -645,11 +630,11 @@ void as_procgen::generateMC(dsde_hlm* dsm, StateLib::state_db* tandb,
 
 		switch (remove_vanishing) {
 		case BY_PATH:
-			generateMCt<indexed_statedbs, long>(Debug(), *dsm, myrs);
+			generateMCt<indexed_statedbs, long>(debug, *dsm, myrs);
 			break;
 
 		case BY_SUBGRAPH:
-			generateSMPt<indexed_statedbs, long>(Debug(), *dsm, myrs);
+			generateSMPt<indexed_statedbs, long>(debug, *dsm, myrs);
 			break;
 
 		default:
@@ -701,17 +686,17 @@ protected:
 			MCLib::vanishing_chain* smp) const;
 
 	inline void initial_distro(const LS_Vector &init) const {
-		if (!Debug().startReport())
+		if (!debug.start())
 			return;
-		Debug().report() << "Built initial distribution [";
+		debug << "Built initial distribution [";
 		for (long z = 0; z < init.size; z++) {
 			DCASSERT(init.index);DCASSERT(init.f_value);
 			if (z)
-				Debug().report() << ", ";
-			Debug().report() << init.index[z] << ":" << init.f_value[z];
+				debug << ", ";
+			debug << init.index[z] << ":" << init.f_value[z];
 		}
-		Debug().report() << "]\n";
-		Debug().stopIO();
+		debug << ']';
+		debug.stop();
 	}
 };
 
@@ -753,10 +738,8 @@ void as_procgenCOV::RunEngine(hldsm* hm, result &statesonly) {
 
 	state_lldsm* slm = dynamic_cast<state_lldsm*>(lm);
 	if (lm && (0 == slm)) {
-		hm->StartError(0);
-		hm->SendError(
-				"Couldn't complete process, unknown type for partial process");
-		hm->DoneError();
+        hldsm::errmsg E(hm);
+        E << "Couldn't complete process, unknown type for partial process";
 		lm->setCompletionEngine(0);
 		return;
 	}
@@ -810,9 +793,8 @@ void as_procgenCOV::RunEngine(hldsm* hm, result &statesonly) {
 	timer watch;
 	if (startGen(*hm, the_proc)) {
 		if (!rss->IsStatic())
-			Report().report() << " using " << statelib->getDBMethod();
-		Report().report() << "\n";
-		Report().stopIO();
+			report << " using " << statelib->getDBMethod();
+		report.stop();
 	}
 
 	// set initial distribution
@@ -822,10 +804,13 @@ void as_procgenCOV::RunEngine(hldsm* hm, result &statesonly) {
 	init.f_value = 0;
 	init.d_value = 0;
 	lchild_rsiblingt* node;
+
+    signal_manager &tsm = signal_manager::theSigMan();
+	tsm.waitTermination();
+    //
 	// Generate process
 	dsde_hlm* dsm = smart_cast <dsde_hlm*>(hm);
 	DCASSERT(dsm);
-	em->waitTerm();
 	bool procOK = true;
 	error bailOut = Engine_Failed;
 
@@ -842,25 +827,23 @@ void as_procgenCOV::RunEngine(hldsm* hm, result &statesonly) {
 	// Report on generation
 	if (stopGen(!procOK, *hm, the_proc, watch)) {
 		if (cg) {
-			Report().report().Put('\t');
-			Report().report().PutMemoryCount(cg->getMemTotal(), 3);
-			Report().report() << " required for COV graph construction\n";
-			Report().report() << "\t" << node->getNumEdges(node)
+			report << '\t' << memoryCount(cg->getMemTotal(), 3);
+			report << " required for COV graph construction\n";
+			report << "\t" << node->getNumEdges(node)
 					<< " COV graph edges\n";
-			Report().report() << "\t" << node->getNumState(node,0)
+			report << "\t" << node->getNumState(node,0)
 								<< " Number of COV State\n";
 			node->showArcsTree(node);
 		}
 		if (vc) {
-			Report().report().Put('\t');
-			Report().report().PutMemoryCount(vc->getMemTotal(), 3);
-			Report().report() << " required for Markov chain construction\n";
-			Report().report() << "\t" << vc->TT().getNumEdges()
+			report << '\t' << memoryCount(vc->getMemTotal(), 3);
+			report << " required for Markov chain construction\n";
+			report << "\t" << vc->TT().getNumEdges()
 					<< " Markov chain edges\n";
 		}
-		Report().stopIO();
+		report.stop();
 	}
-	em->resumeTerm();
+	tsm.resumeTermination();
 
 	// Did we succeed so far?
 	if (!procOK) {
@@ -898,8 +881,8 @@ void as_procgenCOV::RunEngine(hldsm* hm, result &statesonly) {
 
 	// Start reporting on compaction
 //	if (startCompact(*hm, the_proc)) {
-//		Report().report() << "\n";
-//		Report().stopIO();
+//		report << "\n";
+//		report.stop();
 //		watch.reset();
 //	}
 
@@ -920,7 +903,7 @@ void as_procgenCOV::RunEngine(hldsm* hm, result &statesonly) {
 
 	// Report on compaction
 	if (stopCompact(hm->Name(), the_proc, watch, lm)) {
-		Report().stopIO();
+		report.stop();
 	}
 
 	// We've generated the entire process now.
@@ -935,13 +918,13 @@ void as_procgenCOV::generateRG(dsde_hlm* dsm, StateLib::state_db* tandb,
 
 	if (rg) {
 		indexed_reachgraph myrg(*tandb, *vandb, *rg);
-		generateRGt<indexed_reachgraph, long>(Debug(), *dsm, myrg);
+		generateRGt<indexed_reachgraph, long>(debug, *dsm, myrg);
 
 		myrg.exportInitial(s0);
 		myrg.finish();
 	} else {
 		indexed_statedbs myrs(*tandb, *vandb);
-		generateRGt<indexed_statedbs, long>(Debug(), *dsm, myrs);
+		generateRGt<indexed_statedbs, long>(debug, *dsm, myrs);
 	}
 
 	delete vandb;
@@ -959,7 +942,7 @@ lchild_rsiblingt* as_procgenCOV::generateCT(dsde_hlm* dsm,
 
 	if (rg) {
 		//indexed_reachgraph myrg(*tandb, *vandb, *rg);
-		generateCGT<indexed_reachgraph, long>(Debug(), *dsm, &L,
+		generateCGT<indexed_reachgraph, long>(debug, *dsm, &L,
 				firstNode, true, NULL,level);
 		//myrg.exportInitial(s0);
 		//myrg.finish();
@@ -988,11 +971,11 @@ void as_procgenCOV::generateMC(dsde_hlm* dsm, StateLib::state_db* tandb,
 
 		switch (remove_vanishing) {
 		case BY_PATH:
-			generateMCt<indexed_smp, long>(Debug(), *dsm, mysmp);
+			generateMCt<indexed_smp, long>(debug, *dsm, mysmp);
 			break;
 
 		case BY_SUBGRAPH:
-			generateSMPt<indexed_smp, long>(Debug(), *dsm, mysmp);
+			generateSMPt<indexed_smp, long>(debug, *dsm, mysmp);
 			break;
 
 		default:
@@ -1007,11 +990,11 @@ void as_procgenCOV::generateMC(dsde_hlm* dsm, StateLib::state_db* tandb,
 
 		switch (remove_vanishing) {
 		case BY_PATH:
-			generateMCt<indexed_statedbs, long>(Debug(), *dsm, myrs);
+			generateMCt<indexed_statedbs, long>(debug, *dsm, myrs);
 			break;
 
 		case BY_SUBGRAPH:
-			generateSMPt<indexed_statedbs, long>(Debug(), *dsm, myrs);
+			generateSMPt<indexed_statedbs, long>(debug, *dsm, myrs);
 			break;
 
 		default:

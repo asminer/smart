@@ -69,8 +69,7 @@ void minterm_pool::reportStats(std::ostream &out) const
 {
   out << "\t" << used << " minterms used, required ";
   size_t batchmem = (term_depth+2)*sizeof(int)*used + alloc*sizeof(int*);
-  out.PutMemoryCount(batchmem, 3);
-  out << "\n";
+  out << memoryCount(batchmem, 3) << '\n';
 }
 
 // **************************************************************************
@@ -155,14 +154,14 @@ void meddly_varoption::initializeVars()
 char* meddly_varoption::buildVarName(const hldsm::partinfo &part, int k)
 {
   if (!vars_named) return 0;
-  StringStream s;
+  std::stringstream s;
   bool printed = false;
   for (int p=part.pointer[k]; p>part.pointer[k-1]; p--) {
      if (printed)  s << ":";
      else          printed = true;
      s << part.variable[p]->Name();
   }  // for p
-  return s.GetString();
+  return strdup(s.str().c_str());
 }
 
 void meddly_varoption::reportStats(std::ostream &out) const
@@ -446,10 +445,9 @@ void bounded_varoption::updateEvents(debugging_msg &d, bool* cl)
     // Build enabling for this event
     //
 
-    if (d.startReport()) {
-      d.report() << "Building enabling   DD for event ";
-      d.report() << e->Name() << "\n";
-      d.stopIO();
+    if (d.start()) {
+      d << "Building enabling   DD for event " << e->Name();
+      d.stop();
     }
 
     if (0==event_enabling[i]) event_enabling[i] = new dd_edge(f);
@@ -461,10 +459,9 @@ void bounded_varoption::updateEvents(debugging_msg &d, bool* cl)
     // Build firing for this event
     //
 
-    if (d.startReport()) {
-      d.report() << "Building next-state DD for event ";
-      d.report() << e->Name() << "\n";
-      d.stopIO();
+    if (d.start()) {
+      d << "Building next-state DD for event " << e->Name();
+      d.stop();
     }
 
     if (0==event_firing[i])   event_firing[i]   = new dd_edge(f);
@@ -537,12 +534,8 @@ void bounded_varoption
   // First, build the expr as an MTMXD
   e->Traverse(x);
   if (foo.isNull()) {
-    if (getParent().StartError(0)) {
-      getParent().SendError("Got null result for ");
-      getParent().SendError(what);
-      getParent().SendError(who);
-      getParent().DoneError();
-    }
+    hldsm::errmsg E(&getParent());
+    E << "Got null result for " << what << who;
     throw subengine::Engine_Failed;
   }
   shared_ddedge* me = smart_cast <shared_ddedge*>(foo.getPtr());
@@ -563,14 +556,8 @@ void bounded_varoption
   }
   catch (error ce) {
     // An error occurred, report it...
-    if (getParent().StartError(0)) {
-      getParent().SendError("Meddly error ");
-      getParent().SendError(ce.getName());
-      getParent().SendError(" for ");
-      getParent().SendError(what);
-      getParent().SendError(who);
-      getParent().DoneError();
-    }
+    hldsm::errmsg E(&getParent());
+    E << "Meddly error " << ce.getName() << " for " << what << who;
 
     // ...and figure out which one
     if (error::INSUFFICIENT_MEMORY == ce.getCode())
@@ -663,12 +650,9 @@ void bounded_varoption::buildNoChange(const model_event &e, dd_edge &dd)
     Delete(xp);
 
     // An error occurred, report it...
-    if (getParent().StartError(0)) {
-      getParent().SendError("Meddly error ");
-      getParent().SendError(e.getName());
-      getParent().SendError(" in buildNoChange");
-      getParent().DoneError();
-    }
+    hldsm::errmsg E(&getParent());
+    E << "Meddly error " << e.getName() << " in buildNoChange";
+
     // ...and figure out which one
     if (error::INSUFFICIENT_MEMORY == e.getCode()) {
       throw subengine::Out_Of_Memory;
@@ -692,20 +676,27 @@ void bounded_varoption::checkBounds(const exprman* em)
   for (int i=0; i<getParent().getNumStateVars(); i++) {
     const model_statevar* sv = getParent().readStateVar(i);
     if (sv->HasBounds()) continue;
+    built_ok = false;
+    break;
+  }
+  if (built_ok) return;
+  //
+  // Nope; display the bad ones
+  //
+  hldsm::errmsg E(&getParent());
+  E << "BOUNDED setting requires bounds for state variables.";
+  E.newLine();
+  E << "The following state variables do not have declared bounds:";
+  E.newLine();
 
-    if (built_ok) {
-      built_ok = false;
-      if (!getParent().StartError(0)) return;
-      em->cerr() << "BOUNDED setting requires bounds for state variables.";
-      em->newLine();
-      em->cerr() << "The following state variables do not have declared bounds:";
-      em->newLine();
-      em->cerr() << sv->Name();
-    } else {
-      em->cerr() << ", " << sv->Name();
-    }
+  bool printed = false;
+  for (int i=0; i<getParent().getNumStateVars(); i++) {
+    const model_statevar* sv = getParent().readStateVar(i);
+    if (sv->HasBounds()) continue;
+    if (printed)    E << ", ";
+    else            printed = true;
+    E << sv->Name();
   } // for i
-  if (!built_ok) getParent().DoneError();
 }
 
 int bounded_varoption::initDomain(const exprman* em)
@@ -730,10 +721,8 @@ int bounded_varoption::initDomain(const exprman* em)
       int nv = part.variable[i]->NumPossibleValues();
       int newbnd = bnd * nv;
       if (newbnd < 1 || newbnd / nv != bnd) {
-        if (getParent().StartError(0)) {
-          em->cerr() << "Overflow in size of level " << k << " for MDD";
-          getParent().DoneError();
-        }
+        hldsm::errmsg E(&getParent());
+        E << "Overflow in size of level " << k << " for MDD";
         built_ok = false;
         return 0;
       }
@@ -1092,12 +1081,11 @@ enabling_subeventI::~enabling_subeventI()
 void enabling_subeventI::confirm(sathyb_opname::hybrid_relation &rel, int k, int index)
 {
   DCASSERT(E);
-  if (debug.startReport()) {
-    debug.report() << "confirming level " << k << " index " << index;
-    debug.report() << " event " << E->Name() << " firing ";
-    is_enabled->Print(debug.report(), 0);
-    debug.report() << "\n";
-    debug.stopIO();
+  if (debug.start()) {
+    debug << "confirming level " << k << " index " << index;
+    debug << " event " << E->Name() << " firing ";
+    is_enabled->Print(debug.stream());
+    debug.stop();
   }
 
   changed_k = k;
@@ -1109,17 +1097,17 @@ void enabling_subeventI::confirm(sathyb_opname::hybrid_relation &rel, int k, int
 #ifndef USING_MEDDLY_ADD_MINTERM
   if (0==mt_used) return;
 
-  if (debug.startReport()) {
+  if (debug.start()) {
     for (int i = 0; i < mt_used; i++) {
       debug.report() << "\nFiring:\n";
       debug.report() << "\nfrom[" << i << "]: [";
-      debug.report().PutArray(mt_from[i]+1, num_levels);
+      debug << element_writer<int>(mt_from[i]+1, num_levels);
       debug.report() << "]\nto[" << i << "]: [";
-      debug.report().PutArray(mt_to[i]+1, num_levels);
+      debug << element_writer<int>(mt_to[i]+1, num_levels);
       debug.report() << "]\n";
       debug.report() << "\n\n";
     }
-    debug.stopIO();
+    debug.stop();
   }
 
   // Add those minterms
@@ -1130,13 +1118,13 @@ void enabling_subeventI::confirm(sathyb_opname::hybrid_relation &rel, int k, int
   add_to_root += getRoot();
   setRoot(add_to_root);
 
-  if (debug.startReport()) {
+  if (debug.start()) {
     debug.report() << "confirmed  level " << k << " index " << index;
     debug.report() << " event " << E->Name() << " firing ";
     is_enabled->Print(debug.report(), 0);
     debug.newLine();
     debug.report() << "New root: " << add_to_root.getNode() << "\n";
-    debug.stopIO();
+    debug.stop();
   }
 #endif
 }
@@ -1180,15 +1168,15 @@ void enabling_subeventI::exploreEnabling(sathyb_opname::hybrid_relation &rel, in
   // Are we at the bottom?
   //
   if (0==dpth) {
-    bool start_d = debug.startReport();
+    bool start_d = debug.start();
     if (start_d) {
-      debug.report() << "enabled?\n\tstate ";
-      tdcurr->Print(debug.report(), 0);
-      debug.report() << "\n\tfrom minterm [";
-      debug.report().PutArray(from_minterm+1, num_levels);
-      debug.report() << "]\n\t";
-      is_enabled->Print(debug.report(), 0);
-      debug.report() << " : ";
+      debug << "enabled?\n\tstate ";
+      tdcurr->Print(debug.stream());
+      debug << "\n\tfrom minterm [";
+      debug << element_writer<int>(from_minterm+1, num_levels);
+      debug << "]\n\t";
+      is_enabled->Print(debug.stream());
+      debug << " : ";
     }
 #ifdef SHORT_CIRCUIT_ENABLING
     td.answer->setBool(true);
@@ -1199,15 +1187,14 @@ void enabling_subeventI::exploreEnabling(sathyb_opname::hybrid_relation &rel, in
     if (start_d) {
       if (td.answer->isNormal()) {
         if (td.answer->getBool())
-          debug.report() << "true";
+          debug << "true";
         else
-          debug.report() << "false";
+          debug << "false";
       } else if (td.answer->isUnknown())
-        debug.report() << "?";
+        debug << "?";
       else
-        debug.report() << "null";
-      debug.report() << "\n";
-      debug.stopIO();
+        debug << "null";
+      debug.stop();
     }
 
     DCASSERT(td.answer->isNormal());
@@ -1228,13 +1215,13 @@ void enabling_subeventI::exploreEnabling(sathyb_opname::hybrid_relation &rel, in
     //
     // More debug info
     //
-    if (debug.startReport()) {
-      debug.report() << "enabled\n\tstate ";
-      tdcurr->Print(debug.report(), 0);
-      debug.report() << "\n\tto minterm [";
-      debug.report().PutArray(to_minterm+1, num_levels);
-      debug.report() << "]\n";
-      debug.stopIO();
+    if (debug.start()) {
+      debug << "enabled\n\tstate ";
+      tdcurr->Print(debug.stream());
+      debug << "\n\tto minterm [";
+      debug << element_writer<int>(to_minterm+1, num_levels);
+      debug << "]";
+      debug.stop();
     }
 
     addMinterm(from_minterm, to_minterm);
@@ -1402,12 +1389,11 @@ firing_subeventI::~firing_subeventI()
 void firing_subeventI::confirm(sathyb_opname::hybrid_relation &rel, int k, int index)
 {
   DCASSERT(E);
-  if (debug.startReport()) {
-    debug.report() << "confirming level " << k << " index " << index;
-    debug.report() << " event " << E->Name() << " firing ";
-    fire_expr->Print(debug.report(), 0);
-    debug.report() << "\n";
-    debug.stopIO();
+  if (debug.start()) {
+    debug << "confirming level " << k << " index " << index;
+    debug << " event " << E->Name() << " firing ";
+    fire_expr->Print(debug.stream());
+    debug.stop();
   }
 
   changed_k = k;
@@ -1419,17 +1405,17 @@ void firing_subeventI::confirm(sathyb_opname::hybrid_relation &rel, int k, int i
 #ifndef USING_MEDDLY_ADD_MINTERM
   if (0==mt_used) return;
 
-  if (debug.startReport()) {
+  if (debug.start()) {
     for (int i = 0; i < mt_used; i++) {
-      debug.report() << "\nFiring:\n";
-      debug.report() << "\nfrom[" << i << "]: [";
-      debug.report().PutArray(mt_from[i]+1, num_levels);
-      debug.report() << "]\nto[" << i << "]: [";
-      debug.report().PutArray(mt_to[i]+1, num_levels);
-      debug.report() << "]\n";
-      debug.report() << "\n\n";
+      debug << "\nFiring:\n";
+      debug << "\nfrom[" << i << "]: [";
+      debug << element_writer<int>(mt_from[i]+1, num_levels);
+      debug << "]\nto[" << i << "]: [";
+      debug << element_writer<int>(mt_to[i]+1, num_levels);
+      debug << "]\n";
+      debug << "\n";
     }
-    debug.stopIO();
+    debug.stop();
   }
 
   // Add those minterms
@@ -1440,13 +1426,13 @@ void firing_subeventI::confirm(sathyb_opname::hybrid_relation &rel, int k, int i
   add_to_root += getRoot();
   setRoot(add_to_root);
 
-  if (debug.startReport()) {
-    debug.report() << "confirmed  level " << k << " index " << index;
-    debug.report() << " event " << E->Name() << " firing ";
-    fire_expr->Print(debug.report(), 0);
+  if (debug.start()) {
+    debug << "confirmed  level " << k << " index " << index;
+    debug << " event " << E->Name() << " firing ";
+    fire_expr->Print(debug.stream());
     debug.newLine();
-    debug.report() << "New root: " << add_to_root.getNode() << "\n";
-    debug.stopIO();
+    debug << "New root: " << add_to_root.getNode();
+    debug.stop();
   }
 #endif
 }
@@ -1490,32 +1476,31 @@ void firing_subeventI::exploreFiring(sathyb_opname::hybrid_relation &rel, int dp
   // Are we at the bottom?
   //
   if (0==dpth) {
-    bool start_d = debug.startReport();
+    bool start_d = debug.start();
     if (start_d) {
-      debug.report() << "firing?\n\tfrom state ";
-      tdcurr->Print(debug.report(), 0);
-      debug.report() << "\n\tfrom minterm [";
-      debug.report().PutArray(from_minterm+1, num_levels);
-      debug.report() << "]\n\t";
-      fire_expr->Print(debug.report(), 0);
-      debug.report() << " : ";
+      debug << "firing?\n\tfrom state ";
+      tdcurr->Print(debug.stream());
+      debug << "\n\tfrom minterm [";
+      debug << element_writer<int>(from_minterm+1, num_levels);
+      debug << "]\n\t";
+      fire_expr->Print(debug.stream());
+      debug << " : ";
     }
     DCASSERT(fire_expr);
     td.answer->setBool(true);
     fire_expr->Compute(td);
     if (start_d) {
       if (td.answer->isNormal())
-        debug.report() << "ok";
+        debug << "ok";
       else if (td.answer->isUnknown())
-        debug.report() << "?";
+        debug << "?";
       else if (td.answer->isOutOfBounds()) {
-        td.current_state->Print(debug.report(), 0);
-        debug.report() << "out of bounds";
+        td.current_state->Print(debug.stream());
+        debug << "out of bounds";
       }
       else
-        debug.report() << "null";
-      debug.report() << "\n";
-      debug.stopIO();
+        debug << "null";
+      debug.stop();
     }
 
     if (!td.answer->isNormal()) return; // not enabled after all
@@ -1537,13 +1522,13 @@ void firing_subeventI::exploreFiring(sathyb_opname::hybrid_relation &rel, int dp
     //
     // More debug info
     //
-    if (debug.startReport()) {
-      debug.report() << "firing\n\tto state ";
-      tdnext->Print(debug.report(), 0);
-      debug.report() << "\n\tto minterm [";
-      debug.report().PutArray(to_minterm+1, num_levels);
-      debug.report() << "]\n";
-      debug.stopIO();
+    if (debug.start()) {
+      debug << "firing\n\tto state ";
+      tdnext->Print(debug.stream());
+      debug << "\n\tto minterm [";
+      debug << element_writer<int>(to_minterm+1, num_levels);
+      debug << "]";
+      debug.stop();
     }
 
     // add minterm to queue
@@ -1734,12 +1719,11 @@ enabling_subevent::~enabling_subevent()
 void enabling_subevent::confirm(satotf_opname::otf_relation &rel, int k, int index)
 {
   DCASSERT(E);
-  if (debug.startReport()) {
-    debug.report() << "confirming level " << k << " index " << index;
-    debug.report() << " event " << E->Name() << " enabling ";
-    is_enabled->Print(debug.report(), 0);
-    debug.report() << "\n";
-    debug.stopIO();
+  if (debug.start()) {
+    debug << "confirming level " << k << " index " << index;
+    debug << " event " << E->Name() << " enabling ";
+    is_enabled->Print(debug.stream());
+    debug.stop();
   }
 
   changed_k = k;
@@ -1757,17 +1741,17 @@ void enabling_subevent::confirm(satotf_opname::otf_relation &rel, int k, int ind
   DCASSERT(mt_from);
   DCASSERT(mt_to);
 
-  if (debug.startReport()) {
+  if (debug.start()) {
     for (int i = 0; i < mt_used; i++) {
-      debug.report() << "\nEnabling\n";
-      debug.report() << "\nfrom[" << i << "]: [";
-      debug.report().PutArray(mt_from[i]+1, num_levels);
-      debug.report() << "]\nto[" << i << "]: [";
-      debug.report().PutArray(mt_to[i]+1, num_levels);
-      debug.report() << "]\n";
-      debug.report() << "\n\n";
+      debug << "\nEnabling\n";
+      debug << "\nfrom[" << i << "]: [";
+      debug << element_writer<int>(mt_from[i]+1, num_levels);
+      debug << "]\nto[" << i << "]: [";
+      debug << element_writer<int>(mt_to[i]+1, num_levels);
+      debug << "]\n";
+      debug << "\n";
     }
-    debug.stopIO();
+    debug.stop();
   }
 
   getForest()->createEdge(mt_from, mt_to, mt_used, add_to_root);
@@ -1776,13 +1760,13 @@ void enabling_subevent::confirm(satotf_opname::otf_relation &rel, int k, int ind
   add_to_root += getRoot();
   setRoot(add_to_root);
 
-  if (debug.startReport()) {
-    debug.report() << "confirmed  level " << k << " index " << index;
-    debug.report() << " event " << E->Name() << " enabling ";
-    is_enabled->Print(debug.report(), 0);
+  if (debug.start()) {
+    debug << "confirmed  level " << k << " index " << index;
+    debug << " event " << E->Name() << " enabling ";
+    is_enabled->Print(debug.stream());
     debug.newLine();
-    debug.report() << "New root: " << add_to_root.getNode() << "\n";
-    debug.stopIO();
+    debug << "New root: " << add_to_root.getNode();
+    debug.stop();
   }
 #endif
 }
@@ -1825,15 +1809,15 @@ void enabling_subevent::exploreEnabling(satotf_opname::otf_relation &rel, int dp
   // Are we at the bottom?
   //
   if (0==dpth) {
-    bool start_d = debug.startReport();
+    bool start_d = debug.start();
     if (start_d) {
-      debug.report() << "enabled?\n\tstate ";
-      tdcurr->Print(debug.report(), 0);
-      debug.report() << "\n\tfrom minterm [";
-      debug.report().PutArray(from_minterm+1, num_levels);
-      debug.report() << "]\n\t";
-      is_enabled->Print(debug.report(), 0);
-      debug.report() << " : ";
+      debug << "enabled?\n\tstate ";
+      tdcurr->Print(debug.stream());
+      debug << "\n\tfrom minterm [";
+      debug << element_writer<int>(from_minterm+1, num_levels);
+      debug << "]\n\t";
+      is_enabled->Print(debug.stream());
+      debug << " : ";
     }
 #ifdef SHORT_CIRCUIT_ENABLING
     td.answer->setBool(true);
@@ -1844,15 +1828,14 @@ void enabling_subevent::exploreEnabling(satotf_opname::otf_relation &rel, int dp
     if (start_d) {
       if (td.answer->isNormal()) {
         if (td.answer->getBool())
-          debug.report() << "true";
+          debug << "true";
         else
-          debug.report() << "false";
+          debug << "false";
       } else if (td.answer->isUnknown())
-        debug.report() << "?";
+        debug << "?";
       else
-        debug.report() << "null";
-      debug.report() << "\n";
-      debug.stopIO();
+        debug << "null";
+      debug.stop();
     }
 
     DCASSERT(td.answer->isNormal());
@@ -1873,13 +1856,13 @@ void enabling_subevent::exploreEnabling(satotf_opname::otf_relation &rel, int dp
     //
     // More debug info
     //
-    if (debug.startReport()) {
-      debug.report() << "enabled\n\tstate ";
-      tdcurr->Print(debug.report(), 0);
-      debug.report() << "\n\tto minterm [";
-      debug.report().PutArray(to_minterm+1, num_levels);
-      debug.report() << "]\n";
-      debug.stopIO();
+    if (debug.start()) {
+      debug << "enabled\n\tstate ";
+      tdcurr->Print(debug.stream());
+      debug << "\n\tto minterm [";
+      debug << element_writer<int>(to_minterm+1, num_levels);
+      debug << "]";
+      debug.stop();
     }
 
     addMinterm(from_minterm, to_minterm);
@@ -2051,12 +2034,11 @@ firing_subevent::~firing_subevent()
 void firing_subevent::confirm(satotf_opname::otf_relation &rel, int k, int index)
 {
   DCASSERT(E);
-  if (debug.startReport()) {
-    debug.report() << "confirming level " << k << " index " << index;
-    debug.report() << " event " << E->Name() << " firing ";
-    fire_expr->Print(debug.report(), 0);
-    debug.report() << "\n";
-    debug.stopIO();
+  if (debug.start()) {
+    debug << "confirming level " << k << " index " << index;
+    debug << " event " << E->Name() << " firing ";
+    fire_expr->Print(debug.stream());
+    debug.stop();
   }
 
   changed_k = k;
@@ -2069,17 +2051,17 @@ void firing_subevent::confirm(satotf_opname::otf_relation &rel, int k, int index
 #ifndef USING_MEDDLY_ADD_MINTERM
   if (0==mt_used) return;
 
-  if (debug.startReport()) {
+  if (debug.start()) {
     for (int i = 0; i < mt_used; i++) {
-      debug.report() << "\nFiring:\n";
-      debug.report() << "\nfrom[" << i << "]: [";
-      debug.report().PutArray(mt_from[i]+1, num_levels);
-      debug.report() << "]\nto[" << i << "]: [";
-      debug.report().PutArray(mt_to[i]+1, num_levels);
-      debug.report() << "]\n";
-      debug.report() << "\n\n";
+      debug << "\nFiring:\n";
+      debug << "\nfrom[" << i << "]: [";
+      debug << element_writer<int>(mt_from[i]+1, num_levels);
+      debug << "]\nto[" << i << "]: [";
+      debug << element_writer<int>(mt_to[i]+1, num_levels);
+      debug << "]\n";
+      debug << "\n";
     }
-    debug.stopIO();
+    debug.stop();
   }
 
   // Add those minterms
@@ -2090,13 +2072,13 @@ void firing_subevent::confirm(satotf_opname::otf_relation &rel, int k, int index
   add_to_root += getRoot();
   setRoot(add_to_root);
 
-  if (debug.startReport()) {
-    debug.report() << "confirmed  level " << k << " index " << index;
-    debug.report() << " event " << E->Name() << " firing ";
-    fire_expr->Print(debug.report(), 0);
+  if (debug.start()) {
+    debug << "confirmed  level " << k << " index " << index;
+    debug << " event " << E->Name() << " firing ";
+    fire_expr->Print(debug.stream());
     debug.newLine();
-    debug.report() << "New root: " << add_to_root.getNode() << "\n";
-    debug.stopIO();
+    debug << "New root: " << add_to_root.getNode();
+    debug.stop();
   }
 #endif
 }
@@ -2140,30 +2122,29 @@ void firing_subevent::exploreFiring(satotf_opname::otf_relation &rel, int dpth)
   // Are we at the bottom?
   //
   if (0==dpth) {
-    bool start_d = debug.startReport();
+    bool start_d = debug.start();
     if (start_d) {
-      debug.report() << "firing?\n\tfrom state ";
-      tdcurr->Print(debug.report(), 0);
-      debug.report() << "\n\tfrom minterm [";
-      debug.report().PutArray(from_minterm+1, num_levels);
-      debug.report() << "]\n\t";
-      fire_expr->Print(debug.report(), 0);
-      debug.report() << " : ";
+      debug << "firing?\n\tfrom state ";
+      tdcurr->Print(debug.stream());
+      debug << "\n\tfrom minterm [";
+      debug << element_writer<int>(from_minterm+1, num_levels);
+      debug << "]\n\t";
+      fire_expr->Print(debug.stream());
+      debug << " : ";
     }
     DCASSERT(fire_expr);
     td.answer->setBool(true);
     fire_expr->Compute(td);
     if (start_d) {
       if (td.answer->isNormal())
-        debug.report() << "ok";
+        debug << "ok";
       else if (td.answer->isUnknown())
-        debug.report() << "?";
+        debug << "?";
       else if (td.answer->isOutOfBounds())
-        debug.report() << "out of bounds";
+        debug << "out of bounds";
       else
-        debug.report() << "null";
-      debug.report() << "\n";
-      debug.stopIO();
+        debug << "null";
+      debug.stop();
     }
 
     if (!td.answer->isNormal()) return; // not enabled after all
@@ -2184,13 +2165,13 @@ void firing_subevent::exploreFiring(satotf_opname::otf_relation &rel, int dpth)
     //
     // More debug info
     //
-    if (debug.startReport()) {
-      debug.report() << "firing\n\tto state ";
-      tdnext->Print(debug.report(), 0);
-      debug.report() << "\n\tto minterm [";
-      debug.report().PutArray(to_minterm+1, num_levels);
-      debug.report() << "]\n";
-      debug.stopIO();
+    if (debug.start()) {
+      debug << "firing\n\tto state ";
+      tdnext->Print(debug.stream());
+      debug << "\n\tto minterm [";
+      debug << element_writer<int>(to_minterm+1, num_levels);
+      debug << "]";
+      debug.stop();
     }
 
     // add minterm to queue
@@ -2587,14 +2568,12 @@ bool substate_varoption::deplist::addMinterm(const int* from, const int* to)
 void substate_varoption::deplist::showMinterms(std::ostream &s, int pad)
 {
   for (int i=0; i<mt_used; i++) {
-    s.Pad(' ', pad);
-    s.Put('[');
-    s.PutArray(mt_from[i]+1, depth-1);
+    s << padding(pad) << '[';
+    s << element_writer<int>(mt_from[i]+1, depth-1);
     s << "]\n";
   }
   if (next) {
-    s.Pad(' ', pad);
-    s << "(synch)\n";
+    s << padding(pad) << "(synch)\n";
     next->showMinterms(s, pad);
   }
 }
@@ -2602,16 +2581,14 @@ void substate_varoption::deplist::showMinterms(std::ostream &s, int pad)
 void substate_varoption::deplist::showMintermPairs(std::ostream &s, int pad)
 {
   for (int i=0; i<mt_used; i++) {
-    s.Pad(' ', pad);
-    s.Put('[');
-    s.PutArray(mt_from[i]+1, depth-1);
+    s << padding(pad) << '[';
+    s << element_writer<int>(mt_from[i]+1, depth-1);
     s << "], [";
-    s.PutArray(mt_to[i]+1, depth-1);
+    s << element_writer<int>(mt_to[i]+1, depth-1);
     s << "]\n";
   }
   if (next) {
-    s.Pad(' ', pad);
-    s << "(synch)\n";
+    s << padding(pad) << "(synch)\n";
     next->showMintermPairs(s, pad);
   }
 }
@@ -2694,9 +2671,9 @@ void substate_varoption::initializeVars()
 void
 substate_varoption::initializeEvents(debugging_msg &d)
 {
-  if (d.startReport()) {
-    d.report() << "preprocessing event expressions\n";
-    d.stopIO();
+  if (d.start()) {
+    d << "preprocessing event expressions";
+    d.stop();
   }
   enable_deps = new deplist*[getParent().getNumEvents()];
   fire_deps = new deplist*[getParent().getNumEvents()];
@@ -2714,43 +2691,43 @@ substate_varoption::initializeEvents(debugging_msg &d)
 #endif
   } // for i
 
-  if (!d.startReport()) return;
-  d.report() << "done preprocessing event expressions\n";
+  if (!d.start()) return;
+  d << "done preprocessing event expressions\n";
 
   for (int i=0; i<getParent().getNumEvents(); i++) {
 
-    d.report() << "\t" << getParent().readEvent(i)->Name() << " enabling:\n";
+    d << "\t" << getParent().readEvent(i)->Name() << " enabling:\n";
     for (deplist *DL = enable_deps[i]; DL; DL=DL->next) {
-      d.report() << "\t\tlevels ";
+      d << "\t\tlevels ";
       int k = DL->getLevelAbove(0);
       for ( ; k>0; k=DL->getLevelAbove(k)) {
-        d.report() << k << ", ";
+        d << k << ", ";
       } // for k
-      d.report() << "\n\t\t";
+      d << "\n\t\t";
       for (expr_node* term = DL->termlist; term; term=term->next) {
-        term->term->Print(d.report(), 0);
-        d.report() << ", ";
+        term->term->Print(d.stream());
+        d << ", ";
       } // for term
-      d.report() << "\n";
+      d << "\n";
     } // for DL
 
-    d.report() << "\t" << getParent().readEvent(i)->Name() << " firing:\n";
+    d << "\t" << getParent().readEvent(i)->Name() << " firing:\n";
     for (deplist *DL = fire_deps[i]; DL; DL=DL->next) {
-      d.report() << "\t\tlevels ";
+      d << "\t\tlevels ";
       int k = DL->getLevelAbove(0);
       for ( ; k>0; k=DL->getLevelAbove(k)) {
-        d.report() << k << ", ";
+        d << k << ", ";
       } // for k
-      d.report() << "\n\t\t";
+      d << "\n\t\t";
       for (expr_node* term = DL->termlist; term; term=term->next) {
-        term->term->Print(d.report(), 0);
-        d.report() << ", ";
+        term->term->Print(d.stream());
+        d << ", ";
       } // for term
-      d.report() << "\n";
+      d << "\n";
     } // for DL
   } // for i
 
-  d.stopIO();
+  d.stop();
 }
 
 void substate_varoption::reportStats(std::ostream &out) const
@@ -2973,7 +2950,7 @@ satimpl_opname::implicit_relation* substate_varoption::buildNSF_IMPLICIT(debuggi
   for(int i = 0; i < nEvents; i++)
     {
     unsigned long sign = 0;
-    int previous_node_handle = 1;
+    // int previous_node_handle = 1;
     std::map<int, std::pair<long,long>>::iterator e_it = event_table[i].begin();
     if(event_table[i].size()>0)
     while(e_it!=event_table[i].end()){
@@ -2982,7 +2959,7 @@ satimpl_opname::implicit_relation* substate_varoption::buildNSF_IMPLICIT(debuggi
       sign = sign*10 + uniq;
       rNode[rCtr] = new derive_relation_node(debug, c_pass, get_mxd_forest(), e_it->first, e_it->second.first, e_it->second.second,-1);
       //rNode[rCtr] = new derive_relation_node(debug,e_it->second.first,e_it->second.second,c_pass,sign,e_it->first,previous_node_handle);
-      previous_node_handle = T->registerNode((e_it->first==tops_of_events[i]),rNode[rCtr]);
+      // previous_node_handle = T->registerNode((e_it->first==tops_of_events[i]),rNode[rCtr]);
       rCtr ++;
       e_it++;
     }
@@ -3001,13 +2978,13 @@ sathyb_opname::hybrid_relation* substate_varoption::buildNSF_HYBRID(debugging_ms
   DCASSERT(em);
   substate_colls* c_pass = this->getSubstateStorage();
 
-  int max_node_count = 10;
+  // int max_node_count = 10;
   int nEvents = getParent().getNumEvents();
   // int nPlaces = getParent().getNumStateVars();
 
   //forest* mxdRel = ms.createForest(true, forest::BOOLEAN, forest::MULTI_TERMINAL);
 
-  int* tops_of_events = (int*)malloc(nEvents*sizeof(int));
+  // int* tops_of_events = (int*)malloc(nEvents*sizeof(int));
   // int* place_count_in_event = (int*)malloc(nEvents*sizeof(int));
   std::vector<std::map<int, std::pair<long,long>>> event_table;
   event_table.resize(nEvents);
@@ -3228,7 +3205,7 @@ sathyb_opname::hybrid_relation* substate_varoption::buildNSF_HYBRID(debugging_ms
       }
 
       DCASSERT(length>0);
-      expr* chunk = 0;
+      // expr* chunk = 0;
       if (1==length) {
         //
         // Can implicit relation node be built?
@@ -3260,7 +3237,7 @@ sathyb_opname::hybrid_relation* substate_varoption::buildNSF_HYBRID(debugging_ms
         //
         // awesomesauce
         //
-        chunk = Share(ptr->termlist->term);
+        // chunk = Share(ptr->termlist->term);
       }
     }
 
@@ -3280,7 +3257,7 @@ sathyb_opname::hybrid_relation* substate_varoption::buildNSF_HYBRID(debugging_ms
             case 3:   en = impl_it->second[0]; in = impl_it->second[1]; fr = impl_it->second[2]; break;
             default:  en = 0; in = -1; fr = 0; break;
         }
-        printf("\n level %d: rn = %d, %d, %d", k, en, fr, in);
+        // printf("\n level %d: rn = %d, %d, %d", k, en, fr, in);
 
 	      if(!(en == 0 && in == -1 && fr == 0))
           {
@@ -3305,7 +3282,7 @@ sathyb_opname::hybrid_relation* substate_varoption::buildNSF_HYBRID(debugging_ms
     // Pull these together into the event
     //
 
-    printf("\n Created %d rn and %d se", rn,se);
+    // printf("\n Created %d rn and %d se", rn,se);
     if ((rn > 0) && (se > 0))
       T[i] = new sathyb_opname::event((sathyb_opname::subevent**)(&subevents[0]), se, (relation_node**)(&relnodes[0]), rn);
     else if (rn > 0)
@@ -3901,13 +3878,13 @@ void substate_varoption
 
     from_minterm[k] = i;
 
-    bool start_d = d.startReport();
+    bool start_d = d.start();
     if (start_d) {
-      d.report() << "enabled?\n\tstate ";
-      tdcurr->Print(d.report(), 0);
-      d.report() << "\n\tminterm [";
-      d.report().PutArray(from_minterm+1, num_levels);
-      d.report() << "]\n";
+      d << "enabled?\n\tstate ";
+      tdcurr->Print(d.stream());
+      d << "\n\tminterm [";
+      d << element_writer<int>(from_minterm+1, num_levels);
+      d << "]\n";
     }
 
     bool is_enabled = true;
@@ -3915,20 +3892,19 @@ void substate_varoption
       n->term->Compute(td);
 
       if (start_d) {
-        d.report() << "\t";
-        n->term->Print(d.report(), 0);
-        d.report() << " : ";
+        d << "\t";
+        n->term->Print(d.stream());
+        d << " : ";
         if (td.answer->isNormal()) {
           if (td.answer->getBool())
-            d.report() << "true";
+            d << "true";
           else
-            d.report() << "false";
+            d << "false";
         } else if (td.answer->isUnknown())
-          d.report() << "?";
+          d << "?";
         else
-          d.report() << "null";
-        d.report() << "\n";
-        d.stopIO();
+          d << "null";
+        d.stop();
       }
 
       DCASSERT(td.answer->isNormal());
@@ -4021,13 +3997,13 @@ void substate_varoption
 
     from_minterm[k] = i;
 
-    bool start_d = d.startReport();
+    bool start_d = d.start();
     if (start_d) {
-      d.report() << "firing?\n\tstate ";
-      tdcurr->Print(d.report(), 0);
-      d.report() << "\n\tminterm [";
-      d.report().PutArray(from_minterm+1, num_levels);
-      d.report() << "]\n";
+      d << "firing?\n\tstate ";
+      tdcurr->Print(d.stream());
+      d << "\n\tminterm [";
+      d << element_writer<int>(from_minterm+1, num_levels);
+      d << "]\n";
     }
 
     bool is_enabled = true;
@@ -4035,19 +4011,18 @@ void substate_varoption
       n->term->Compute(td);
 
       if (start_d) {
-        d.report() << "\t";
-        n->term->Print(d.report(), 0);
-        d.report() << " : ";
+        d << "\t";
+        n->term->Print(d.stream());
+        d << " : ";
         if (td.answer->isNormal())
-          d.report() << "ok";
+          d << "ok";
         else if (td.answer->isUnknown())
-          d.report() << "?";
+          d << "?";
         else if (td.answer->isOutOfBounds())
-          d.report() << "out of bounds";
+          d << "out of bounds";
         else
-          d.report() << "null";
-        d.report() << "\n";
-        d.stopIO();
+          d << "null";
+        d.stop();
       }
 
       if (td.answer->isNormal()) continue;
@@ -4073,13 +4048,13 @@ void substate_varoption
     //
     // Reporting
     //
-    if (d.startReport()) {
-      d.report() << "firing\n\tto state ";
-      tdnext->Print(d.report(), 0);
-      d.report() << "\n\tto minterm [";
-      d.report().PutArray(to_minterm+1, num_levels);
-      d.report() << "]\n";
-      d.stopIO();
+    if (d.start()) {
+      d << "firing\n\tto state ";
+      tdnext->Print(d.stream());
+      d << "\n\tto minterm [";
+      d << element_writer<int>(to_minterm+1, num_levels);
+      d << "]";
+      d.stop();
     }
 
     // add minterm to queue
@@ -4107,22 +4082,21 @@ void substate_varoption
 void substate_varoption::updateLevels(debugging_msg &d, const int* levels)
 {
   DCASSERT(tmpLevels);
-  if (d.startReport()) {
-    d.report() << "updating for levels: ";
+  if (d.start()) {
+    d << "updating for levels: ";
     for (int p=0; levels[p]; p++) {
       if (p) {
-        d.report() << ", ";
+        d << ", ";
       }
-      d.report() << levels[p];
+      d << levels[p];
     }
-    d.report() << "\n";
-    d.stopIO();
+    d.stop();
   }
   for (int i=0; i<getParent().getNumEvents(); i++) {
     const model_event* e = getParent().readEvent(i);
-    if (d.startReport()) {
-      d.report() << "updating event " << e->Name() << "\n";
-      d.stopIO();
+    if (d.start()) {
+      d << "updating event " << e->Name();
+      d.stop();
     }
 
     //
@@ -4149,25 +4123,25 @@ void substate_varoption::updateLevels(debugging_msg &d, const int* levels)
       exploreNextstate(d, *fd, fd->getLevelAbove(0), tmpLevels);
     }
 
-    if (d.startReport()) {
+    if (d.start()) {
       if (new_firings || new_enablings) {
-        d.report() << "event " << e->Name() << " has changed\n";
+        d << "event " << e->Name() << " has changed";
       } else {
-        d.report() << "event " << e->Name() << " is unchanged\n";
+        d << "event " << e->Name() << " is unchanged";
       }
-      d.stopIO();
+      d.stop();
     }
 
     if (!(new_firings || new_enablings)) continue;
 
 #ifdef SHOW_MINTERMS
-    if (d.startReport()) {
-      d.report() << "event " << e->Name() << ":\n";
-      d.report() << "\tenabling:\n";
+    if (d.start()) {
+      d << "event " << e->Name() << ":\n";
+      d << "\tenabling:\n";
       enable_deps[i]->showMinterms(d.report(), 12);
-      d.report() << "\tfiring:\n";
+      d << "\tfiring:\n";
       fire_deps[i]->showMintermPairs(d.report(), 12);
-      d.stopIO();
+      d.stop();
     }
 #endif
 
@@ -4187,10 +4161,10 @@ void substate_varoption::updateLevels(debugging_msg &d, const int* levels)
   } // for k
 
 #ifdef SHOW_SUBSTATES
-  if (d.startReport()) {
-    d.report() << "Done updating.  Current substates:\n";
+  if (d.start()) {
+    d << "Done updating.  Current substates:\n";
     show_substates(d.report());
-    d.stopIO();
+    d.stop();
   }
 #endif
 }
@@ -4252,13 +4226,13 @@ pregen_varoption::updateEvents(debugging_msg &d, bool* cl)
   int* updated = new int[num_levels+1];
 
   for (int iter=1; ; iter++) {
-    if (d.startReport()) {
-      d.report() << "Pregenerating locals, iteration " << iter << "\n";
+    if (d.start()) {
+      d << "Pregenerating locals, iteration " << iter << "\n";
 #ifdef SHOW_SUBSTATES
-      d.report() << "Current substates:\n";
+      d << "Current substates:\n";
       show_substates(d.report());
 #endif
-      d.stopIO();
+      d.stop();
     }
 
     // What levels have been updated

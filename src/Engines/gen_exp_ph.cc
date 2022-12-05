@@ -12,6 +12,9 @@
 // Modules
 #include "../Modules/expl_states.h"
 
+// Signal catching
+#include "../Utils/sigman.h"
+
 // External libs
 #include "../_StateLib/statelib.h"
 #include "../_MCLib/mclib.h"
@@ -40,54 +43,44 @@ protected:
   void badWeightError(hldsm* m, const char* what, const result& x) const;
   void MCError(hldsm* m, const char* what, MCLib::error e) const;
   inline void terminateError() const {
-    if (em->startError()) {
-      em->causedBy(0);
-      em->cerr() << "Process construction prematurely terminated";
-      em->stopIO();
-    }
+    expr_error E(0);
+    E << "Process construction prematurely terminated";
     throw Terminated;
   }
   inline void initial(bool tang, long num, const shared_state* st) const {
-    if (!Debug().startReport()) return;
-    Debug().report() << "Adding initial";
-    if (tang)   Debug().report() << " tangible  state# ";
-    else        Debug().report() << " vanishing state# ";
-    Debug().report().Put(num, 4);
-    Debug().report() << " : ";
-    st->Print(Debug().report(), 0);
-    Debug().report() << "\n";
-    Debug().stopIO();
+    if (!debug.start()) return;
+    debug << "Adding initial";
+    if (tang)   debug << " tangible  state# ";
+    else        debug << " vanishing state# ";
+    debug << formatted_int(num, 4) << " : ";
+    st->Print(debug.stream());
+    debug.stop();
   }
   inline void exploring(bool tang, long num, const shared_state* st) const {
-    if (!Debug().startReport()) return;
-    Debug().report() << "Exploring";
-    if (tang)   Debug().report() << " tangible  state# ";
-    else        Debug().report() << " vanishing state# ";
-    Debug().report().Put(num, 4);
-    Debug().report() << " : ";
-    st->Print(Debug().report(), 0);
-    Debug().report() << "\n";
-    Debug().stopIO();
+    if (!debug.start()) return;
+    debug << "Exploring";
+    if (tang)   debug << " tangible  state# ";
+    else        debug << " vanishing state# ";
+    debug << formatted_int(num, 4) << " : ";
+    st->Print(debug.stream());
+    debug.stop();
   }
   inline void reached(bool tang, long num, double rate, const shared_state* st) const {
-    if (!Debug().startReport()) return;
+    if (!debug.start()) return;
     if (rate) {
-      Debug().report() << " (";
-      Debug().report().Put(rate, 4);
-      Debug().report() << ")";
+      debug << " (" << formatted_real(rate, 4) << ")";
     }
-    Debug().report() << " --> ";
-    st->Print(Debug().report(), 0);
-    if (tang)  Debug().report() << " (tangible  index ";
-    else  Debug().report() << " (vanishing index ";
-    Debug().report().Put(num, 4);
-    Debug().report() << ")\n";
-    Debug().stopIO();
+    debug << " --> ";
+    st->Print(debug.stream());
+    if (tang)  debug << " (tangible  index ";
+    else  debug << " (vanishing index ";
+    debug << formatted_int(num, 4) << ")";
+    debug.stop();
   }
   inline void eliminating(long count) const {
-    if (!Debug().startReport()) return;
-    Debug().report() << "Eliminating " << count << " vanishing states\n";
-    Debug().stopIO();
+    if (!debug.start()) return;
+    debug << "Eliminating " << count << " vanishing states";
+    debug.stop();
   }
   inline bool addVan(hldsm* m, MCLib::vanishing_chain* vc, long i)
   const {
@@ -114,16 +107,16 @@ protected:
     return true;
   }
   inline void initial_distro(const LS_Vector &init) const {
-    if (!Debug().startReport()) return;
-    Debug().report() << "Built initial distribution [";
+    if (!debug.start()) return;
+    debug << "Built initial distribution [";
     for (long z=0; z<init.size; z++) {
       DCASSERT(init.index);
       DCASSERT(init.f_value);
-      if (z) Debug().report() << ", ";
-      Debug().report() << init.index[z] << ":" << init.f_value[z];
+      if (z) debug << ", ";
+      debug << init.index[z] << ":" << init.f_value[z];
     }
-    Debug().report() << "]\n";
-    Debug().stopIO();
+    debug << "]";
+    debug.stop();
   }
 };
 
@@ -161,9 +154,8 @@ void phase_procgen::RunEngine(hldsm* hm, result &statesonly)
 
   stochastic_lldsm* slm = dynamic_cast <stochastic_lldsm*> (lm);
   if (lm && (0==slm)) {
-    hm->StartError(0);
-    hm->SendError("Couldn't complete process, unknown type for partial process");
-    hm->DoneError();
+    hldsm::errmsg E(hm);
+    E << "Couldn't complete process, unknown type for partial process";
     lm->setCompletionEngine(0);
     return;
   }
@@ -186,9 +178,8 @@ void phase_procgen::RunEngine(hldsm* hm, result &statesonly)
   timer watch;
   if (startGen(*hm, the_proc)) {
     if (!rss->IsStatic())
-        em->report() << " using " << statelib->getDBMethod();
-    em->report() << "\n";
-    em->stopIO();
+        report << " using " << statelib->getDBMethod();
+    report.stop();
   }
 
   // set initial distribution
@@ -198,10 +189,13 @@ void phase_procgen::RunEngine(hldsm* hm, result &statesonly)
   init.f_value = 0;
   init.d_value = 0;
 
+  // Delay termination on signals
+  signal_manager &tsm = signal_manager::theSigMan();
+  tsm.waitTermination();
+
   // Generate process
   long accept = -1;
   long trap = -1;
-  em->waitTerm();
   bool procOK = true;
   error bailOut = Engine_Failed;
   try {
@@ -215,20 +209,20 @@ void phase_procgen::RunEngine(hldsm* hm, result &statesonly)
   // Report on generation
   if (stopGen(!procOK, *hm, the_proc, watch)) {
     if (!rss->IsStatic()) {
-      em->report().Put('\t');
-      em->report().PutMemoryCount(rss->ReportMemTotal(), 3);
-      em->report() << " required for state space construction\n";
-      em->report() << "\t" << rss->Size() << " states generated\n";
+      report << '\t' << memoryCount(rss->ReportMemTotal(), 3);
+      report << " required for state space construction\n";
+      report << "\t" << rss->Size() << " states generated\n";
     }
     if (vc) {
-      em->report().Put('\t');
-      em->report().PutMemoryCount(vc->getMemTotal(), 3);
-      em->report() << " required for Markov chain construction\n";
-      em->report() << "\t" << vc->TT().getNumEdges() << " Markov chain edges\n";
+      report << '\t' << memoryCount(vc->getMemTotal(), 3);
+      report << " required for Markov chain construction\n";
+      report << "\t" << vc->TT().getNumEdges() << " Markov chain edges\n";
     }
-    em->stopIO();
+    report.stop();
   }
-  em->resumeTerm();
+
+  // Resume termination on signals
+  tsm.resumeTermination();
 
   // Did we succeed so far?
   if (!procOK) {
@@ -244,8 +238,7 @@ void phase_procgen::RunEngine(hldsm* hm, result &statesonly)
 
   // Start reporting on compaction
   if (startCompact(*hm, the_proc)) {
-    em->report() << "\n";
-    em->stopIO();
+    report.stop();
     watch.reset();
   }
 
@@ -263,7 +256,7 @@ void phase_procgen::RunEngine(hldsm* hm, result &statesonly)
 
   // Report on compaction
   if (stopCompact(hm->Name(), the_proc, watch, lm)) {
-    em->stopIO();
+    report.stop();
   }
 
   // Neat trick! Specify how to finish building the process:
@@ -302,6 +295,8 @@ void phase_procgen::generateMC(phase_hlm* dsm, LS_Vector &init, long &accept,
   shared_state* next_st = new shared_state(dsm);
   int stsize = curr_st->getStateSize();
 
+  signal_manager &tsm = signal_manager::theSigMan();
+
   try {
 
     // Find and insert the initial state
@@ -329,7 +324,7 @@ void phase_procgen::generateMC(phase_hlm* dsm, LS_Vector &init, long &accept,
     for (;;) {
 
       // Check for sigterm
-      if (em->caughtTerm()) {
+      if (tsm.caughtSignal()) {
         terminateError();
       }
 
@@ -447,42 +442,35 @@ void phase_procgen::generateMC(phase_hlm* dsm, LS_Vector &init, long &accept,
 
 void phase_procgen::lostStateError(hldsm* m, const shared_state* s) const
 {
-  DCASSERT(m);
-  DCASSERT(s);
-  if (m->StartError(0)) {
-    em->cerr() << " Couldn't find reachable state ";
-    s->Print(em->cerr(), 0);
-    em->cerr() << " during process generation";
-    m->DoneError();
-  }
-  throw Engine_Failed;
+    DCASSERT(m);
+    DCASSERT(s);
+    hldsm::errmsg E(m);
+    E << " Couldn't find reachable state ";
+    s->Print(E.stream());
+    E << " during process generation";
+    throw Engine_Failed;
 }
 
 void phase_procgen
 ::badWeightError(hldsm* m, const char* what, const result& x) const
 {
-  DCASSERT(m);
-  if (m->StartError(0)) {
-    em->cerr() << "Bad " << what << ": ";
+    DCASSERT(m);
+    hldsm::errmsg E(m);
+    E << "Bad " << what << ": ";
     DCASSERT(em->REAL);
-    em->REAL->print(em->cerr(), x);
-    em->cerr() << " during process generation";
-    m->DoneError();
-  }
-  throw Engine_Failed;
+    em->REAL->print(E.stream(), x);
+    E << " during process generation";
+    throw Engine_Failed;
 }
 
 void phase_procgen::MCError(hldsm* m, const char* what, MCLib::error e) const
 {
-  DCASSERT(m);
-  if (e.getCode() == MCLib::error::Out_Of_Memory) throw Out_Of_Memory;
-  // what kind of error is this?
-  if (m->StartError(0)) {
-    em->cerr() << "Couldn't " << what << " process: ";
-    em->cerr() << e.getString();
-    m->DoneError();
-  }
-  throw Engine_Failed;
+    DCASSERT(m);
+    if (e.getCode() == MCLib::error::Out_Of_Memory) throw Out_Of_Memory;
+    // what kind of error is this?
+    hldsm::errmsg E(m);
+    E << "Couldn't " << what << " process: " << e.getString();
+    throw Engine_Failed;
 }
 
 // ******************************************************************
