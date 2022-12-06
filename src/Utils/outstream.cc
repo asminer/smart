@@ -1,10 +1,8 @@
 
 #include "outstream.h"
 #include "strings.h"
-#include "location.h"
-// #include "sigman.h"
-#include "../Options/optman.h"
-#include "../Options/options.h"
+// #include "../Options/optman.h"
+// #include "../Options/options.h"
 
 #include <iomanip>
 
@@ -18,6 +16,7 @@ outputStream outputStream::Out(std::cout);
 // ======================================================================
 
 /// Update the stream when the option changes
+/*
 class rfwatch : public option::watcher {
         outputStream& stream;
     public:
@@ -33,6 +32,7 @@ void rfwatch::notify(const option*)
 {
     stream.update_real_format();
 }
+*/
 
 // ======================================================================
 
@@ -53,6 +53,8 @@ outputStream::~outputStream()
     Delete(comma);
 }
 
+/*
+ *
 void outputStream::buildRealOption(option_manager* om,
         const char* name, const char* doc)
 {
@@ -71,6 +73,7 @@ void outputStream::buildThousandsOption(option_manager* om,
     if (0==om) return;
     om->addStringOption(name, doc, comma);
 }
+*/
 
 bool outputStream::switchOutput(const char* outfile)
 {
@@ -312,12 +315,14 @@ std::ostream& memoryCount::show(std::ostream &s) const
         units = " Kibytes";
     }
 
-    unsigned p = prec+1;
+    /*
+    unsigned p = prec;
     if (show >= 10.0)  p++;
     if (show >= 100.0)  p++;
+    */
 
-    auto oldprec = s.precision();
-    s.precision(p);
+    int  oldprec = s.precision();
+    s.precision(prec);
     s << show;
     s.precision(oldprec);
     return s << units;

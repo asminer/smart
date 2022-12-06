@@ -10,8 +10,7 @@
 #include <sstream>
 
 class shared_string;
-class location;
-class option_manager;
+// class option_manager;
 
 class outputStream {
     public:
@@ -24,8 +23,8 @@ class outputStream {
          *  @param  name    Name of the option
          *  @param  doc     Documentation for the option
          */
-        void buildRealOption(option_manager* om, const char* name,
-                const char* doc);
+        // void buildRealOption(option_manager* om, const char* name,
+                //const char* doc);
 
         /**
          * Build an option to set the thousands separator for this stream.
@@ -33,8 +32,8 @@ class outputStream {
          *  @param  name    Name of the option
          *  @param  doc     Documentation for the option
          */
-        void buildThousandsOption(option_manager* om, const char* name,
-                const char* doc);
+        // void buildThousandsOption(option_manager* om, const char* name,
+                // const char* doc);
 
 
         /** Switch to a file with given name.
