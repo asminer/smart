@@ -95,6 +95,7 @@ public:
 protected:
   virtual ~help_topic();
   void setName(char* name);
+  void setName(const std::string &str);
   inline void setSummary(const char* sum) {
     DCASSERT(0==summary);
     summary = sum;

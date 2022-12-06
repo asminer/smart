@@ -59,23 +59,15 @@ void intdiv_si::Compute(traverse_data &x, expr** pass, int np)
   } else return;  // some kind of error, propogate it
 
   if (0==r_int) {
-    if (em->startError()) {
-      em->causedBy(x.parent);
-      em->cerr() << "Illegal operation: divide by 0";
-      em->stopIO();
-    }
-    ans->setNull();
+    expr_error E(x.parent, ans);
+    E << "Illegal operation: divide by 0";
     return;
   }
 
   if (r_infty) {
     if (l_infty) {
-      if (em->startError()) {
-        em->causedBy(x.parent);
-        em->cerr() << "Illegal operation: infty / infty";
-        em->stopIO();
-      }
-      ans->setNull();
+      expr_error E(x.parent, ans);
+      E << "Illegal operation: infty / infty";
       return;
     }
     // a div infinity = 0.
@@ -103,18 +95,14 @@ public:
   virtual void Compute(traverse_data &x, expr** pass, int np);
 
   inline void undefined(traverse_data &x, const result &r) const {
-    if (em->startError()) {
-      DCASSERT(em->REAL);
-      DCASSERT(em->INT);
-      em->causedBy(x.parent);
-      em->cerr() << "pow(";
-      em->REAL->print(em->cerr(), r);
-      em->cerr() << ", ";
-      em->INT->print(em->cerr(), *(x.answer));
-      em->cerr() << ") is undefined";
-      em->stopIO();
-    }
-    x.answer->setNull();
+    DCASSERT(em->REAL);
+    DCASSERT(em->INT);
+    expr_error E(x.parent, x.answer);
+    E << "pow(";
+    em->REAL->print(E.stream(), r);
+    E << ", ";
+    em->INT->print(E.stream(), *(x.answer));
+    E << ") is undefined";
   }
 
   static double pow(double x, long n);
@@ -306,14 +294,10 @@ void log_si::Compute(traverse_data &x, expr** pass, int np)
   }
 
   // negative log, error
-  if (em->startError()) {
-    em->causedBy(x.parent);
-    em->cerr() << "log with negative argument: ";
-    DCASSERT(em->REAL);
-    em->REAL->print(em->cerr(), *x.answer);
-    em->stopIO();
-  }
-  x.answer->setNull();
+  expr_error E(x.parent, x.answer);
+  E << "log with negative argument: ";
+  DCASSERT(em->REAL);
+  em->REAL->print(E.stream(), *x.answer);
 }
 
 // ******************************************************************
@@ -352,14 +336,10 @@ void sqrt_si::Compute(traverse_data &x, expr** pass, int np)
   }
 
   // negative square root, error (we don't have complex)
-  if (em->startError()) {
-    em->causedBy(x.parent);
-    em->cerr() << "Square root with negative argument: ";
-    DCASSERT(em->REAL);
-    em->REAL->print(em->cerr(), *x.answer);
-    em->stopIO();
-  }
-  x.answer->setNull();
+  expr_error E(x.parent, x.answer);
+  E << "Square root with negative argument: ";
+  DCASSERT(em->REAL);
+  em->REAL->print(E.stream(), *x.answer);
 }
 
 // ******************************************************************

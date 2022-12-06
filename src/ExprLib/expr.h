@@ -514,13 +514,16 @@ public:
 // ******************************************************************
 
 class expr_error : public error_msg {
+        result* ans;
     public:
         /*
          * Start an error message caused by an expression.
          *      @param  cause   Cause; will print its location
-         *      @param  ans     If not a null pointer, sets to Null().
+         *      @param  ans     If not a null pointer, sets to Null()
+         *                      on destruction.
          */
         expr_error(const expr* cause, result* ans = nullptr);
+        ~expr_error();
 };
 
 // ******************************************************************

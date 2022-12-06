@@ -221,6 +221,12 @@ void help_topic::setName(char* n)
   Rename(new shared_string(n));
 }
 
+void help_topic::setName(const std::string &n)
+{
+  Rename(new shared_string(n));
+}
+
+
 void help_topic::PrintHeader(std::ostream &s) const
 {
   s << "Help topic: " << Name();

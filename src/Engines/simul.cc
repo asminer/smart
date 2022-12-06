@@ -64,8 +64,7 @@ conf_intl::conf_intl(double hw, float cl) : shared_object()
 
 bool conf_intl::Print(std::ostream &s, int prec) const
 {
-  s << " +- ";
-  s.Put(half_width, 0, prec);
+  s << " +- " << formatted_real(half_width, 0, prec);
   s << " (" << conf_level*100 << "%)";
   return true;
 }
@@ -207,12 +206,11 @@ void monte_carlo_engine
         SIM_MonteCarlo_C(se, &avg, 1, GetSamples(), GetPrecision());
         break;
     default:
-        if (em->startInternal(__FILE__, __LINE__)) {
-          em->causedBy(e);
-          em->internal() << "Bad simulation type";
-          em->stopIO();
-        }
+    {
+        internal_error E(__FILE__, __LINE__, e->Where());
+        E << "Bad simulation type" << GetType();
         avg.is_valid = false;
+    }
   } // switch
 
   if (avg.is_valid) {
@@ -223,18 +221,18 @@ void monte_carlo_engine
   }
 
   // Info dump here
-  if (report.startReport()) {
-      report.report() << "Finished estimation of E[";
-      e->Print(report.report(), 0);
-      report.report() << "]\n";
-      report.report() << "\t" << avg.samples << " iterations\n";
-      report.report() << "\t" << avg.confidence << " confidence\n";
+  if (report.start()) {
+      report << "Finished estimation of E[";
+      e->Print(report.stream());
+      report << "]\n";
+      report << "\t" << avg.samples << " iterations\n";
+      report << "\t" << avg.confidence << " confidence\n";
       double prec = 0.0;
       if (avg.half_width) prec = avg.half_width / avg.average;
-      report.report() << "\t" << prec << " precision\n";
-      report.report() << "Monte_Carlo: Simulation took ";
-      report.report() << watch.elapsed_seconds() << " seconds\n";
-      report.stopIO();
+      report << "\t" << prec << " precision\n";
+      report << "Monte_Carlo: Simulation took ";
+      report << watch.elapsed_seconds() << " seconds";
+      report.stop();
   }
 
   x.stream = old;

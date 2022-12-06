@@ -109,15 +109,15 @@ void read_bool::Compute(traverse_data &x, expr** pass, int np)
     DCASSERT(0==x.aggregate);
     DCASSERT(1==np);
     SafeCompute(pass[0], x);
+    outputStream &out = outputStream::globalOut();
     char c=' ';
     while (1) {
         if (infile.isClosed()) {
             if (!x.answer->isNull()) {
-                em->cout() << "Enter the [y/n] value for ";
+                out << "Enter the [y/n] value for ";
                 DCASSERT(em->STRING);
-                em->STRING->print(em->cout(), *x.answer);
-                em->cout() << " : ";
-                em->cout().flush();
+                em->STRING->print(out.stream(), *x.answer);
+                out << " : ";
             }
         }
         infile.get(c);
@@ -151,23 +151,19 @@ void read_int::Compute(traverse_data &x, expr** pass, int np)
     DCASSERT(0==x.aggregate);
     DCASSERT(1==np);
     SafeCompute(pass[0], x);
+    outputStream &out = outputStream::globalOut();
     if (infile.isClosed()) {
         if (!x.answer->isNull()) {
-            em->cout() << "Enter the (integer) value for ";
+            out << "Enter the (integer) value for ";
             DCASSERT(em->STRING);
-            em->STRING->print(em->cout(), *x.answer);
-            em->cout() << " : ";
-            em->cout().flush();
+            em->STRING->print(out.stream(), *x.answer);
+            out << " : ";
         }
     }
     long ans;
     if (!infile.get(ans)) {
-        if (em->startError()) {
-            em->causedBy(x.parent);
-            em->cerr() << "Expecting integer from input stream";
-            em->stopIO();
-        }
-        x.answer->setNull();
+        expr_error E(x.parent, x.answer);
+        E << "Expecting integer from input stream";
     } else {
         x.answer->setInt(ans);
     }
@@ -198,23 +194,19 @@ void read_real::Compute(traverse_data &x, expr** pass, int np)
     DCASSERT(0==x.aggregate);
     DCASSERT(1==np);
     SafeCompute(pass[0], x);
+    outputStream &out = outputStream::globalOut();
     if (infile.isClosed()) {
         if (!x.answer->isNull()) {
-            em->cout() << "Enter the (real) value for ";
+            out << "Enter the (real) value for ";
             DCASSERT(em->STRING);
-            em->STRING->print(em->cout(), *x.answer);
-            em->cout() << " : ";
-            em->cout().flush();
+            em->STRING->print(out.stream(), *x.answer);
+            out << " : ";
         }
     }
     double ans;
     if (!infile.get(ans)) {
-        if (em->startError()) {
-            em->causedBy(x.parent);
-            em->cerr() << "Expecting real from input stream";
-            em->stopIO();
-        }
-        x.answer->setNull();
+        expr_error E(x.parent, x.answer);
+        E << "Expecting real from input stream";
     } else {
         x.answer->setReal(ans);
     }
@@ -245,6 +237,7 @@ void read_string::Compute(traverse_data &x, expr** pass, int np)
     DCASSERT(x.parent);
     DCASSERT(0==x.aggregate);
     DCASSERT(2==np);
+    outputStream &out = outputStream::globalOut();
     SafeCompute(pass[1], x);
     if (!x.answer->isNormal()) {
         x.answer->setNull();
@@ -254,11 +247,10 @@ void read_string::Compute(traverse_data &x, expr** pass, int np)
     SafeCompute(pass[0], x);
     if (infile.isClosed()) {
         if (!x.answer->isNull()) {
-            em->cout() << "Enter the (string, length " << length << ") value for ";
+            out << "Enter the (string, length " << length << ") value for ";
             DCASSERT(em->STRING);
-            em->STRING->print(em->cout(), *x.answer);
-            em->cout() << " : ";
-            em->cout().flush();
+            em->STRING->print(out.stream(), *x.answer);
+            out << " : ";
         }
     }
     if (length <= 0) {
@@ -269,12 +261,8 @@ void read_string::Compute(traverse_data &x, expr** pass, int np)
     // Skip whitespace for first character
     char c;
     if (!infile.get(c)) {
-        if (em->startError()) {
-            em->causedBy(x.parent);
-            em->cerr() << "End of input stream before expected string\n";
-            em->stopIO();
-        }
-        x.answer->setNull();
+        expr_error E(x.parent, x.answer);
+        E << "End of input stream before expected string";
         delete[] buffer;
         return;
     }
@@ -317,16 +305,16 @@ void print_type::Compute(traverse_data &x, expr** pass, int np)
   if (x.answer)  if (x.stopExecution())  return;
   DCASSERT(1==np);
   if (0==pass)  return;
+  outputStream &out = outputStream::globalOut();
   if (pass[0]) {
-    em->cout() << "Expression ";
-    pass[0]->Print(em->cout(), 0);
-    em->cout() << " has type: ";
-    pass[0]->PrintType(em->cout());
+    out << "Expression ";
+    pass[0]->Print(out.stream());
+    out << " has type: ";
+    pass[0]->PrintType(out.stream());
   } else {
-    em->cout() << "Expression null has type: null";
+    out << "Expression null has type: null";
   }
-  em->cout().Put('\n');
-  em->cout().flush();
+  out << '\n';
 }
 
 int print_type::Traverse(traverse_data &x, expr** pass, int np)
@@ -354,7 +342,7 @@ class generic_print : public custom_internal {
 public:
   generic_print(const char* name, const char* header);
   virtual int Traverse(traverse_data &x, expr** pass, int np);
-  void compute(OutputStream &s, traverse_data &x, expr** pass, int np);
+  void compute(std::ostream &s, traverse_data &x, expr** pass, int np);
 };
 
 generic_print::generic_print(const char* n, const char* h)
@@ -362,7 +350,7 @@ generic_print::generic_print(const char* n, const char* h)
 {
 }
 
-void generic_print::compute(OutputStream &s, traverse_data &x,
+void generic_print::compute(std::ostream &s, traverse_data &x,
         expr** pass, int np)
 {
   if (x.stopExecution())  return;
@@ -444,7 +432,7 @@ public:
   print_ci();
   virtual void Compute(traverse_data &x, expr** pass, int np);
   virtual int Traverse(traverse_data &x, expr** pass, int np);
-  virtual void PrintDocs(doc_formatter* df, const char*) const;
+  virtual void PrintDocs(doc_formatter &df, const char*) const;
 };
 
 print_ci::print_ci() : generic_print("print", "print(arg1, arg2, ...)")
@@ -453,9 +441,7 @@ print_ci::print_ci() : generic_print("print", "print(arg1, arg2, ...)")
 
 void print_ci::Compute(traverse_data &x, expr** pass, int np)
 {
-  DCASSERT(em->hasIO());
-  compute(em->cout(), x, pass, np);
-  em->cout().flush();
+  compute(outputStream::globalOut().stream(), x, pass, np);
 }
 
 int print_ci::Traverse(traverse_data &x, expr** pass, int np)
@@ -470,33 +456,32 @@ int print_ci::Traverse(traverse_data &x, expr** pass, int np)
   }
 }
 
-void print_ci::PrintDocs(doc_formatter* df, const char*) const
+void print_ci::PrintDocs(doc_formatter &df, const char*) const
 {
-  if (0==df)    return;
-  df->begin_heading();
-  PrintHeader(df->Out(), true);
-  df->end_heading();
-  df->begin_indent();
-  df->Out() << "Print each argument to output stream. ";
-  df->Out() << "Arguments can be any printable type, and may include ";
-  df->Out() << "an optional width specifier as \"arg:width\". ";
-  df->Out() << "Real arguments may also specify the number of digits of ";
-  df->Out() << "precision, as \"arg:width:prec\" (the format of reals is ";
-  df->Out() << "specified with the option RealFormat).  ";
-  df->Out() << "Strings may include the following special characters:";
-  df->begin_description(2);
-  df->item("\\a");
-  df->Out() << "audible bell";
-  df->item("\\b");
-  df->Out() << "backspace";
-  df->item("\\n");
-  df->Out() << "newline";
-  df->item("\\q");
-  df->Out() << "double quote: \"";
-  df->item("\\t");
-  df->Out() << "tab character";
-  df->end_description();
-  df->end_indent();
+  df.begin_heading();
+  PrintHeader(df.Out(), true);
+  df.end_heading();
+  df.begin_indent();
+  df.Out() << "Print each argument to output stream. ";
+  df.Out() << "Arguments can be any printable type, and may include ";
+  df.Out() << "an optional width specifier as \"arg:width\". ";
+  df.Out() << "Real arguments may also specify the number of digits of ";
+  df.Out() << "precision, as \"arg:width:prec\" (the format of reals is ";
+  df.Out() << "specified with the option RealFormat).  ";
+  df.Out() << "Strings may include the following special characters:";
+  df.begin_description(2);
+  df.item("\\a");
+  df.Out() << "audible bell";
+  df.item("\\b");
+  df.Out() << "backspace";
+  df.item("\\n");
+  df.Out() << "newline";
+  df.item("\\q");
+  df.Out() << "double quote: \"";
+  df.item("\\t");
+  df.Out() << "tab character";
+  df.end_description();
+  df.end_indent();
 }
 
 // ******************************************************************
@@ -504,38 +489,36 @@ void print_ci::PrintDocs(doc_formatter* df, const char*) const
 // ******************************************************************
 
 class sprint_ci : public generic_print {
-  StringStream strbuffer;
 public:
-  sprint_ci();
-  virtual void Compute(traverse_data &x, expr** pass, int np);
-  virtual int Traverse(traverse_data &x, expr** pass, int np);
+    sprint_ci();
+    virtual void Compute(traverse_data &x, expr** pass, int np);
+    virtual int Traverse(traverse_data &x, expr** pass, int np);
 };
 
 sprint_ci::sprint_ci() : generic_print("sprint", "sprint(arg1, arg2, ...)")
 {
-  SetDocumentation("Just like \"print\", except the result is written into a string, which is returned.");
+    SetDocumentation("Just like \"print\", except the result is written into a string, which is returned.");
 }
 
 void sprint_ci::Compute(traverse_data &x, expr** pass, int np)
 {
-  DCASSERT(x.answer);
-  DCASSERT(0==x.aggregate);
-  compute(strbuffer, x, pass, np);
-  char* bar = strbuffer.GetString();
-  strbuffer.flush();
-  x.answer->setPtr(new shared_string(bar));
+    DCASSERT(x.answer);
+    DCASSERT(0==x.aggregate);
+    std::stringstream strbuffer;
+    compute(strbuffer, x, pass, np);
+    x.answer->setPtr(new shared_string(strbuffer.str()));
 }
 
 int sprint_ci::Traverse(traverse_data &x, expr** pass, int np)
 {
-  switch (x.which) {
-    case traverse_data::GetType:
-        x.the_type = em->STRING;
-        return 0;
+    switch (x.which) {
+        case traverse_data::GetType:
+            x.the_type = em->STRING;
+            return 0;
 
-    default:
-        return generic_print::Traverse(x, pass, np);
-  }
+        default:
+            return generic_print::Traverse(x, pass, np);
+    }
 }
 
 // ******************************************************************
@@ -545,7 +528,7 @@ int sprint_ci::Traverse(traverse_data &x, expr** pass, int np)
 class generic_file : public simple_internal {
 public:
   generic_file(const char* name);
-  void compute(DisplayStream &s, traverse_data &x, expr** pass, int np) const;
+  void compute(outputStream &s, traverse_data &x, expr** pass, int np) const;
 };
 
 generic_file::generic_file(const char* name)
@@ -554,7 +537,7 @@ generic_file::generic_file(const char* name)
   SetFormal(0, em->STRING, "filename");
 }
 
-void generic_file::compute(DisplayStream &s, traverse_data &x, expr** pass, int np) const
+void generic_file::compute(outputStream &s, traverse_data &x, expr** pass, int np) const
 {
   DCASSERT(x.answer);
   DCASSERT(0==x.aggregate);
@@ -564,7 +547,7 @@ void generic_file::compute(DisplayStream &s, traverse_data &x, expr** pass, int 
 #ifdef DEBUG_FILE
       fprintf(stderr, "Switching stream to normal display\n");
 #endif
-      s.SwitchDisplay(0);
+      s.defaultOutput();
       x.answer->setBool(true);
       return;
   }
@@ -573,19 +556,7 @@ void generic_file::compute(DisplayStream &s, traverse_data &x, expr** pass, int 
 #ifdef DEBUG_FILE
   fprintf(stderr, "Switching stream to file %s...\n", xss->getStr());
 #endif
-  FILE* outfile = fopen(xss->getStr(), "a");
-  if (outfile) {
-      s.SwitchDisplay(outfile);
-      x.answer->setBool(true);
-#ifdef DEBUG_FILE
-      fprintf(stderr, "...successful\n");
-#endif
-  } else {
-      x.answer->setBool(false);
-#ifdef DEBUG_FILE
-      fprintf(stderr, "...error opening\n");
-#endif
-  }
+  x.answer->setBool(s.switchOutput(xss->getStr()));
 }
 
 // ******************************************************************
@@ -606,8 +577,7 @@ output_file::output_file() : generic_file("output_file")
 void output_file::Compute(traverse_data &x, expr** pass, int np)
 {
   DCASSERT(x.answer);
-  if (em->hasIO())  compute(em->cout(), x, pass, np);
-  else              x.answer->setBool(false);
+  compute(outputStream::globalOut(), x, pass, np);
 }
 
 // ******************************************************************
@@ -628,8 +598,7 @@ error_file::error_file() : generic_file("error_file")
 void error_file::Compute(traverse_data &x, expr** pass, int np)
 {
   DCASSERT(x.answer);
-  if (em->hasIO())  compute(em->cerr(), x, pass, np);
-  else              x.answer->setBool(false);
+  compute(error_msg::Out, x, pass, np);
 }
 
 

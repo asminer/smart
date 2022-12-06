@@ -405,18 +405,22 @@ long expr::getUpper() const
 // *                       expr_error methods                       *
 // ******************************************************************
 
-
-expr_error::expr_error(const expr* cause, result* ans) : error_msg("ERROR")
+expr_error::expr_error(const expr* cause, result* _ans) : error_msg("ERROR")
 {
-    if (ans) {
-        ans->setNull();
-    }
+    ans = _ans;
     if (cause) {
         Out << ' ' << cause->Where();
     } else {
         Out << ':';
     }
     newLine();
+}
+
+expr_error::~expr_error()
+{
+    if (ans) {
+        ans->setNull();
+    }
 }
 
 // ******************************************************************

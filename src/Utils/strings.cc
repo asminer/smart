@@ -22,6 +22,11 @@ shared_string::shared_string(const char* s) : shared_object()
     string = strdup(s);
 }
 
+shared_string::shared_string(const std::string &s) : shared_object()
+{
+    string = strdup(s.c_str());
+}
+
 shared_string::~shared_string()
 {
     free(string);

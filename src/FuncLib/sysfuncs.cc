@@ -26,7 +26,7 @@ struct ftnode {
 
   ftnode(const formalism* ft, ftnode* n) { ftype = ft; next = n; }
 
-  void Print(OutputStream &s, bool depth) {
+  void Print(std::ostream &s, bool depth) {
     if (0==next && depth) s << " or ";
     else if (depth) s << ", ";
     s << ftype->getName();
@@ -66,8 +66,8 @@ struct help_object {
     return Compare(x->item);
   }
 
-  void DocumentObject(doc_formatter* df, const char* keyword) const {
-    df->Out() << "\n";
+  void DocumentObject(doc_formatter &df, const char* keyword) const {
+    df.Out() << "\n";
     if (0==within_models) {
       item->PrintDocs(df, keyword);
       return;
@@ -75,12 +75,12 @@ struct help_object {
     const function* fitem = smart_cast <const function*> (item);
     DCASSERT(fitem);
     if (!fitem->DocumentHeader(df))  return;
-    df->begin_indent();
-    df->Out() << "Allowed in models of type ";
-    within_models->Print(df->Out(), false);
-    df->Out() << "; cannot be called outside of a model. ";
+    df.begin_indent();
+    df.Out() << "Allowed in models of type ";
+    within_models->Print(df.Out(), false);
+    df.Out() << "; cannot be called outside of a model. ";
     fitem->DocumentBehavior(df);
-    df->end_indent();
+    df.end_indent();
   }
 };
 
@@ -88,7 +88,7 @@ class help_base : public simple_internal {
   const symbol** flist;
   long flist_alloc;
   SplayOfPointers <help_object> *doctree;
-  doc_formatter* df;
+  doc_formatter df;
 public:
   help_base(const char* name, int np);
   virtual ~help_base();
@@ -104,18 +104,17 @@ private:
 };
 
 help_base::help_base(const char* name, int np)
-: simple_internal(em->VOID, name, np)
+: simple_internal(em->VOID, name, np),
+    df(80, outputStream::globalOut().stream())
 {
   flist = 0;
   flist_alloc = 0;
   doctree = 0;
-  df = MakeTextFormatter(80, em->cout());
 }
 
 help_base::~help_base()
 {
   delete[] flist;
-  delete df;
 }
 
 void help_base::Compute(traverse_data &x, expr** pass, int np)
@@ -155,11 +154,11 @@ void help_base::HelpTopics(const symbol_table* st, const char* search)
   Alloc(max_num);
   st->CopyToArray(flist);
   for (long i=0; i<max_num; i++) {
-    if (!df->Matches(flist[i]->Name(), search))  continue;
+    if (!df.Matches(flist[i]->Name(), search))  continue;
     for (const symbol* chain = flist[i]; chain; chain=chain->Next()) {
       const help_topic* ht = dynamic_cast <const help_topic*> (chain);
       if (0==ht) continue;
-      df->Out() << "\n";
+      df.Out() << "\n";
       ht->PrintDocs(df, search);
     } // for chain
   } // for i
@@ -218,7 +217,7 @@ void help_base::AddFunctions(const char* key, const formalism* ft, long lsize)
   help_object* tmp = 0;
   for (long j=0; j<lsize; j++) {
     DCASSERT(flist[j]);
-    if (!df->Matches(flist[j]->Name(), key))  continue;
+    if (!df.Matches(flist[j]->Name(), key))  continue;
     for (const symbol* chain = flist[j]; chain; chain = chain->Next()) {
       // add this function to the tree
       const help_topic* ht = dynamic_cast <const help_topic*> (chain);

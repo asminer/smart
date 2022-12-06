@@ -17,6 +17,10 @@ class shared_string : public shared_object {
             @param  s   String to fill from.  Will be copied.
         */
         shared_string(const char* s);
+        /** Constructor.
+            @param  s   String to fill from.  Will be copied.
+        */
+        shared_string(const std::string &s);
         unsigned length() const;
     protected:
         virtual ~shared_string();
