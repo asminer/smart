@@ -97,36 +97,38 @@ inline int Compare(const symbol* a, const symbol* b)
 
    ===================================================================== */
 
+parse_error::parse_error(bool err) : error_msg(err ? "ERROR" : "WARNING")
+{
+    Out << ' ' << Where();
+    newLine();
+}
+
 void yyerror(const char *msg)
 {
-  DCASSERT(pm);
-  if (pm->startError()) {
-    pm->cerr() << msg;
-    pm->stopError();
-  }
+    parse_error E;
+    E << msg;
 }
 
 void Reducing(const char* msg)
 {
   DCASSERT(pm);
-  if (parser_debug.startReport()) {
-    parser_debug.report() << "reducing rule:\n\t\t";
-    parser_debug.report().Put(msg);
-    parser_debug.report().Put('\n');
-    parser_debug.stopIO();
+  if (parser_debug.start()) {
+    parser_debug << "reducing rule:\n\t\t";
+    parser_debug << msg;
+    parser_debug.stop();
   }
 }
 
 inline expr* ShowNewStatement(const char* what, expr* f)
 {
   // Make noise as appropriate
-  if (compiler_debug.startReport()) {
-    compiler_debug.report() << "built ";
-    if (what)   compiler_debug.report() << what;
-    else        compiler_debug.report() << "statement: ";
-    if (f)  f->Print(compiler_debug.report(), 4);
-    else    compiler_debug.report().Put("    null\n");
-    compiler_debug.stopIO();
+  if (compiler_debug.start()) {
+    compiler_debug << "built ";
+    if (what) compiler_debug << what;
+    else      compiler_debug << "statement: ";
+    if (f)  f->Print(compiler_debug.stream(), 4);
+    else    compiler_debug << "    null\n";
+    compiler_debug.stop();
   }
   return f;
 }
@@ -135,21 +137,20 @@ template <class EXPR>
 inline EXPR* ShowWhatWeBuilt(const char* what, EXPR* f)
 {
   // Make noise as appropriate
-  if (compiler_debug.startReport()) {
-    compiler_debug.report() << "built ";
-    if (what)   compiler_debug.report() << what;
-    else        compiler_debug.report() << "expression: ";
-    if (f)  f->Print(compiler_debug.report(), 0);
-    else    compiler_debug.report().Put("null");
-    compiler_debug.report() << "\t type: ";
-    const type* t = f ? f->Type() : 0;
-    if (t)  compiler_debug.report().Put(t->getName());
-    else    compiler_debug.report().Put("null");
-    compiler_debug.report().Put('\n');
-    compiler_debug.stopIO();
+  if (compiler_debug.start()) {
+    compiler_debug << "built ";
+    if (what) compiler_debug << what;
+    else      compiler_debug << "expression: ";
+    if (f)  f->Print(compiler_debug.stream());
+    else    compiler_debug << "null";
+    compiler_debug << "\t type: ";
+    if (f)  f->PrintType(compiler_debug.stream());
+    else    compiler_debug << "nulltype";
+    compiler_debug.stop();
   }
   return f;
 }
+
 
 /* =====================================================================
 
@@ -166,7 +167,7 @@ public:
   expr_term(int o, expr* t);
   virtual ~expr_term();
 
-  virtual bool Print(OutputStream &s, int width) const;
+  virtual bool Print(std::ostream &s, int width) const;
   virtual bool Equals(const shared_object* o) const;
 };
 
@@ -181,13 +182,11 @@ expr_term::~expr_term()
   Delete(term);
 }
 
-bool expr_term::Print(OutputStream &s, int) const
+bool expr_term::Print(std::ostream &s, int) const
 {
-  s << "(";
-  s << TokenName(op);
-  s << ", ";
-  if (term)   term->Print(s, 0);
-  else        s.Put("null");
+  s << "(" << TokenName(op) << ", ";
+  if (term)   term->Print(s);
+  else        s << "null";
   s << ")";
   return true;
 }
@@ -406,13 +405,11 @@ expr* MakeConstraint(expr *x)
   if (!em->isOrdinary(x))  return 0;
   DCASSERT(x->Type());
   if (! x->Type()->matches("bool")) {
-    if (pm->startError()) {
-      pm->cerr() << "Expected boolean constraint, got ";
-      x->PrintType(pm->cerr());
-      pm->cerr() << ", ignoring";
-      pm->stopError();
-    }
-    return 0;
+    parse_error E;
+    E << "Expected boolean constraint, got ";
+    x->PrintType(E.stream());
+    E << ", ignoring";
+    return nullptr;
   }
   const type* ICP_TYPE = em->findOWDType("dcp");
   symbol* best = em->findFunction(ICP_TYPE, "constraint");
@@ -441,12 +438,12 @@ expr* BuildOptionStatement(option* o, char* n)
   expr* foo;
   option_enum* oc = o ? o->FindConstant(n) : 0;
   if (0==oc) {
-    if (o && pm->startError()) {
-      pm->cerr() << "Illegal value " << n << " for option " << o->Name();
-      pm->cerr() << ", ignoring";
-      pm->stopError();
+    if (o) {
+      parse_error E;
+      E << "Illegal value " << n << " for option " << o->Name();
+      E << ", ignoring";
     }
-    foo = 0;
+    foo = nullptr;
   } else {
     foo = em->makeOptionStatement(Where(), o, oc);
   }
@@ -476,10 +473,10 @@ expr* BuildOptionStatement(option* o, bool check, parser_list* list)
       actual_length++;
       continue;
     }
-    if (name) if (pm->startError()) {
-      pm->cerr() << "Illegal value " << name << " for option " << o->Name();
-      pm->cerr() << ", ignoring";
-      pm->stopError();
+    if (name) {
+      parse_error E;
+      E << "Illegal value " << name << " for option " << o->Name();
+      E << ", ignoring";
     }
   }
 
@@ -516,9 +513,9 @@ option* BuildOptionHeader(char* name)
   option_manager* om = pm ? pm->OptMan() : 0;
   option* answer = om ? om->FindOption(name) : 0;
 
-  if (0==answer) if (pm->startError()) {
-    pm->cerr() << "Unknown option " << name;
-    pm->stopError();
+  if (0==answer) {
+    parse_error E;
+    E << "Unknown option " << name;
   }
   free(name);
   return answer;
@@ -548,10 +545,8 @@ expr* BuildIntegers(char* typ, parser_list* namelist, expr* values)
   }
   bool oktype = (0 != strcmp(typ, "bool"));
   if (!oktype) {
-    if (pm->startError()) {
-      pm->cerr() << "no bounding needed for boolean identifiers";
-      pm->stopError();
-    }
+    parse_error E;
+    E << "no bounding needed for boolean identifiers";
     DeleteCircular(namelist);
     return 0;
   }
@@ -569,10 +564,8 @@ expr* BuildBools(char* typ, parser_list* namelist)
 {
   bool oktype = (0 != strcmp(typ, "int"));
   if (!oktype) {
-    if (pm->startError()) {
-      pm->cerr() << "unbounded integer identifiers";
-      pm->stopError();
-    }
+    parse_error E;
+    E << "unbounded integer identifiers";
     DeleteCircular(namelist);
     return 0;
   }
@@ -597,10 +590,8 @@ bool IllegalModelVarName(char* ident, const char* what_am_i)
 {
   DCASSERT(ModelInternal);
   if (ModelInternal->FindSymbol(ident)) {
-    if (pm->startError()) {
-      pm->cerr() << "Duplicate identifier " << ident << " within model";
-      pm->stopError();
-    }
+    parse_error E;
+    E << "Duplicate identifier " << ident << " within model";
     free(ident);
     return true;
   }
@@ -758,15 +749,15 @@ function* scoreFuncs(symbol* find, expr** pass, int np, int &bs, bool &tie)
 }
 
 // Helper for FindBest
-void showMatching(symbol* find, expr** pass, int np, int best_score)
+void showMatching(error_msg &E, symbol* find, expr** pass, int np, int best_score)
 {
   for (symbol* ptr = find; ptr; ptr = ptr->Next()) {
     function* f = smart_cast <function*> (ptr);
     if (0==f)      continue;
     int score = f->TypecheckParams(pass, np);
     if (score != best_score)  continue;
-    f->PrintHeader(pm->cerr(), true);
-    pm->newLine();
+    f->PrintHeader(E.stream(), true);
+    E.newLine();
   } // for ptr
 }
 
@@ -791,35 +782,31 @@ function* FindBest(symbol* f1, symbol* f2, expr** pass, int length, int first)
 
   bool bailout = false;
   if (best_score < 0) {
-    if (pm->startError()) {
-      pm->cerr() << "No match for " << name << "(";
-      for (int i=first; i<length; i++) {
-        if (i>first)  pm->cerr() << ", ";
-        if (pass[i])  pass[i]->PrintType(pm->cerr());
-        else          pm->cerr().Put("null");
-      }
-      pm->cerr() << ")";
-      pm->stopError();
+    parse_error E;
+    E << "No match for " << name << "(";
+    for (int i=first; i<length; i++) {
+      if (i>first)  E << ", ";
+      if (pass[i])  pass[i]->PrintType(E.stream());
+      else          E << "null";
     }
+    E << ")";
     bailout = true;
   }
 
   if (tie) {
-    if (pm->startError()) {
-      pm->cerr() << "Multiple promotions with distance " << best_score;
-      pm->cerr() << " for " << name << "(";
-      for (int i=first; i<length; i++) {
-        if (i>first)  pm->cerr() << ", ";
-        pass[i]->PrintType(pm->cerr());
-      }
-      pm->cerr() << ")";
-      pm->newLine();
-      pm->cerr() << "Possible choices:";
-      pm->newLine();
-      showMatching(f1, pass, length, best_score);
-      showMatching(f2, pass, length, best_score);
-      pm->stopError();
+    parse_error E;
+    E << "Multiple promotions with distance " << best_score;
+    E << " for " << name << "(";
+    for (int i=first; i<length; i++) {
+      if (i>first)  E << ", ";
+      pass[i]->PrintType(E.stream());
     }
+    E << ")";
+    E.newLine();
+    E << "Possible choices:";
+    E.newLine();
+    showMatching(E, f1, pass, length, best_score);
+    showMatching(E, f2, pass, length, best_score);
     bailout = true;
   }
 
@@ -839,11 +826,8 @@ exprman::unary_opcode Int2Uop(int op)
     case NOT:     return exprman::uop_not;
     case MINUS:   return exprman::uop_neg;
   }
-  if (pm->startInternal(__FILE__, __LINE__)) {
-    pm->internal() << "Operator " << TokenName(op);
-    pm->internal() << " not matched to any unary operator";
-    pm->stopError();
-  }
+  internal_error E(__FILE__, __LINE__, Where());
+  E << "Operator " << TokenName(op) << " not matched to any unary operator";
   return exprman::uop_none;
 }
 
@@ -859,11 +843,8 @@ exprman::binary_opcode Int2Bop(int op)
     case LT:      return exprman::bop_lt;
     case LE:      return exprman::bop_le;
   }
-  if (pm->startInternal(__FILE__, __LINE__)) {
-    pm->internal() << "Operator " << TokenName(op);
-    pm->internal() << " not matched to any binary operator";
-    pm->stopError();
-  }
+  internal_error E(__FILE__, __LINE__, Where());
+  E << "Operator " << TokenName(op) << " not matched to any binary operator";
   return exprman::bop_none;
 }
 
@@ -878,11 +859,8 @@ exprman::assoc_opcode Int2Aop(int op)
     case SEMI:    return exprman::aop_semi;
     case COMMA:   return exprman::aop_union;
   }
-  if (pm->startInternal(__FILE__, __LINE__)) {
-    pm->internal() << "Operator " << TokenName(op);
-    pm->internal() << " not matched to any associative operator";
-    pm->stopError();
-  }
+  internal_error E(__FILE__, __LINE__, Where());
+  E << "Operator " << TokenName(op) << " not matched to any associative operator";
   return exprman::aop_none;
 }
 
@@ -893,12 +871,10 @@ expr* BuildElementSet(expr* elem)
   DCASSERT(elem->Type());
   const type* set_type = elem->Type()->getSetOfThis();
   if (0 == set_type) {
-    if (pm->startError()) {
-      pm->cerr() << "Sets of type ";
-      elem->PrintType(pm->cerr());
-      pm->cerr() << " are not allowed";
-      pm->stopError();
-    }
+    parse_error E;
+    E << "Sets of type ";
+    elem->PrintType(E.stream());
+    E << " are not allowed";
     Delete(elem);
     return em->makeError();
   }
@@ -1088,10 +1064,8 @@ expr* MakeBoolConst(char* s)
     free(s);
     return new value(Where(), em->BOOL, c);
   }
-  if (pm->startInternal(__FILE__, __LINE__)) {
-    pm->internal() << "Bad boolean constant: " << s;
-    pm->stopError();
-  }
+  internal_error E(__FILE__, __LINE__, Where());
+  E << "Bad boolean constant: " << s;
   free(s);
   return em->makeError();
 }
@@ -1116,10 +1090,8 @@ expr* FindIdent(char* name)
     free(name);
     return Share(find);
   }
-  if (pm->startError()) {
-    pm->cerr() << "Unknown identifier: " << name;
-    pm->stopError();
-  }
+  parse_error E;
+  E << "Unknown identifier: " << name;
 
   return em->makeError();
 }
@@ -1141,12 +1113,9 @@ expr* BuildFunctionCall(char* n, parser_list* posparams)
   }
 
   if (0==find && 0==find2) {
-    if (pm->startError()) {
-      if (posparams)  pm->cerr() << "Unknown function ";
-      else            pm->cerr() << "Unknown identifier: ";
-      pm->cerr() << n;
-      pm->stopError();
-    }
+    parse_error E;
+    if (posparams)  E << "Unknown function " << n;
+    else            E << "Unknown identifier: " << n;
     free(n);
     DeleteCircular(posparams);
     return em->makeError();
@@ -1213,10 +1182,10 @@ int Compile(parse_module* parent)
 
   int ans = yyparse();
 
-  if (compiler_debug.startReport()) {
-    compiler_debug.report() << "Done compiling\n";
-    compiler_debug.report() << "List depth: " << list_depth << "\n";
-    compiler_debug.stopIO();
+  if (compiler_debug.start()) {
+    compiler_debug << "Done compiling\n";
+    compiler_debug << "List depth: " << list_depth << "\n";
+    compiler_debug.stop();
   }
 
   return ans;

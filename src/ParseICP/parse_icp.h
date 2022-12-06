@@ -16,8 +16,6 @@ class exprman;
 /// Defined in Options module.
 class option_manager;
 
-struct parser_list;
-class symbol;
 class expr;
 
 /** Module for parsing ICP input files.
@@ -86,6 +84,7 @@ public:
     DCASSERT(em);
     return em->findModifier(s);
   }
+  /*
   inline void newLine() {
     DCASSERT(em);
     DCASSERT(em->hasIO());
@@ -122,6 +121,7 @@ public:
     if (em->hasIO())
       em->stopIO();
   }
+  */
 };
 
 #endif
