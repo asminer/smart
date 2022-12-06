@@ -301,23 +301,22 @@ public:
 
 protected:
   inline bool startGen(const char* name) {
-    if (report.startReport()) {
-      report.report() << "Generating reachability set for model " << name;
+    if (report.start()) {
+      report << "Generating reachability set for model " << name;
       return true;
     }
     return false;
   };
 
   inline bool stopGen(const char* n, const timer &w, long mem) {
-    if (report.startReport()) {
-      report.report() << "Generated ";
-      report.report() << " reachability set for model " << n << "\n";
-      report.report() << "\t" << w.elapsed_seconds() << " seconds ";
-      report.report() << "required for generation\n";
+    if (report.start()) {
+      report << "Generated ";
+      report << " reachability set for model " << n << "\n";
+      report << "\t" << w.elapsed_seconds() << " seconds ";
+      report << "required for generation\n";
       if (mem >= 0) {
-        report.report().Put('\t');
-        report.report().PutMemoryCount(mem, 3);
-        report.report() << " required for state generation\n";
+        report << '\t' << memoryCount(mem, 3);
+        report << " required for state generation\n";
       }
       return true;
     }
@@ -438,8 +437,7 @@ void icp_symbgen::RunEngine(hldsm* hm, result &)
 
   timer watch;
   if (startGen(hm->Name())) {
-    em->report().Put('\n');
-    em->stopIO();
+    report.stop();
   }
 
   int N = nem->NumVars();
@@ -462,11 +460,8 @@ void icp_symbgen::RunEngine(hldsm* hm, result &)
     d = MEDDLY::createDomain(vars, N);
   }
   catch (MEDDLY::error de) {
-    if (hm->StartError(0)) {
-      em->cerr() << "Error adding variables: ";
-      em->cerr() << de.getName();
-      hm->DoneError();
-    }
+    hldsm::errmsg E(hm);
+    E << "Error adding variables: " << de.getName();
     MEDDLY::destroyDomain(d);
     throw Engine_Failed;
   }
@@ -492,17 +487,17 @@ void icp_symbgen::RunEngine(hldsm* hm, result &)
 
   shared_ddedge** cbylevel = new shared_ddedge*[N];
   for (int k=0; k<N; k++) {
-    if (debug.startReport()) {
-      debug.report() << "Generating level " << k+1 << " constraints:\n";
-      debug.stopIO();
+    if (debug.start()) {
+      debug << "Generating level " << k+1 << " constraints:\n";
+      debug.stop();
     }
     expr** clist = nem->GetConstraintsAtLevel(k);
     cbylevel[k] = ProcessConjunct(clist, k+1, ddlwrap);
   } // for k
 
-  if (debug.startReport()) {
-    debug.report() << "Combining level-wise constraints\n";
-    debug.stopIO();
+  if (debug.start()) {
+    debug << "Combining level-wise constraints\n";
+    debug.stop();
   }
 
   MEDDLY::dd_edge constraints(f);
@@ -522,17 +517,14 @@ void icp_symbgen::RunEngine(hldsm* hm, result &)
 #endif
 
   if (stopGen(hm->Name(), watch, f->getPeakMemoryUsed())) {
-    em->report() << "\t" << constraints.getCardinality();
-    em->report() << " states generated\n";
-    em->report() << "\tCurrent nodes: " << f->getCurrentNumNodes() << "\n";
-    em->report() << "\tPeak    nodes: " << f->getPeakNumNodes() << "\n";
-    em->report() << "\tCurrent memory: ";
-    em->report().PutMemoryCount(f->getCurrentMemoryUsed(), 3);
-    em->report() << "\n";
-    em->report() << "\tPeak    memory: ";
-    em->report().PutMemoryCount(f->getPeakMemoryUsed(), 3);
-    em->report() << "\n";
-    em->stopIO();
+    report << "\t" << constraints.getCardinality();
+    report << " states generated\n";
+    report << "\tCurrent nodes: " << f->getCurrentNumNodes();
+    report << "\n\tPeak    nodes: " << f->getPeakNumNodes();
+    report << "\n\tCurrent memory: "
+           << memoryCount(f->getCurrentMemoryUsed(), 3);
+    report << "\n\tPeak    memory: " << memoryCount(f->getPeakMemoryUsed(), 3);
+    report.stop();
     // constraints.show(em->Fstdout(), 1);
   }
 
@@ -568,13 +560,15 @@ shared_ddedge* icp_symbgen
 #endif
     COLL.get(i)->Traverse(x);
     if (x.answer->isNull()) {
-      em->cout() << "\t\tGot null result\n";
+      internal_error E(__FILE__, __LINE__);
+      E << "Got null result\n";
       continue;
     }
 
     edgelist[i] = Share(dynamic_cast <shared_ddedge*> (x.answer->getPtr()));
     if (0==edgelist[i]) {
-      em->cout() << "\t\tUnexpected result, not dd edge?\n";
+      internal_error E(__FILE__, __LINE__);
+      E << "Unexpected result, not dd edge?";
       continue;
     }
   } // for i
@@ -686,7 +680,8 @@ void icp_mdd_min
 
   shared_ddedge* me = Share(dynamic_cast <shared_ddedge*> (foo.getPtr()));
   if (0==me) {
-    em->cout() << "\t\tUnexpected result, not dd edge?\n";
+    internal_error E(__FILE__, __LINE__);
+    E << "Unexpected result, not dd edge?";
     throw Engine_Failed;
   }
 
@@ -756,9 +751,11 @@ void icp_mdd_min
     sv->SetToValueNumber(minterm[level]);
   } // for i
 
-  em->cout() << "Minimum value " << m << " obtainted in state ";
-  nem->ShowCurrentState(em->cout());
-  em->cout() << "\n";
+  outputStream &out = outputStream::globalOut();
+
+  out << "Minimum value " << m << " obtainted in state ";
+  nem->ShowCurrentState(out.stream());
+  out << "\n";
 
   Delete(me);
 }
@@ -806,7 +803,8 @@ void icp_mdd_max
 
   shared_ddedge* me = dynamic_cast <shared_ddedge*> (foo.getPtr());
   if (0==me) {
-    em->cout() << "\t\tUnexpected result, not dd edge?\n";
+    internal_error E(__FILE__, __LINE__);
+    E << "Unexpected result, not dd edge?";
     throw Engine_Failed;
   }
 
@@ -865,9 +863,11 @@ void icp_mdd_max
     sv->SetToValueNumber(minterm[level]);
   } // for i
 
-  em->cout() << "Minimum value " << m << " obtainted in state ";
-  nem->ShowCurrentState(em->cout());
-  em->cout() << "\n";
+  outputStream &out = outputStream::globalOut();
+
+  out << "Maximum value " << m << " obtainted in state ";
+  nem->ShowCurrentState(out.stream());
+  out << "\n";
 
   Delete(me);
 }
@@ -915,7 +915,8 @@ void icp_mdd_sat
 
   shared_ddedge* me = Share(dynamic_cast <shared_ddedge*> (foo.getPtr()));
   if (0==me) {
-    em->cout() << "\t\tUnexpected result, not dd edge?\n";
+    internal_error E(__FILE__, __LINE__);
+    E << "Unexpected result, not dd edge?";
     throw Engine_Failed;
   }
 
@@ -942,9 +943,11 @@ void icp_mdd_sat
     sv->SetToValueNumber(minterm[level]);
   } // for i
 
-  em->cout() << "Satisfiable in state ";
-  nem->ShowCurrentState(em->cout());
-  em->cout() << "\n";
+  outputStream &out = outputStream::globalOut();
+
+  out << "Satisfiable in state ";
+  nem->ShowCurrentState(out.stream());
+  out << "\n";
 
   Delete(me);
 }
