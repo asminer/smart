@@ -61,6 +61,8 @@ bool warning_msg::start(const location &L) const
 // *                       named_msg  methods                       *
 // ******************************************************************
 
+char named_msg::prefix[256];
+
 void named_msg::setName(const char* n)
 {
     DCASSERT(0==name);
@@ -129,6 +131,8 @@ bool debugging_msg::start() const
 // ******************************************************************
 // *                       error_msg  methods                       *
 // ******************************************************************
+
+outputStream error_msg::Out(std::cerr);
 
 error_msg::error_msg(const char* prefix)
 {

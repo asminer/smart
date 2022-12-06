@@ -184,7 +184,6 @@ class unnamed_warning : public error_msg {
     public:
         unnamed_warning();
         unnamed_warning(const location &cause);
-        ~unnamed_warning();
 };
 
 
