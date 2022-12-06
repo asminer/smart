@@ -48,10 +48,11 @@ void library::printReleaseDate(doc_formatter&) const
 // *                        exprman  methods                        *
 // ******************************************************************
 
-exprman::exprman(io_environ* i, option_manager* o)
+// exprman::exprman(io_environ* i, option_manager* o)
+exprman::exprman(option_manager* o)
 {
   is_finalized = false;
-  io = i;
+  // io = i;
   om = o;
 
   // fundamental types
@@ -388,13 +389,13 @@ model_def* exprman::isAModelDef(symbol* f)
 exprman* The_Man = 0;
 bool builtManager = 0;
 
-exprman* Initialize_Expressions(io_environ* io, option_manager* om)
+exprman* Initialize_Expressions(option_manager* om)
 {
   if (builtManager)  return The_Man;
   builtManager = 1;
 
   // abstract_msg::initStatic(io);
-  The_Man = new superman(io, om);
+  The_Man = new superman(om);
   InitTypes(The_Man);
   InitEngines(The_Man);
 

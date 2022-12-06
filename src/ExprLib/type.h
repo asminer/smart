@@ -7,7 +7,7 @@
 #include <string.h>
 
 class result;
-class io_environ;
+// class io_environ;
 
 // all of this required for infinity string option.
 // class option;

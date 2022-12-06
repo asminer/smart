@@ -6,7 +6,7 @@
 
 class type;
 class option;
-class io_environ;
+// class io_environ;
 class option_manager;
 class engine_manager;
 class symbol;

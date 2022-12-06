@@ -31,6 +31,26 @@ void yy_delete_buffer(yy_buffer_state*);
 
 // ******************************************************************
 // *                                                                *
+// *                       lexer_error  class                       *
+// *                                                                *
+// ******************************************************************
+
+class lexer_error : public error_msg {
+    public:
+        lexer_error(const char* text=0);
+};
+
+lexer_error::lexer_error(const char* text) : error_msg("ERROR")
+{
+    Out << ' ' << Where();
+    if (text) {
+        Out << " at text: '" << text << "'";
+    }
+    newLine();
+}
+
+// ******************************************************************
+// *                                                                *
 // *                        lexer_mod  class                        *
 // *                                                                *
 // ******************************************************************
@@ -39,7 +59,7 @@ class inputfile;
 
 struct lexer_mod {
   parse_module* parent;
-  debugging_msg lexer_debug;
+  debugging_msg debug;
   /// Stack of input files.
   inputfile** filestack;
   /// Top of file stack.
@@ -57,6 +77,7 @@ public:
     DCASSERT(parent);
     return parent->FindModif(s);
   }
+  /*
   inline bool startInternal(const char* file, int line) {
     DCASSERT(parent);
     return parent->startInternal(file, line);
@@ -102,6 +123,7 @@ public:
   inline void stopDebug() {
     lexer_debug.stopIO();
   }
+  */
   inline bool StackFull() const { return (topfile+1 >= max_file_depth); }
 
   const location& Where() const;
@@ -231,10 +253,8 @@ bool inputfile::StartTokenizing()
     else                input = fopen(where.getFile(), "r");
 
     if (0==input) {
-      if (lexdata.startError()) {
-        lexdata.cerr() << "couldn't open file " << where.getFile() << ", ignoring";
-        lexdata.stopError();
-      }
+      error_msg E("ERROR");
+      E << "couldn't open file " << where.getFile() << ", ignoring";
       return false;
     }
   }
@@ -320,13 +340,11 @@ const char* TokenName(int tk)
 
 inline int ProcessToken(int tk)
 {
-  if (lexdata.startDebug()) {
-    lexdata.debug() << "generated token:";
-    lexdata.debug().Put(TokenName(tk), 12);
-    lexdata.debug() << "  from text: ";
-    lexdata.debug().Put(yytext);
-    lexdata.debug().Put('\n');
-    lexdata.stopDebug();
+  if (lexdata.debug.start()) {
+    lexdata.debug << "generated token:";
+    lexdata.debug << formatted_string(TokenName(tk), 12);
+    lexdata.debug << "  from text: " << yytext;
+    lexdata.debug.stop();
   }
   return tk;
 }
@@ -543,10 +561,8 @@ int ProcessString()
   yylval.name = strdup(yytext+1);  // skip open quote
 
   if (yylval.name[yyleng-2] != '"') {
-    if (lexdata.startError()) {
-      lexdata.cerr() << "Unclosed quote";
-      lexdata.stopError();
-    }
+    lexer_error E(yytext);
+    E << "Unclosed quote";
   } else
     yylval.name[yyleng-2] = '\0'; // erase close quote
 
@@ -581,11 +597,9 @@ int ProcessTemporalOperator()
     // weak until?
     case 'X':   return ProcessToken(NEXT);
     default:
-      if (lexdata.startInternal(__FILE__, __LINE__)) {
-        lexdata.internal() << "Temporal operator error, unknown operator '";
-        lexdata.internal() << yytext[0] << "'.";
-        lexdata.stopError();
-      }
+      internal_error E(__FILE__, __LINE__, Where());
+      E << "Temporal operator error, unknown operator '";
+      E << yytext[0] << "'.";
       return 0;
   }
 }
@@ -607,18 +621,14 @@ int ProcessID()
 
 void UnclosedComment()
 {
-  if (lexdata.startError()) {
-    lexdata.cerr() << "Unclosed comment";
-    lexdata.stopError();
-  }
+    lexer_error E;
+    E << "Unclosed comment";
 }
 
 void IllegalToken()
 {
-  if (lexdata.startError()) {
-    lexdata.cerr() << "Illegal syntactical element: '" << yytext << "'";
-    lexdata.stopError();
-  }
+    lexer_error E(yytext);
+    E << "Illegal syntactical element";
 }
 
 /**
@@ -627,14 +637,12 @@ void IllegalToken()
 */
 void Include()
 {
-  // Check for stack overflow.
-  if (lexdata.StackFull()) {
-    if (lexdata.startError()) {
-      lexdata.cerr() << "Too many #includes, maximum depth exceeded!";
-      lexdata.stopError();
+    // Check for stack overflow.
+    if (lexdata.StackFull()) {
+        lexer_error E;
+        E << "Too many #includes, maximum depth exceeded!";
+        return;
     }
-    return;
-  }
 
   // Get the filename.  Ignore everything until first quote
   const char *token = yytext;
@@ -643,29 +651,23 @@ void Include()
   int stop;
   for(start=0; start<tokenlen; start++) if (token[start]=='"') break;
   if (start>=tokenlen) {
-    if (lexdata.startInternal(__FILE__, __LINE__)) {
-      lexdata.internal() << "Include() error, missing quote?";
-      lexdata.stopError();
-    }
-    return;
+      internal_error E(__FILE__, __LINE__, Where());
+      E << "Include() error, missing quote?";
+      return;
   }
   // stop should be the last char, but who knows?
   for (stop=tokenlen-1; stop>start; stop--) if (token[stop]=='"') break;
   if (stop<=start) {
-    if (lexdata.startInternal(__FILE__, __LINE__)) {
-      lexdata.internal() << "Include() error, missing final quote?";
-      lexdata.stopError();
-    }
-    return;
+      internal_error E(__FILE__, __LINE__, Where());
+      E << "Include() error, missing final quote?";
+      return;
   }
 
   // Bail out for empty strings
   if (stop-1==start) {
-    if (lexdata.startWarning()) {
-      lexdata.warn() << "Empty filename for include, ignoring";
-      lexdata.stopError();
-    }
-    return;
+      lexer_error E;
+      E << "Empty filename for include, ignoring";
+      return;
   }
 
   // Build the filename
@@ -676,13 +678,11 @@ void Include()
 
   // Check for circular dependency
   if (lexdata.AlreadyOpen(fn)) {
-    if (lexdata.startWarning()) {
-      lexdata.warn() << "circular file dependency caused by #include ";
-      lexdata.warn() << fn << ", ignoring";
-      lexdata.stopError();
-    }
-    free(fn);
-    return;
+      lexer_error E;
+      E << "circular file dependency caused by #include ";
+      E << fn << ", ignoring";
+      free(fn);
+      return;
   }
 
   // Ok, try to open the file
@@ -726,11 +726,11 @@ void lexer_mod::Initialize(parse_module* p)
 {
   if (p == parent)  return;
   parent = p;
-  lexer_debug.initialize(parent ? parent->OptMan() : 0, "lexer",
+  debug.initialize(parent ? parent->OptMan() : 0, "lexer",
     "When set, very low-level lexer messages are displayed."
   );
 #ifdef LEXER_DEBUG
-  lexer_debug.Activate();
+  debug.Activate();
 #endif
 }
 
@@ -757,9 +757,9 @@ bool lexer_mod::Open(inputfile* fi)
   // Push the stack
   topfile++;
 
-  if (startDebug()) {
-    debug() << "switching to input file: " << fi->Name() << "\n";
-    stopDebug();
+  if (debug.start()) {
+    debug << "switching to input file: " << fi->Name();
+    debug.stop();
   }
 
   return true;
@@ -769,9 +769,9 @@ bool lexer_mod::CloseCurrent()
 {
   if (topfile<0)  return false;
 
-  if (startDebug()) {
-    debug() << "finished with input file: " << filestack[topfile]->Name() << "\n";
-    stopDebug();
+  if (debug.start()) {
+    debug << "finished with input file: " << filestack[topfile]->Name();
+    debug.stop();
   }
 
   // end of current file
@@ -783,9 +783,9 @@ bool lexer_mod::CloseCurrent()
   while (topfile >= 0) {
     if (filestack[topfile]->StartTokenizing()) {
 
-      if (startDebug()) {
-        debug() << "switching to input file: " << filestack[topfile]->Name() << "\n";
-        stopDebug();
+      if (debug.start()) {
+        debug << "switching to input file: " << filestack[topfile]->Name();
+        debug.stop();
       }
 
       return true;
@@ -797,9 +797,9 @@ bool lexer_mod::CloseCurrent()
   } // while
 
   // stack is empty, must be end of input
-  if (startDebug()) {
-    debug() << "no more input files\n";
-    stopDebug();
+  if (debug.start()) {
+    debug << "no more input files";
+    debug.stop();
   }
   return false;
 }
@@ -819,11 +819,9 @@ bool lexer_mod::SetInputs(const char** files, int filecount)
   for (topfile--; topfile>=0; topfile--) {
     if (filestack[topfile]->StartTokenizing()) {
 
-      if (startDebug()) {
-        debug() << "switching to input file: ";
-        debug().Put(filestack[topfile]->Name());
-        debug().Put('\n');
-        stopDebug();
+      if (debug.start()) {
+        debug << "switching to input file: " << filestack[topfile]->Name();
+        debug.stop();
       }
 
       return true;

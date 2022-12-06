@@ -42,126 +42,138 @@
 
 // ============================================================
 
+class cmdline_error : public error_msg {
+    public:
+        cmdline_error();
+};
+
+cmdline_error::cmdline_error() : error_msg("ERROR")
+{
+    Out << ' ' << location::CMDLINE();
+    newLine();
+}
+
+// ============================================================
+
 class first_init : public initializer {
-  public:
-    first_init(exprman* em, symbol_table* st, const char** env);
-    virtual bool execute();
-    static const char* getVersionString();
-    static const char* getLongName();
-  private:
-    exprman* hold_em;
-    symbol_table* hold_st;
-    const char** hold_env;
+    public:
+        first_init(exprman* em, symbol_table* st, const char** env);
+        virtual bool execute();
+        static const char* getVersionString();
+        static const char* getLongName();
+    private:
+        exprman* hold_em;
+        symbol_table* hold_st;
+        const char** hold_env;
 };
 
 // ============================================================
 
 first_init::first_init(exprman* _em, symbol_table* _st, const char** _env)
- : initializer("first_init")
+    : initializer("first_init")
 {
-  buildsResource("em");
-  buildsResource("st");
-  buildsResource("env");
-  buildsResource("version");
-  hold_em = _em;
-  hold_st = _st;
-  hold_env = _env;
+    buildsResource("em");
+    buildsResource("st");
+    buildsResource("env");
+    buildsResource("version");
+    hold_em = _em;
+    hold_st = _st;
+    hold_env = _env;
 }
 
 bool first_init::execute()
 {
-  em = hold_em;
-  st = hold_st;
-  env = hold_env;
-  version = getVersionString();
+    em = hold_em;
+    st = hold_st;
+    env = hold_env;
+    version = getVersionString();
 
-  DCASSERT(em);
-  DCASSERT(st);
-  DCASSERT(env);
-  DCASSERT(version);
-  return true;
+    DCASSERT(em);
+    DCASSERT(st);
+    DCASSERT(env);
+    DCASSERT(version);
+    return true;
 }
 
 const char* first_init::getVersionString()
 {
-  static char* version = 0;
-  if (0==version) {
-    StringStream str;
-    str << "SMART";
+    static char* version = 0;
+    if (0==version) {
+        std::stringstream str;
+        str << "SMART";
 #ifdef VERSION
-    str << " version " << VERSION;
+        str << " version " << VERSION;
 #endif
 #ifdef DEVELOPMENT_CODE
-    str << " (" << long(8*sizeof(void*)) << "-bit devel.)";
+        str << " (" << long(8*sizeof(void*)) << "-bit devel.)";
 #else
-    str << " (" << long(8*sizeof(void*)) << "-bit)";
+        str << " (" << long(8*sizeof(void*)) << "-bit)";
 #endif
-    version = str.GetString();
-  }
-  return version;
+        version = strdup(str.str().c_str());
+    }
+    return version;
 }
 
 const char* first_init::getLongName()
 {
-  return "Stochastic Model-checking Analyzer for Reliability and Timing";
+    return "Stochastic Model-checking Analyzer for Reliability and Timing";
 }
 
 // ============================================================
 
 void InitOptions(option_manager* om)
 {
-  if (0==om)  return;
-  om->addChecklistOption("Report",
-    "Switches to control what reports, if any, are written to the report stream."
-  );
-  om->addChecklistOption("Debug",
-    "Switches to control what low-level debugging information, if any, is written to the report stream."
-  );
-  om->addChecklistOption("Warning",
-    "Switches to control which warning messages are displayed and which are suppressed."
-  );
+    if (0==om)  return;
+    om->addChecklistOption("Report",
+        "Switches to control what reports, if any, are written to the report stream."
+    );
+    om->addChecklistOption("Debug",
+        "Switches to control what low-level debugging information, if any, is written to the report stream."
+    );
+    om->addChecklistOption("Warning",
+        "Switches to control which warning messages are displayed and which are suppressed."
+    );
 }
 
 int Usage(exprman* em)
 {
   if (0==em) return 1;
-  DisplayStream& cout = em->cout();
-  cout << "\n" << first_init::getVersionString() << "\n";
-  cout << "\nSupporting libraries:\n";
-  em->printLibraryVersions(cout);
-  cout << "\n";
-  cout << "Usage : \n";
-  cout << "smart <file1> <file2> ... <filen>\n";
-  cout << "      Use the filename `-' to denote standard input\n";
-  cout << "\n";
-  cout << "For full copyright information, type `smart -c'\n";
-  cout << "For help, view documentation with `smart -h keywords'\n";
-  cout << "\n";
+  outputStream &out = outputStream::globalOut();
+  out << "\n" << first_init::getVersionString() << "\n";
+  out << "\nSupporting libraries:\n";
+  em->printLibraryVersions(out.stream());
+  out << "\n";
+  out << "Usage : \n";
+  out << "smart <file1> <file2> ... <filen>\n";
+  out << "      Use the filename `-' to denote standard input\n";
+  out << "\n";
+  out << "For full copyright information, type `smart -c'\n";
+  out << "For help, view documentation with `smart -h keywords'\n";
+  out << "\n";
   return 0;
 }
 
 int Copyrights(exprman* em)
 {
   if (0==em) return 1;
-  doc_formatter* df = MakeTextFormatter(80, em->cout());
-  df->Out() << "\n";
-  df->begin_heading();
-  df->Out() << first_init::getVersionString();
+  doc_formatter df(80, outputStream::globalOut().stream());
+  df.Out() << "\n";
+  df.begin_heading();
+  df.Out() << first_init::getVersionString();
   if (SMART_DATE) {
-    df->Out() << ", released " << SMART_DATE << "\n";
+    df.Out() << ", released " << SMART_DATE << "\n";
   }
-  df->end_heading();
-  df->begin_indent();
-  df->Out() << first_init::getLongName() << "\n";
-  df->Out() << "Copyright (C) 2017-2018, Gianfranco Ciardo and Andrew Miner\n";
-  df->Out() << "Released under the Apache License, version 2\n";
+  df.end_heading();
+  df.begin_indent();
+  df.Out() << first_init::getLongName() << "\n";
+  df.Out() << "Copyright (C) 2017-2018, Gianfranco Ciardo and Andrew Miner\n";
+  df.Out() << "Released under the Apache License, version 2\n";
 #ifdef PACKAGE_URL
-  df->Out() << PACKAGE_URL << "\n";
+  df.Out() << PACKAGE_URL << "\n";
 #endif
-  df->end_indent();
+  df.end_indent();
   em->printLibraryCopyrights(df);
-  delete df;
-  em->cout() << "\n";
+  df.Out() << "\n";
   return 0;
 }
 
@@ -172,17 +184,13 @@ int CmdLineHelp(exprman* em, symbol_table* st, const char** argv, int argc)
 
   symbol* help = st->FindSymbol("help");
   if (0==help) {
-    em->startError();
-    em->causedBy(0);
-    em->cerr() << "No online help found\n";
-    em->stopIO();
+    cmdline_error E;
+    E << "No online help found\n";
     return 1;
   }
   if (help->Next()) {
-    em->startError();
-    em->causedBy(0);
-    em->cerr() << "Overloaded online help\n";
-    em->stopIO();
+    cmdline_error E;
+    E << "Overloaded online help\n";
     return 1;
   }
   function* hf = smart_cast<function*>(help);
@@ -206,7 +214,7 @@ int CmdLineHelp(exprman* em, symbol_table* st, const char** argv, int argc)
     }
   }
 
-  em->cout() << "\n";
+  outputStream::globalOut() << "\n";
   return 0;
 }
 
@@ -224,10 +232,8 @@ int process_args(parse_module& pm, exprman* em, symbol_table* st,
 
   if (argv[1][0] == '-' && argv[1][1] == '?' && argv[1][2] == 0) {
     if (0==em) return 1;
-    em->startError();
-    em->causedBy(location::CMDLINE());
-    em->cerr() << "Help system is now -h\n";
-    em->stopIO();
+    cmdline_error E;
+    E << "Help system is now -h\n";
     return 1;
   }
 
@@ -236,15 +242,16 @@ int process_args(parse_module& pm, exprman* em, symbol_table* st,
 
 int main(int argc, const char** argv, const char** env)
 {
-  io_environ myio;
-  CatchSignals(&myio);
+  // io_environ myio;
+  // CatchSignals(&myio);
 
   // Options
   option_manager* om = MakeOptionManager();
   InitOptions(om);
 
   // Expressions
-  exprman* em = Initialize_Expressions(&myio, om);
+  // exprman* em = Initialize_Expressions(&myio, om);
+  exprman* em = Initialize_Expressions(om);
 
   // Start the symbol table for builtin functions
   symbol_table* st = MakeSymbolTable();
@@ -252,10 +259,8 @@ int main(int argc, const char** argv, const char** env)
   // Bootstrap initializers, and run them
   first_init the_first_init(em, st, env);
   if ( ! initializer::executeAll() ) {
-    if (em->startInternal(__FILE__, __LINE__)) {
-      em->cerr() << "Deadlock in initializers";
-      em->stopIO();
-    }
+    internal_error E(__FILE__, __LINE__);
+    E << "Deadlock in initializers";
     return -1;
   }
 

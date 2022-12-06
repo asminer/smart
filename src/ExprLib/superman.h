@@ -54,7 +54,8 @@ class superman : public exprman {
 
 
 public:
-  superman(io_environ* io, option_manager* om);
+//  superman(io_environ* io, option_manager* om);
+  superman(option_manager* om);
 
   virtual ~superman();
 

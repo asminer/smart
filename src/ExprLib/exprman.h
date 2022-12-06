@@ -109,7 +109,7 @@ public:
     cannot be added.
 */
 class exprman {
-  io_environ* io;
+//  io_environ* io;
 protected:
   bool is_finalized;
   option_manager* om;
@@ -225,7 +225,8 @@ public:
   };
 
 public:
-  exprman(io_environ* io, option_manager* om);
+  // exprman(io_environ* io, option_manager* om);
+  exprman(option_manager* om);
 
   inline bool isFinalized() const { return is_finalized; }
 
@@ -1300,8 +1301,6 @@ protected:
 
 /** Initialize the expression manager and return it.
 
-      @param  io  Streams to use for errors and such.
-
       @param  om  Collection to add any expression-related
                   options into.  If 0, the options will
                   still be created, but it will be impossible
@@ -1311,7 +1310,7 @@ protected:
               if one already exists.
               Otherwise, creates and returns an expression manager.
 */
-exprman* Initialize_Expressions(io_environ* io, option_manager* om);
+exprman* Initialize_Expressions(option_manager* om);
 
 /// Return the expression manager, or 0 if none exists.
 exprman* getExpressionManager();

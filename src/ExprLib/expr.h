@@ -15,7 +15,7 @@ class exprman;
 class result;
 class rng_stream;
 
-class io_environ;    // defined in Streams module
+// class io_environ;    // defined in Streams module
 
 class option_manager;   // defined in Options module
 
@@ -214,7 +214,7 @@ protected:
   /// Expression manager, for "global" options and such.
   static exprman* em;
   // friend, needed to initialize the static items.
-  friend exprman* Initialize_Expressions(io_environ* io, option_manager *om);
+  friend exprman* Initialize_Expressions(option_manager *om);
 
 private:
   /// Where the expression was declared.

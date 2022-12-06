@@ -160,23 +160,25 @@ inline int Compare(const symbol* a, const symbol* b)
 
    ===================================================================== */
 
+parse_error::parse_error(bool err) : error_msg(err ? "ERROR" : "WARNING")
+{
+    Out << ' ' << Where();
+    newLine();
+}
+
 void yyerror(const char *msg)
 {
-  DCASSERT(pm);
-  if (pm->startError()) {
-    pm->cerr() << msg;
-    pm->stopError();
-  }
+    parse_error E;
+    E << msg;
 }
 
 void Reducing(const char* msg)
 {
   DCASSERT(pm);
-  if (parser_debug.startReport()) {
-    parser_debug.report() << "reducing rule:\n\t\t";
-    parser_debug.report().Put(msg);
-    parser_debug.report().Put('\n');
-    parser_debug.stopIO();
+  if (parser_debug.start()) {
+    parser_debug << "reducing rule:\n\t\t";
+    parser_debug << msg;
+    parser_debug.stop();
   }
 }
 
@@ -186,11 +188,8 @@ const type* MakeType(bool proc, char* modif, const type* t)
   if (modif) {
     m = em->findModifier(modif);
     if (NO_SUCH_MODIFIER == m) {
-      if (pm->startInternal(__FILE__, __LINE__)) {
-        pm->internal() << "Bad type modifier: " << modif;
-        pm->stopError();
-      }
-      // shouldn't get here
+      internal_error E(__FILE__, __LINE__, Where());
+      E << "Bad type modifier: " << modif;
       return 0;
     }
   }
@@ -204,13 +203,13 @@ const type* MakeType(bool proc, char* modif, const type* t)
 inline expr* ShowNewStatement(const char* what, expr* f)
 {
   // Make noise as appropriate
-  if (compiler_debug.startReport()) {
-    compiler_debug.report() << "built ";
-    if (what) compiler_debug.report() << what;
-    else      compiler_debug.report() << "statement: ";
-    if (f)  f->Print(compiler_debug.report(), 4);
-    else    compiler_debug.report().Put("    null\n");
-    compiler_debug.stopIO();
+  if (compiler_debug.start()) {
+    compiler_debug << "built ";
+    if (what) compiler_debug << what;
+    else      compiler_debug << "statement: ";
+    if (f)  f->Print(compiler_debug.stream(), 4);
+    else    compiler_debug << "    null\n";
+    compiler_debug.stop();
   }
   return f;
 }
@@ -219,33 +218,32 @@ template <class EXPR>
 inline EXPR* ShowWhatWeBuilt(const char* what, EXPR* f)
 {
   // Make noise as appropriate
-  if (compiler_debug.startReport()) {
-    compiler_debug.report() << "built ";
-    if (what) compiler_debug.report() << what;
-    else      compiler_debug.report() << "expression: ";
-    if (f)  f->Print(compiler_debug.report(), 0);
-    else    compiler_debug.report().Put("null");
-    compiler_debug.report() << "\t type: ";
-    if (f)  f->PrintType(compiler_debug.report());
-    else    compiler_debug.report().Put("nulltype");
-    compiler_debug.report().Put('\n');
-    compiler_debug.stopIO();
+  if (compiler_debug.start()) {
+    compiler_debug << "built ";
+    if (what) compiler_debug << what;
+    else      compiler_debug << "expression: ";
+    if (f)  f->Print(compiler_debug.stream());
+    else    compiler_debug << "null";
+    compiler_debug << "\t type: ";
+    if (f)  f->PrintType(compiler_debug.stream());
+    else    compiler_debug << "nulltype";
+    compiler_debug.stop();
   }
   return f;
 }
 
-void ShowPosCall(OutputStream &s, const char* name, expr** pass, int first, int length)
+void ShowPosCall(std::ostream &s, const char* name, expr** pass, int first, int length)
 {
   s << name << "(";
   for (int i=first; i<length; i++) {
     if (i>first)  s << ", ";
     if (pass[i])  pass[i]->PrintType(s);
-    else          s.Put("null");
+    else          s << "null";
   }
   s << ")";
 }
 
-void ShowNamedCall(OutputStream &s, const char* name, symbol** pass, int length)
+void ShowNamedCall(std::ostream &s, const char* name, symbol** pass, int length)
 {
   s << name << "(";
   bool comma = false;
@@ -256,8 +254,7 @@ void ShowNamedCall(OutputStream &s, const char* name, symbol** pass, int length)
     if ('-' == n[0]) continue;  // hidden parameter
     if (comma)  s << ", ";
     pass[i]->PrintType(s);
-    s.Put(' ');
-    s.Put(n);
+    s << ' ' << n;
     comma = true;
   }
   s << ")";
@@ -282,7 +279,7 @@ public:
 
   void Trash();
 
-  virtual bool Print(OutputStream &s, int) const;
+  virtual bool Print(std::ostream &s, int) const;
   virtual bool Equals(const shared_object* o) const;
 };
 
@@ -316,7 +313,7 @@ void model_call_data::Trash()
   np = 0;
 }
 
-bool model_call_data::Print(OutputStream &s, int) const
+bool model_call_data::Print(std::ostream &s, int) const
 {
   DCASSERT(0);
   return false;
@@ -343,7 +340,7 @@ public:
   expr_term(int o, expr* t);
   virtual ~expr_term();
 
-  virtual bool Print(OutputStream &s, int width) const;
+  virtual bool Print(std::ostream &s, int width) const;
   virtual bool Equals(const shared_object* o) const;
 };
 
@@ -358,13 +355,11 @@ expr_term::~expr_term()
   Delete(term);
 }
 
-bool expr_term::Print(OutputStream &s, int) const
+bool expr_term::Print(std::ostream &s, int) const
 {
-  s << "(";
-  s << TokenName(op);
-  s << ", ";
-  if (term)   term->Print(s, 0);
-  else        s.Put("null");
+  s << "(" << TokenName(op) << ", ";
+  if (term)   term->Print(s);
+  else        s << "null";
   s << ")";
   return true;
 }
@@ -515,10 +510,8 @@ bool BadIteratorList(char* n, parser_list* list)
   int length = CircularLength(list);
   int dimension = Iterators->NumSymbols();
   if (length != dimension) {
-     if (pm->startError()) {
-      pm->cerr() << "Dimension of array " << n << " does not match iterators";
-      pm->stopError();
-    }
+    parse_error E;
+    E << "Dimension of array " << n << " does not match iterators";
     DeleteCircular(list);
     free(n);
     return true;
@@ -531,11 +524,9 @@ bool BadIteratorList(char* n, parser_list* list)
     shared_string* forml = smart_cast <shared_string*> (list->data);
     DCASSERT(forml);
     if (strcmp(nth->Name(), forml->getStr())) {
-      if (pm->startError()) {
-        pm->cerr() << "Array " << n << " expecting index ";
-        pm->cerr() << nth->Name() << ", got " << forml->getStr();
-        pm->stopError();
-      }
+      parse_error E;
+      E << "Array " << n << " expecting index ";
+      E << nth->Name() << ", got " << forml->getStr();
       DeleteCircular(list);
       free(n);
       return true;
@@ -780,10 +771,8 @@ parser_list* AppendSymbol(parser_list* list, symbol* p, const char* kind)
     const char* fpname = fp->Name();
     DCASSERT(fpname);
     if (0==strcmp(pname, fpname)) {
-      if (pm->startError()) {
-        pm->cerr() << "Duplicate " << kind << " `" << fpname << "'";
-        pm->stopError();
-      }
+      parse_error E;
+      E << "Duplicate " << kind << " `" << fpname << "'";
       Delete(p);
       return list;
     }
@@ -826,10 +815,8 @@ expr* BuildForLoop(int count, parser_list* stmts)
     };
     // check for stack underflow
     if (0==iters[0]) {
-      if (pm->startInternal(__FILE__, __LINE__)) {
-        pm->internal() << "Iterator stack underflow";
-        pm->stopError();
-      }
+      internal_error E(__FILE__, __LINE__, Where());
+      E << "Iterator stack underflow";
       for (int d=0; d<count; d++) Delete(iters[d]);
       delete[] iters;
       return 0;
@@ -878,10 +865,10 @@ option_enum* FindOptionConstant(option* o, char* n)
 {
   option_enum* oc = o ? o->FindConstant(n) : 0;
   if (0==oc) {
-    if (o && pm->startError()) {
-      pm->cerr() << "Illegal value " << n << " for option " << o->Name();
-      pm->cerr() << ", ignoring";
-      pm->stopError();
+    if (o) {
+      parse_error E;
+      E << "Illegal value " << n << " for option " << o->Name();
+      E << ", ignoring";
     }
   }
   free(n);
@@ -908,10 +895,8 @@ expr* StartOptionBlock(option* o, char* n)
   expr* foo;
   if (oc) {
     if (!Options.push(oc)) {
-      if (pm->startError()) {
-        pm->cerr() << "Nesting of option statements is too deep\n";
-        pm->stopError();
-      }
+      parse_error E;
+      E << "Nesting of option statements is too deep";
     }
     foo = em->makeOptionStatement(Where(), o, oc);
   } else {
@@ -951,10 +936,10 @@ expr* BuildOptionStatement(option* o, bool check, parser_list* list)
       oclist = AppendGeneric(oclist, oc);
       continue;
     }
-    if (name) if (pm->startError()) {
-      pm->cerr() << "Illegal value " << name << " for option " << o->Name();
-      pm->cerr() << ", ignoring";
-      pm->stopError();
+    if (name) {
+      parse_error E;
+      E << "Illegal value " << name << " for option " << o->Name();
+      E << ", ignoring";
     }
   }
   DeleteCircular(list);
@@ -1005,10 +990,10 @@ option* BuildOptionHeader(char* name)
   }
   answer = om ? om->FindOption(name) : 0;
 
-  if (0==answer) if (pm->startError()) {
-    pm->cerr() << "Unknown option " << name;
-    if (oc) pm->cerr() << " within " << oc->Name();
-    pm->stopError();
+  if (0==answer) {
+    parse_error E;
+    E << "Unknown option " << name;
+    if (oc) E << " within " << oc->Name();
   }
   free(name);
   return answer;
@@ -1020,10 +1005,8 @@ int AddIterator(symbol* i)
   if (!em->isOrdinary(i))  return 0;
   symbol* find = Iterators->FindSymbol(i->Name());
   if (find) {
-    if (pm->startError()) {
-      pm->cerr() << "Duplicate iterator named " << i->Name();
-      pm->stopError();
-    }
+    parse_error E;
+    E << "Duplicate iterator named " << i->Name();
     Delete(i);
     return 0;
   }
@@ -1048,20 +1031,16 @@ bool IllegalModelVarName(char* ident, const char* what_am_i)
   DCASSERT(WithinModel());
   if (model_under_construction) {
     if (model_under_construction->FindFormal(ident)) {
-      if (pm->startError()) {
-        pm->cerr() << "Model " << what_am_i << " ";
-        pm->cerr() << ident << " has same name as parameter";
-        pm->stopError();
-      }
+      parse_error E;
+      E << "Model " << what_am_i << " ";
+      E << ident << " has same name as parameter";
       free(ident);
       return true;
     }
   }
   if (ModelInternal) if (ModelInternal->FindSymbol(ident)) {
-    if (pm->startError()) {
-      pm->cerr() << "Duplicate identifier " << ident << " within model";
-      pm->stopError();
-    }
+    parse_error E;
+    E << "Duplicate identifier " << ident << " within model";
     free(ident);
     return true;
   }
@@ -1142,11 +1121,8 @@ expr* BuildVarStmt(const type* typ, char* id, expr* ret)
 
   DCASSERT(typ);
   if (! typ->canDefineVarOfThis()) {
-    if (pm->startError()) {
-      pm->cerr() << "Constants of type " << typ->getName();
-      pm->cerr() << " are not allowed";
-      pm->stopError();
-    }
+    parse_error E;
+    E << "Constants of type " << typ->getName() << " are not allowed";
     free(id);
     Delete(ret);
     return 0;
@@ -1164,14 +1140,13 @@ expr* BuildVarStmt(const type* typ, char* id, expr* ret)
     break;
   }
   if (match) {
-    if (pm->startError()) {
-      pm->cerr() << "Constant declaration conflicts with existing identifier:";
-      pm->newLine(1);
-      match->PrintHeader(pm->cerr(), true);
-      pm->cerr() << " declared " << match->Where();
-      pm->changeIndent(-1);
-      pm->stopError();
-    }
+    parse_error E;
+    E << "Constant declaration conflicts with existing identifier:";
+    E.Out.incIndent();
+    E.newLine();
+    match->PrintHeader(E.stream(), true);
+    E << " declared " << match->Where();
+    E.Out.decIndent();
     free(id);
     Delete(ret);
     return 0;
@@ -1183,10 +1158,8 @@ expr* BuildVarStmt(const type* typ, char* id, expr* ret)
     free(id);
 
     if (find->isDefined()) {
-      if (pm->startError()) {
-        pm->cerr() << "Re-definition of constant " << find->Name();
-        pm->stopError();
-      }
+      parse_error E;
+      E << "Re-definition of constant " << find->Name();
       Delete(ret);
       return 0;
     }
@@ -1219,10 +1192,8 @@ expr* BuildGuessStmt(const type* typ, char* id, expr* ret)
     return 0;
   }
   if (!WithinConverge()) {
-    if (pm->startError()) {
-      pm->cerr() << "Guess for " << id << " outside converge";
-      pm->stopError();
-    }
+    parse_error E;
+    E << "Guess for " << id << " outside converge";
     free(id);
     Delete(ret);
     return 0;
@@ -1232,11 +1203,9 @@ expr* BuildGuessStmt(const type* typ, char* id, expr* ret)
   if (find) {
     free(id);
     if (find->isGuessed()) {
-      if (pm->startError()) {
-        pm->cerr() << "Duplicate guess for identifier " << find->Name();
-        pm->stopError();
-      }
-      return 0;
+      parse_error E;
+      E << "Duplicate guess for identifier " << find->Name();
+      return nullptr;
     }
   } else {
     find = em->makeCvgVar(Where(), typ, id);
@@ -1280,20 +1249,15 @@ expr* BuildArrayGuess(symbol* a, expr* ret)
   expr* stmt;
   if (WithinConverge()) {
     if (a->isGuessed()) {
-      if (pm->startError()) {
-        pm->cerr() << "Duplicate guess for identifier " << a->Name();
-        pm->stopError();
-      }
+      parse_error E;
+      E << "Duplicate guess for identifier " << a->Name();
       Delete(ret);
       return 0;
     }
     stmt = em->makeArrayCvgGuess(Where(), a, ret);
   } else {
-    if (pm->startError()) {
-      pm->cerr() << "Guess for " << a->Name();
-      pm->cerr() << " outside converge";
-      pm->stopError();
-    }
+    parse_error E;
+    E << "Guess for " << a->Name() << " outside converge";
     stmt = 0;
     Delete(ret);
   }
@@ -1343,19 +1307,14 @@ function* findFirstMatch(symbol_table* st, char* n, expr** pass, int nfp)
 void duplicationError(bool warning_only, function* f, const char* how)
 {
   if (0==f) return;
-  if (warning_only) {
-    if (!pm->startWarning()) return;
-  } else {
-    if (!pm->startError()) return;
-  }
-  OutputStream &s = warning_only ? pm->warn() : pm->cerr();
-  s << "Function declaration " << how << " existing identifier:";
-  pm->newLine(1);
-  f->PrintHeader(s, true);
-  pm->newLine();
-  s << "declared " << f->Where();
-  pm->changeIndent(-1);
-  pm->stopError();
+  parse_error E(!warning_only);
+  E << "Function declaration " << how << " existing identifier:";
+  E.Out.incIndent();
+  E.newLine();
+  f->PrintHeader(E.stream(), true);
+  E.newLine();
+  E << "declared " << f->Where();
+  E.Out.decIndent();
 }
 
 // Check for named parameter conflicts
@@ -1377,32 +1336,37 @@ bool hasNamedParamConflicts(const char* n, symbol** fp, int np)
   }
 
   bool conflicts = false;
-  bool errIO = false;
-  for (symbol* find = Funcs->FindSymbol(n); find; find = find->Next()) {
-    function* f = smart_cast <function*> (find);
+  const symbol* findlist = Funcs->FindSymbol(n);
+
+  //
+  // Check for conflicts
+  //
+  for (const symbol* find = findlist; find; find = find->Next()) {
+    const function* f = smart_cast <const function*> (find);
+    if (0==f)   continue;
+    if (!f->HasNameConflict(fp, np, scratch))  continue;
+    conflicts = true;
+    break;
+  }
+  if (!conflicts) return false;
+
+  //
+  // Print the conflicts
+  //
+  parse_error E;
+  E << "Parameter names for `" << n << "' conflict with existing:";
+  E.Out.incIndent();
+  E.newLine();
+  for (const symbol* find = findlist; find; find = find->Next()) {
+    const function* f = smart_cast <const function*> (find);
     if (0==f)   continue;
     if (!f->HasNameConflict(fp, np, scratch))  continue;
 
-    if (!conflicts) {
-      conflicts = true;
-      errIO = pm->startError();
-      if (errIO) {
-        pm->cerr() << "Parameter names for `" << n << "' conflict with existing:";
-        pm->newLine(1);
-      }
-    }
-    if (errIO) {
-      f->PrintHeader(pm->cerr(), true);
-      pm->newLine();
-    }
+    f->PrintHeader(E.stream(), true);
+    E.newLine();
   }
-
-  if (errIO) {
-    pm->changeIndent(-1);
-    pm->stopError();
-  }
-
-  return conflicts;
+  E.Out.decIndent();
+  return true;
 }
 
 // --------------------------------------------------------------
@@ -1414,21 +1378,16 @@ symbol* BuildFunction(const type* typ, char* n, parser_list* list)
     return 0;
   }
   if (WithinFor() || WithinConverge()) {
-    if (pm->startError()) {
-      pm->cerr() << "Function " << n << " defined within a for/converge";
-      pm->stopError();
-    }
+    parse_error E;
+    E << "Function " << n << " defined within a for/converge";
     free(n);
     DeleteCircular(list);
     return 0;
   }
   DCASSERT(typ);
   if (! typ->canDefineFuncOfThis()) {
-    if (pm->startError()) {
-      pm->cerr() << "Functions of type " << typ->getName();
-      pm->cerr() << " are not allowed";
-      pm->stopError();
-    }
+    parse_error E;
+    E << "Functions of type " << typ->getName() << " are not allowed";
     free(n);
     DeleteCircular(list);
     return 0;
@@ -1537,10 +1496,8 @@ symbol* BuildArray(const type* typ, char* n, parser_list* list)
   symbol* find = Arrays->FindSymbol(n);
   if (find) {
     if (find->isDefined()) {
-      if (pm->startError()) {
-        pm->cerr() << "Array " << n << " already defined";
-        pm->stopError();
-      }
+      parse_error E;
+      E << "Array " << n << " already defined";
       DeleteCircular(list);
       free(n);
       return 0;
@@ -1628,18 +1585,14 @@ symbol* BuildModel(const type* typ, char* n, parser_list* list)
 
   ModelType = dynamic_cast <const formalism*> (typ);
   if (0==ModelType) {
-    if (pm->startInternal(__FILE__, __LINE__)) {
-      pm->internal() << "Type " << typ->getName() << " is not a formalism!";
-      pm->stopError();
-    }
+    internal_error E(__FILE__, __LINE__, Where());
+    E << "Type " << typ->getName() << " is not a formalism!";
     return 0;
   }
 
   if (WithinFor() || WithinConverge()) {
-    if (pm->startError()) {
-      pm->cerr() << "Model " << n << " defined within a for/converge; ignoring";
-      pm->stopError();
-    }
+    parse_error E;
+    E << "Model " << n << " defined within a for/converge; ignoring";
     free(n);
     DeleteCircular(list);
     return 0;
@@ -1660,14 +1613,13 @@ symbol* BuildModel(const type* typ, char* n, parser_list* list)
     // No parameters - check "constants"
     find = Constants->FindSymbol(n);
     if (find) {
-      if (pm->startError()) {
-        pm->cerr() << "Model declaration conflicts with existing identifier:";
-        pm->newLine(1);
-        find->PrintType(pm->cerr());
-        pm->cerr() << " " << find->Name() << " declared " << find->Where();
-        pm->changeIndent(-1);
-        pm->stopError();
-      }
+      parse_error E;
+      E << "Model declaration conflicts with existing identifier:";
+      E.Out.incIndent();
+      E.newLine();
+      find->PrintType(E.stream());
+      E << " " << find->Name() << " declared " << find->Where();
+      E.Out.decIndent();
       free(n);
       return 0;
     }
@@ -1681,14 +1633,13 @@ symbol* BuildModel(const type* typ, char* n, parser_list* list)
     int score = f->TypecheckParams(pass, num_Formals);
     if (score != 0)    continue;
     // perfect match, that's bad!
-    if (pm->startError()) {
-      pm->cerr() << "Model declaration conflicts with existing identifier:";
-      pm->newLine(1);
-      f->PrintHeader(pm->cerr(), true);
-      pm->cerr() << " declared " << f->Where();
-      pm->changeIndent(-1);
-      pm->stopError();
-    }
+    parse_error E;
+    E << "Model declaration conflicts with existing identifier:";
+    E.Out.incIndent();
+    E.newLine();
+    f->PrintHeader(E.stream(), true);
+    E << " declared " << f->Where();
+    E.Out.decIndent();
     free(n);
     for (int i=0; i<num_Formals; i++) {
       Delete(Formals[i]);
@@ -1714,10 +1665,8 @@ symbol* BuildModel(const type* typ, char* n, parser_list* list)
     em->makeModel(Where(), typ, n, Formals, num_Formals);
 
   if (0==model_under_construction) {
-    if (pm->startError()) {
-      pm->cerr() << "Couldn't make model of type " << typ->getName();
-      pm->stopError();
-    }
+    parse_error E;
+    E << "Couldn't make model of type " << typ->getName();
   }
 
   return (symbol*) model_under_construction;
@@ -1758,10 +1707,8 @@ parser_list* AddModelVar(parser_list* varlist, char* ident)
 {
   if (0==ident)  return varlist;
   if (WithinFor()) {
-    if (pm->startError()) {
-      pm->cerr() << "Expecting array for model variable " << ident;
-      pm->stopError();
-    }
+    parse_error E;
+    E << "Expecting array for model variable " << ident;
     free(ident);
     return varlist;
   }
@@ -1786,13 +1733,11 @@ parser_list* AddModelArray(parser_list* varlist, char* ident, parser_list* index
     return varlist;
   }
   if (!WithinFor()) {
-    if (pm->startError()) {
-      pm->cerr() << "Model array variable "<< ident <<" outside of for loop";
-      pm->stopError();
-    }
-    free(ident);
-    DeleteCircular(indexlist);
-    return varlist;
+      parse_error E;
+      E << "Model array variable "<< ident <<" outside of for loop";
+      free(ident);
+      DeleteCircular(indexlist);
+      return varlist;
   }
   if (IllegalModelVarName(ident, "array variable")) {
     return varlist;
@@ -1832,22 +1777,21 @@ parser_list* AddModelArray(parser_list* varlist, char* ident, parser_list* index
 // Helper for FindBest
 function* scoreFuncs(symbol* find, expr** pass, int np, int &bs, bool &tie)
 {
-  if (find) if (compiler_debug.startReport()) {
-    compiler_debug.report() << "matching positional call ";
-    ShowPosCall(compiler_debug.report(), find->Name(), pass, 0, np);
-    compiler_debug.report().Put('\n');
-    compiler_debug.stopIO();
+  if (find) if (compiler_debug.start()) {
+    compiler_debug << "matching positional call ";
+    ShowPosCall(compiler_debug.stream(), find->Name(), pass, 0, np);
+    compiler_debug.stop();
   }
   function* best = 0;
   for (symbol* ptr = find; ptr; ptr = ptr->Next()) {
     function* f = dynamic_cast <function*> (ptr);
     if (0==f)  continue;
     int score = f->TypecheckParams(pass, np);
-    if (compiler_debug.startReport()) {
-      compiler_debug.report() << "scored ";
-      f->PrintHeader(compiler_debug.report(), false);
-      compiler_debug.report() << ": " << score << "\n";
-      compiler_debug.stopIO();
+    if (compiler_debug.start()) {
+      compiler_debug << "scored ";
+      f->PrintHeader(compiler_debug.stream(), false);
+      compiler_debug << ": " << score;
+      compiler_debug.stop();
     }
     if (score < 0)    continue;
     if (score == bs)  {
@@ -1864,15 +1808,16 @@ function* scoreFuncs(symbol* find, expr** pass, int np, int &bs, bool &tie)
 }
 
 // Helper for FindBest
-void showMatching(symbol* find, expr** pass, int np, int best_score)
+void showMatching(parse_error &E, symbol* find,
+        expr** pass, int np, int best_score)
 {
   for (symbol* ptr = find; ptr; ptr = ptr->Next()) {
     function* f = dynamic_cast <function*> (ptr);
     if (0==f)      continue;
     int score = f->TypecheckParams(pass, np);
     if (score != best_score)  continue;
-    f->PrintHeader(pm->cerr(), true);
-    pm->newLine();
+    f->PrintHeader(E.stream(), true);
+    E.newLine();
   } // for ptr
 }
 
@@ -1897,28 +1842,26 @@ function* FindBest(symbol* f1, symbol* f2, expr** pass,
   }
 
   if (best_score < 0) {
-    if (no_match_error && pm->startError()) {
-      pm->cerr() << "No match for ";
-      ShowPosCall(pm->cerr(), name, pass, first, length);
-      pm->stopError();
+    if (no_match_error) {
+      parse_error E;
+      E << "No match for ";
+      ShowPosCall(E.stream(), name, pass, first, length);
     }
-    return 0;
+    return nullptr;
   }
 
   if (tie) {
-    if (pm->startError()) {
-      pm->cerr() << "Multiple promotions with distance " << best_score;
-      pm->cerr() << " for ";
-      ShowPosCall(pm->cerr(), name, pass, first, length);
-      pm->newLine();
-      pm->cerr() << "Possible choices:";
-      pm->newLine(1);
-      showMatching(f1, pass, length, best_score);
-      showMatching(f2, pass, length, best_score);
-      pm->changeIndent(-1);
-      pm->stopError();
-    }
-    return 0;
+    parse_error E;
+    E << "Multiple promotions with distance " << best_score << " for ";
+    ShowPosCall(E.stream(), name, pass, first, length);
+    E.newLine();
+    E << "Possible choices:";
+    E.Out.incIndent();
+    E.newLine();
+    showMatching(E, f1, pass, length, best_score);
+    showMatching(E, f2, pass, length, best_score);
+    E.Out.decIndent();
+    return nullptr;
   }
 
   return best;
@@ -1934,11 +1877,10 @@ function* scoreFuncs(symbol* find, symbol** pass, int np, int &bs, bool &tie)
 {
   pos_paramarray &ppa = pos_paramarray::thePosList();
 
-  if (find) if (compiler_debug.startReport()) {
-    compiler_debug.report() << "matching named call ";
-    ShowNamedCall(compiler_debug.report(), find->Name(), pass, np);
-    compiler_debug.report().Put('\n');
-    compiler_debug.stopIO();
+  if (find) if (compiler_debug.start()) {
+    compiler_debug << "matching named call ";
+    ShowNamedCall(compiler_debug.stream(), find->Name(), pass, np);
+    compiler_debug.stop();
   }
   function* best = 0;
   for (symbol* ptr = find; ptr; ptr = ptr->Next()) {
@@ -1950,11 +1892,10 @@ function* scoreFuncs(symbol* find, symbol** pass, int np, int &bs, bool &tie)
     //
     int mnp = f->maxNamedParams();
     if (mnp < 0) {
-      if (compiler_debug.startReport()) {
-        compiler_debug.report() << "named params not supported by ";
-        f->PrintHeader(compiler_debug.report(), false);
-        compiler_debug.report() << "\n";
-        compiler_debug.stopIO();
+      if (compiler_debug.start()) {
+        compiler_debug << "named params not supported by ";
+        f->PrintHeader(compiler_debug.stream(), false);
+        compiler_debug.stop();
       }
 
       // can't call this function with named params
@@ -1966,11 +1907,11 @@ function* scoreFuncs(symbol* find, symbol** pass, int np, int &bs, bool &tie)
       //
       // Couldn't convert; bad name or missing something required
       //
-      if (compiler_debug.startReport()) {
-        compiler_debug.report() << "failed conversion to ";
-        f->PrintHeader(compiler_debug.report(), false);
-        compiler_debug.report() << ": " << ntp << "\n";
-        compiler_debug.stopIO();
+      if (compiler_debug.start()) {
+        compiler_debug << "failed conversion to ";
+        f->PrintHeader(compiler_debug.stream(), false);
+        compiler_debug << ": " << ntp;
+        compiler_debug.stop();
       }
       continue;
     }
@@ -1980,11 +1921,11 @@ function* scoreFuncs(symbol* find, symbol** pass, int np, int &bs, bool &tie)
     //
     int score = f->TypecheckParams(ppa.getList(), ntp);
     ppa.recycle(ntp);   // cleanup
-    if (compiler_debug.startReport()) {
-      compiler_debug.report() << "scored ";
-      f->PrintHeader(compiler_debug.report(), false);
-      compiler_debug.report() << ": " << score << "\n";
-      compiler_debug.stopIO();
+    if (compiler_debug.start()) {
+      compiler_debug << "scored ";
+      f->PrintHeader(compiler_debug.stream(), false);
+      compiler_debug << ": " << score;
+      compiler_debug.stop();
     }
     if (score < 0)    continue;
     if (score == bs)  {
@@ -2001,7 +1942,7 @@ function* scoreFuncs(symbol* find, symbol** pass, int np, int &bs, bool &tie)
 }
 
 // Helper for FindBest
-void showMatching(symbol* find, symbol** pass, int np, int best_score)
+void showMatching(parse_error &E, symbol* find, symbol** pass, int np, int best_score)
 {
   pos_paramarray &ppa = pos_paramarray::thePosList();
   for (symbol* ptr = find; ptr; ptr = ptr->Next()) {
@@ -2019,8 +1960,8 @@ void showMatching(symbol* find, symbol** pass, int np, int best_score)
     int score = f->TypecheckParams(ppa.getList(), ntp);
     ppa.recycle(ntp);
     if (score != best_score)  continue;
-    f->PrintHeader(pm->cerr(), true);
-    pm->newLine();
+    f->PrintHeader(E.stream(), true);
+    E.newLine();
   } // for ptr
 }
 
@@ -2046,27 +1987,25 @@ function* FindBest(symbol* f1, symbol* f2, symbol** pass,
   }
 
   if (best_score < 0) {
-    if (no_match_error && pm->startError()) {
-      pm->cerr() << "No match for ";
-      ShowNamedCall(pm->cerr(), name, pass, length);
-      pm->stopError();
+    if (no_match_error) {
+      parse_error E;
+      E << "No match for ";
+      ShowNamedCall(E.stream(), name, pass, length);
     }
-    return 0;
+    return nullptr;
   }
 
   if (tie) {
-    if (pm->startError()) {
-      pm->cerr() << "Multiple promotions with distance " << best_score;
-      pm->cerr() << " for ";
-      ShowNamedCall(pm->cerr(), name, pass, length);
-      pm->newLine();
-      pm->cerr() << "Possible choices:";
-      pm->newLine(1);
-      showMatching(f1, pass, length, best_score);
-      showMatching(f2, pass, length, best_score);
-      pm->changeIndent(-1);
-      pm->stopError();
-    }
+    parse_error E;
+    E << "Multiple promotions with distance " << best_score << " for ";
+    ShowNamedCall(E.stream(), name, pass, length);
+    E.newLine();
+    E << "Possible choices:";
+    E.Out.incIndent();
+    E.newLine();
+    showMatching(E, f1, pass, length, best_score);
+    showMatching(E, f2, pass, length, best_score);
+    E.Out.decIndent();
     return 0;
   }
 
@@ -2084,11 +2023,8 @@ exprman::unary_opcode Int2Uop(int op)
     case GLOBALLY:  return exprman::uop_globally;
     case NEXT:      return exprman::uop_next;
   }
-  if (pm->startInternal(__FILE__, __LINE__)) {
-    pm->internal() << "Operator " << TokenName(op);
-    pm->internal() << " not matched to any unary operator";
-    pm->stopError();
-  }
+  internal_error E(__FILE__, __LINE__, Where());
+  E << "Operator " << TokenName(op) << " not matched to any unary operator";
   return exprman::uop_none;
 }
 
@@ -2107,11 +2043,8 @@ exprman::binary_opcode Int2Bop(int op)
     case UNTIL:     return exprman::bop_until;
     case TEMPORALAND:  return exprman::bop_and;
   }
-  if (pm->startInternal(__FILE__, __LINE__)) {
-    pm->internal() << "Operator " << TokenName(op);
-    pm->internal() << " not matched to any binary operator";
-    pm->stopError();
-  }
+  internal_error E(__FILE__, __LINE__, Where());
+  E << "Operator " << TokenName(op) << " not matched to any binary operator";
   return exprman::bop_none;
 }
 
@@ -2126,11 +2059,9 @@ exprman::assoc_opcode Int2Aop(int op)
     case SEMI:    return exprman::aop_semi;
     case COMMA:   return exprman::aop_union;
   }
-  if (pm->startInternal(__FILE__, __LINE__)) {
-    pm->internal() << "Operator " << TokenName(op);
-    pm->internal() << " not matched to any associative operator";
-    pm->stopError();
-  }
+  internal_error E(__FILE__, __LINE__, Where());
+  E << "Operator " << TokenName(op)
+    << " not matched to any associative operator";
   return exprman::aop_none;
 }
 
@@ -2141,12 +2072,10 @@ expr* BuildElementSet(expr* elem)
   DCASSERT(elem->Type());
   const type* set_type = elem->Type()->getSetOfThis();
   if (0 == set_type) {
-    if (pm->startError()) {
-      pm->cerr() << "Sets of type ";
-      elem->PrintType(pm->cerr());
-      pm->cerr() << " are not allowed";
-      pm->stopError();
-    }
+    parse_error E;
+    E << "Sets of type ";
+    elem->PrintType(E.stream());
+    E << " are not allowed";
     Delete(elem);
     return em->makeError();
   }
@@ -2365,10 +2294,8 @@ expr* MakeBoolConst(char* s)
     free(s);
     return new value(Where(), em->BOOL, c);
   }
-  if (pm->startInternal(__FILE__, __LINE__)) {
-    pm->internal() << "Bad boolean constant: " << s;
-    pm->stopError();
-  }
+  internal_error E(__FILE__, __LINE__, Where());
+  E << "Bad boolean constant: " << s;
   free(s);
   return em->makeError();
 }
@@ -2445,9 +2372,9 @@ expr* MakeAMCall(char* n, parser_list* ind, char* m)
   symbol* find = 0;
   if (n) find = Arrays->FindSymbol(n);
   if (0==find) {
-     if (n) if (pm->startError()) {
-      pm->cerr() << "Unknown array " << n;
-      pm->stopError();
+    if (n) {
+      parse_error E;
+      E << "Unknown array " << n;
     }
     free(n);
     DeleteCircular(ind);
@@ -2499,9 +2426,9 @@ expr* MakeAMACall(char* n, parser_list* ind, char* m, parser_list* ind2)
   symbol* find = 0;
   if (n) find = Arrays->FindSymbol(n);
   if (0==find) {
-     if (n) if (pm->startError()) {
-      pm->cerr() << "Unknown array " << n;
-      pm->stopError();
+    if (n) {
+      parse_error E;
+      E << "Unknown array " << n;
     }
     free(n);
     DeleteCircular(ind);
@@ -2550,10 +2477,8 @@ shared_object* MakeModelCallPP(char* n, parser_list* list)
 
   find = Funcs->FindSymbol(n);
   if (0==find) {
-    if (pm->startError()) {
-      pm->cerr() << "Unknown model " << n;
-      pm->stopError();
-    }
+    parse_error E;
+    E << "Unknown model " << n;
     free(n);
     DeleteCircular(list);
     return 0;
@@ -2582,20 +2507,19 @@ shared_object* MakeModelCallPP(char* n, parser_list* list)
   // make sure this is a model!
   model_def* parent = em->isAModelDef(best);
   if (0==parent) {
-    if (pm->startError()) {
-      if (0==length) {
-        pm->cerr() << best->Name() << " is not a model";
-      } else {
-        pm->cerr() << "Expected model for call ";
-        ShowPosCall(pm->cerr(), best->Name(), pass, 0, length);
-        pm->cerr() << ", but it matches";
-        pm->newLine(1);
-        best->PrintHeader(pm->cerr(), true);
-        pm->cerr() << " declared " << best->Where();
-        pm->changeIndent(-1);
-      } // length
-      pm->stopError();
-    } // if startError
+    parse_error E;
+    if (0==length) {
+        E << best->Name() << " is not a model";
+    } else {
+        E << "Expected model for call ";
+        ShowPosCall(E.stream(), best->Name(), pass, 0, length);
+        E << ", but it matches";
+        E.Out.incIndent();
+        E.newLine();
+        best->PrintHeader(E.stream(), true);
+        E << " declared " << best->Where();
+        E.Out.decIndent();
+    } // length
     return 0;
   }
 
@@ -2623,10 +2547,8 @@ shared_object* MakeModelCallNP(char* n, parser_list* list)
 
   find = Funcs->FindSymbol(n);
   if (0==find) {
-    if (pm->startError()) {
-      pm->cerr() << "Unknown model " << n;
-      pm->stopError();
-    }
+    parse_error E;
+    E << "Unknown model " << n;
     free(n);
     DeleteCircular(list);
     return 0;
@@ -2651,20 +2573,19 @@ shared_object* MakeModelCallNP(char* n, parser_list* list)
   //
   model_def* parent = em->isAModelDef(best);
   if (0==parent) {
-    if (pm->startError()) {
-      if (0==npa.getLength()) {
-        pm->cerr() << best->Name() << " is not a model";
-      } else {
-        pm->cerr() << "Expected model for call ";
-        ShowNamedCall(pm->cerr(), best->Name(), npa.getList(), npa.getLength());
-        pm->cerr() << ", but it matches";
-        pm->newLine(1);
-        best->PrintHeader(pm->cerr(), true);
-        pm->cerr() << " declared " << best->Where();
-        pm->changeIndent(-1);
-      } // length
-      pm->stopError();
-    } // if startError
+    parse_error E;
+    if (0==npa.getLength()) {
+        E << best->Name() << " is not a model";
+    } else {
+        E << "Expected model for call ";
+        ShowNamedCall(E.stream(), best->Name(), npa.getList(), npa.getLength());
+        E << ", but it matches";
+        E.Out.incIndent();
+        E.newLine();
+        best->PrintHeader(E.stream(), true);
+        E << " declared " << best->Where();
+        E.Out.decIndent();
+    } // length
     return 0;
   }
 
@@ -2739,10 +2660,8 @@ expr* BuildArrayCall(char* n, parser_list* ind)
   }
 
   if (0==find) {
-     if (pm->startError()) {
-      pm->cerr() << "Unknown array " << n;
-      pm->stopError();
-    }
+    parse_error E;
+    E << "Unknown array " << n;
     free(n);
     DeleteCircular(ind);
     return em->makeError();
@@ -2781,12 +2700,9 @@ expr* BuildFuncCallPP(char* n, parser_list* posparams)
   }
 
   if (0==find && 0==find2) {
-    if (pm->startError()) {
-      if (posparams)  pm->cerr() << "Unknown function ";
-      else            pm->cerr() << "Unknown identifier: ";
-      pm->cerr() << n;
-      pm->stopError();
-    }
+    parse_error E;
+    if (posparams)  E << "Unknown function " << n;
+    else            E << "Unknown identifier: " << n;
     free(n);
     DeleteCircular(posparams);
     return em->makeError();
@@ -2840,12 +2756,9 @@ expr* BuildFuncCallNP(char* n, parser_list* namedparams)
   }
 
   if (0==find && 0==find2) {
-    if (pm->startError()) {
-      if (namedparams)  pm->cerr() << "Unknown function ";
-      else              pm->cerr() << "Unknown identifier: ";
-      pm->cerr() << n;
-      pm->stopError();
-    }
+    parse_error E;
+    if (namedparams)  E << "Unknown function " << n;
+    else              E << "Unknown identifier: " << n;
     free(n);
     DeleteCircular(namedparams);
     return em->makeError();
@@ -2961,10 +2874,10 @@ int Compile(parse_module* parent)
 
   int ans = yyparse();
 
-  if (compiler_debug.startReport()) {
-    compiler_debug.report() << "Done compiling\n";
-    compiler_debug.report() << "List depth: " << list_depth << "\n";
-    compiler_debug.stopIO();
+  if (compiler_debug.start()) {
+    compiler_debug << "Done compiling\n";
+    compiler_debug << "List depth: " << list_depth << "\n";
+    compiler_debug.stop();
   }
 
   if (kill_builtins) {

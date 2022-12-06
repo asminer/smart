@@ -120,7 +120,8 @@ int Compare(type *a, type* b)
 // *                                                                *
 // ******************************************************************
 
-superman::superman(io_environ* i, option_manager* o) : exprman(i, o)
+// superman::superman(io_environ* i, option_manager* o) : exprman(i, o)
+superman::superman(option_manager* o) : exprman(o)
 {
   // special error and default expressions
   error_expr = new bogus_expr("error");
