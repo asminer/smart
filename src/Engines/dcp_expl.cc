@@ -2,6 +2,7 @@
 #include "dcp_expl.h"
 
 #include "../Utils/textfmt.h"
+#include "../Utils/sigman.h"
 #include "../Options/options.h"
 #include "../ExprLib/startup.h"
 #include "../ExprLib/exprman.h"
@@ -32,18 +33,18 @@ public:
   virtual bool hasFixedPointer() const {
     return false;
   }
-  virtual void printCopyright(doc_formatter* df) const;
+  virtual void printCopyright(doc_formatter &df) const;
 };
 
 icp_state_lib::icp_state_lib() : library(false, false)
 {
 }
 
-void icp_state_lib::printCopyright(doc_formatter* df) const
+void icp_state_lib::printCopyright(doc_formatter &df) const
 {
-  df->begin_indent();
-  df->Out() << "State library copyright info here\n";
-  df->end_indent();
+  df.begin_indent();
+  df.Out() << "State library copyright info here\n";
+  df.end_indent();
 }
 
 // ******************************************************************
@@ -104,8 +105,8 @@ private:
 protected:
   // returns true if the report stream is open
   inline bool startGen(const char* name) {
-    if (report.startReport()) {
-      report.report() << "Generating reachability set for model " << name;
+    if (report.start()) {
+      report << "Generating reachability set for model " << name;
       return true;
     }
     return false;
@@ -113,34 +114,30 @@ protected:
   // returns true if the report stream is open
   inline bool stopGen(bool err, const char* n, const timer& w,
                                                 long mem, long ns) {
-    if (report.startReport()) {
-      if (err)  report.report() << "Incomplete";
-      else      report.report() << "Generated ";
-      report.report() << " reachability set for model " << n << "\n";
-      report.report() << "\t" << w.elapsed_seconds() << " seconds ";
-      if (err)  report.report() << "until error\n";
-      else      report.report() << "required for generation\n";
+    if (report.start()) {
+      if (err)  report << "Incomplete";
+      else      report << "Generated ";
+      report << " reachability set for model " << n << "\n";
+      report << "\t" << w.elapsed_seconds() << " seconds ";
+      if (err)  report << "until error\n";
+      else      report << "required for generation\n";
       if (mem >= 0) {
-        report.report().Put('\t');
-        report.report().PutMemoryCount(mem, 3);
-        if (err)  report.report() << " used before error\n";
-        else      report.report() << " required for state generation\n";
+        report << '\t' << memoryCount(mem, 3);
+        if (err)  report << " used before error\n";
+        else      report << " required for state generation\n";
       }
       if (ns >= 0) {
-        report.report() << "\t" << ns << " states generated";
-        if (err) report.report() << " before error";
-        report.report() << "\n";
+        report << "\t" << ns << " states generated";
+        if (err) report << " before error";
+        report << "\n";
       }
       return true;
     }
     return false;
   }
   inline void terminateError() const {
-    if (em->startError()) {
-      em->causedBy(0);
-      em->cerr() << "Process construction prematurely terminated";
-      em->stopIO();
-    }
+    expr_error E(0);
+    E << "Process construction prematurely terminated";
     throw Terminated;
   }
 };
@@ -178,8 +175,7 @@ void icp_stategen::RunEngine(hldsm* hm, result &)
 
   timer watch;
   if (startGen(hm->Name())) {
-    em->report().Put('\n');
-    em->stopIO();
+    report.stop();
   }
 
   N = nem->NumVars();
@@ -192,7 +188,9 @@ void icp_stategen::RunEngine(hldsm* hm, result &)
     current[i] = 0;
   }
 
-  em->waitTerm();
+  signal_manager &tsm = signal_manager::theSigMan();
+  tsm.waitTermination();
+
   states = StateLib::CreateCollection(false, false);
   bool OK = true;
   error foo = Engine_Failed;
@@ -206,9 +204,10 @@ void icp_stategen::RunEngine(hldsm* hm, result &)
 
   if (stopGen(!OK, hm->Name(), watch,
               states->ReportMemTotal(), states->Size())) {
-    em->stopIO();
+    report.stop();
   }
-  em->resumeTerm();
+
+  tsm.resumeTermination();
 
   delete[] current;
   delete[] bounds;
@@ -227,23 +226,23 @@ void icp_stategen::Generate_NE_rec(int k)
     // visit this state
     long index = states->AddState(current, N);
     if (index < 0) {
-      if (nem->StartError(0)) {
-        em->cerr() << "Out of memory when adding to state space";
-        nem->DoneError();
-      }
+      hldsm::errmsg E(nem);
+      E << "Out of memory when adding to state space";
       throw Out_Of_Memory;
     }
-    if (debug.startReport()) {
-      debug.report() << "Valid state: ";
-      debug.report().PutArray(current, N);
-      debug.report() << "\n";
-      debug.stopIO();
+    if (debug.start()) {
+      debug << "Valid state: ";
+      debug << element_writer<int>(current, N);
+      debug.stop();
     }
     return;
   }
+
   for (current[k] = 0; current[k] < bounds[k]; current[k]++) {
     // Check for sigterm
-    if (em->caughtTerm()) return terminateError();
+    if (signal_manager::theSigMan().caughtSignal()) {
+        return terminateError();
+    }
 
     nem->GetVar(k)->SetToValueNumber(current[k]);
     if (nem->SatisfiesConstraintsAt(k)) {
@@ -375,9 +374,12 @@ void icp_minimize ::SolveExplicit(no_event_model* nem,
   // Need option or something to decide how many optima to show here...
   sc->GetStateKnown(min_st, current, N);
   nem->SetState(current);
-  em->cout() << "Minimum value " << min << " obtainted in state ";
-  nem->ShowCurrentState(em->cout());
-  em->cout() << "\n";
+
+  outputStream &out = outputStream::globalOut();
+
+  out << "Minimum value " << min << " obtainted in state ";
+  nem->ShowCurrentState(out.stream());
+  out << "\n";
 
   delete[] current;
 }
@@ -444,9 +446,12 @@ void icp_maximize::SolveExplicit(no_event_model* nem,
   // Need option or something to decide how many optima to show here...
   sc->GetStateKnown(max_st, current, N);
   nem->SetState(current);
-  em->cout() << "Maximum value " << max << " obtainted in state ";
-  nem->ShowCurrentState(em->cout());
-  em->cout() << "\n";
+
+  outputStream &out = outputStream::globalOut();
+
+  out << "Maximum value " << max << " obtainted in state ";
+  nem->ShowCurrentState(out.stream());
+  out << "\n";
 
   delete[] current;
 }
@@ -499,9 +504,10 @@ void icp_satisfiable::SolveExplicit(no_event_model* nem,
 
   // Need option or something to decide how many to show here...
   if (foo.getBool()) {
-    em->cout() << "Satisfiable in state ";
-    nem->ShowCurrentState(em->cout());
-    em->cout() << "\n";
+    outputStream &out = outputStream::globalOut();
+    out << "Satisfiable in state ";
+    nem->ShowCurrentState(out.stream());
+    out << "\n";
   }
 
   delete[] current;

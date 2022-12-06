@@ -35,7 +35,7 @@ public:
 
 protected:
   virtual void InitModel();
-  virtual void FinalizeModel(std::ostream& ds);
+  virtual void FinalizeModel(outputStream& ds);
 };
 
 // ******************************************************************
@@ -104,7 +104,7 @@ void dcp_def::InitModel()
   constraints = new List <expr>;
 }
 
-void dcp_def::FinalizeModel(std::ostream &ds)
+void dcp_def::FinalizeModel(outputStream &ds)
 {
 #ifdef DEBUG_DCP
   em->cout() << "Finalizing dcp_def...\n";
@@ -303,11 +303,8 @@ bool init_dcps::execute()
   // Set up and register formalism
   formalism* dcp = new dcp_form("dcp", "discrete constraint program", "foobar");
   if (! em->registerType(dcp)) {
-    if (em->startInternal(__FILE__, __LINE__)) {
-      em->causedBy(0);
-      em->internal() << "Couldn't register dcp type";
-      em->stopIO();
-    }
+    internal_error E(__FILE__, __LINE__);
+    E << "Couldn't register dcp type";
     return false;
   }
   symbol_table* dcpsyms = MakeSymbolTable();
