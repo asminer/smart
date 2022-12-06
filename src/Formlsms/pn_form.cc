@@ -2284,7 +2284,7 @@ pn_enable_dec::pn_enable_dec() : model_internal(em->VOID, "enable_decision", 2)
   d->SetItem(1, em->BOOL);
   SetFormal(1, d, "dset:b");
   SetRepeat(1);
-  SetDocumentation("For each decision d in the set dset, adds guard b on decision d(d is unknown if d is not taken).");
+  SetDocumentation("For each decision d in the set dset, adds guard b on decision d(d is unknown if b false).");
 }
 
 void pn_enable_dec::Compute(traverse_data &x, expr** pass, int ndd)
@@ -2307,7 +2307,10 @@ void pn_enable_dec::Compute(traverse_data &x, expr** pass, int ndd)
     DCASSERT(first.isNormal());
     shared_set* dset = smart_cast <shared_set*> (first.getPtr());
     DCASSERT(dset);
+    //
     expr* decEnabling = pass[i]->Substitute(1);
+    // expr* decEnabling = pass[i];
+    //
 
     for (int z=0; z<dset->Size(); z++) {
       result tr;
@@ -2970,16 +2973,10 @@ void pn_istaken::Compute(traverse_data &x, expr** pass, int ndd)
   mypn = smart_cast <dsde_hlm*> (mi->GetCompiledModel());
 
   decision* d = smart_cast <decision*> (pass[1]);
+  DCASSERT(d);
 
-  if (d) {
-    if (d->isTaken()) {
-      x.answer->setBool(true);
-    } else {
-      x.answer->setUnknown();
-    }
-  } else {
-    std::cerr << "help!\n";
-  }
+  if (d->isTaken()) x.answer->setBool(true);
+  else x.answer->setUnknown();
 }
 
 
