@@ -105,7 +105,7 @@ private:
 
 help_base::help_base(const char* name, int np)
 : simple_internal(em->VOID, name, np),
-    df(80, outputStream::globalOut().stream())
+    df(80, outputStream::globalOut())
 {
   flist = 0;
   flist_alloc = 0;

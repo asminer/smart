@@ -431,16 +431,16 @@ void topic_unaryop::PrintDocs(doc_formatter &df, const char*) const
   df.Out() << ".  It may be used on the following types of expressions:\n";
 
   df.begin_description(18);
-  std::stringstream foo;
   for (int i=0; i<em->getNumTypes(); i++) {
     const type* t = em->getTypeNumber(i);
     DCASSERT(t);
     const type* u = em->getTypeOf(op, t);
     if (0==u)  continue;
-    foo.clear();
+    std::stringstream foo;
     foo << em->getOp(op) << " " << t->getName();
     df.item(foo.str().c_str());
     df.Out() << "has type " << u->getName() << "\n";
+    foo.str("");
   }
   df.end_description();
   df.end_indent();
@@ -479,7 +479,6 @@ void topic_binaryop::PrintDocs(doc_formatter &df, const char*) const
   df.Out() << ".  It may be used on the following types of expressions:\n";
 
   df.begin_description(35);
-  std::stringstream foo;
   for (int i=0; i<em->getNumTypes(); i++) {
     const type* t = em->getTypeNumber(i);
     DCASSERT(t);
@@ -488,11 +487,12 @@ void topic_binaryop::PrintDocs(doc_formatter &df, const char*) const
       DCASSERT(u);
       const type* v = em->getTypeOf(t, op, u);
       if (0==v)  continue;
-      foo.clear();
+      std::stringstream foo;
       foo << t->getName() << " ";
       foo << em->getOp(op) << " " << u->getName();
       df.item(foo.str().c_str());
       df.Out() << "has type " << v->getName() << "\n";
+      foo.str("");
     }
   }
   df.end_description();
@@ -533,7 +533,6 @@ void topic_trinaryop::PrintDocs(doc_formatter &df, const char*) const
   df.Out() << ".  It may be used on the following types of expressions:\n";
 
   df.begin_description(35);
-  std::stringstream foo;
   for (int i=0; i<em->getNumTypes(); i++) {
     const type* t = em->getTypeNumber(i);
     DCASSERT(t);
@@ -545,12 +544,13 @@ void topic_trinaryop::PrintDocs(doc_formatter &df, const char*) const
         DCASSERT(v);
         const type* w = em->getTypeOf(op, t, u, v);
         if (0==w)  continue;
-        foo.clear();
+        std::stringstream foo;
         foo << t->getName() << " " << em->getFirst(op) << " ";
         foo << u->getName() << " " << em->getSecond(op) << " ";
         foo << v->getName();
         df.item(foo.str().c_str());
         df.Out() << "has type " << w->getName() << "\n";
+        foo.str("");
       } // for k
     } // for j
   } // for i
@@ -593,7 +593,6 @@ void topic_assocop::PrintDocs(doc_formatter &df, const char*) const
   df.Out() << ".  It may be used on the following types of expressions:\n";
 
   df.begin_description(35);
-  std::stringstream foo;
   for (int i=0; i<em->getNumTypes(); i++) {
     const type* t = em->getTypeNumber(i);
     DCASSERT(t);
@@ -602,11 +601,12 @@ void topic_assocop::PrintDocs(doc_formatter &df, const char*) const
       DCASSERT(u);
       const type* v = em->getTypeOf(t, flipped, op, u);
       if (0==v)  continue;
-      foo.clear();
+      std::stringstream foo;
       foo << t->getName() << " ";
       foo << em->getOp(flipped, op) << " " << u->getName();
       df.item(foo.str().c_str());
       df.Out() << "has type " << v->getName() << "\n";
+      foo.str("");
     }
   }
   df.end_description();

@@ -55,18 +55,18 @@ class outputStream {
          */
         void defaultOutput();
 
-        inline void activate()          { active = true; }
-        inline void deactivate()        { active = false; }
-        inline bool isActive() const    { return active; }
-
         inline std::ostream& stream() {
             return (fout.is_open()) ? fout : deflt;
         }
 
-        inline void incIndent() {
-            indent_spaces += 4;
-        }
-        inline void decIndent() {
+        inline void activate()          { active = true; }
+        inline void deactivate()        { active = false; }
+        inline bool isActive() const    { return active; }
+
+        inline void flush()             { stream().flush(); }
+
+        inline void incIndent()         { indent_spaces += 4; }
+        inline void decIndent()         {
             if (indent_spaces) indent_spaces -= 4;
         }
         inline void clearIndent(unsigned sp=0) {

@@ -19,7 +19,7 @@ inline bool EndOfWord(char c)
 // |                                                                |
 // ==================================================================
 
-doc_formatter::doc_formatter(unsigned width, std::ostream& o)
+doc_formatter::doc_formatter(unsigned width, outputStream &o)
  : out(o)
 {
     // pagewidth = width;
@@ -28,6 +28,7 @@ doc_formatter::doc_formatter(unsigned width, std::ostream& o)
     in_heading = false;
     indent_depth = 0;
     desc_width = 0;
+    buffer.str("");
 }
 
 void doc_formatter::section(const char* name)
@@ -102,9 +103,9 @@ void doc_formatter::eject_page()
 bool doc_formatter::Matches(const char* item, const char* keyword)
 {
     if (NULL==keyword) return true;
-    unsigned slen = strlen(keyword);
-    unsigned last = strlen(item) - slen;
-    for (unsigned i=0; i<=last; i++) {
+    long slen = strlen(keyword);
+    long last = strlen(item) - slen;
+    for (long i=0; i<=last; i++) {
         if (0==strncasecmp(item+i, keyword, slen)) return true;
     }
     return false;
@@ -113,6 +114,7 @@ bool doc_formatter::Matches(const char* item, const char* keyword)
 void doc_formatter::FlushText()
 {
     std::string doc = buffer.str();
+    buffer.str("");
     unsigned ptr = 0;
     unsigned linewidth = (right > left) ? (right - left) : 0;
     bool ignore_marg = desc_width;
@@ -176,6 +178,5 @@ void doc_formatter::FlushText()
     } // while doc[ptr]
     out.flush();
     // Clear the buffer
-    buffer.str(std::string());
 }
 

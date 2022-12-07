@@ -156,7 +156,7 @@ int Usage(exprman* em)
 int Copyrights(exprman* em)
 {
   if (0==em) return 1;
-  doc_formatter df(80, outputStream::globalOut().stream());
+  doc_formatter df(80, outputStream::globalOut());
   df.Out() << "\n";
   df.begin_heading();
   df.Out() << first_init::getVersionString();

@@ -4,6 +4,7 @@
 
 #include <iostream>
 #include <sstream>
+#include "outstream.h"
 
 /** Centralized documentation formatting class.
 
@@ -17,7 +18,7 @@ class doc_formatter {
 //        unsigned pagewidth;
         unsigned left;
         unsigned right;
-        std::ostream& out;
+        outputStream &out;
         std::stringstream buffer;
 
         bool in_heading;
@@ -25,7 +26,7 @@ class doc_formatter {
         unsigned desc_width;
 
     public:
-        doc_formatter(unsigned _pagewidth, std::ostream& _out);
+        doc_formatter(unsigned _pagewidth, outputStream &_out);
 
         /// Write text here.
         inline std::ostream& Out() { return buffer; }
