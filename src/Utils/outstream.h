@@ -60,7 +60,6 @@ class outputStream {
         inline bool isActive() const    { return active; }
 
         inline std::ostream& stream() {
-            DCASSERT(active);
             return (fout.is_open()) ? fout : deflt;
         }
 

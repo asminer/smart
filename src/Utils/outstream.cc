@@ -78,7 +78,7 @@ void outputStream::buildThousandsOption(option_manager* om,
 bool outputStream::switchOutput(const char* outfile)
 {
     if (fout.is_open()) fout.close();
-    fout.open(outfile, std::fstream::out);
+    fout.open(outfile, std::fstream::out | std::fstream::app);
     update_real_format();
     return fout.good();
 }
