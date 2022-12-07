@@ -208,7 +208,8 @@ const char* token::getIdName() const
 
 void token::debug(outputStream &s) const
 {
-    s << "Token " << getIdName() << " " << where << " from text ";
+    s << "Token " << std::left << std::setw(12) << getIdName() << " "
+      << where << " from text ";
     show(s.stream());
 }
 

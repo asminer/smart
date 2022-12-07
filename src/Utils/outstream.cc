@@ -38,6 +38,7 @@ void rfwatch::notify(const option*)
 
 outputStream::outputStream(std::ostream &_deflt) : deflt(_deflt)
 {
+    activate();
     realfmt = RF_FIXED;
 
     update_real_format();
@@ -45,7 +46,6 @@ outputStream::outputStream(std::ostream &_deflt) : deflt(_deflt)
     clearIndent();
 
     comma = 0;
-    activate();
 }
 
 outputStream::~outputStream()
