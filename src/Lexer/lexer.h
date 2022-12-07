@@ -2,10 +2,12 @@
 #define LEXER_H
 
 #include "../Utils/location.h"
-#include "../ExprLib/exprman.h"
+#include "../Utils/messages.h"
 #include "tokens.h"
 #include <cstring>
 #include <fstream>
+
+class exprman;
 
 /*
  * Brilliantly-designed, perfect in every way,
@@ -102,7 +104,17 @@ class lexer {
                 void operator=(const buffer&) = delete;
         };
     private:
-        debugging_msg lexer_debug;
+        class lexerror : public error_msg {
+            public:
+                lexerror(const location &L, const char* text=0);
+        };
+    private:
+        class lexwarning : public error_msg {
+            public:
+                lexwarning(const location &L, const char* text=0);
+        };
+    private:
+        debugging_msg debug;
 
         const exprman* em;
         const char** filenames;
@@ -172,12 +184,12 @@ class lexer {
 
         // Turn on debugging
         inline void debug_on() {
-            lexer_debug.Activate();
+            debug.Activate();
         }
 
         // Turn off debugging
         inline void debug_off() {
-            lexer_debug.Deactivate();
+            debug.Deactivate();
         }
 
     private:
@@ -198,10 +210,9 @@ class lexer {
         void finish_attributed_token(token::type t);
 
         inline void debug_token() {
-            if (lexer_debug.startReport()) {
-                lookaheads[0].debug(lexer_debug.report());
-                lexer_debug.report() << "\n";
-                lexer_debug.stopIO();
+            if (debug.start()) {
+                lookaheads[0].debug(debug.Out);
+                debug.stop();
             }
         }
 };

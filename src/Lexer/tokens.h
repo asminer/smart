@@ -2,6 +2,7 @@
 #define TOKENS_H
 
 #include "../Utils/location.h"
+#include "../Utils/outstream.h"
 #include "../ExprLib/type.h"
 
 /**
@@ -136,13 +137,13 @@ class token {
         }
 
         // Show the actual text (lexeme)
-        void show(OutputStream &s) const;
+        std::ostream& show(std::ostream &s) const;
 
         // Convert tokenID into a string
         const char* getIdName() const;
 
         // For debugging: show lots of stuff
-        void debug(OutputStream &s) const;
+        void debug(outputStream &s) const;
 
         friend class lexer;
 
@@ -150,10 +151,9 @@ class token {
         void set_special(type t);
 };
 
-inline OutputStream& operator<< (OutputStream& s, const token& t)
+inline std::ostream& operator<< (std::ostream& s, const token& t)
 {
-    t.show(s);
-    return s;
+    return t.show(s);
 }
 
 #endif

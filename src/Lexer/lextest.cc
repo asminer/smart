@@ -50,8 +50,8 @@ void InitOptions(option_manager* om)
 
 int Usage(exprman* em)
 {
+    using namespace std;
     if (0==em) return 1;
-    DisplayStream& cout = em->cout();
     cout << "\n";
     cout << "Usage : \n";
     cout << "lextest <file1> <file2> ... <filen>\n";
@@ -64,23 +64,18 @@ int Usage(exprman* em)
 
 int main(int argc, const char** argv)
 {
-    io_environ myio;
-    CatchSignals(&myio);
-
     // Options
     option_manager* om = MakeOptionManager();
     InitOptions(om);
 
     // Expressions
-    exprman* em = Initialize_Expressions(&myio, om);
+    exprman* em = Initialize_Expressions(om);
 
     // Bootstrap initializers, and run them
     first_init the_first_init(em);
     if ( ! initializer::executeAll() ) {
-        if (em->startInternal(__FILE__, __LINE__)) {
-            em->cerr() << "Deadlock in initializers";
-            em->stopIO();
-        }
+        internal_error E(__FILE__, __LINE__);
+        E << "Deadlock in initializers";
         return -1;
     }
 
@@ -94,9 +89,8 @@ int main(int argc, const char** argv)
     token t;
     do {
         LEX.consume(t);
-        t.debug(em->cout());
-        em->cout() << "\n";
-        em->cout().flush();
+        t.debug(outputStream::globalOut());
+        outputStream::globalOut() << "\n";
     } while (t);
 
     //

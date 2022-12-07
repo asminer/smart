@@ -3,12 +3,13 @@
 	Test of the splay tree class.
 */
 
+#include <iostream>
 #include <stdlib.h>
 #include <string.h>
 // #define DEBUG
 #include "../include/splay.h"
 
-io_environ myio;
+// io_environ myio;
 
 class myitem {
   const char* word;
@@ -30,7 +31,8 @@ inline int Compare(char* a, char* b)
 
 int main()
 {
-  DisplayStream& cout = myio.Output;
+  // DisplayStream& cout = myio.Output;
+  using namespace std;
 
   cout << "Creating splay tree of strings\n";
   cout.flush();

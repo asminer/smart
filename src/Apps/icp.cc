@@ -55,7 +55,7 @@ void InitOptions(option_manager* om)
   );
 }
 
-void SolveMeasures(DisplayStream& s, parse_module* pm)
+void SolveMeasures(outputStream& s, parse_module* pm)
 {
   pm->Finish();
   traverse_data x(traverse_data::Compute);
@@ -67,11 +67,10 @@ void SolveMeasures(DisplayStream& s, parse_module* pm)
   for (int i=0; i<pm->num_measures; i++) {
     s << "\t" << pm->measure_names[i] << " : ";
     if (pm->measure_calls[i])
-      pm->measure_calls[i]->Print(s, 0);
+      pm->measure_calls[i]->Print(s.stream());
     else
       s << "null";
     s << "\n";
-    s.flush();
   }
 #endif
 
@@ -79,9 +78,8 @@ void SolveMeasures(DisplayStream& s, parse_module* pm)
     SafeCompute(pm->measure_calls[i], x);
     const type* t = pm->em->SafeType(pm->measure_calls[i]);
     s << pm->measure_names[i] << ": ";
-    t->print(s, answer);
+    t->print(s.stream(), answer);
     s << "\n";
-    s.flush();
   }
   // solve measures here...
 }
@@ -93,24 +91,25 @@ int main(int argc, const char** argv, const char** env)
   //
 
   // Stream module initialization
+    /*
   io_environ myio;
   CatchSignals(&myio);
   DisplayStream& cout = myio.Output;
+  */
 
   // Option module initialization
   option_manager* om = MakeOptionManager();
   InitOptions(om);
 
   // Expression module initialization
-  exprman* em = Initialize_Expressions(&myio, om);
+  // exprman* em = Initialize_Expressions(&myio, om);
+  exprman* em = Initialize_Expressions(om);
 
   // Bootstrap initializers, and run them
   first_init the_first_init(em);
   if ( ! initializer::executeAll() ) {
-    if (em->startInternal(__FILE__, __LINE__)) {
-      em->cerr() << "Deadlock in initializers";
-      em->stopIO();
-    }
+    internal_error E(__FILE__, __LINE__);
+    E << "Deadlock in initializers";
     return -1;
   }
 
@@ -125,23 +124,26 @@ int main(int argc, const char** argv, const char** env)
   // Process command line, start parser
   //
 
+  outputStream& out = outputStream::globalOut();
+
   int code = 0;
   if (argc < 2) {
     // ==================================================================
-    cout << "\nICP version 0.1\n";
-    cout << "\nSupporting libraries:\n";
-    if (em)   em->printLibraryVersions(cout);
-    else      cout << "\nERROR, no expression manager available\n";
-    cout << "\n";
-    cout << "Usage : \n";
-    cout << "icp <file1> <file2> ... <filen>\n";
-    cout << "      Use the filename `-' to denote standard input\n";
-    cout << "\n";
+    out << "\nICP version 0.1\n";
+    out << "\nSupporting libraries:\n";
+    if (em)   em->printLibraryVersions(out.stream());
+    else      out << "\nERROR, no expression manager available\n";
+    out << "\n";
+    out << "Usage : \n";
+    out << "icp <file1> <file2> ... <filen>\n";
+    out << "      Use the filename `-' to denote standard input\n";
+    out << "\n";
     // ==================================================================
   } else {
     code = pm.ParseICPFiles(argv+1, argc-1);
-    if (0==code)
-      SolveMeasures(cout, &pm);
+    if (0==code) {
+      SolveMeasures(out, &pm);
+    }
   }
 
   //

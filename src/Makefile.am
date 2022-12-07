@@ -290,6 +290,7 @@ lextest_SOURCES = \
   Utils/outstream.cc \
   Utils/sigman.cc \
   Utils/strings.cc \
+  Utils/textfmt.cc \
   \
   Options/optman.cc \
   Options/options.cc \

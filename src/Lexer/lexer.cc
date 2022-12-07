@@ -3,7 +3,7 @@
 
 #include "../Options/options.h"
 
-#include <iostream>
+#include "../ExprLib/exprman.h"
 
 #define BUFSIZE 16384
 #define MAX_LEXEME 1024
@@ -51,6 +51,40 @@ lexer::buffer::~buffer()
 // ======================================================================
 //
 
+inline void start_error(outputStream &Out, const location &L, const char* txt)
+{
+    Out << ' ' << L;
+    if (txt) {
+        Out << " at text: '" << txt << "'";
+    }
+}
+
+//
+// ======================================================================
+//
+
+lexer::lexerror::lexerror(const location &L, const char* text)
+    : error_msg("ERROR")
+{
+    start_error(Out, L, text);
+    newLine();
+}
+
+//
+// ======================================================================
+//
+
+lexer::lexwarning::lexwarning(const location &L, const char* text)
+    : error_msg("WARNING")
+{
+    start_error(Out, L, text);
+    newLine();
+}
+
+//
+// ======================================================================
+//
+
 lexer::lexer(const exprman* _em, const char** fns, unsigned nfs)
     : text(MAX_LEXEME)
 {
@@ -58,11 +92,11 @@ lexer::lexer(const exprman* _em, const char** fns, unsigned nfs)
     DCASSERT(em);
 
 
-    lexer_debug.initialize(em->OptMan(), "lexer",
+    debug.initialize(em->OptMan(), "lexer",
         "When set, very low-level lexer messages are displayed."
     );
 #ifdef DEBUG_LEXER
-    lexer_debug.Activate();
+    debug.Activate();
 #endif
 
     topfile = 0;
@@ -93,25 +127,24 @@ bool lexer::push_input(const location& from, const char* filename)
 {
     if ( 0 == strcmp("-", filename) ) {
         // Special case: standard input
-        if (lexer_debug.startReport()) {
-            lexer_debug.report() << "opening standard input\n";
-            lexer_debug.stopIO();
+        if (debug.start()) {
+            debug << "opening standard input";
+            debug.stop();
         }
 
         topfile = new buffer(topfile);
     } else {
-        if (lexer_debug.startReport()) {
-            lexer_debug.report() << "opening " << filename << "\n";
-            lexer_debug.stopIO();
+        if (debug.start()) {
+            debug << "opening " << filename;
+            debug.stop();
         }
         topfile = new buffer(filename, topfile);
     }
 
     if (topfile->isGood()) return true;
 
-    em->startError(from, 0);
-    em->cerr() << "Couldn't open file '" << filename << "', ignoring";
-    em->stopIO();
+    lexerror E(from);
+    E << "Couldn't open file '" << filename << "', ignoring";
     buffer* next = topfile->getNext();
     delete topfile;
     topfile = next;
@@ -151,10 +184,9 @@ void lexer::scan_token()
         // Handle end of the top file
         //
         if (EOF == c) {
-            if (lexer_debug.startReport()) {
-                lexer_debug.report() << "End of file "
-                                     << topfile->where().getFile() << "\n";
-                lexer_debug.stopIO();
+            if (debug.start()) {
+                debug << "End of file " << topfile->where().getFile();
+                debug.stop();
             }
             buffer* n = topfile->getNext();
             delete topfile;
@@ -471,10 +503,8 @@ void lexer::ignore_c_comment()
             if ('/' == c) return;
         }
         if (EOF == c) {
-            if (em && em->startWarning(lookaheads[0].where, "/*")) {
-                em->warn() << "Unclosed comment";
-                em->stopIO();
-            }
+            lexwarning E(lookaheads[0].where, "/*");
+            E << "Unclosed comment";
             return;
         }
     }
@@ -486,10 +516,8 @@ void lexer::consume_strconst()
     for (int c=0; c != '"'; ) {
         c = topfile->getc();
         if (EOF == c) {
-            if (em && em->startError(lookaheads[0].where, "\"")) {
-                em->cerr() << "Unclosed string";
-                em->stopIO();
-            }
+            lexerror E(lookaheads[0].where, "\"");
+            E << "Unclosed string";
             c = '"';
         }
         text.append(c);
@@ -709,10 +737,8 @@ void lexer::IllegalChar(char c)
     txt[0] = c;
     txt[1] = 0;
 
-    if (em && em->startError(lookaheads[0].where, txt)) {
-        em->cerr() << "Ignoring unexpected character '" << c << "'";
-        em->stopIO();
-    }
+    lexerror E(lookaheads[0].where, txt);
+    E << "Ignoring unexpected character '" << c << "'";
 }
 
 void lexer::finish_attributed_token(token::type t)
@@ -722,10 +748,9 @@ void lexer::finish_attributed_token(token::type t)
     lookaheads[0].tokenID = t;
 
     if (text.is_truncated()) {
-        if (em && em->startWarning(lookaheads[0].where, text.get())) {
-            em->warn() << "Token too long; only keeping first " << MAX_LEXEME << " characters.";
-            em->stopIO();
-        }
+        lexwarning E(lookaheads[0].where, text.get());
+        E << "Token too long; only keeping first "
+          << MAX_LEXEME << " characters.";
     }
 }
 

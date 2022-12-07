@@ -34,115 +34,101 @@ token::~token()
     Delete(attribute);
 }
 
-void token::show(OutputStream &s) const
+std::ostream& token::show(std::ostream &s) const
 {
     const char* astr = attribute ? attribute->getStr() : 0;
-    /*
-    if (astr) {
-        s.Put(astr);
-        return;
-    }
-    */
     switch (tokenID) {
-        case END:       s.Put("(eof)");     return;
-        case BEGIN:     s.Put("(bof)");     return;
-        case NEWLINE:   s.Put("(newline)"); return;
-        case SHARP:     s.Put("#");         return;
-        case COMMA:     s.Put(",");         return;
-        case DOT:       s.Put(".");         return;
-        case SEMI:      s.Put(";");         return;
-        case LPAR:      s.Put("(");         return;
-        case RPAR:      s.Put(")");         return;
-        case LBRAK:     s.Put("[");         return;
-        case RBRAK:     s.Put("]");         return;
-        case LBRACE:    s.Put("{");         return;
-        case RBRACE:    s.Put("}");         return;
-        case GT:        s.Put(">");         return;
-        case LT:        s.Put("<");         return;
-        case PLUS:      s.Put("+");         return;
-        case MINUS:     s.Put("-");         return;
-        case TIMES:     s.Put("*");         return;
-        case DIVIDE:    s.Put("/");         return;
-        case MOD:       s.Put("%");         return;
-        case COLON:     s.Put(":");         return;
-        // case QUEST:     s.Put("?");         return;
-        case BANG:      s.Put("!");         return;
-        case OR:        s.Put("|");         return;
-        case AND:       s.Put("&");         return;
+        case END:               return s << "(eof)";
+        case BEGIN:             return s << "(bof)";
+        case NEWLINE:           return s << "(newline)";
+        case SHARP:             return s << "#";
+        case COMMA:             return s << ",";
+        case DOT:               return s << ".";
+        case SEMI:              return s << ";";
+        case LPAR:              return s << "(";
+        case RPAR:              return s << ")";
+        case LBRAK:             return s << "[";
+        case RBRAK:             return s << "]";
+        case LBRACE:            return s << "{";
+        case RBRACE:            return s << "}";
+        case GT:                return s << ">";
+        case LT:                return s << "<";
+        case PLUS:              return s << "+";
+        case MINUS:             return s << "-";
+        case TIMES:             return s << "*";
+        case DIVIDE:            return s << "/";
+        case MOD:               return s << "%";
+        case COLON:             return s << ":";
+        case BANG:              return s << "!";
+        case OR:                return s << "|";
+        case AND:               return s << "&";
 
-        case FORALL:        s.Put("A");     return;
-        case EXISTS:        s.Put("E");     return;
-        case FUTURE:        s.Put("F");     return;
-        case PAST:          s.Put("P");     return;
-        case GLOBALLY:      s.Put("G");     return;
-        case HISTORICALLY:  s.Put("H");     return;
-        case UNTIL:         s.Put("U");     return;
-        case SINCE:         s.Put("S");     return;
-        case NEXT:          s.Put("X");     return;
-        case PREV:          s.Put("Y");     return;
+        case FORALL:            return s << "A";
+        case EXISTS:            return s << "E";
+        case FUTURE:            return s << "F";
+        case PAST:              return s << "P";
+        case GLOBALLY:          return s << "G";
+        case HISTORICALLY:      return s << "H";
+        case UNTIL:             return s << "U";
+        case SINCE:             return s << "S";
+        case NEXT:              return s << "X";
+        case PREV:              return s << "Y";
 
-        case GETS:      s.Put(":=");    return;
-        case EQUALS:    s.Put("==");    return;
-        case NEQUAL:    s.Put("!=");    return;
-        case GE:        s.Put(">=");    return;
-        case LE:        s.Put("<=");    return;
-        case SET_DIFF:  s.Put("\\");    return;
-        case IMPLIES:   s.Put("->");    return;
-        case DOTDOT:    s.Put("..");    return;
+        case GETS:              return s << ":=";
+        case EQUALS:            return s << "==";
+        case NEQUAL:            return s << "!=";
+        case GE:                return s << ">=";
+        case LE:                return s << "<=";
+        case SET_DIFF:          return s << "\\";
+        case IMPLIES:           return s << "->";
+        case DOTDOT:            return s << "..";
 
-        case IN:        s.Put("in");        return;
-        case FOR:       s.Put("for");       return;
-        case CONVERGE:  s.Put("converge");  return;
-        case GUESS:     s.Put("guess");     return;
-        case DEFAULT:   s.Put("default");   return;
-        case PROC:      s.Put("proc");      return;
-        case NUL:       s.Put("null");      return;
+        case IN:                return s << "in";
+        case FOR:               return s << "for";
+        case CONVERGE:          return s << "converge";
+        case GUESS:             return s << "guess";
+        case DEFAULT:           return s << "default";
+        case PROC:              return s << "proc";
+        case NUL:               return s << "null";
 
-        case MAXIMIZE:      s.Put("maximize");      return;
-        case MINIMIZE:      s.Put("minimize");      return;
-        case SATISFIABLE:   s.Put("satisfiable");   return;
+        case MAXIMIZE:          return s << "maximize";
+        case MINIMIZE:          return s << "minimize";
+        case SATISFIABLE:       return s << "satisfiable";
 
-        case BOOLCONST:     s.Put(bool_const ? "true" : "false");
-                            return;
+        case BOOLCONST:         return s << (bool_const ? "true" : "false");
 
-        case STRCONST:      if (astr) {
-                                s << "\"" << astr << "\"";
-                            } else {
-                                s.Put("(null)");
-                            }
-                            return;
+        case STRCONST:          if (astr) {
+                                    return s << "\"" << astr << "\"";
+                                }
+                                return s << "(null)";
 
         case INTCONST:
         case REALCONST:
         case IDENT:
-                            if (astr) {
-                                s.Put(astr);
-                            } else {
-                                s.Put("(null)");
-                            }
-                            return;
+                                if (!astr) {
+                                    return s << "(null)";
+                                }
+                                return s << astr;
 
         case FORMALISM:
         case TYPE:
-                            if (type_attrib) {
-                                const char* tn = type_attrib->getName();
-                                if (tn) s.Put(tn);
-                                else    s.Put("(null type name)");
-                            } else {
-                                s.Put("(null type)");
-                            }
-                            return;
+                                if (!type_attrib) {
+                                    return s << "(null type)";
+                                } else {
+                                    const char* tn = type_attrib->getName();
+                                    if (tn) return s << tn;
+                                }
+                                return s << "(null type name)";
 
         case MODIF:
-                            if (astr) {
-                                s << astr << " (index " << modif_attrib << ")";
-                            } else {
-                                s.Put("(null)");
-                            }
-                            return;
+                                if (!astr) {
+                                    return s << "(null)";
+                                }
+                                return s << astr << " (index "
+                                         << modif_attrib << ")";
 
 
-        default:    s.Put("unknown token");
+        default:                return s << "unknown token";
     }
 }
 
@@ -220,10 +206,10 @@ const char* token::getIdName() const
     }
 }
 
-void token::debug(OutputStream &s) const
+void token::debug(outputStream &s) const
 {
     s << "Token " << getIdName() << " " << where << " from text ";
-    show(s);
+    show(s.stream());
 }
 
 void token::set_special(type t)

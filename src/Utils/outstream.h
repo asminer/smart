@@ -15,7 +15,11 @@ class shared_string;
 class outputStream {
     public:
         outputStream(std::ostream &_deflt);
+
         virtual ~outputStream();
+
+        outputStream(const outputStream &) = delete;
+        void operator=(const outputStream &) = delete;
 
         /**
          * Build an option to set the real format for this stream.
