@@ -70,8 +70,8 @@ class outputStream {
         inline void decIndent() {
             if (indent_spaces) indent_spaces -= 4;
         }
-        inline void clearIndent() {
-            indent_spaces = 0;
+        inline void clearIndent(unsigned sp=0) {
+            indent_spaces = sp*4;
         }
         inline void newLine(const char* prefix=nullptr) {
             if (prefix) {

@@ -51,9 +51,12 @@ warning_msg::warning_msg() : switchable_msg("Warning")
 bool warning_msg::start(const location &L) const
 {
     if (!isActive()) return false;
+    Out.activate();
+    Out.clearIndent(1);
     Out << "WARNING";
     if (L) Out << ' ' << L;
-    Out << ":\n    ";
+    Out << ':';
+    Out.newLine();
     return true;
 }
 
@@ -103,6 +106,8 @@ reporting_msg::reporting_msg() : named_msg("Report")
 bool reporting_msg::start() const
 {
     if (!isActive()) return false;
+    Out.activate();
+    Out.clearIndent();
     Out << setPrefix('R');
     return true;
 }
@@ -123,6 +128,8 @@ debugging_msg::debugging_msg() : named_msg("Debug")
 bool debugging_msg::start() const
 {
     if (!isActive()) return false;
+    Out.activate();
+    Out.clearIndent();
     Out << setPrefix('D');
     return true;
 }
@@ -136,14 +143,14 @@ outputStream error_msg::Out(std::cerr);
 
 error_msg::error_msg(const char* prefix)
 {
-    Out.incIndent();
+    Out.activate();
+    Out.clearIndent(1);
     if (prefix) Out << prefix;
 }
 
 error_msg::~error_msg()
 {
     Out.stream() << std::endl;
-    Out.clearIndent();
 }
 
 // ******************************************************************
