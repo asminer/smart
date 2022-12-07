@@ -51,6 +51,7 @@ warning_msg::warning_msg() : switchable_msg("Warning")
 bool warning_msg::start(const location &L) const
 {
     if (!isActive()) return false;
+    outputStream::globalOut().flush();
     Out.activate();
     Out.clearIndent(1);
     Out << "WARNING";
@@ -143,6 +144,7 @@ outputStream error_msg::Out(std::cerr);
 
 error_msg::error_msg(const char* prefix)
 {
+    outputStream::globalOut().flush();
     Out.activate();
     Out.clearIndent(1);
     if (prefix) Out << prefix;

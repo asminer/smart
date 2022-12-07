@@ -410,9 +410,8 @@ expr_error::expr_error(const expr* cause, result* _ans) : error_msg("ERROR")
     ans = _ans;
     if (cause) {
         Out << ' ' << cause->Where();
-    } else {
-        Out << ':';
     }
+    Out << ':';
     newLine();
 }
 
