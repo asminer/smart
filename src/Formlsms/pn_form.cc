@@ -774,6 +774,7 @@ public:
   void AddOutput(const expr* call, transition* t, model_var* pl, expr* card);
   void AddInhibitor(const expr* call, model_var* pl, transition* t, expr* card);
   void AddGuard(const expr* call, transition* t, expr* guard);
+  void AddCost(const expr* call, shared_set* dset, int cost);
   void AddDecEnabling(const expr* call, decision* d, expr* decEnabling);
   void HideTransition(const expr* call, transition* t);
   void AddFiring(const expr* call, transition* t, expr* dist);
@@ -1066,6 +1067,50 @@ void petri_def::AddGuard(const expr* call, transition* t, expr* guard)
     DoneWarning();
   }
 }
+
+void petri_def::AddCost(const expr* call, shared_set* dset, int cost)
+{
+  DCASSERT(dset);
+
+
+  if (cost < 0) {
+    /*if (StartWarning(zero_bound, call)) {
+      em->warn() << "Ignoring upper bound of " << upper;
+      em->warn() << " tokens for places ";
+      dset->Print(em->warn(), 0);
+      DoneWarning();
+    }
+    */
+    return;
+  }
+
+  result elem;
+  for (int z=0; z<dset->Size(); z++) {
+    dset->GetElement(z, elem);
+    DCASSERT(elem.isNormal());
+    decision* pl = smart_cast <decision*> (elem.getPtr());
+    DCASSERT(pl);  
+    if (!isVariableOurs(pl, call, "ignoring cost")) continue;
+
+    if (pn_debug.startReport()) {
+      pn_debug.report() << "setting " << cost;
+      pn_debug.report() << " cost for each decision ";
+      pn_debug.report() << pl->Name() << "\n";
+      pn_debug.stopIO();
+    }
+
+    if (pl->getCost() != cost) {
+      //if (StartWarning(dup_bound, call)) {
+        em->warn() << "Already have a cost for this decision " << pl->Name();
+        //em->warn() << ", taking smaller";
+        DoneWarning();
+      //}
+    }
+    pl->setCost(cost);
+  } // for z
+
+}
+
 
 void petri_def::AddDecEnabling(const expr* call, decision* d, expr* decEnabling)
 {
@@ -1924,6 +1969,68 @@ void pn_bound::Compute(traverse_data &x, expr** pass, int np)
     DCASSERT(first.isNormal());
     shared_set* ps = smart_cast <shared_set*> (first.getPtr());
     mdl->AddBound(pass[i], ps, second.getInt());
+  }
+  x.answer = answer;
+  x.aggregate = 0;
+}
+
+// ********************************************************
+// *                    pn_cost class                    *
+// ********************************************************
+
+class pn_cost : public model_internal {
+public:
+  pn_cost();
+  virtual void Compute(traverse_data &x, expr** pass, int ndd);
+};
+
+pn_cost::pn_cost() : model_internal(em->VOID, "cost", 2)
+{
+  typelist* t = new typelist(2);
+  const type* decision = em->findType("decision");
+  DCASSERT(decision);
+  t->SetItem(0, decision->getSetOfThis());
+  t->SetItem(1, em->INT);
+  SetFormal(1, t, "dset:n");
+  SetRepeat(1);
+  SetDocumentation("For each decision in set dset, this is the cost that can occur if that decision is taken");
+}
+
+void pn_cost::Compute(traverse_data &x, expr** pass, int ndd)
+{
+  DCASSERT(x.answer);
+  DCASSERT(0==x.aggregate);
+  DCASSERT(pass);
+  DCASSERT(pass[0]);
+  petri_def* mdl = smart_cast<petri_def*>(pass[0]);
+  DCASSERT(mdl);
+  
+  if (x.stopExecution())  return;
+  result* answer = x.answer;
+
+  for (int i=1; i<ndd; i++) {
+    DCASSERT(pass[i]);
+
+    result second;
+    x.answer = &second;
+    x.aggregate = 1;
+    SafeCompute(pass[i], x);
+    if (! second.isNormal() || second.getInt() < 0) {
+      mdl->StartError(pass[i]);
+      em->cerr() << "Bad token value: ";
+      em->INT->print(em->cerr(), second, 0);
+      em->cerr() << " for decision cost, ignoring";
+      mdl->DoneError();
+      continue;
+    }
+
+    result first;
+    x.answer = &first;
+    x.aggregate = 0;
+    SafeCompute(pass[i], x);
+    DCASSERT(first.isNormal());
+    shared_set* ps = smart_cast <shared_set*> (first.getPtr());
+    mdl->AddCost(pass[i], ps, second.getInt());
   }
   x.answer = answer;
   x.aggregate = 0;
@@ -3169,6 +3276,7 @@ bool init_pnform::execute()
   symbol_table* pnsyms = MakeSymbolTable();
   pnsyms->AddSymbol(  new pn_init     );
   pnsyms->AddSymbol(  new pn_bound    );
+  pnsyms->AddSymbol(  new pn_cost    );
   pnsyms->AddSymbol(  new pn_arcs     );
   pnsyms->AddSymbol(  new pn_inhibit  );
   pnsyms->AddSymbol(  new pn_guard    );

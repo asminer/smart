@@ -280,11 +280,13 @@ class decision : public model_var{
   //int num_decisions;
   //std:: vector<result*> decisions;// not vector: one decision // will it be a vector of expr or just three valued number?//ask Dr. Miner is result compatible with exprmin a formula like aa & apD
   expr* enable_cond;
+  int cost;
   public:
   decision(const symbol* w, const model_instance* pn) : model_var(w,pn) {
   	dec = new result();
     dec->setUnknown();
     enable_cond=0;
+    cost =1;
   }
 
   // decision(const char* fn, int line, const type* t, char* n,
@@ -310,6 +312,12 @@ class decision : public model_var{
  inline void addEnablingCond(expr* e){
  	enable_cond=e;
  } 
+ inline void setCost(int c){
+ 	 cost=c;
+ }
+ inline int getCost(){
+ 	return cost;
+ }
 };
 
 // **************************************************************************

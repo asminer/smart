@@ -78,8 +78,10 @@ pn cruft(int n) := {
     J : tJD, tJD : D
   );
   decision aa, bb, cc;
-  enable_decision(aa:true);
-  enable_decision(bb:true);
+  cost(aa:1,bb:2,cc:1);
+  enable_decision(aa:(true & true));
+  bool ab := istaken(aa);
+  enable_decision(bb:ab);
   enable_decision(cc:true);
   //aa:=1;
   //find the model type:study them
@@ -139,7 +141,7 @@ compute(cruft(5).show_rg);
 print("\n");
 print(cruft(5).test1);
 print("\n", cruft(5).test2);
-print("I am texting the following");
+print("\n I am testing the following");
 print("\n", cruft(5).test3);
 print("\n", cruft(5).test4);
 
