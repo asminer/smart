@@ -1,28 +1,20 @@
 
-#include "startup.h"
-#include <string.h>
-#include <cstdio>
+#include "initializer.h"
 
 // ******************************************************************
 
-startup::resource* startup::resource_list = 0;
-startup* startup::waiting_list = 0;
-startup* startup::completed_list = 0;
-startup* startup::failed_list = 0;
-bool startup::debug = 0;
-// bool startup::debug = 1;
-
-exprman* startup::em = 0;
-symbol_table* startup::st = 0;
-const char** startup::env = 0;
-const char* startup::version = 0;
-List <msr_func> startup::CML;
+initializer::resource* initializer::resource_list = 0;
+initializer* initializer::waiting_list = 0;
+initializer* initializer::completed_list = 0;
+initializer* initializer::failed_list = 0;
+bool initializer::debug = 0;
+// bool initializer::debug = 1;
 
 // ******************************************************************
 
 inline void DEBUG(const char* S)
 {
-    if (startup::isDebugging()) {
+    if (initializer::isDebugging()) {
         fputs(S, stderr);
     }
 }
@@ -30,43 +22,43 @@ inline void DEBUG(const char* S)
 template <class T>
 inline void DEBUG(const char* fmt, T t)
 {
-    if (startup::isDebugging()) {
+    if (initializer::isDebugging()) {
         fprintf(stderr, fmt, t);
     }
 }
 
 // ******************************************************************
 // *                                                                *
-// *                  startup::resource  class                  *
+// *                  initializer::resource  class                  *
 // *                                                                *
 // ******************************************************************
 
-class startup::resource {
+class initializer::resource {
         const char* name;
-        List <startup> builders;
+        List <initializer> builders;
         bool ready;
     public:
         resource* next;
     public:
         resource(const char* n);
         bool isReady();
-        void addBuilder(startup* b);
+        void addBuilder(initializer* b);
 
-        friend class startup;
+        friend class initializer;
 };
 
 // ******************************************************************
-// *                 startup::resource  methods                 *
+// *                 initializer::resource  methods                 *
 // ******************************************************************
 
-startup::resource::resource(const char* n)
+initializer::resource::resource(const char* n)
 {
     name = n;
     next = 0;
     ready = false;
 }
 
-bool startup::resource::isReady()
+bool initializer::resource::isReady()
 {
     if (ready) {
         DEBUG("\t\tResource %s is ready\n", name);
@@ -88,18 +80,18 @@ bool startup::resource::isReady()
     return true;
 }
 
-void startup::resource::addBuilder(startup *b)
+void initializer::resource::addBuilder(initializer *b)
 {
     builders.Append(b);
 }
 
 // ******************************************************************
 // *                                                                *
-// *                      startup  methods                      *
+// *                      initializer  methods                      *
 // *                                                                *
 // ******************************************************************
 
-startup::startup(const char* n)
+initializer::initializer(const char* n)
 {
     name = n;
     next = waiting_list;
@@ -107,11 +99,11 @@ startup::startup(const char* n)
     executed = false;
 }
 
-startup::~startup()
+initializer::~initializer()
 {
 }
 
-bool startup::executeAll()
+bool initializer::executeAll()
 {
     //
     // Giant debugging chunk here: show resource list
@@ -137,21 +129,21 @@ bool startup::executeAll()
 
 // ******************************************************************
 
-void startup::buildsResource(const char* name)
+void initializer::buildsResource(const char* name)
 {
     resource* r = findResource(name);
     DCASSERT(r);
     r->addBuilder(this);
 }
 
-void startup::usesResource(const char* name)
+void initializer::usesResource(const char* name)
 {
     resources_used.Append(findResource(name));
 }
 
 // ******************************************************************
 
-bool startup::isReady()
+bool initializer::isReady()
 {
     for (int i=0; i<resources_used.Length(); i++) {
         if (resources_used.Item(i)->isReady()) continue;
@@ -161,17 +153,17 @@ bool startup::isReady()
 }
 
 
-int startup::executeWaiting()
+int initializer::executeWaiting()
 {
     int count = 0;
-    startup* run_list = waiting_list;
+    initializer* run_list = waiting_list;
     waiting_list = 0;
 
-    DEBUG("Running through waiting startups\n");
+    DEBUG("Running through waiting initializers\n");
 
     while (run_list) {
         DEBUG("\tChecking %s\n", run_list->name);
-        startup* next = run_list->next;
+        initializer* next = run_list->next;
         if (run_list->isReady()) {
             DEBUG("\tExecuting %s\n", run_list->name);
             count++;
@@ -193,7 +185,7 @@ int startup::executeWaiting()
     return count;
 }
 
-startup::resource* startup::findResource(const char* name)
+initializer::resource* initializer::findResource(const char* name)
 {
     // traverse list, find item with name, and move it to front
     // otherwise, if not present, create a new entry in front

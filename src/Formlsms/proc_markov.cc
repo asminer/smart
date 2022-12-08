@@ -260,16 +260,16 @@ public:
 // *                                                                *
 // ******************************************************************
 
-class init_markovproc : public initializer {
+class init_markovproc : public startup {
   public:
     init_markovproc();
     virtual bool execute();
 
     option_manager* makeSubsettings(unsigned i, bool auxvectors);
 };
-init_markovproc the_markovproc_initializer;
+init_markovproc the_markovproc_startup;
 
-init_markovproc::init_markovproc() : initializer("init_markovproc")
+init_markovproc::init_markovproc() : startup("init_markovproc")
 {
   usesResource("em");
 }

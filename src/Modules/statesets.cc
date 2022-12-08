@@ -832,14 +832,14 @@ void empty_si::Compute(traverse_data &x, expr** pass, int np)
 // *                                                                *
 // ******************************************************************
 
-class init_statesets : public initializer {
+class init_statesets : public startup {
   public:
     init_statesets();
     virtual bool execute();
 };
-init_statesets the_stateset_initializer;
+init_statesets the_stateset_startup;
 
-init_statesets::init_statesets() : initializer("init_statesets")
+init_statesets::init_statesets() : startup("init_statesets")
 {
   usesResource("em");
   usesResource("st");

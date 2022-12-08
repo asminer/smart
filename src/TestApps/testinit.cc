@@ -7,13 +7,13 @@
 
 #include <cstdio>
 
-class myinita : public initializer {
+class myinita : public startup {
   public:
     myinita();
     virtual bool execute();
 };
 
-myinita::myinita() : initializer("myinita")
+myinita::myinita() : startup("myinita")
 {
   buildsResource("a");
 }
@@ -26,13 +26,13 @@ bool myinita::execute()
 
 //============================================================
 
-class myinitb : public initializer {
+class myinitb : public startup {
   public:
     myinitb();
     virtual bool execute();
 };
 
-myinitb::myinitb() : initializer("myinitb")
+myinitb::myinitb() : startup("myinitb")
 {
   usesResource("b");
 }
@@ -45,13 +45,13 @@ bool myinitb::execute()
 
 //============================================================
 
-class myinitc : public initializer {
+class myinitc : public startup {
   public:
     myinitc();
     virtual bool execute();
 };
 
-myinitc::myinitc() : initializer("myinitc")
+myinitc::myinitc() : startup("myinitc")
 {
   usesResource("a");
   buildsResource("b");
@@ -73,7 +73,7 @@ int main()
 {
   printf("Starting...\n");
 
-  bool ok = initializer::executeAll();
+  bool ok = startup::executeAll();
 
   printf("Done\n");
   if (ok) printf("  No deadlock\n");

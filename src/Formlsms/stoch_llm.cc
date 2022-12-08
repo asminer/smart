@@ -236,14 +236,14 @@ void stochastic_lldsm::process::showError(const char* s)
 // *                                                                *
 // ******************************************************************
 
-class init_stochllm : public initializer {
+class init_stochllm : public startup {
   public:
     init_stochllm();
     virtual bool execute();
 };
-init_stochllm the_stochllm_initializer;
+init_stochllm the_stochllm_startup;
 
-init_stochllm::init_stochllm() : initializer("init_stochllm")
+init_stochllm::init_stochllm() : startup("init_stochllm")
 {
   usesResource("em");
 }

@@ -741,14 +741,14 @@ binary* string_le_op::makeValid(const location &W, expr* l, expr* r) const
 // *                                                                *
 // ******************************************************************
 
-class init_strings : public initializer {
+class init_strings : public startup {
   public:
     init_strings();
     virtual bool execute();
 };
-init_strings the_string_initializer;
+init_strings the_string_startup;
 
-init_strings::init_strings() : initializer("init_strings")
+init_strings::init_strings() : startup("init_strings")
 {
   usesResource("em");
   buildsResource("stringtype");

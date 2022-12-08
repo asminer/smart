@@ -521,14 +521,14 @@ void icp_satisfiable::SolveExplicit(no_event_model* nem,
 // *                                                                *
 // ******************************************************************
 
-class init_dcpengines : public initializer {
+class init_dcpengines : public startup {
   public:
     init_dcpengines();
     virtual bool execute();
 };
-init_dcpengines the_dcpengine_initializer;
+init_dcpengines the_dcpengine_startup;
 
-init_dcpengines::init_dcpengines() : initializer("init_dcpengines")
+init_dcpengines::init_dcpengines() : startup("init_dcpengines")
 {
   usesResource("em");
   usesResource("engtypes");

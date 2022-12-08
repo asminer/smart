@@ -2069,14 +2069,14 @@ void bigintdiv_si::Compute(traverse_data &x, expr** pass, int np)
 // *                                                                *
 // ******************************************************************
 
-class init_bigints : public initializer {
+class init_bigints : public startup {
   public:
     init_bigints();
     virtual bool execute();
 };
-init_bigints the_bigint_initializer;
+init_bigints the_bigint_startup;
 
-init_bigints::init_bigints() : initializer("init_bigints")
+init_bigints::init_bigints() : startup("init_bigints")
 {
   usesResource("em");
   usesResource("st");

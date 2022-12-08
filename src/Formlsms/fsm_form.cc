@@ -550,14 +550,14 @@ void fsm_lib::Init(exprman* em)
 // *                                                                *
 // ******************************************************************
 
-class init_fsms : public initializer {
+class init_fsms : public startup {
   public:
     init_fsms();
     virtual bool execute();
 };
-init_fsms the_fsm_initializer;
+init_fsms the_fsm_startup;
 
-init_fsms::init_fsms() : initializer("init_fsms")
+init_fsms::init_fsms() : startup("init_fsms")
 {
   usesResource("em");
   usesResource("CML");

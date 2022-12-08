@@ -1013,15 +1013,15 @@ void as_procgenCOV::generateMC(dsde_hlm* dsm, StateLib::state_db* tandb,
 // *                                                                *
 // ******************************************************************
 
-class init_asynchgen: public initializer {
+class init_asynchgen: public startup {
 public:
 	init_asynchgen();
 	virtual bool execute();
 };
-init_asynchgen the_asynchgen_initializer;
+init_asynchgen the_asynchgen_startup;
 
 init_asynchgen::init_asynchgen() :
-		initializer("init_asynchgen") {
+		startup("init_asynchgen") {
 	usesResource("em");
 	usesResource("engtypes");
 }

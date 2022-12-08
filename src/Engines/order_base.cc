@@ -122,14 +122,14 @@ double heuristic_varorder::alphaParameter = -1.0;
 // *                                                                *
 // ******************************************************************
 
-class init_static_varorder : public initializer {
+class init_static_varorder : public startup {
 public:
   init_static_varorder();
   virtual bool execute();
 };
-init_static_varorder the_static_varorder_initializer;
+init_static_varorder the_static_varorder_startup;
 
-init_static_varorder::init_static_varorder() : initializer("init_static_varorder")
+init_static_varorder::init_static_varorder() : startup("init_static_varorder")
 {
   usesResource("em");
   buildsResource("varorders");

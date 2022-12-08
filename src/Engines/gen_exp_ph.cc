@@ -481,14 +481,14 @@ void phase_procgen::MCError(hldsm* m, const char* what, MCLib::error e) const
 // *                                                                *
 // ******************************************************************
 
-class init_phasegen : public initializer {
+class init_phasegen : public startup {
   public:
     init_phasegen();
     virtual bool execute();
 };
-init_phasegen the_phasegen_initializer;
+init_phasegen the_phasegen_startup;
 
-init_phasegen::init_phasegen() : initializer("init_phasegen")
+init_phasegen::init_phasegen() : startup("init_phasegen")
 {
   usesResource("em");
   usesResource("engtypes");

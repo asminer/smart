@@ -585,14 +585,14 @@ void stop_timer_si::Compute(traverse_data &x, expr** pass, int np)
 // *                                                                *
 // ******************************************************************
 
-class init_sysfuncs : public initializer {
+class init_sysfuncs : public startup {
   public:
     init_sysfuncs();
     virtual bool execute();
 };
-init_sysfuncs the_sysfunc_initializer;
+init_sysfuncs the_sysfunc_startup;
 
-init_sysfuncs::init_sysfuncs() : initializer("init_sysfuncs")
+init_sysfuncs::init_sysfuncs() : startup("init_sysfuncs")
 {
   usesResource("em");
   usesResource("st");

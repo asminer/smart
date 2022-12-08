@@ -55,7 +55,7 @@ cmdline_error::cmdline_error() : error_msg("ERROR")
 
 // ============================================================
 
-class first_init : public initializer {
+class first_init : public startup {
     public:
         first_init(exprman* em, symbol_table* st, const char** env);
         virtual bool execute();
@@ -70,7 +70,7 @@ class first_init : public initializer {
 // ============================================================
 
 first_init::first_init(exprman* _em, symbol_table* _st, const char** _env)
-    : initializer("first_init")
+    : startup("first_init")
 {
     buildsResource("em");
     buildsResource("st");
@@ -256,11 +256,11 @@ int main(int argc, const char** argv, const char** env)
   // Start the symbol table for builtin functions
   symbol_table* st = MakeSymbolTable();
 
-  // Bootstrap initializers, and run them
+  // Bootstrap startups, and run them
   first_init the_first_init(em, st, env);
-  if ( ! initializer::executeAll() ) {
+  if ( ! startup::executeAll() ) {
     internal_error E(__FILE__, __LINE__);
-    E << "Deadlock in initializers";
+    E << "Deadlock in startups";
     return -1;
   }
 

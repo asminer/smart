@@ -364,14 +364,14 @@ void seed_watcher::notify(const option* opt)
 // *                                                                *
 // ******************************************************************
 
-class init_simul : public initializer {
+class init_simul : public startup {
   public:
     init_simul();
     virtual bool execute();
 };
-init_simul the_simul_initializer;
+init_simul the_simul_startup;
 
-init_simul::init_simul() : initializer("init_simul")
+init_simul::init_simul() : startup("init_simul")
 {
   usesResource("em");
   usesResource("engtypes");

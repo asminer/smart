@@ -189,14 +189,14 @@ intset_lib intset_lib_data;
 // *                                                                *
 // ******************************************************************
 
-class init_explssets : public initializer {
+class init_explssets : public startup {
   public:
     init_explssets();
     virtual bool execute();
 };
-init_explssets the_explsset_initializer;
+init_explssets the_explsset_startup;
 
-init_explssets::init_explssets() : initializer("init_explssets")
+init_explssets::init_explssets() : startup("init_explssets")
 {
   usesResource("em");
 }

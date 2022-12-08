@@ -1433,14 +1433,14 @@ void traces::traces_ex::Compute(traverse_data &x, expr** pass, int np)
 // *                                                                *
 // ******************************************************************
 
-class init_ctlmsrs : public initializer {
+class init_ctlmsrs : public startup {
   public:
     init_ctlmsrs();
     virtual bool execute();
 };
-init_ctlmsrs the_ctlmsr_initializer;
+init_ctlmsrs the_ctlmsr_startup;
 
-init_ctlmsrs::init_ctlmsrs() : initializer("init_ctlmsrs")
+init_ctlmsrs::init_ctlmsrs() : startup("init_ctlmsrs")
 {
   usesResource("em");
   usesResource("st");

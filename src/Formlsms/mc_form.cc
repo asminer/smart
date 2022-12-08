@@ -665,16 +665,16 @@ void mc_tta::Compute(traverse_data &x, expr** pass, int np)
 // *                                                                *
 // ******************************************************************
 
-class init_mcform : public initializer {
+class init_mcform : public startup {
   public:
     init_mcform();
     virtual bool execute();
   private:
     void FillSymbolTable(bool disc, formalism* mc);
 };
-init_mcform the_mcform_initializer;
+init_mcform the_mcform_startup;
 
-init_mcform::init_mcform() : initializer("init_mcform")
+init_mcform::init_mcform() : startup("init_mcform")
 {
   usesResource("em");
   usesResource("CML");

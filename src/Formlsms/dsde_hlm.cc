@@ -1296,14 +1296,14 @@ void dsde_priolist::Compute(traverse_data &x, expr** pass, int np) {
 // *                                                                *
 // ******************************************************************
 
-class init_dsde: public initializer {
+class init_dsde: public startup {
     public:
 	    init_dsde();
 	    virtual bool execute();
 };
-init_dsde the_dsde_initializer;
+init_dsde the_dsde_startup;
 
-init_dsde::init_dsde() : initializer("init_dsde")
+init_dsde::init_dsde() : startup("init_dsde")
 {
 	usesResource("em");
 }

@@ -108,14 +108,14 @@ bool process_generator
 // *                                                                *
 // ******************************************************************
 
-class init_procgen : public initializer {
+class init_procgen : public startup {
   public:
     init_procgen();
     virtual bool execute();
 };
-init_procgen the_procgen_initializer;
+init_procgen the_procgen_startup;
 
-init_procgen::init_procgen() : initializer("init_procgen")
+init_procgen::init_procgen() : startup("init_procgen")
 {
   usesResource("em");
   buildsResource("procgen");

@@ -3137,15 +3137,15 @@ phint2randreal::phint2randreal() : specific_conv(false)
 // *                                                                *
 // ******************************************************************
 
-class init_stochtypes : public initializer {
+class init_stochtypes : public startup {
   public:
     init_stochtypes();
     virtual bool execute();
 };
-init_stochtypes the_stochtype_initializer;
+init_stochtypes the_stochtype_startup;
 
 
-init_stochtypes::init_stochtypes() : initializer("init_stochtypes")
+init_stochtypes::init_stochtypes() : startup("init_stochtypes")
 {
   usesResource("em");
   usesResource("st");

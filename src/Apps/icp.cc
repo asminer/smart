@@ -18,7 +18,7 @@
 
 // ============================================================
 
-class first_init : public initializer {
+class first_init : public startup {
   public:
     first_init(exprman* em);
     virtual bool execute();
@@ -29,7 +29,7 @@ class first_init : public initializer {
 // ============================================================
 
 first_init::first_init(exprman* _em)
- : initializer("first_init")
+ : startup("first_init")
 {
   buildsResource("em");
   hold_em = _em;
@@ -105,11 +105,11 @@ int main(int argc, const char** argv, const char** env)
   // exprman* em = Initialize_Expressions(&myio, om);
   exprman* em = Initialize_Expressions(om);
 
-  // Bootstrap initializers, and run them
+  // Bootstrap startups, and run them
   first_init the_first_init(em);
-  if ( ! initializer::executeAll() ) {
+  if ( ! startup::executeAll() ) {
     internal_error E(__FILE__, __LINE__);
-    E << "Deadlock in initializers";
+    E << "Deadlock in startups";
     return -1;
   }
 

@@ -4456,7 +4456,7 @@ meddly_procgen::buildRSSPolicies() const
 // *                                                                *
 // ******************************************************************
 
-class init_genmeddly : public initializer {
+class init_genmeddly : public startup {
   public:
     init_genmeddly();
     virtual bool execute();
@@ -4465,9 +4465,9 @@ class init_genmeddly : public initializer {
     unsigned numNDPButtons();
     void addNDPButtons(option* o);
 };
-init_genmeddly the_genmeddly_initializer;
+init_genmeddly the_genmeddly_startup;
 
-init_genmeddly::init_genmeddly() : initializer("init_genmeddly")
+init_genmeddly::init_genmeddly() : startup("init_genmeddly")
 {
   usesResource("em");
   usesResource("engtypes");

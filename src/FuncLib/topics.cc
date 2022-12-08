@@ -774,14 +774,14 @@ void topic_models::PrintDocs(doc_formatter &df, const char*) const
 // *                                                                *
 // ******************************************************************
 
-class init_helpfuncs : public initializer {
+class init_helpfuncs : public startup {
   public:
     init_helpfuncs();
     virtual bool execute();
 };
-init_helpfuncs the_helpfunc_initializer;
+init_helpfuncs the_helpfunc_startup;
 
-init_helpfuncs::init_helpfuncs() : initializer("init_helpfuncs")
+init_helpfuncs::init_helpfuncs() : startup("init_helpfuncs")
 {
   usesResource("em");
   usesResource("st");

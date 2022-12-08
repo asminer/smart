@@ -1154,14 +1154,14 @@ shared_ddedge* meddly_encoder::accumulate(const MEDDLY::binary_opname* op,
 // *                                                                *
 // ******************************************************************
 
-class init_meddly : public initializer {
+class init_meddly : public startup {
   public:
     init_meddly();
     virtual bool execute();
 };
-init_meddly the_meddly_initializer;
+init_meddly the_meddly_startup;
 
-init_meddly::init_meddly() : initializer("init_meddly")
+init_meddly::init_meddly() : startup("init_meddly")
 {
   usesResource("em");
   buildsResource("MEDDLY");

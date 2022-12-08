@@ -295,14 +295,14 @@ stateset* graph_lldsm::reachgraph::incompatibleOperand(const char* op) const
 // *                                                                *
 // ******************************************************************
 
-class init_graphllm : public initializer {
+class init_graphllm : public startup {
   public:
     init_graphllm();
     virtual bool execute();
 };
-init_graphllm the_graphllm_initializer;
+init_graphllm the_graphllm_startup;
 
-init_graphllm::init_graphllm() : initializer("init_graphllm")
+init_graphllm::init_graphllm() : startup("init_graphllm")
 {
   usesResource("em");
 }

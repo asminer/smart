@@ -700,14 +700,14 @@ void warning_file::Compute(traverse_data &x, expr** pass, int np)
 // *                                                                *
 // ******************************************************************
 
-class init_iofuncs : public initializer {
+class init_iofuncs : public startup {
   public:
     init_iofuncs();
     virtual bool execute();
 };
-init_iofuncs the_iofunc_initializer;
+init_iofuncs the_iofunc_startup;
 
-init_iofuncs::init_iofuncs() : initializer("init_iofuncs")
+init_iofuncs::init_iofuncs() : startup("init_iofuncs")
 {
   usesResource("em");
   usesResource("st");

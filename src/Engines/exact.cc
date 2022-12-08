@@ -980,14 +980,14 @@ void exact_ph_analyze::RunEngine(hldsm* foo, result &fls)
 // *                                                                *
 // ******************************************************************
 
-class init_exactengines : public initializer {
+class init_exactengines : public startup {
   public:
     init_exactengines();
     virtual bool execute();
 };
-init_exactengines the_exactengine_initializer;
+init_exactengines the_exactengine_startup;
 
-init_exactengines::init_exactengines() : initializer("init_exactengines")
+init_exactengines::init_exactengines() : startup("init_exactengines")
 {
   usesResource("em");
   usesResource("engtypes");

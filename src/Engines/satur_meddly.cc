@@ -2381,14 +2381,14 @@ void meddly_nextall::generateRSS(meddly_varoption &x, timer &w)
 // *                                                                *
 // ******************************************************************
 
-class init_saturmeddly : public initializer {
+class init_saturmeddly : public startup {
   public:
     init_saturmeddly();
     virtual bool execute();
 };
-init_saturmeddly the_saturmeddly_initializer;
+init_saturmeddly the_saturmeddly_startup;
 
-init_saturmeddly::init_saturmeddly() : initializer("init_saturmeddly")
+init_saturmeddly::init_saturmeddly() : startup("init_saturmeddly")
 {
   usesResource("em");
   usesResource("meddlyprocgen");

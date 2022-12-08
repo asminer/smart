@@ -1282,14 +1282,14 @@ void expected_si::Compute(traverse_data &x, expr** pass, int np)
 // *                                                                *
 // ******************************************************************
 
-class init_statevects : public initializer {
+class init_statevects : public startup {
   public:
     init_statevects();
     virtual bool execute();
 };
-init_statevects the_statevect_initializer;
+init_statevects the_statevect_startup;
 
-init_statevects::init_statevects() : initializer("init_statevects")
+init_statevects::init_statevects() : startup("init_statevects")
 {
   usesResource("em");
   usesResource("st");

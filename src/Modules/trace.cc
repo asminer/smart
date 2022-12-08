@@ -165,14 +165,14 @@ trace_type::trace_type()
 // *                                                                *
 // ******************************************************************
 
-class init_trace : public initializer {
+class init_trace : public startup {
   public:
     init_trace();
     virtual bool execute();
 };
-init_trace the_trace_initializer;
+init_trace the_trace_startup;
 
-init_trace::init_trace() : initializer("init_trace")
+init_trace::init_trace() : startup("init_trace")
 {
   usesResource("em");
   usesResource("st");

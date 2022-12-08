@@ -961,14 +961,14 @@ void icp_mdd_sat
 // *                                                                *
 // ******************************************************************
 
-class init_dcpsymbolic : public initializer {
+class init_dcpsymbolic : public startup {
   public:
     init_dcpsymbolic();
     virtual bool execute();
 };
-init_dcpsymbolic the_dcpsymbolic_initializer;
+init_dcpsymbolic the_dcpsymbolic_startup;
 
-init_dcpsymbolic::init_dcpsymbolic() : initializer("init_dcpsymbolic")
+init_dcpsymbolic::init_dcpsymbolic() : startup("init_dcpsymbolic")
 {
   usesResource("em");
   usesResource("engtypes");

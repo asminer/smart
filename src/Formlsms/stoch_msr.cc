@@ -470,14 +470,14 @@ engtype* MakeTimeOrdered(exprman* em, const char* n, const char* d)
 // *                                                                *
 // ******************************************************************
 
-class init_stochmsrs : public initializer {
+class init_stochmsrs : public startup {
   public:
     init_stochmsrs();
     virtual bool execute();
 };
 init_stochmsrs the_stochmsr_initiailzer;
 
-init_stochmsrs::init_stochmsrs() : initializer("init_stochmsrs")
+init_stochmsrs::init_stochmsrs() : startup("init_stochmsrs")
 {
   usesResource("em");
   usesResource("st");

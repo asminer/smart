@@ -220,14 +220,14 @@ state_lldsm::reachset::iterator::~iterator()
 // *                                                                *
 // ******************************************************************
 
-class init_statellm : public initializer {
+class init_statellm : public startup {
   public:
     init_statellm();
     virtual bool execute();
 };
-init_statellm the_statellm_initializer;
+init_statellm the_statellm_startup;
 
-init_statellm::init_statellm() : initializer("init_statellm")
+init_statellm::init_statellm() : startup("init_statellm")
 {
   usesResource("em");
 }

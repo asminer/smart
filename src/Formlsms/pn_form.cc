@@ -2717,14 +2717,14 @@ void pn_transitions::Compute(traverse_data &x, expr** pass, int np)
 // *                                                                *
 // ******************************************************************
 
-class init_pnform : public initializer {
+class init_pnform : public startup {
   public:
     init_pnform();
     virtual bool execute();
 };
-init_pnform the_pnform_initializer;
+init_pnform the_pnform_startup;
 
-init_pnform::init_pnform() : initializer("init_pnform")
+init_pnform::init_pnform() : startup("init_pnform")
 {
   usesResource("em");
   usesResource("CML");

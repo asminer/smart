@@ -1425,14 +1425,14 @@ void tam_export::Compute(traverse_data &x, expr** pass, int np)
 // *                                                                *
 // ******************************************************************
 
-class init_tamform : public initializer {
+class init_tamform : public startup {
   public:
     init_tamform();
     virtual bool execute();
 };
-init_tamform the_tamform_initializer;
+init_tamform the_tamform_startup;
 
-init_tamform::init_tamform() : initializer("init_tamform")
+init_tamform::init_tamform() : startup("init_tamform")
 {
   usesResource("em");
   usesResource("CML");

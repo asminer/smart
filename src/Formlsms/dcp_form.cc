@@ -282,14 +282,14 @@ void dcp_unique::Compute(traverse_data &x, expr** pass, int np)
 // *                                                                *
 // ******************************************************************
 
-class init_dcps : public initializer {
+class init_dcps : public startup {
   public:
     init_dcps();
     virtual bool execute();
 };
-init_dcps the_dcp_initializer;
+init_dcps the_dcp_startup;
 
-init_dcps::init_dcps() : initializer("init_dcps")
+init_dcps::init_dcps() : startup("init_dcps")
 {
   usesResource("em");
   usesResource("CML");

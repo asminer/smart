@@ -353,14 +353,14 @@ void PU_expl_eng::RunEngine(result* pass, int np, traverse_data &x)
 // *                                                                *
 // ******************************************************************
 
-class init_cslengines : public initializer {
+class init_cslengines : public startup {
   public:
     init_cslengines();
     virtual bool execute();
 };
-init_cslengines the_cslengine_initializer;
+init_cslengines the_cslengine_startup;
 
-init_cslengines::init_cslengines() : initializer("init_cslengines")
+init_cslengines::init_cslengines() : startup("init_cslengines")
 {
   usesResource("em");
   usesResource("engtypes");

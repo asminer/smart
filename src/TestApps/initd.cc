@@ -3,13 +3,13 @@
 
 #include <cstdio>
 
-class myinitd : public initializer {
+class myinitd : public startup {
   public:
     myinitd();
     virtual bool execute();
 };
 
-myinitd::myinitd() : initializer("myinitd")
+myinitd::myinitd() : startup("myinitd")
 {
   usesResource("d");
   buildsResource("d");

@@ -982,14 +982,14 @@ void irorder_si::Compute(traverse_data &x, expr** pass, int np)
 // *                                                                *
 // ******************************************************************
 
-class init_mathfuncs : public initializer {
+class init_mathfuncs : public startup {
   public:
     init_mathfuncs();
     virtual bool execute();
 };
-init_mathfuncs the_mathfunc_initializer;
+init_mathfuncs the_mathfunc_startup;
 
-init_mathfuncs::init_mathfuncs() : initializer("init_mathfuncs")
+init_mathfuncs::init_mathfuncs() : startup("init_mathfuncs")
 {
   usesResource("em");
   usesResource("st");

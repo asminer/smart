@@ -1457,14 +1457,14 @@ void writedot_si::Compute(traverse_data &x, expr** pass, int np)
 // *                                                                *
 // ******************************************************************
 
-class init_basicmsrs : public initializer {
+class init_basicmsrs : public startup {
   public:
     init_basicmsrs();
     virtual bool execute();
 };
-init_basicmsrs the_basicmsr_initializer;
+init_basicmsrs the_basicmsr_startup;
 
-init_basicmsrs::init_basicmsrs() : initializer("init_basicmsrs")
+init_basicmsrs::init_basicmsrs() : startup("init_basicmsrs")
 {
   usesResource("em");
   usesResource("procgen");

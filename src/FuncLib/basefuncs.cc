@@ -613,14 +613,14 @@ int case_ci::Substitute(traverse_data &x, expr** pass, int np) const
 // *                                                                *
 // ******************************************************************
 
-class init_basefuncs : public initializer {
+class init_basefuncs : public startup {
   public:
     init_basefuncs();
     virtual bool execute();
 };
-init_basefuncs the_basefunc_initializer;
+init_basefuncs the_basefunc_startup;
 
-init_basefuncs::init_basefuncs() : initializer("init_basefuncs")
+init_basefuncs::init_basefuncs() : startup("init_basefuncs")
 {
   usesResource("em");
   usesResource("st");

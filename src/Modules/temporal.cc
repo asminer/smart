@@ -1306,15 +1306,15 @@ binary* temporal_implies_op::makeExpr(const location &W, expr* left,
 // *                                                                *
 // ******************************************************************
 
-class init_temporal : public initializer {
+class init_temporal : public startup {
   public:
     init_temporal();
     virtual bool execute();
 };
-init_temporal the_temporal_initializer;
+init_temporal the_temporal_startup;
 
 
-init_temporal::init_temporal() : initializer("init_temporal")
+init_temporal::init_temporal() : startup("init_temporal")
 {
   usesResource("em");
   usesResource("st");

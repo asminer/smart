@@ -3297,14 +3297,14 @@ void meddly_explgen::generateMC(dsde_hlm &hm, meddly_reachset* rss)
 // *                                                                *
 // ******************************************************************
 
-class init_explmeddly : public initializer {
+class init_explmeddly : public startup {
   public:
     init_explmeddly();
     virtual bool execute();
 };
-init_explmeddly the_explmeddly_initializer;
+init_explmeddly the_explmeddly_startup;
 
-init_explmeddly::init_explmeddly() : initializer("init_explmeddly")
+init_explmeddly::init_explmeddly() : startup("init_explmeddly")
 {
   usesResource("em");
   usesResource("meddlyprocgen");

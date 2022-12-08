@@ -1223,14 +1223,14 @@ void evm_assert::Compute(traverse_data &x, expr** pass, int np)
 // *                                                                *
 // ******************************************************************
 
-class init_evmform : public initializer {
+class init_evmform : public startup {
   public:
     init_evmform();
     virtual bool execute();
 };
-init_evmform the_evmform_initializer;
+init_evmform the_evmform_startup;
 
-init_evmform::init_evmform() : initializer("init_evmform")
+init_evmform::init_evmform() : startup("init_evmform")
 {
   usesResource("em");
   usesResource("CML");

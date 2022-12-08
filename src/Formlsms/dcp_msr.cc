@@ -90,14 +90,14 @@ dcp_satisfiable::dcp_satisfiable(engtype *w)
 // *                                                                *
 // ******************************************************************
 
-class init_dcpmeasures : public initializer {
+class init_dcpmeasures : public startup {
   public:
     init_dcpmeasures();
     virtual bool execute();
 };
-init_dcpmeasures the_dcpmeasure_initializer;
+init_dcpmeasures the_dcpmeasure_startup;
 
-init_dcpmeasures::init_dcpmeasures() : initializer("init_dcpmeasures")
+init_dcpmeasures::init_dcpmeasures() : startup("init_dcpmeasures")
 {
   usesResource("em");
   buildsResource("CML");

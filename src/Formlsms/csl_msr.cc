@@ -441,14 +441,14 @@ void TU_func::Compute(traverse_data &x, expr** pass, int np)
 // *                                                                *
 // ******************************************************************
 
-class init_cslmsrs : public initializer {
+class init_cslmsrs : public startup {
   public:
     init_cslmsrs();
     virtual bool execute();
 };
-init_cslmsrs the_cslmsr_initializer;
+init_cslmsrs the_cslmsr_startup;
 
-init_cslmsrs::init_cslmsrs() : initializer("init_cslmsrs")
+init_cslmsrs::init_cslmsrs() : startup("init_cslmsrs")
 {
   usesResource("em");
   usesResource("stochtypes");
