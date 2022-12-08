@@ -576,7 +576,8 @@ void InitTypeOptions(exprman* em)
   if (0==em)  return;
   if (0==em->OptMan()) return;
 
-  type::pos_infinity_string = new shared_string("+infinity");
+  type::pos_infinity_string = new shared_string("infinity");
+//  type::pos_infinity_string = new shared_string("+infinity");
   em->OptMan()->addStringOption(
       "PlusInfinityString",
       "Output string for positive infinity.",
