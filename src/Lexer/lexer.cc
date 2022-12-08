@@ -57,6 +57,7 @@ inline void start_error(outputStream &Out, const location &L, const char* txt)
     if (txt) {
         Out << " at text: '" << txt << "'";
     }
+    Out << ':';
 }
 
 //

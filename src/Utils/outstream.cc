@@ -39,7 +39,7 @@ void rfwatch::notify(const option*)
 outputStream::outputStream(std::ostream &_deflt) : deflt(_deflt)
 {
     activate();
-    realfmt = RF_FIXED;
+    realfmt = RF_GENERAL;
 
     update_real_format();
 

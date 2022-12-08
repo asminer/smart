@@ -195,9 +195,8 @@ measure::errmsg::errmsg(measure* c) : error_msg("ERROR")
 
     if (cause) {
         Out << ' ' << cause->Where();
-    } else {
-        Out << ':';
     }
+    Out << ':';
     newLine();
 }
 

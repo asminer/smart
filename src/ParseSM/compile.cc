@@ -162,7 +162,7 @@ inline int Compare(const symbol* a, const symbol* b)
 
 parse_error::parse_error(bool err) : error_msg(err ? "ERROR" : "WARNING")
 {
-    Out << ' ' << Where();
+    Out << ' ' << Where() << ':';
     newLine();
 }
 

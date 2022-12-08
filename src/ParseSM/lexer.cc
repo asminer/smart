@@ -46,6 +46,7 @@ lexer_error::lexer_error(const char* text) : error_msg("ERROR")
     if (text) {
         Out << " at text: '" << text << "'";
     }
+    Out << ':';
     newLine();
 }
 
