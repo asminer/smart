@@ -19,6 +19,11 @@
     to hold them has been set up),
     derive a class from this one and override the execute method.
 
+    Inside the constructor, call builds_resource() and needs_resource()
+    to set up dependencies.
+    Your execute() method can then safely assume that the required
+    resources have been constructed already.
+
     Convention is to use the variable name as the resource
     we build or need.
 */
