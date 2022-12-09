@@ -10,6 +10,18 @@
 // *                                                                *
 // ******************************************************************
 
+/**
+    Non-trivial initializations with (acyclic) dependencies.
+
+    To automatically initialize something (typically, options or
+    static members or whatnot) that depends on something else
+    (e.g., don't initialize options until an option manager
+    to hold them has been set up),
+    derive a class from this one and override the execute method.
+
+    Convention is to use the variable name as the resource
+    we build or need.
+*/
 class initializer {
         struct node;
         class resource;
