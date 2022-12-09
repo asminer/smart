@@ -153,6 +153,7 @@ error_msg::error_msg(const char* prefix)
 error_msg::~error_msg()
 {
     Out.stream() << std::endl;
+    Out.deactivate();
 }
 
 // ******************************************************************

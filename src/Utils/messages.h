@@ -71,8 +71,15 @@ class warning_msg : public switchable_msg {
         static inline std::ostream& stream() {
             return Out.stream();
         }
-        static inline void newLine()    {   Out.newLine();          }
-        static inline void stop()       {   stream() << std::endl;  }
+        static inline void newLine(char tab=0) {
+            if ('+' == tab) Out.incIndent();
+            if ('-' == tab) Out.decIndent();
+            Out.newLine();
+        }
+        static inline void stop(bool nl=true) {
+            if (nl) stream() << std::endl;
+            Out.deactivate();
+        }
 };
 
 /*
@@ -108,9 +115,18 @@ class reporting_msg : public named_msg {
 
         bool start() const;
 
-        static inline std::ostream& stream() { return Out.stream();     }
-        inline void newLine() const     {   Out.newLine(getPrefix());   }
-        static inline void stop()       {   stream() << std::endl;      }
+        static inline std::ostream& stream() {
+            return Out.stream();
+        }
+        inline void newLine(char tab=0) const {
+            if ('+' == tab) Out.incIndent();
+            if ('-' == tab) Out.decIndent();
+            Out.newLine(getPrefix());
+        }
+        static inline void stop(bool nl=true) {
+            if (nl) stream() << std::endl;
+            Out.deactivate();
+        }
 };
 
 /*
@@ -131,9 +147,18 @@ class debugging_msg : public named_msg {
 
         bool start() const;
 
-        static inline std::ostream& stream() { return Out.stream();     }
-        inline void newLine() const     {   Out.newLine(getPrefix());   }
-        static inline void stop()       {   stream() << std::endl;      }
+        static inline std::ostream& stream() {
+            return Out.stream();
+        }
+        inline void newLine(char tab=0) const {
+            if ('+' == tab) Out.incIndent();
+            if ('-' == tab) Out.decIndent();
+            Out.newLine(getPrefix());
+        }
+        static inline void stop(bool nl=true) {
+            if (nl) stream() << std::endl;
+            Out.deactivate();
+        }
 };
 
 
@@ -161,8 +186,14 @@ class error_msg {
         static inline void defaultOutput() {
             Out.defaultOutput();
         }
-        static inline std::ostream& stream() { return Out.stream(); }
-        static inline void newLine()    {   Out.newLine();          }
+        static inline std::ostream& stream() {
+            return Out.stream();
+        }
+        inline void newLine(char tab=0) const {
+            if ('+' == tab) Out.incIndent();
+            if ('-' == tab) Out.decIndent();
+            Out.newLine();
+        }
 };
 
 /*

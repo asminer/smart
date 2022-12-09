@@ -2,6 +2,8 @@
 #ifndef INITIALIZER_H
 #define INITIALIZER_H
 
+class error_msg;
+
 // ******************************************************************
 // *                                                                *
 // *                       initializer  class                       *
@@ -40,12 +42,11 @@ class initializer {
         /// Index of next built resource
         unsigned next_build;
 
-        /// List of initializers in init state
-        static initializer* init_list;
-        /// List of initializers in waiting state
-        static initializer* waiting_list;
-        /// List of completed initializers
-        static initializer* finished_list;
+        /// List of initializers that may need to run
+        static initializer* Waiting;
+
+        /// Debugging messages?
+        static bool debug;
 
         /// Next initializer in our list
         initializer* next;
@@ -77,8 +78,6 @@ class initializer {
         static void execute_all(bool debug = false);
 
     protected:
-        virtual ~initializer();
-
         /**
             Provided by derived classes.
             Perform necessary initializations.
@@ -108,9 +107,20 @@ class initializer {
         void notify(resource *r);
 
         /**
-            Book keeping after calling execute().
+            If the initializer is ready to run,
+            then run it; otherwise make it wait.
         */
-        void post_execute();
+        void run_or_wait();
+
+        /**
+            Cleanup memory.
+        */
+        void cleanup();
+
+        /**
+            Display, when there's an error
+        */
+        void show(error_msg &E) const;
 };
 
 #endif

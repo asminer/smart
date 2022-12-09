@@ -34,7 +34,6 @@ struct initializer::node {
     The number of subscribers can be huge.
 */
 class initializer::resource {
-        const char* name;
         initializer::node* wait_builders;
         initializer::node* done_builders;
         initializer::node* subscribers;
@@ -45,6 +44,9 @@ class initializer::resource {
         resource(const char* n, resource* nxt);
 
     public:
+        const char* name;
+        static bool debug;
+
         ~resource();
 
         inline bool is_ready() const { return 0==wait_builders; }
@@ -79,6 +81,7 @@ class initializer::resource {
 // ******************************************************************
 
 initializer::resource* initializer::resource::RLIST = nullptr;
+bool initializer::resource::debug = false;
 
 initializer::resource::resource(const char* n, resource* nxt)
 {
@@ -120,7 +123,16 @@ void initializer::resource::done_builder(initializer* IN)
         // Add to front of done list
         find->next = done_builders;
         done_builders = find;
-        // done!
+        // Is our waiting list now empty?
+        if (wait_builders) return;  // nope, we're done
+
+        // Waiting list just became empty.
+        // That means the resource is ready.
+        if (debug) {
+            std::cerr << "Resource " << name << " is ready.\n";
+        }
+        // Notify all our subscribers
+        notify_subscribers();
         return;
     }
 }
@@ -174,9 +186,8 @@ void initializer::resource::delete_list(initializer::node* L)
 // *                                                                *
 // ******************************************************************
 
-initializer* initializer::init_list = nullptr;
-initializer* initializer::waiting_list = nullptr;
-initializer* initializer::finished_list = nullptr;
+bool initializer::debug = false;
+initializer* initializer::Waiting = nullptr;
 
 
 initializer::initializer(const char* _name, unsigned maxbld, unsigned maxnds)
@@ -203,26 +214,57 @@ initializer::initializer(const char* _name, unsigned maxbld, unsigned maxnds)
     }
     next_needs = 0;
 
-    // Add us to init_list
-    next = init_list;
-    init_list = this;
+    // Add us to the waiting list
+    next = Waiting;
+    Waiting = this;
 }
 
-void initializer::execute_all(bool debug)
+void initializer::execute_all(bool _debug)
 {
-    // TBD
+    resource::debug = _debug;
+    debug = _debug;
+
+    //
+    // One pass through the list, run what we can.
+    // Notifications should get everyone else,
+    // unless there is a deadlock.
     //
 
-    // Go through init_list.
-    // First pass: add everything with one or more needs
-    // to the waiting list.
-    // Second pass: execute everything in this list
-}
+    for (initializer* I=Waiting; I; I=I->next) {
+        I->run_or_wait();
+    }
 
-initializer::~initializer()
-{
-    delete[] build_list;
-    delete[] need_list;
+    //
+    // Now, go through the list, and remove (without deleting)
+    // any completed items.
+    // Whatever is left, is in a deadlock.
+    //
+
+    initializer* dead = nullptr;
+
+    for (initializer* I=Waiting; I; ) {
+        initializer* nxt = I->next;
+        if (complete != I->state) {
+            I->next = dead;
+            dead = I;
+        }
+        I = nxt;
+    }
+
+    //
+    // If deadlock, throw a major hissy fit
+    //
+    if (!dead) return;
+
+    internal_error E(__FILE__, __LINE__);
+    E << "Deadlock in initializer::execute_all";
+    E.newLine();
+    E << "Remaining (dead) initializers:";
+    E.Out.incIndent();
+    E.newLine();
+    for (initializer* I = dead; I; I=I->next) {
+        I->show(E);
+    }
 }
 
 void initializer::builds_resource(const char* res)
@@ -275,19 +317,28 @@ void initializer::notify(resource *r)
         }
         --next_needs;
 
-        if (0==next_needs) {
-            state = running;
-            execute();
-            post_execute();
-        }
+        run_or_wait();
         return;
     }
 
     // Not found; don't change anything
 }
 
-void initializer::post_execute()
+void initializer::run_or_wait()
 {
+    if (complete == state) return;
+
+    DCASSERT( running != state );
+
+    if (next_needs) {
+        state = waiting;
+        return;
+    }
+    state = running;
+    if (debug) {
+        std::cerr << "Running initializer " << name << "\n";
+    }
+    execute();
     // Notify resources we build
     for (unsigned i=0; i<max_build; i++) {
         build_list[i]->done_builder(this);
@@ -295,6 +346,36 @@ void initializer::post_execute()
     state = complete;
 }
 
+void initializer::cleanup()
+{
+    delete[] build_list;
+    build_list = nullptr;
+    next_build = 0;
+
+    delete[] need_list;
+    need_list = nullptr;
+    next_needs = 0;
+}
+
+void initializer::show(error_msg &E)
+{
+    E << "Initializer '" << name << "'";
+    E.Out.incIndent();
+    E.newLine();
+    E << "Needs :";
+    for (unsigned i=0; i<next_needs; i++) {
+        if (i) E << ", ";
+        E << need_list[i]->name;
+    }
+    E.newLine();
+    E << "Builds:";
+    for (unsigned i=0; i<next_build; i++) {
+        if (i) E << ", ";
+        E << build_list[i]->name;
+    }
+    E.Out.decIndent();
+    E.newLine();
+}
 
 // ******************************************************************
 // ******************************************************************
