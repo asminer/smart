@@ -17,4 +17,5 @@ missing
 test-driver
 ylwrap
 *.swp
+*.o
 .DS_Store

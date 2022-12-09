@@ -2,7 +2,7 @@
 #ifndef INITIALIZER_H
 #define INITIALIZER_H
 
-class error_msg;
+#include "messages.h"
 
 // ******************************************************************
 // *                                                                *
