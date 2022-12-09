@@ -2,15 +2,6 @@
 #ifndef INITIALIZER_H
 #define INITIALIZER_H
 
-#include "../include/list.h"
-
-//
-// TBD: redesign this class a little bit so that
-// each resource also maintains a list of subscribers
-// (users), so they can be updated when a resource is ready.
-//
-//
-
 // ******************************************************************
 // *                                                                *
 // *                       initializer  class                       *
@@ -18,26 +9,57 @@
 // ******************************************************************
 
 class initializer {
+        struct node;
         class resource;
-    public:
-        initializer(const char* n);
-    protected:
-        virtual ~initializer();
-    public:
+        friend class resource;
+    private:
+        /// States of an initializer.
+        enum status {
+            init,       // initial state after construction
+            waiting,    // waiting on resources
+            running,    // currently executing
+            complete    // finished executing
+        };
+    private:
+        /// Our name (for debugging).
+        const char* name;
+        /// Our state
+        status state;
 
+        /// Array of needed resources.
+        resource** need_list;
+        /// Dimension of need_list array.
+        unsigned max_needs;
+        /// Index of next needed resource
+        unsigned next_needs;
+
+        /// Array of built resources
+        resource** build_list;
+        /// Dimension of build_list array.
+        unsigned max_build;
+        /// Index of next built resource
+        unsigned next_build;
+
+        /// List of initializers in init state
+        static initializer* init_list;
+        /// List of initializers in waiting state
+        static initializer* waiting_list;
+        /// List of completed initializers
+        static initializer* finished_list;
+
+        /// Next initializer in our list
+        initializer* next;
+
+    public:
         /**
-            Provided by derived classes.
-            Returns true on success, false on failure.
+            Build an initializer.
+                @param  _name       The initializer name (for debugging).
+                @param  max_bld     Max (typically, exact) number of
+                                    resources this initializer builds.
+                @param  max_nds     Max (typically, exact) number of
+                                    resources this initializer needs.
         */
-        virtual bool execute() = 0;
-
-        inline static void setDebugging() {
-            debug = true;
-        }
-
-        inline static bool isDebugging() {
-            return debug;
-        }
+        initializer(const char* _name, unsigned max_bld, unsigned max_nds);
 
         /**
             Execute all initializers.
@@ -45,53 +67,46 @@ class initializer {
             all "builders" of a resource are executed
             before "users" of a resource.
 
-            Returns true if all initializers had a chance to execute,
-            false otherwise (happens if "deadlock" occurs).
+            Will cause a detailed, internal error message
+            if not all initializers are able to execute
+            due to cyclic dependencies.
+
+            @param  debug       If true, debugging messages
+                                will be displayed.
         */
-        static bool executeAll();
+        static void execute_all(bool debug = false);
 
     protected:
-        void buildsResource(const char* name);
-        void usesResource(const char* name);
+        virtual ~initializer();
+
+        /**
+            Provided by derived classes.
+            Perform necessary initializations.
+        */
+        virtual void execute() = 0;
+
+        /**
+            Indicate that this initializer
+            is a builder for the named resource.
+            Cannot be called more than max_bld times.
+        */
+        void builds_resource(const char* name);
+
+        /**
+            Indicate that this initializer
+            requires the named resource to be initialized,
+            before it can execute.
+            Cannot be called more than max_nds times.
+        */
+        void needs_resource(const char* name);
 
     private:
-        /// Checks if all required resources are ready.
-        bool isReady();
+        /**
+            Tell this initializer that one of the
+            resources it needs, is now ready.
+        */
+        void notify(resource *r);
 
-        /// Execute all waiting initializers;
-        /// put them in the appropriate list.
-        static int executeWaiting();
-
-        resource* findResource(const char* name);
-
-        static inline void add_to_waiting(initializer* r) {
-            r->next = waiting_list;
-            waiting_list = r;
-        }
-        static inline void add_to_completed(initializer* r) {
-            r->next = completed_list;
-            completed_list = r;
-        }
-        static inline void add_to_failed(initializer* r) {
-            r->next = failed_list;
-            failed_list = r;
-        }
-
-    private:
-        const char* name;
-        initializer* next;
-        bool executed;
-        List <resource> resources_used;
-
-        // Current implementation assumes not many resources
-        // TBD: use a splay tree instead
-        static resource* resource_list;
-
-        static initializer* waiting_list;
-        static initializer* completed_list;
-        static initializer* failed_list;
-
-        static bool debug;
 };
 
 #endif

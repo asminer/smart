@@ -1,12 +1,195 @@
 
 #include "initializer.h"
 
+
+// ******************************************************************
+// *                                                                *
+// *                    initializer::node struct                    *
+// *                                                                *
 // ******************************************************************
 
+struct initializer::node {
+        initializer* item;
+        initializer::node* next;
+    public:
+        node(initializer* _item, node* _next) {
+            item = _item;
+            next = _next;
+        }
+};
+
+// ******************************************************************
+// *                                                                *
+// *                  initializer::resource  class                  *
+// *                                                                *
+// ******************************************************************
+
+/*
+    Note: the number of builders for a resource
+    is assumed to be relatively small.
+
+    The number of subscribers can be huge.
+*/
+class initializer::resource {
+        const char* name;
+        initializer::node* wait_builders;
+        initializer::node* done_builders;
+        initializer::node* subscribers;
+        resource* next;
+
+        static resource* RLIST;
+    private:
+        resource(const char* n, resource* nxt);
+
+    public:
+        ~resource();
+
+        inline bool is_ready() const { return 0==wait_builders; }
+
+        /// Indicate that IN is a builder for this resource
+        inline void add_builder(initializer* IN) {
+            wait_builders = new initializer::node(IN, wait_builders);
+        }
+
+        /// Indicate that IN needs this resource
+        inline void add_subscriber(initializer* IN) {
+            subscribers = new initializer::node(IN, subscribers);
+        }
+
+        /// Indicate that builder IN has executed
+        void done_builder(initilizer* IN);
+
+        /// Notify all subscribers that we're ready.
+        void notify_subscribers();
+
+        /**
+            Find (and build a new one of needed)
+            a resource with the given name.
+        */
+        static resource* findResource(const char* n);
+    private:
+        static void delete_list(initializer::node* L);
+};
+
+// ******************************************************************
+// *                 initializer::resource  methods                 *
+// ******************************************************************
+
+initializer::resource* initializer::resource::RLIST = nullptr;
+
+initializer::resource::resource(const char* n, resource* nxt)
+{
+    name = n;
+    next = nxt;
+    wait_builders = nullptr;
+    done_builders = nullptr;
+    subscribers = nullptr;
+}
+
+initializer::resource::~resource()
+{
+    delete_list(wait_builders);
+    delete_list(done_builders);
+    delete_list(subscribers);
+}
+
+void initializer::resource::done_builder(initializer* IN)
+{
+    // Find and remove the node containing IN.
+    // If none, then do nothing.
+    initializer::node* prev = nullptr;
+    initializer::node* find = wait_builders;
+    while (find) {
+        if (find->item != IN) {
+            prev = find;
+            find = find->next;
+            continue;
+        }
+        // Found it
+        //
+        // Remove from current list
+        //
+        if (prev) {
+            prev->next = find->next;
+        } else {
+            wait_builders = find->next;
+        }
+        // Add to front of done list
+        find->next = done_builders;
+        done_builders = find;
+        // done!
+        return;
+    }
+}
+
+void initializer::resource::notify_subscribers()
+{
+    for (initializer::node* curr = subscribers; curr; curr=curr->next) {
+        curr->notify(this);
+    }
+}
+
+void resource* initializer::resource::findResource(const char* n)
+{
+    //
+    // Move the resource to the front of the list if present;
+    // if not, create it at the front of the list
+    //
+    resource* prev = nullptr;
+    resource* curr = RLIST;
+    while (curr) {
+        if (strcmp(curr->name, n)) {
+            prev = curr;
+            curr = curr->next;
+            continue;
+        }
+        // found
+        if (prev) prev->next = curr->next;
+        curr->next = RLIST;
+        RLIST = curr;
+        break;
+    }
+    // Not found; create
+    if (!curr) {
+        RLIST = new resource(n, RLIST);
+    }
+    return RLIST;
+}
+
+void initializer::resource::delete_list(initializer::node* L)
+{
+    while (L) {
+        initializer::node* curr = L;
+        L = L->next;
+        delete curr;
+    }
+}
+
+// ******************************************************************
+// *                                                                *
+// *                      initializer  methods                      *
+// *                                                                *
+// ******************************************************************
+
+initializer* initializer::init_list = nullptr;
+initializer* initializer::waiting_list = nullptr;
+initializer* initializer::finished_list = nullptr;
+
+
+// ******************************************************************
+// ******************************************************************
+// ******************************************************************
+// ******************************************************************
+//
+// OLD IMPLEMENTATION BELOW HERE
+//
+// ******************************************************************
+// ******************************************************************
+// ******************************************************************
+// ******************************************************************
+
+#if 0
 initializer::resource* initializer::resource_list = 0;
-initializer* initializer::waiting_list = 0;
-initializer* initializer::completed_list = 0;
-initializer* initializer::failed_list = 0;
 bool initializer::debug = 0;
 // bool initializer::debug = 1;
 
@@ -46,44 +229,6 @@ class initializer::resource {
 
         friend class initializer;
 };
-
-// ******************************************************************
-// *                 initializer::resource  methods                 *
-// ******************************************************************
-
-initializer::resource::resource(const char* n)
-{
-    name = n;
-    next = 0;
-    ready = false;
-}
-
-bool initializer::resource::isReady()
-{
-    if (ready) {
-        DEBUG("\t\tResource %s is ready\n", name);
-        return true;
-    }
-    DEBUG("\t\tChecking resource %s\n", name);
-    for (int i=0; i<builders.Length(); i++) {
-        if (builders.ReadItem(i)->executed) {
-            DEBUG("\t\t\tBuilder %s has executed\n",
-                builders.ReadItem(i)->name);
-            continue;
-        }
-        DEBUG("\t\t\tBuilder %s has not executed\n",
-            builders.ReadItem(i)->name);
-        return false;
-    }
-    ready = true;
-    DEBUG("\t\tResource %s is ready\n", name);
-    return true;
-}
-
-void initializer::resource::addBuilder(initializer *b)
-{
-    builders.Append(b);
-}
 
 // ******************************************************************
 // *                                                                *
@@ -216,3 +361,4 @@ initializer::resource* initializer::findResource(const char* name)
     return resource_list;
 }
 
+#endif
