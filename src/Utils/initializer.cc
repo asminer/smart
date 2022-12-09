@@ -1,6 +1,8 @@
 
 #include "initializer.h"
-
+#include "../include/defines.h"
+#include <iostream>
+#include "messages.h"
 
 // ******************************************************************
 // *                                                                *
@@ -13,6 +15,7 @@ struct initializer::node {
         initializer::node* next;
     public:
         node(initializer* _item, node* _next) {
+            DCASSERT(_item);
             item = _item;
             next = _next;
         }
@@ -57,7 +60,7 @@ class initializer::resource {
         }
 
         /// Indicate that builder IN has executed
-        void done_builder(initilizer* IN);
+        void done_builder(initializer* IN);
 
         /// Notify all subscribers that we're ready.
         void notify_subscribers();
@@ -66,7 +69,7 @@ class initializer::resource {
             Find (and build a new one of needed)
             a resource with the given name.
         */
-        static resource* findResource(const char* n);
+        static resource* find(const char* n);
     private:
         static void delete_list(initializer::node* L);
 };
@@ -125,11 +128,11 @@ void initializer::resource::done_builder(initializer* IN)
 void initializer::resource::notify_subscribers()
 {
     for (initializer::node* curr = subscribers; curr; curr=curr->next) {
-        curr->notify(this);
+        curr->item->notify(this);
     }
 }
 
-void resource* initializer::resource::findResource(const char* n)
+initializer::resource* initializer::resource::find(const char* n)
 {
     //
     // Move the resource to the front of the list if present;
@@ -174,6 +177,123 @@ void initializer::resource::delete_list(initializer::node* L)
 initializer* initializer::init_list = nullptr;
 initializer* initializer::waiting_list = nullptr;
 initializer* initializer::finished_list = nullptr;
+
+
+initializer::initializer(const char* _name, unsigned maxbld, unsigned maxnds)
+{
+    name = _name;
+    max_build = maxbld;
+    max_needs = maxnds;
+
+    state = init;
+
+    if (max_build) {
+        build_list = new resource* [max_build];
+        for (unsigned i=0; i<max_build; i++) {
+            build_list[i] = nullptr;
+        }
+    }
+    next_build = 0;
+
+    if (max_needs) {
+        need_list = new resource* [max_needs];
+        for (unsigned i=0; i<max_needs; i++) {
+            need_list[i] = nullptr;
+        }
+    }
+    next_needs = 0;
+
+    // Add us to init_list
+    next = init_list;
+    init_list = this;
+}
+
+void initializer::execute_all(bool debug)
+{
+    // TBD
+    //
+
+    // Go through init_list.
+    // First pass: add everything with one or more needs
+    // to the waiting list.
+    // Second pass: execute everything in this list
+}
+
+initializer::~initializer()
+{
+    delete[] build_list;
+    delete[] need_list;
+}
+
+void initializer::builds_resource(const char* res)
+{
+    DCASSERT(init == state);
+
+    if (0==res) return;
+
+    if (next_build >= max_build) {
+        internal_error E(__FILE__, __LINE__);
+        E << "Initializer " << name
+          << " build overflow: more than " << max_build;
+        return;
+    }
+    build_list[next_build++] = resource::find(res);
+}
+
+void initializer::needs_resource(const char* res)
+{
+    DCASSERT(init == state);
+
+    if (0==res) return;
+
+    if (next_needs >= max_needs) {
+        internal_error E(__FILE__, __LINE__);
+        E << "Initializer " << name
+          << " needs overflow: more than " << max_needs;
+        return;
+    }
+    need_list[next_needs++] = resource::find(res);
+}
+
+void initializer::notify(resource *r)
+{
+    DCASSERT(waiting == state);
+
+    // Resource r is now ready
+    // find it in our needs array, move it to the end, decrement next_needs
+    // when next_needs becomes 0, we can execute
+
+    for (unsigned i=0; i<next_needs; i++) {
+        if (need_list[i] != r) continue;
+        // found it
+
+        if (i+1 != next_needs) {
+            // Not the last element.
+            // Make it so by swapping.
+            need_list[i] = need_list[next_needs-1];
+            need_list[next_needs-1] = r;
+        }
+        --next_needs;
+
+        if (0==next_needs) {
+            state = running;
+            execute();
+            post_execute();
+        }
+        return;
+    }
+
+    // Not found; don't change anything
+}
+
+void initializer::post_execute()
+{
+    // Notify resources we build
+    for (unsigned i=0; i<max_build; i++) {
+        build_list[i]->done_builder(this);
+    }
+    state = complete;
+}
 
 
 // ******************************************************************

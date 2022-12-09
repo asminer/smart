@@ -107,6 +107,10 @@ class initializer {
         */
         void notify(resource *r);
 
+        /**
+            Book keeping after calling execute().
+        */
+        void post_execute();
 };
 
 #endif
