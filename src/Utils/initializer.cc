@@ -2,6 +2,10 @@
 #include "initializer.h"
 #include "../include/defines.h"
 
+// #define DEBUG
+// #define DEBUG_FIND
+
+
 // ******************************************************************
 // *                                                                *
 // *                    initializer::node struct                    *
@@ -78,7 +82,7 @@ class initializer::resource {
         // For debugging.
         //
         void show(std::ostream &s) const;
-        static void show_all(std::ostream &s);
+        static void show_all(std::ostream &s, bool names_only = false);
     private:
         static void delete_list(initializer::node* L);
         static void show_list(std::ostream &s, const initializer::node* L);
@@ -98,6 +102,9 @@ initializer::resource::resource(const char* n, resource* nxt)
     wait_builders = nullptr;
     done_builders = nullptr;
     subscribers = nullptr;
+#ifdef DEBUG
+    std::cerr << "\tBuilt resource: " << name << "\n";
+#endif
 }
 
 initializer::resource::~resource()
@@ -154,6 +161,9 @@ void initializer::resource::notify_subscribers()
 
 initializer::resource* initializer::resource::find(const char* n)
 {
+#ifdef DEBUG_FIND
+    std::cerr << "Looking for " << n << ":\n";
+#endif
     //
     // Move the resource to the front of the list if present;
     // if not, create it at the front of the list
@@ -167,15 +177,25 @@ initializer::resource* initializer::resource::find(const char* n)
             continue;
         }
         // found
-        if (prev) prev->next = curr->next;
-        curr->next = RLIST;
-        RLIST = curr;
-        break;
+        if (prev) {
+            // Not already in front; move it there
+            prev->next = curr->next;
+            curr->next = RLIST;
+            RLIST = curr;
+        }
+#ifdef DEBUG_FIND
+        std::cerr << "Found; new list: ";
+        show_all(std::cerr, true);
+#endif
+        return RLIST;
     }
     // Not found; create
-    if (!curr) {
-        RLIST = new resource(n, RLIST);
-    }
+    curr = new resource(n, RLIST);
+    RLIST = curr;
+#ifdef DEBUG_FIND
+    std::cerr << "Not found; new list: ";
+    show_all(std::cerr, true);
+#endif
     return RLIST;
 }
 
@@ -191,19 +211,24 @@ void initializer::resource::delete_all()
 void initializer::resource::show(std::ostream &s) const
 {
     s << "    " << name << "\n";
-    s << "        waiting  builders:\n";
+    s << "        waiting  builders: ";
     show_list(s, wait_builders);
-    s << "        finished builders:\n";
+    s << "        finished builders: ";
     show_list(s, done_builders);
-    s << "        subscribers:\n";
+    s << "        subscribers      : ";
     show_list(s, subscribers);
 }
 
-void initializer::resource::show_all(std::ostream &s)
+void initializer::resource::show_all(std::ostream &s, bool names_only)
 {
     for (const resource* curr = RLIST; curr; curr = curr->next) {
-        curr->show(s);
+        if (names_only) {
+            s << curr->name << " -> ";
+        } else {
+            curr->show(s);
+        }
     }
+    if (names_only) s << "null\n";
 }
 
 void initializer::resource::delete_list(initializer::node* L)
@@ -218,8 +243,6 @@ void initializer::resource::delete_list(initializer::node* L)
 void initializer::resource::show_list(std::ostream &s,
         const initializer::node* L)
 {
-    if (0==L) return;
-    s << "            ";
     for (const initializer::node* curr = L; curr; curr=curr->next) {
         if (curr != L) {
             s << ", ";
@@ -244,8 +267,11 @@ initializer::initializer(const char* _name, unsigned maxbld, unsigned maxnds)
     name = _name;
     max_build = maxbld;
     max_needs = maxnds;
-
     state = init;
+
+#ifdef DEBUG
+    std::cerr << "Building initializer: " << name << "\n";
+#endif
 
     if (max_build) {
         build_list = new resource* [max_build];
@@ -276,6 +302,11 @@ void initializer::execute_all(bool _debug)
     if (debug) {
         std::cerr << "Prepping to run initializers.\nResources:\n";
         resource::show_all(std::cerr);
+        error_msg E("Initializers:");
+        E.newLine();
+        for (const initializer* I=Waiting; I; I=I->next) {
+            I->show(E);
+        }
     }
 
     //
@@ -300,9 +331,10 @@ void initializer::execute_all(bool _debug)
         if (complete != I->state) {
             I->next = dead;
             dead = I;
+        } else {
+            // Clean up I, but don't delete it.
+            I->cleanup();
         }
-        // Clean up I, but don't delete it.
-        I->cleanup();
         I = nxt;
     }
 
@@ -344,6 +376,10 @@ void initializer::builds_resource(const char* res)
 
     if (0==res) return;
 
+#ifdef DEBUG
+    std::cerr << "    builds " << res << "\n";
+#endif
+
     if (next_build >= max_build) {
         internal_error E(__FILE__, __LINE__);
         E << "Initializer " << name
@@ -353,6 +389,9 @@ void initializer::builds_resource(const char* res)
     resource* r = resource::find(res);
     r->add_builder(this);
     build_list[next_build++] = r;
+#ifdef DEBUG
+    std::cerr << "        done\n";
+#endif
 }
 
 void initializer::needs_resource(const char* res)
@@ -360,6 +399,10 @@ void initializer::needs_resource(const char* res)
     DCASSERT(init == state);
 
     if (0==res) return;
+
+#ifdef DEBUG
+    std::cerr << "    needs  " << res << "\n";
+#endif
 
     if (next_needs >= max_needs) {
         internal_error E(__FILE__, __LINE__);
@@ -370,6 +413,9 @@ void initializer::needs_resource(const char* res)
     resource* r = resource::find(res);
     r->add_subscriber(this);
     need_list[next_needs++] = r;
+#ifdef DEBUG
+    std::cerr << "        done\n";
+#endif
 }
 
 void initializer::notify(resource *r)
@@ -425,13 +471,13 @@ void initializer::show(error_msg &E) const
 {
     E << "Initializer '" << name << "'";
     E.newLine('+');
-    E << "Needs :";
+    E << "Needs : ";
     for (unsigned i=0; i<next_needs; i++) {
         if (i) E << ", ";
         E << need_list[i]->name;
     }
     E.newLine();
-    E << "Builds:";
+    E << "Builds: ";
     for (unsigned i=0; i<next_build; i++) {
         if (i) E << ", ";
         E << build_list[i]->name;

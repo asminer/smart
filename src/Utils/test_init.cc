@@ -36,10 +36,35 @@ void myinit::execute()
 }
 
 //============================================================
+// Build an interesting dependency graph
 
-myinit foo1("foo1", "a");
-myinit foo2("foo2", "b");
-myinit foo3("foo3", "c", "a", "b");
+myinit A1("A1", "a");
+myinit A2("A2", "a");
+myinit B("B", "b");
+myinit C1("C1", "c");
+myinit C2("C2", "c");
+myinit C3("C3", "c");
+myinit D("D", "d");
+myinit E("E", "e");
+myinit F("F", "f");
+myinit G("G", "g");
+
+myinit H1("H1", "h", "a", "b");
+myinit H2("H2", "h");
+
+myinit I("I", "i", "c", "d");
+myinit J("J", "j", "h", "i");
+myinit K("K", "k", "j", "e");
+myinit L1("L1", "l", "k", "f");
+myinit L2("L2", "l", "a");
+myinit L3("L3", "l");
+myinit M("M", "m", "l", "g");
+
+// Deadlock cycle
+
+myinit X("X", "x", "a", "z");
+myinit Y("Y", "y", "b", "x");
+myinit Z("Z", "z", "c", "y");
 
 int main()
 {
