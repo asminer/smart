@@ -70,8 +70,18 @@ class initializer::resource {
             a resource with the given name.
         */
         static resource* find(const char* n);
+
+        /// Delete all resources.
+        static void delete_all();
+
+        //
+        // For debugging.
+        //
+        void show(std::ostream &s) const;
+        static void show_all(std::ostream &s);
     private:
         static void delete_list(initializer::node* L);
+        static void show_list(std::ostream &s, const initializer::node* L);
 };
 
 // ******************************************************************
@@ -169,6 +179,33 @@ initializer::resource* initializer::resource::find(const char* n)
     return RLIST;
 }
 
+void initializer::resource::delete_all()
+{
+    while (RLIST) {
+        resource* curr = RLIST;
+        RLIST = RLIST->next;
+        delete curr;
+    }
+}
+
+void initializer::resource::show(std::ostream &s) const
+{
+    s << "    " << name << "\n";
+    s << "        waiting  builders:\n";
+    show_list(s, wait_builders);
+    s << "        finished builders:\n";
+    show_list(s, done_builders);
+    s << "        subscribers:\n";
+    show_list(s, subscribers);
+}
+
+void initializer::resource::show_all(std::ostream &s)
+{
+    for (const resource* curr = RLIST; curr; curr = curr->next) {
+        curr->show(s);
+    }
+}
+
 void initializer::resource::delete_list(initializer::node* L)
 {
     while (L) {
@@ -176,6 +213,20 @@ void initializer::resource::delete_list(initializer::node* L)
         L = L->next;
         delete curr;
     }
+}
+
+void initializer::resource::show_list(std::ostream &s,
+        const initializer::node* L)
+{
+    if (0==L) return;
+    s << "            ";
+    for (const initializer::node* curr = L; curr; curr=curr->next) {
+        if (curr != L) {
+            s << ", ";
+        }
+        s << curr->item->name;
+    }
+    s << "\n";
 }
 
 // ******************************************************************
@@ -222,6 +273,11 @@ void initializer::execute_all(bool _debug)
     resource::debug = _debug;
     debug = _debug;
 
+    if (debug) {
+        std::cerr << "Prepping to run initializers.\nResources:\n";
+        resource::show_all(std::cerr);
+    }
+
     //
     // One pass through the list, run what we can.
     // Notifications should get everyone else,
@@ -233,8 +289,7 @@ void initializer::execute_all(bool _debug)
     }
 
     //
-    // Now, go through the list, and remove (without deleting)
-    // any completed items.
+    // Now, go through the list, and remove any completed items.
     // Whatever is left, is in a deadlock.
     //
 
@@ -246,23 +301,42 @@ void initializer::execute_all(bool _debug)
             I->next = dead;
             dead = I;
         }
+        // Clean up I, but don't delete it.
+        I->cleanup();
         I = nxt;
     }
 
     //
     // If deadlock, throw a major hissy fit
     //
-    if (!dead) return;
-
-    internal_error E(__FILE__, __LINE__);
-    E << "Deadlock in initializer::execute_all";
-    E.newLine();
-    E << "Remaining (dead) initializers:";
-    E.newLine('+');
-    for (initializer* I = dead; I; I=I->next) {
-        I->show(E);
+    if (dead) {
+        internal_error E(__FILE__, __LINE__);
+        E << "Deadlock in initializer::execute_all";
+        E.newLine();
+        E << "Remaining (dead) initializers:";
+        E.newLine('+');
+        for (initializer* I = dead; I; I=I->next) {
+            I->show(E);
+        }
     }
+
+    //
+    // Destroy resources
+    //
+    resource::delete_all();
 }
+
+void initializer::cleanup()
+{
+    delete[] build_list;
+    build_list = nullptr;
+    next_build = 0;
+
+    delete[] need_list;
+    need_list = nullptr;
+    next_needs = 0;
+}
+
 
 void initializer::builds_resource(const char* res)
 {
@@ -276,7 +350,9 @@ void initializer::builds_resource(const char* res)
           << " build overflow: more than " << max_build;
         return;
     }
-    build_list[next_build++] = resource::find(res);
+    resource* r = resource::find(res);
+    r->add_builder(this);
+    build_list[next_build++] = r;
 }
 
 void initializer::needs_resource(const char* res)
@@ -291,7 +367,9 @@ void initializer::needs_resource(const char* res)
           << " needs overflow: more than " << max_needs;
         return;
     }
-    need_list[next_needs++] = resource::find(res);
+    resource* r = resource::find(res);
+    r->add_subscriber(this);
+    need_list[next_needs++] = r;
 }
 
 void initializer::notify(resource *r)
@@ -341,17 +419,6 @@ void initializer::run_or_wait()
         build_list[i]->done_builder(this);
     }
     state = complete;
-}
-
-void initializer::cleanup()
-{
-    delete[] build_list;
-    build_list = nullptr;
-    next_build = 0;
-
-    delete[] need_list;
-    need_list = nullptr;
-    next_needs = 0;
 }
 
 void initializer::show(error_msg &E) const

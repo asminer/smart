@@ -39,9 +39,10 @@ class initializer {
             running,    // currently executing
             complete    // finished executing
         };
-    private:
+    protected:
         /// Our name (for debugging).
         const char* name;
+    private:
         /// Our state
         status state;
 
@@ -89,6 +90,8 @@ class initializer {
             if not all initializers are able to execute
             due to cyclic dependencies.
 
+            Dependency information will be destroyed upon completion.
+
             @param  debug       If true, debugging messages
                                 will be displayed.
         */
@@ -100,6 +103,14 @@ class initializer {
             Perform necessary initializations.
         */
         virtual void execute() = 0;
+
+        /**
+            Cleanup any memory that is no longer needed,
+            after everything has been initialized.
+            If overridden in derived classes,
+            be sure to call initializer::cleanup().
+        */
+        virtual void cleanup();
 
         /**
             Indicate that this initializer
@@ -128,11 +139,6 @@ class initializer {
             then run it; otherwise make it wait.
         */
         void run_or_wait();
-
-        /**
-            Cleanup memory.
-        */
-        void cleanup();
 
         /**
             Display, when there's an error

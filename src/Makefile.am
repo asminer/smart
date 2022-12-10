@@ -6,7 +6,7 @@ SUBDIRS = _LSLib _RngLib _SimLib _IntSets _StateLib _GraphLib _MCLib _Meddly
 
 
 ## List executables that we build
-bin_PROGRAMS = smart icp testsplay testinit lextest
+bin_PROGRAMS = smart icp testsplay test_init lextest
 
 
 BUILT_SOURCES = \
@@ -270,13 +270,18 @@ testsplay_SOURCES = \
 
 ## ============================================================
 ##
-## testinit
+## test_init
 ##
 ## ============================================================
 
-testinit_SOURCES = \
-  TestApps/testinit.cc TestApps/initd.cc \
-  ExprLib/startup.cc
+test_init_SOURCES = \
+  Utils/test_init.cc \
+  Utils/initializer.cc \
+  Utils/messages.cc \
+  Utils/outstream.cc \
+  Utils/location.cc \
+  Utils/strings.cc \
+  Utils/sigman.cc
 
 ## ============================================================
 ##
