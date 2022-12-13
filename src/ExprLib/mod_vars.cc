@@ -912,6 +912,8 @@ void measure_array_assign::Compute(traverse_data &x) {
 		return;
 	if (msr_slot < 0) {
 		msr_slot = parent->FindVisible(wrapper->Name());
+    }
+    if (msr_slot < 0) {
         internal_error E(__FILE__, __LINE__, Where());
         E << "Couldn't find slot for measure " << wrapper->Name();
 		E << " in model " << parent->Name();

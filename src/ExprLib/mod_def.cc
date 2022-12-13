@@ -11,6 +11,7 @@
 #include <stdlib.h>
 
 // #define ARRAY_TRACE
+// #define MSR_DEBUG
 
 // ******************************************************************
 // *                                                                *
@@ -63,23 +64,35 @@ model_def::~model_def()
 
 int model_def::FindVisible(const char* name) const
 {
-  int low = 0;
-  int high = num_symbols;
-  while (low < high) {
-    int mid = (high+low) / 2;
-    const char* peek = mysymbols[mid]->Name();
-    int cmp = strcmp(name, peek);
-    if (0==cmp) return mid;
-    if (cmp<0) {
-      // name < peek
-      high = mid;
-    } else {
-      // name > peek
-      low = mid+1;
+#ifdef MSR_DEBUG
+    std::cerr << "Model " << Name() << " looking for " << name << "\n";
+#endif
+
+    int low = 0;
+    int high = num_symbols;
+    while (low < high) {
+        int mid = (high+low) / 2;
+        const char* peek = mysymbols[mid]->Name();
+        int cmp = strcmp(name, peek);
+        if (0==cmp) {
+#ifdef MSR_DEBUG
+            std::cerr << "\t" << name << " in slot " << mid << "\n";
+#endif
+            return mid;
+        }
+        if (cmp<0) {
+            // name < peek
+            high = mid;
+        } else {
+            // name > peek
+            low = mid+1;
+        }
     }
-  }
-  // not found
-  return -1;
+#ifdef MSR_DEBUG
+    std::cerr << "\t" << name << " not found\n";
+#endif
+    // not found
+    return -1;
 }
 
 void model_def::SetDotFile(result& x)
