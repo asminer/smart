@@ -80,7 +80,7 @@ pn cruft(int n) := {
   decision aa, bb, cc;
   cost(aa:1,bb:2,cc:1);
   enable_decision(aa:(true & true));
-  bool ab := istaken(aa);
+  bool ab := is_taken(aa);
   enable_decision(bb:ab);
   enable_decision(cc:true);
   //aa:=1;
@@ -112,7 +112,7 @@ pn cruft(int n) := {
   stateset apEn:= reachable & potential(tk(E)==1);
 
   stateset test1 := potential(tk(I)>0 & true);
-  stateset test2 := potential(tk(I)>0 & istaken(aa));
+  stateset test2 := potential(tk(I)>0 & dec_value(aa));
 
   stateset test3 := EX(test2);
 

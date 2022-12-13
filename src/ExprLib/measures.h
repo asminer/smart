@@ -41,6 +41,9 @@ class measure : public symbol {
   /// Measures we're waiting for, to solve ourselves
   List <symbol> *solve_deps;
 
+  /// Whether the measure is intended to be recomputable at some point
+  bool recomputable;
+
 protected:
   /// Model that owns us.
   model_instance* owner;
@@ -70,14 +73,17 @@ public:
   }
   inline void SetValue(const result &v) {
     value = v;
-    Affix();
+    if (!recomputable) Affix();
   }
   inline void SetNull() {
     value.setNull();
-    Affix();
+    if (!recomputable) Affix();
   }
   inline void PrecomputeRHS() {
     if (rhs)	rhs->PreCompute();
+  }
+  inline void setRecomputable() {
+    recomputable = true;
   }
   inline void ComputeRHS(traverse_data &x) {
     SafeCompute(rhs, x);
@@ -285,9 +291,14 @@ public:
     substitution to handle complex measure dependencies.
 */
 class msr_noengine : public msr_func {
+private:
+  bool recomputable;
 public:
   msr_noengine(eng_class ec, const type* t, const char* name, int nf);
   virtual ~msr_noengine();
+  inline void setRecomputable() {
+    recomputable = true;
+  }
   virtual void Compute(traverse_data &x, expr** pass, int np);
   virtual measure* buildMeasure(traverse_data &x, expr** pass, int np);
 };

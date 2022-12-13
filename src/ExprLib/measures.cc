@@ -24,6 +24,7 @@ measure::measure(const expr* e, engtype* which, model_def* parent, expr* rhs)
   value.setNull();
   class_deps = 0;
   solve_deps = 0;
+  recomputable = false;
 
   parent->AcceptMeasure(this);
   if (model_debug.startReport()) {
@@ -125,13 +126,15 @@ void measure::SetRHS(expr* r)
 void measure::Affix()
 {
   if (Type() == em->VOID) return;
-  if (!isComputed()) setComputed();
-  SetSubstitution(true);
+  if (!recomputable) {
+    if (!isComputed()) setComputed();
+    SetSubstitution(true);
+  }
   if (model_debug.startReport()) {
     model_debug.report() << "Measure " << Name() << " is computed\n";
     model_debug.stopIO();
   }
-  notifyList();
+  notifyList(!recomputable); // destroy list if recomputable is false
 }
 
 void measure::notifyFrom(const symbol *p)
@@ -476,6 +479,7 @@ msr_noengine
 ::msr_noengine(eng_class ec, const type* t, const char* name, int nf)
  : msr_func(ec, t, name, nf)
 {
+  recomputable = false;
 }
 
 msr_noengine::~msr_noengine()

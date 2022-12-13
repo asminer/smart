@@ -80,8 +80,8 @@ public:
   /// Check if a symbol could be waiting for us (perhaps indirectly).
   bool couldNotify(const symbol* s) const;
 
-  /// Notify everyone on our waiting list, and destroy the list.
-  void notifyList();
+  /// Notify everyone on our waiting list, and destroy the list if arg is true
+  void notifyList(bool);
 };
 
 

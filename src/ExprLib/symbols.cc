@@ -197,13 +197,15 @@ bool symbol::couldNotify(const symbol* s) const
   return false;
 }
 
-void symbol::notifyList()
+void symbol::notifyList(bool destroy)
 {
   if (0==waitlist) return;
   for (int i=0; i<waitlist->Length(); i++)
     waitlist->Item(i)->notifyFrom(this);
-  delete waitlist;
-  waitlist = 0;
+  if (destroy) {
+    delete waitlist;
+    waitlist = 0;
+  }
 }
 
 // ******************************************************************

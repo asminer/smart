@@ -259,7 +259,7 @@ void guess_stmt::Traverse(traverse_data &x)
     case traverse_data::Affix:
         if (var->isComputed())  return;
         var->setComputed();
-        var->notifyList();
+        var->notifyList(true);
         return;
 
     case traverse_data::Update:
@@ -380,7 +380,7 @@ void assign_stmt::Traverse(traverse_data &x)
     case traverse_data::Affix:
         if (var->isComputed())  return;
         var->setComputed();
-        var->notifyList();
+        var->notifyList(true);
         return;
 
     default:
@@ -473,7 +473,7 @@ void array_guess_stmt::Traverse(traverse_data &x)
     case traverse_data::Affix:
         if (var->isComputed())  return;
         var->setComputed();
-        var->notifyList();
+        var->notifyList(true);
         return;
 
     case traverse_data::Update:
@@ -628,7 +628,7 @@ void array_assign_stmt::Traverse(traverse_data &x)
     case traverse_data::Affix:
         if (var->isComputed())  return;
         var->setComputed();
-        var->notifyList();
+        var->notifyList(true);
         return;
 
     default:

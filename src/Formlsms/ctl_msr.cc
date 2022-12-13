@@ -110,6 +110,7 @@ CTL_engine::CTL_engine(const type* t, const char* name, bool rt, int np)
  : msr_noengine(CTL, t, name, np)
 {
   reverse_time = rt;
+  setRecomputable();
 }
 
 // *****************************************************************
