@@ -8,6 +8,7 @@
 #include "../ExprLib/startup.h"
 #include "../ExprLib/exprman.h"
 #include "../ExprLib/functions.h"
+#include "../ExprLib/help.h"
 #include "../SymTabs/symtabs.h"
 #include "../Utils/strings.h"
 #include "../Utils/textfmt.h"

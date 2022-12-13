@@ -2,8 +2,9 @@
 #ifndef HEAP_H
 #define HEAP_H
 
-const int MAX_HEAP_ADD = 1024;
+#include <iostream>
 
+const int MAX_HEAP_ADD = 1024;
 
 // ==================================================================
 // ||                                                              ||

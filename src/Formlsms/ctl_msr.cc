@@ -6,6 +6,7 @@
 #include "../ExprLib/mod_def.h"
 #include "../ExprLib/mod_vars.h"
 #include "../ExprLib/values.h"
+#include "../ExprLib/help.h"
 #include "graph_llm.h"
 
 #include "../Modules/biginttype.h"

@@ -2,14 +2,17 @@
 #include "topics.h"
 
 #include "../include/defines.h"
+#include "../include/heap.h"
+
 #include "../ExprLib/startup.h"
 #include "../ExprLib/exprman.h"
-#include "../include/heap.h"
-#include "../ExprLib/symbols.h"
-#include "../SymTabs/symtabs.h"
-#include "../Utils/textfmt.h"
+#include "../ExprLib/help.h"
 #include "../ExprLib/formalism.h"
 #include "../ExprLib/functions.h"
+
+#include "../SymTabs/symtabs.h"
+
+#include "../Utils/textfmt.h"
 
 #include "../Options/optman.h"
 

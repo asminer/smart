@@ -72,6 +72,7 @@ smart_SOURCES = \
   ExprLib/bogus.cc \
   ExprLib/values.cc \
   ExprLib/symbols.cc \
+  ExprLib/help.cc \
   ExprLib/iterators.cc \
   ExprLib/arrays.cc \
   ExprLib/stmts.cc \
@@ -209,6 +210,7 @@ icp_SOURCES = \
   ExprLib/bogus.cc \
   ExprLib/values.cc \
   ExprLib/symbols.cc \
+  ExprLib/help.cc \
   ExprLib/iterators.cc \
   ExprLib/arrays.cc \
   ExprLib/stmts.cc \
@@ -319,6 +321,7 @@ lextest_SOURCES = \
   ExprLib/bogus.cc \
   ExprLib/values.cc \
   ExprLib/symbols.cc \
+  ExprLib/help.cc \
   ExprLib/iterators.cc \
   ExprLib/arrays.cc \
   ExprLib/stmts.cc \
