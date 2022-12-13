@@ -1433,6 +1433,88 @@ void traces::traces_ex::Compute(traverse_data &x, expr** pass, int np)
   Delete(q);
 }
 
+
+// *****************************************************************
+// *                                                               *
+// *                  CTL Cost w/ Unknowns                         *
+// *                                                               *
+// *****************************************************************
+
+// class CTL_decision_cost_base : public CTL_engine {
+// public:
+//   CTL_decision_cost_base(const char* name, bool rt);
+//   virtual void Compute(traverse_data &x, expr** pass, int np);
+// };
+
+// CTL_decision_cost_base::CTL_decision_cost_base(const char* name, bool rt)
+//  : CTL_engine(em->STATESET, name, rt, 2)
+// {
+//   SetFormal(1, em->STATESET, "p");
+// }
+
+// void CTL_decision_cost_base::Compute(traverse_data &x, expr** pass, int np)
+// {
+//   DCASSERT(x.answer);
+//   DCASSERT(0==x.aggregate);
+//   DCASSERT(pass);
+//   const graph_lldsm* llm = getLLM(x, pass[0]);
+//   stateset* p = grabParam(llm, pass[1], x);
+//   setAnswer(x, p);
+//   Delete(p);
+// }
+
+// class CTL_decision_cost_si : public CTL_decision_cost_base {
+// public:
+//   CTL_decision_cost_si();
+// };
+
+// CTL_decision_cost_si::CTL_decision_cost_si() : CTL_decision_cost_base("decision_cost", false)
+// {
+//   SetDocumentation("CTL decision cost");
+// }
+
+
+// *****************************************************************
+// *                                                               *
+// *                  CTL Min cost w/ Unknowns                     *
+// *                                                               *
+// *****************************************************************
+
+class CTL_min_decision_cost_base : public CTL_engine {
+public:
+  CTL_min_decision_cost_base(const char* name, bool rt);
+  virtual void Compute(traverse_data &x, expr** pass, int np);
+};
+
+CTL_min_decision_cost_base::CTL_min_decision_cost_base(const char* name, bool rt)
+ : CTL_engine(em->STATESET, name, rt, 2)
+{
+  SetFormal(1, em->STATESET, "p");
+}
+
+void CTL_min_decision_cost_base::Compute(traverse_data &x, expr** pass, int np)
+{
+  DCASSERT(x.answer);
+  DCASSERT(0==x.aggregate);
+  DCASSERT(pass);
+  const graph_lldsm* llm = getLLM(x, pass[0]);
+  // stateset* p = grabParam(llm, pass[1], x);
+  // setAnswer(x, llm->EX(revTime(), p));
+  // Delete(p);
+}
+
+class CTL_min_decision_cost_si : public CTL_min_decision_cost_base {
+public:
+  CTL_min_decision_cost_si();
+};
+
+CTL_min_decision_cost_si::CTL_min_decision_cost_si() : CTL_min_decision_cost_base("min_decision_cost", false)
+{
+  SetDocumentation("CTL min decision cost");
+}
+
+
+
 // ******************************************************************
 // *                                                                *
 // *                                                                *

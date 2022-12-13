@@ -244,7 +244,7 @@ stateset* ectl_reachgraph::EU(bool revTime, const stateset* p, const stateset* q
     } else if (0==etq) {
       etq = new expl_tri_stateset(q->getParent(), eq);
     } else {
-      return incompatibleOperand("hello world!");
+      return incompatibleOperand(CTLOP);
     }
 
     const intset& itq = etq->getTrueSet()->getExplicit(); 
@@ -255,7 +255,7 @@ stateset* ectl_reachgraph::EU(bool revTime, const stateset* p, const stateset* q
 
     // if p is specified, then restrict paths to satisfying p
     if (p) {
-      if (0==etp)   return incompatibleOperand("hello2");
+      if (0==etp)   return incompatibleOperand(CTLOP);
       const intset& itp = etp->getTrueSet()->getExplicit(); 
       TH->restrict_paths(itp);
     }

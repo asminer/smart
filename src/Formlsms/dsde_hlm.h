@@ -275,7 +275,7 @@ public:
 // *                                                                        *
 // **************************************************************************
 
-class decision : public model_var{
+class decision : public model_var {
   result* dec; //this will be a three valued data
   //int num_decisions;
   //std:: vector<result*> decisions;// not vector: one decision // will it be a vector of expr or just three valued number?//ask Dr. Miner is result compatible with exprmin a formula like aa & apD
@@ -303,21 +303,25 @@ class decision : public model_var{
 
     }
   inline bool isTaken(){
-    if ((!dec->isUnknown()) && dec->getBool()) {
-      return true;
-    }
-    return false;
+    if ((!dec->isUnknown()) && dec->getBool()) return true;
+    else return false;
 	}
 	
- inline void addEnablingCond(expr* e){
- 	enable_cond=e;
- } 
- inline void setCost(int c){
- 	 cost=c;
- }
- inline int getCost(){
- 	return cost;
- }
+  inline void addEnablingCond(expr* e) {
+    enable_cond=e;
+  } 
+  
+  inline expr* getEnablingCond() {
+    return enable_cond;
+  }
+
+  inline void setCost(int c){
+    cost=c;
+  }
+  
+  inline int getCost(){
+    return cost;
+  }
 };
 
 // **************************************************************************
@@ -436,44 +440,24 @@ public:
       event_data[i]->display(s);
     }
   }
-  ////////////////*********//////////
   
-   inline const model_var* readDecVar(int i) const {
-	   	if(num_decs!=0){
-		   CHECK_RANGE(0, i, num_decs);
-		   DCASSERT(decision_data);
-		   return decision_data[i];
-		}
-	  }
+  inline const model_var* readDecVar(int i) const {
+    CHECK_RANGE(0, i, num_decs);
+    DCASSERT(decision_data);
+    return decision_data[i];
+  }
 	
-   inline model_var* getDecVar(int i) {
-	   	if(num_decs!=0){
-		   CHECK_RANGE(0, i, num_decs);
-		   DCASSERT(decision_data);
-		   return decision_data[i];
-		}
-	 }
+  inline model_var* getDecVar(int i) {
+    CHECK_RANGE(0, i, num_decs);
+    DCASSERT(decision_data);
+    return decision_data[i];
+	}
 	
    inline int getNumDecVars() const { 
-   		if (num_decs){
-
-   			return num_decs;
-   		}
-
-    	else 
-    		return 0;
+   		if (num_decs) return num_decs;
+    	else return 0;
 	}
 
-/*
-	inline void showEvents(OutputStream &s) const {
-    for (int i=0; i<num_decs; i++) {
-      DCASSERT(decision_data[i]);
-      Print(decision_data[i],0);
-    }
-  }
-	*/  
-
-//////////////**********///////////////
   inline const model_statevar* readStateVar(int i) const {
     CHECK_RANGE(0, i, num_vars);
     DCASSERT(state_data);
