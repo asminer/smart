@@ -25,12 +25,12 @@ ParseICP        Parser for the Integer Constraint Programming language.
 
 ParseSM         Parser for the Smart input language.
 
-Streams         Centralized I/O, reporting, and documentation.
-
 SymTabs         Symbol tables.
 
 TestApps        Test applications, for testing individual
                 or groups of modules together.
+
+Utils           Foundation utilities.
 
 include         Templates and other headers.
 
