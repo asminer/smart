@@ -9,7 +9,11 @@
     Plus, any string result will be stored using this class.
 */
 class shared_string : public shared_object {
+        /// The 'raw' string
         char* string;
+        /// The string with special chars replaced.
+        /// Will point to the raw string if no special chars.
+        char* printable;
     public:
         /// Constructor, sets string to null.
         shared_string();
@@ -25,7 +29,6 @@ class shared_string : public shared_object {
     protected:
         virtual ~shared_string();
     public:
-//        void CopyFrom(const char* s);
         inline const char* getStr() const { return string; }
         virtual bool Print(std::ostream &s, int indent=0) const;
         virtual bool Equals(const shared_object *o) const;

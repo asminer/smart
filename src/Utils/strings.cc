@@ -6,6 +6,63 @@
 #include <cstdlib>
 #include <iomanip>
 
+static char* build_printable(char* raw)
+{
+    if (nullptr == raw) return nullptr;
+    unsigned rawlen = 0;
+    unsigned special = 0;
+
+    //
+    // Check for special chars and determine
+    // length of printable copy.
+    //
+    for (; raw[rawlen]; rawlen++) {
+        if (raw[rawlen] != '\\' ) continue;
+        // special char
+        ++rawlen;
+        if (0==raw[rawlen]) break;
+
+        if (    'a' == raw[rawlen] ||
+                'b' == raw[rawlen] ||
+                'n' == raw[rawlen] ||
+                'q' == raw[rawlen] ||
+                't' == raw[rawlen] ||
+                '\\' == raw[rawlen] )   ++special;
+    }
+
+    if (0==special) return raw;
+
+    //
+    // Build a version of the string
+    // with special chars in place
+    //
+
+    char* print = new char[rawlen+1-special];
+
+    unsigned p=0;
+    for (unsigned i=0; raw[i]; i++) {
+        if (raw[i] != '\\') {
+            print[p++] = raw[i];
+            continue;
+        }
+        ++i;
+        if (0==raw[i]) {
+            print[p++] = '\\';
+            break;
+        }
+        switch (raw[i]) {
+            case 'a'  :  print[p++] = '\a';     break;
+            case 'b'  :  print[p++] = '\b';     break;
+            case 'n'  :  print[p++] = '\n';     break;
+            case 'q'  :  print[p++] = '"';      break;
+            case 't'  :  print[p++] = '\t';     break;
+            case '\\' :  print[p++] = '\\';     break;
+        }
+    }
+    print[p] = 0;
+    return print;
+}
+
 // ******************************************************************
 // *                                                                *
 // *                     shared_string  methods                     *
@@ -14,21 +71,27 @@
 
 shared_string::shared_string() : shared_object()
 {
-    string = 0;
+    string = nullptr;
+    printable = nullptr;
 }
 
 shared_string::shared_string(const char* s) : shared_object()
 {
     string = strdup(s);
+    printable = build_printable(string);
 }
 
 shared_string::shared_string(const std::string &s) : shared_object()
 {
     string = strdup(s.c_str());
+    printable = build_printable(string);
 }
 
 shared_string::~shared_string()
 {
+    if (printable && printable != string) {
+        delete[] printable;
+    }
     free(string);
 }
 
@@ -40,93 +103,12 @@ unsigned shared_string::length() const
 
 bool shared_string::Print(std::ostream &s, int indent) const
 {
-    DCASSERT(string);
-
-    s << std::setw(indent) << "";
-
-    unsigned i;
-    for (i=0; string[i]; i++) {
-        if (string[i] != '\\') {
-            s << string[i];
-            continue;
-        }
-        // special char.
-        i++;
-        if (0==string[i]) break;
-        switch (string[i]) {
-            case 'a'  :  s << '\a'; break;
-            case 'b'  :  s << '\b'; break;
-            case 'n'  :  s << '\n'; break;
-            case 'q'  :  s << '"';  break;
-            case 't'  :  s << '\t'; break;
-            case '\\' :  s << '\\'; break;
-        }
+    DCASSERT(printable);
+    if (indent < 0) {
+        s << std::setw(-indent) << std::left << printable;
+    } else {
+        s << std::setw(indent) << std::right << printable;
     }
-
-
-    /*
-     *  OLD IMPLEMENTATION
-     *
-    DCASSERT(string);
-
-    int stlen = strlen(string);
-    bool has_special = false;
-    int correction = 0;
-
-    // check if there are any special characters
-    for (int i=0; i<stlen; i++) if ('\\' == string[i]) {
-        // handle a "\x" sequence for some x.
-        i++;
-        if (i<stlen) switch (string[i]) {
-            case 'a'  :
-            case 'b'  :
-            case 'f'  :
-            case 'n'  :
-            case 't'  :
-                has_special = true;
-                break;
-            default:
-                correction++;
-        }
-    }
-    if (has_special) width = 0;  // don't try to line it up
-
-    // nice trick: if no special chars, just print it!
-    if (0==correction && 0==has_special) {
-        s << std::setw(width) << string;
-        return true;
-    }
-
-    // right justify
-    if (width>0) {
-        Pad(s, ' ', width-stlen+correction);
-    }
-
-    // print the string, taking special chars into account
-    for (int i=0; i<stlen; i++) {
-        if (string[i] != '\\') {
-            s << string[i];
-            continue;
-        }
-        // special char.
-        i++;
-        if (i>=stlen) break;
-        switch (string[i]) {
-            case 'a'  :  s << '\a'; break;
-            case 'b'  :  s << '\b'; break;
-            case 'f'  :  s.flush(); break;  // does this work?
-            case 'n'  :  s << '\n'; break;
-            case 'q'  :  s << '"';  break;
-            case 't'  :  s << '\t'; break;
-            case '\\' :  s << '\\'; break;
-        }
-    }
-
-    // left justify
-    if (width<0) {
-        Pad(s, ' ', correction-width-stlen);
-    }
-    */
 
     return true;
 }
