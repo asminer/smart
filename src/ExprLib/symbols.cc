@@ -14,183 +14,183 @@
 // ******************************************************************
 
 symbol::symbol(const location &W, const type* t, char* n)
- : expr(W, t)
+    : expr(W, t)
 {
-  name = (n) ? (new shared_string(n)) : 0;
-  substitute_value = true;
-  next = 0;
-  waitlist = 0;
+    name = (n) ? (new shared_string(n)) : nullptr;
+    substitute_value = true;
+    next = nullptr;
+    waitlist = nullptr;
 }
 
 symbol::symbol(const location &W, typelist* t, char* n)
- : expr(W, t)
+    : expr(W, t)
 {
-  name = (n) ? (new shared_string(n)) : 0;
-  substitute_value = true;
-  next = 0;
-  waitlist = 0;
+    name = (n) ? (new shared_string(n)) : nullptr;
+    substitute_value = true;
+    next = nullptr;
+    waitlist = nullptr;
 }
 
 symbol::symbol(const symbol* wrapper) : expr(wrapper)
 {
-  if (wrapper) {
-    name = Share( smart_cast <shared_string*> (wrapper->SharedName()) );
-  }
-  substitute_value = true;
-  next = 0;
-  waitlist = 0;
+    if (wrapper) {
+        name = Share( smart_cast <shared_string*> (wrapper->SharedName()) );
+    }
+    substitute_value = true;
+    next = nullptr;
+    waitlist = nullptr;
 }
 
 symbol::~symbol()
 {
-  Delete(name);
-  delete waitlist;
+    Delete(name);
+    delete waitlist;
 }
 
 const char* symbol::Name() const
 {
-  if (name)  return name->getStr();
-  return 0;
+    if (name)  return name->getStr();
+    return nullptr;
 }
 
 shared_object* symbol::SharedName() const
 {
-  return name;
+    return name;
 }
 
 void symbol::Rename(shared_object* newname)
 {
-  if (name != newname) {
-    Delete(name);
-    name = Share( smart_cast <shared_string*> (newname) );
-  }
+    if (name != newname) {
+        Delete(name);
+        name = Share( smart_cast <shared_string*> (newname) );
+    }
 }
 
 bool symbol::Print(std::ostream &s, int width) const
 {
-  if (0==name) return false;
-  s << formatted_string(name->getStr(), width);
-  return true;
+    if (!name) return false;
+    s << formatted_string(name->getStr(), width);
+    return true;
 }
 
 void symbol::Traverse(traverse_data &x)
 {
-  DCASSERT(0==x.aggregate);
-  switch (x.which) {
-    case traverse_data::Substitute:
-        DCASSERT(x.answer);
-        if (!substitute_value) {
-          x.answer->setPtr(Share(this));
-        } else {
-          traverse_data xx(traverse_data::Compute);
-          result ans;
-          xx.answer = &ans;
-          Compute(xx);
-          x.answer->setPtr(new value(Where(), Type(), ans));
-        }
-        return;
+    DCASSERT(0==x.aggregate);
+    switch (x.which) {
+        case traverse_data::Substitute:
+            DCASSERT(x.answer);
+            if (!substitute_value) {
+                x.answer->setPtr(Share(this));
+            } else {
+                traverse_data xx(traverse_data::Compute);
+                result ans;
+                xx.answer = &ans;
+                Compute(xx);
+                x.answer->setPtr(new value(Where(), Type(), ans));
+            }
+            return;
 
-    case traverse_data::BuildDD: {
-        DCASSERT(x.answer);
-        DCASSERT(x.ddlib);
-        shared_object* dd = x.ddlib->makeEdge(0);
+        case traverse_data::BuildDD: {
+            DCASSERT(x.answer);
+            DCASSERT(x.ddlib);
+            shared_object* dd = x.ddlib->makeEdge(0);
 
-        try {
-          x.ddlib->buildSymbolicSV(this, false, 0, dd);
-          x.answer->setPtr(dd);
+            try {
+                x.ddlib->buildSymbolicSV(this, false, 0, dd);
+                x.answer->setPtr(dd);
+            }
+            catch (sv_encoder::error e) {
+                expr_error E(this, x.answer);
+                E << "Error while building state variable " << Name() << ": ";
+                E << sv_encoder::getNameOfError(e);
+                Delete(dd);
+            }
+            return;
         }
-        catch (sv_encoder::error e) {
-          expr_error E(this, x.answer);
-          E << "Error while building state variable " << Name() << ": ";
-          E << sv_encoder::getNameOfError(e);
-          Delete(dd);
-        }
-        return;
+
+        case traverse_data::GetVarDeps:
+        case traverse_data::GetSymbols:
+            if (x.elist)  x.elist->Append(this);
+            if (x.slist)  x.slist->Append(this);
+            DCASSERT(x.answer);
+            x.answer->setInt(x.answer->getInt()+1);
+            return;
+
+        case traverse_data::PreCompute:
+        case traverse_data::GetMeasures:
+            return;
+
+        default:
+            expr::Traverse(x);
     }
-
-    case traverse_data::GetVarDeps:
-    case traverse_data::GetSymbols:
-        if (x.elist)  x.elist->Append(this);
-        if (x.slist)  x.slist->Append(this);
-        DCASSERT(x.answer);
-        x.answer->setInt(x.answer->getInt()+1);
-        return;
-
-    case traverse_data::PreCompute:
-    case traverse_data::GetMeasures:
-        return;
-
-    default:
-        expr::Traverse(x);
-  }
 }
 
 void symbol::PrintDocs(doc_formatter &df, const char* keyword) const
 {
-  if (0==name)  return;
-  df.begin_heading();
-  PrintType(df.Out());
-  df.Out() << " " << name->getStr();
-  df.end_heading();
-  df.begin_indent();
-  df.Out() << "Defined " << Where();
-  df.end_indent();
+    if (!name)  return;
+    df.begin_heading();
+    PrintType(df.Out());
+    df.Out() << " " << name->getStr();
+    df.end_heading();
+    df.begin_indent();
+    df.Out() << "Defined " << Where();
+    df.end_indent();
 }
 
 void symbol::addToWaitList(symbol* w)
 {
-  DCASSERT(w);
-  if (isComputed() || !OK()) return;
-  if (waitlist_debug.start()) {
-    waitlist_debug << "Adding symbol ";
-    if (w->Name()) waitlist_debug << w->Name() << " ";
-    waitlist_debug << "to waiting list";
-    if (Name()) waitlist_debug << " of symbol " << Name();
-    waitlist_debug.stop();
-  }
+    DCASSERT(w);
+    if (isComputed() || !OK()) return;
+    if (waitlist_debug.start()) {
+        waitlist_debug << "Adding symbol ";
+        if (w->Name()) waitlist_debug << w->Name() << " ";
+        waitlist_debug << "to waiting list";
+        if (Name()) waitlist_debug << " of symbol " << Name();
+        waitlist_debug.stop();
+    }
 #ifdef DEVELOPMENT_CODE
-  if (w->couldNotify(this)) {
-    internal_error E(__FILE__, __LINE__, w->Where());
-    E << "Circular dependency in symbol waiting lists";
-    E.newLine();
-    E << "when adding symbol ";
-    if (w->Name()) E << w->Name();
-  }
+    if (w->couldNotify(this)) {
+        internal_error E(__FILE__, __LINE__, w->Where());
+        E << "Circular dependency in symbol waiting lists";
+        E.newLine();
+        E << "when adding symbol ";
+        if (w->Name()) E << w->Name();
+    }
 #endif
-  if (0==waitlist) waitlist = new List <symbol>;
-  waitlist->Append(w);
-  w->setBlocked();
+    if (!waitlist) waitlist = new List <symbol>;
+    waitlist->Append(w);
+    w->setBlocked();
 }
 
 void symbol::notifyFrom(const symbol* p)
 {
-  if (0==p) return;
-  if (waitlist_debug.start()) {
-    waitlist_debug << "Notifying symbol ";
-    if (Name()) waitlist_debug << Name() << " ";
-    if (p->Name()) waitlist_debug << "from symbol " << p->Name();
-    waitlist_debug.stop();
-  }
+    if (0==p) return;
+    if (waitlist_debug.start()) {
+        waitlist_debug << "Notifying symbol ";
+        if (Name()) waitlist_debug << Name() << " ";
+        if (p->Name()) waitlist_debug << "from symbol " << p->Name();
+        waitlist_debug.stop();
+    }
 }
 
 bool symbol::couldNotify(const symbol* s) const
 {
-  if (0==waitlist) return false;
-  for (int i=0; i<waitlist->Length(); i++) {
-    const symbol* item = waitlist->ReadItem(i);
-    if (item==s) return true;
-    if (item->couldNotify(s)) return true;
-  }
-  return false;
+    if (!waitlist) return false;
+    for (int i=0; i<waitlist->Length(); i++) {
+        const symbol* item = waitlist->ReadItem(i);
+        if (item==s) return true;
+        if (item->couldNotify(s)) return true;
+    }
+    return false;
 }
 
 void symbol::notifyList()
 {
-  if (0==waitlist) return;
-  for (int i=0; i<waitlist->Length(); i++)
-    waitlist->Item(i)->notifyFrom(this);
-  delete waitlist;
-  waitlist = 0;
+    if (!waitlist) return;
+    for (int i=0; i<waitlist->Length(); i++)
+        waitlist->Item(i)->notifyFrom(this);
+    delete waitlist;
+    waitlist = 0;
 }
 
 // ******************************************************************
