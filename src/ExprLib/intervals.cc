@@ -219,12 +219,6 @@ int interval_object::Compare(const shared_object *o) const
     return right.compare(i->right, false);
 }
 
-int interval_object::Compare(const char* ) const
-{
-    DCASSERT(0);
-    return 0;
-}
-
 // ******************************************************************
 // *                                                                *
 // *                           Front  end                           *

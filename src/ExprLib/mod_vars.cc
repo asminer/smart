@@ -466,16 +466,23 @@ void shared_state::fillFrom(const shared_state &s) {
 	}
 }
 
-bool shared_state::Print(std::ostream &s, int) const {
+bool shared_state::Print(std::ostream &s, int) const
+{
 	if (0 == parent)
 		return false;
 	parent->showState(s, this);
 	return true;
 }
 
-bool shared_state::Equals(const shared_object* o) const {
-	DCASSERT(0);
-	return false;
+int shared_state::Compare(const shared_object* o) const
+{
+    const shared_state* s = dynamic_cast <const shared_state *> (o);
+    DCASSERT(s);
+    for (int i = 0; i < num_buckets; i++) {
+        int cmp = bucket_ptr[i] - s->bucket_ptr[i];
+        if (cmp) return cmp;
+    }
+    return 0;
 }
 
 //

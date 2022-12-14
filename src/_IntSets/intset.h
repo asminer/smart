@@ -49,6 +49,15 @@ public:
    */
   bool isSingleCardinality() const;
 
+  /** Compare two sets.
+      Does a bit vector comparison,
+      and returns negative if this < x,
+      positive if this > x, and zero if this == x.
+      This says NOTHING about subsets; use
+      the comparison operators for that.
+  */
+  int compare(const intset &x) const;
+
   // element manipulation
 
   /** Complement the set.

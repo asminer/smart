@@ -263,13 +263,6 @@ int typelist::Compare(const shared_object* o) const
   return 0;
 }
 
-int typelist::Compare(const char*) const
-{
-    internal_error E(__FILE__, __LINE__);
-    E << "typelist::Compare(const char*)";
-    return 0;
-}
-
 // ******************************************************************
 // *                      simple_type  methods                      *
 // ******************************************************************

@@ -92,7 +92,6 @@ public:
 
   // shared object requirements:
   virtual bool Print(std::ostream &, int) const;
-  virtual bool Equals(const shared_object*) const;
 
   /** Write memory information to the reporting stream.
         @param  em      Will write to the report stream of this manager.
@@ -271,7 +270,6 @@ public:
 
   // shared object requirements:
   virtual bool Print(std::ostream &, int w=0) const;
-  virtual bool Equals(const shared_object*) const;
 
   /** Start a warning message.
       Returns true on success.

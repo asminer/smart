@@ -500,8 +500,6 @@ public:
         shared_object in member \a answer.
   */
   virtual void Traverse(traverse_data &x);
-  virtual int Compare(const shared_object *o) const;
-  virtual int Compare(const char* x) const;
   virtual long getDelta() const;
   virtual long getLower() const;
   virtual long getUpper() const;

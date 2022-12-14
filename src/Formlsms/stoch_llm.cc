@@ -216,11 +216,6 @@ bool stochastic_lldsm::process::Print(std::ostream &s, int width) const
   return true;
 }
 
-bool stochastic_lldsm::process::Equals(const shared_object* o) const
-{
-  return (this == o);
-}
-
 void stochastic_lldsm::process::showError(const char* s)
 {
     expr_error E(0);

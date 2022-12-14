@@ -120,11 +120,11 @@ bool bigint::Print(std::ostream &s, int width) const
   return true;
 }
 
-bool bigint::Equals(const shared_object *o) const
+int bigint::Compare(const shared_object *o) const
 {
   const bigint* b = dynamic_cast <const bigint*> (o);
-  if (0==b) return false;
-  return (0 == mpz_cmp(value, b->value));
+  DCASSERT(b);
+  return mpz_cmp(value, b->value);
 }
 
 #else
@@ -169,11 +169,11 @@ bool bigint::Print(std::ostream &s, int width) const
   return true;
 }
 
-bool bigint::Equals(const shared_object *o) const
+int bigint::Compare(const shared_object *o) const
 {
   const bigint* b = dynamic_cast <const bigint*> (o);
-  if (0==b) return false;
-  return (value == b->value);
+  DCASSERT(b);
+  return (value - b->value);
 }
 
 #endif

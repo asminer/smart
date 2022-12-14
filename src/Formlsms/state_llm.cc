@@ -197,12 +197,6 @@ bool state_lldsm::reachset::Print(std::ostream &s, int width) const
   return true;
 }
 
-bool state_lldsm::reachset::Equals(const shared_object* o) const
-{
-  return (this == o);
-}
-
-
 state_lldsm::reachset::iterator::iterator()
 {
 }

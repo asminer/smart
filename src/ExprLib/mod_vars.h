@@ -454,7 +454,7 @@ public:
 
 	// required for shared object
 	virtual bool Print(std::ostream &, int w=0) const;
-	virtual bool Equals(const shared_object*) const;
+    virtual int Compare(const shared_object* o) const;
 
 	/// Is the value for state variable i unknown?
 	inline bool unknown(int i) const {
@@ -568,17 +568,6 @@ public:
 
 		// Not implemented yet
 		DCASSERT(0);
-	}
-    virtual int Compare(const shared_object* o) const {
-        const shared_state* s = dynamic_cast <const shared_state *> (o);
-        DCASSERT(s);
-		for (int i = 0; i < num_buckets; i++) {
-			if (s->bucket_ptr[i] < bucket_ptr[i])
-				return 1;
-			if (s->bucket_ptr[i] > bucket_ptr[i])
-				return -1;
-		}
-		return 0;
 	}
 	inline bool operator<(shared_state *other) const {
 		for (int i = 0; i < num_buckets; i++) {

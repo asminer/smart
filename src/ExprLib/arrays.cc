@@ -41,18 +41,6 @@ bool array_item::Print(std::ostream &s, int) const
   return true;
 }
 
-int array_item::Compare(const shared_object*) const
-{
-  DCASSERT(0);
-  return 0;
-}
-
-int array_item::Compare(const char*) const
-{
-  DCASSERT(0);
-  return 0;
-}
-
 // ******************************************************************
 // *                                                                *
 // *                        array_desc class                        *

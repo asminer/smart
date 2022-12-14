@@ -378,20 +378,6 @@ void expr::Traverse(traverse_data &x)
     Print(E.stream());
 }
 
-// Nice, conservative default.
-int expr::Compare(const shared_object* o) const
-{
-    const expr* e = dynamic_cast <const expr*> (o);
-    return this - e;
-}
-
-int expr::Compare(const char* x) const
-{
-    internal_error E(__FILE__, __LINE__);
-    E << "Calling expr::Compare(const char*)";
-    return 0;
-}
-
 long expr::getDelta() const
 {
   return 0;

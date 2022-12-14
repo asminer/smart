@@ -16,19 +16,6 @@ bool sv_encoder::Print(std::ostream &s, int) const
     return true;
 }
 
-int sv_encoder::Compare(const shared_object *o) const
-{
-    const shared_object* me = this;
-    return me - o;
-}
-
-int sv_encoder::Compare(const char*) const
-{
-    DCASSERT(0);
-    return 0;
-}
-
-
 const char* sv_encoder::getNameOfError(error e)
 {
     switch (e) {

@@ -76,14 +76,6 @@ int set_converter::Compare(const shared_object* o) const
   return oldset->Compare(foo->oldset);
 }
 
-int set_converter::Compare(const char*) const
-{
-    internal_error E(__FILE__, __LINE__);
-    E << "shared_set::compare(const char*)";
-    return 0;
-}
-
-
 // ******************************************************************
 // *                                                                *
 // *                        int_ivlset class                        *

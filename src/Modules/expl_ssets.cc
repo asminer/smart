@@ -140,20 +140,23 @@ bool expl_stateset::Print(std::ostream &s, int) const
   return true;
 }
 
-bool expl_stateset::Equals(const shared_object *o) const
+int expl_stateset::Compare(const shared_object *o) const
 {
   const expl_stateset* b = dynamic_cast <const expl_stateset*> (o);
-  if (0==b) return false;
+  DCASSERT(b);
   // TBD : may want to allow comparisons with other implementations
 
-  if (getParent() != b->getParent()) return false;  // TBD: may want to allow this
+  DCASSERT(getParent() == b->getParent());
+  // TBD: may want to allow this
 
   // Not sure if data can ever be 0, but this is probably
-  // the correct way to handle it if it is possible.
-  if (0==data && 0==b->data) return true;
-  if (0==data || 0==b->data) return false;
+  // the correct way to handle it if it is possible
+  // (assuming 0 means empty set).
+  if (!data && !b->data) return 0;
+  if (!data) return -1;
+  if (!b->data) return +1;
 
-  return (*data) == *(b->data);
+  return data->compare(*(b->data));
 }
 
 

@@ -37,7 +37,7 @@ class expl_stateset : public stateset {
     virtual bool isEmpty() const;
 
     virtual bool Print(std::ostream &s, int) const;
-    virtual bool Equals(const shared_object *o) const;
+    virtual int Compare(const shared_object *o) const;
 
     inline const intset& getExplicit() const {
       DCASSERT(data);

@@ -36,14 +36,14 @@ protected:
   static const int bitwidth = sizeof(long) * 8;
   static const int bitwidthm1 = bitwidth-1;
   static const unsigned long msbit = 1L << bitwidthm1;
-  inline static long Bits2Words(long bits) { 
-    return (bits>0) ? (((bits-1)/bitwidth)+1) : 0; 
+  inline static long Bits2Words(long bits) {
+    return (bits>0) ? (((bits-1)/bitwidth)+1) : 0;
   }
   inline static long Bits2Bytes(long bits) {
     return (bits>0) ? ((bits-1)/8 + 1) : 0;
   }
 public:
-  bitvector(long s); 
+  bitvector(long s);
 protected:
   ~bitvector();
   void SetSize(long s);
@@ -52,15 +52,15 @@ public:
   inline long NumWords() const { return Bits2Words(NumBits()); }
   inline long NumBytes() const { return Bits2Bytes(NumBits()); }
   inline const unsigned long* read() const { return data; }
-  inline unsigned long* write() { 
+  inline unsigned long* write() {
     DCASSERT(1==links);
-    return data; 
+    return data;
   }
   inline void Link() { links++; }
   inline void Unlink() { links--; if (0==links) delete this; }
   inline long numLinks() const { return links; }
   bitvector* Modify();
-  void Resize(long ns); 
+  void Resize(long ns);
   void UnsetAll();
   void SetAll();
   void Set(long n);
@@ -103,11 +103,11 @@ public:
   /// This = A \ B
   void Difference(const bitvector &A, const bitvector &B);
 
-  /// does This == B?
-  bool Equals(const bitvector &B) const;
+  /// Determine the sign of this - B (as n-bit integers)
+  int Compare(const bitvector &B) const;
 
-  /// does This == ~B?
-  bool EqualsComplement(const bitvector &B) const;
+  /// Determine the sign of this - ~B (as n-bit integers)
+  int CompareComplement(const bitvector &B) const;
 
   /// does This \ B = 0?
   bool EmptyDifference(const bitvector &B) const;
@@ -129,8 +129,8 @@ public:
 
 // ======================================================================
 
-intset::bitvector::bitvector(long s) 
-{ 
+intset::bitvector::bitvector(long s)
+{
   data = 0;
   size = 0;
   if (s>0) Resize(s);
@@ -141,8 +141,8 @@ intset::bitvector::bitvector(long s)
 #endif
 }
 
-intset::bitvector::~bitvector() 
-{ 
+intset::bitvector::~bitvector()
+{
   Resize(0);
 #ifdef DEBUG_ALLOC
   fprintf(stderr, "free  bitvector\n");
@@ -159,19 +159,19 @@ void intset::bitvector::SetSize(long ns)
 }
 
 
-void intset::bitvector::Resize(long ns) 
+void intset::bitvector::Resize(long ns)
 {
   long words = Bits2Words(ns);
   long oldwords = NumWords();
   if (words != oldwords) {
     data = (unsigned long*) realloc(data, words*sizeof(long));
     if (words>0) data[words-1] = 0;
-  } 
+  }
   SetSize(ns);
 }
 
 
-inline intset::bitvector* intset::bitvector::Modify() 
+inline intset::bitvector* intset::bitvector::Modify()
 {
   if (1==links) return this;
   bitvector* foo = new bitvector(size);
@@ -180,14 +180,14 @@ inline intset::bitvector* intset::bitvector::Modify()
 }
 
 
-inline void intset::bitvector::UnsetAll() 
+inline void intset::bitvector::UnsetAll()
 {
   DCASSERT(1==links);
   memset(data, 0, NumWords() * sizeof(long));
 }
 
 
-inline void intset::bitvector::SetAll() 
+inline void intset::bitvector::SetAll()
 {
   DCASSERT(1==links);
   memset(data, 0xFF, NumWords() * sizeof(long));
@@ -195,7 +195,7 @@ inline void intset::bitvector::SetAll()
 }
 
 
-inline void intset::bitvector::Set(long n) 
+inline void intset::bitvector::Set(long n)
 {
   DCASSERT(n>=0);
   DCASSERT(n<size);
@@ -206,7 +206,7 @@ inline void intset::bitvector::Set(long n)
 }
 
 
-inline void intset::bitvector::Unset(long n) 
+inline void intset::bitvector::Unset(long n)
 {
   DCASSERT(n>=0);
   DCASSERT(n<size);
@@ -214,19 +214,19 @@ inline void intset::bitvector::Unset(long n)
   DCASSERT(n/bitwidth>=0);
   DCASSERT(n/bitwidth < NumWords());
   // printf("Unset(%d) bitwidth %d NumWords %d\n", n, bitwidth, NumWords());
-  data[n/bitwidth] &= ~(msbit >> n%bitwidth); // clear bit n      
+  data[n/bitwidth] &= ~(msbit >> n%bitwidth); // clear bit n
 }
 
 
-inline bool intset::bitvector::IsSet(long n) const 
+inline bool intset::bitvector::IsSet(long n) const
 {
   DCASSERT(n>=0);
   DCASSERT(n<size);
-  return (data[n/bitwidth] & (msbit >> n%bitwidth)) > 0; 
+  return (data[n/bitwidth] & (msbit >> n%bitwidth)) > 0;
 }
 
 
-inline bool intset::bitvector::SetBit_Changed(long n) 
+inline bool intset::bitvector::SetBit_Changed(long n)
 {
   DCASSERT(n>=0);
   DCASSERT(n<size);
@@ -236,11 +236,11 @@ inline bool intset::bitvector::SetBit_Changed(long n)
   // long word = n/bitwidth;
   if (dataword[0] & tweak) return false;  // already set
   dataword[0] |= tweak; // set bit
-  return true; 
+  return true;
 }
 
 
-inline bool intset::bitvector::UnsetBit_Changed(long n) 
+inline bool intset::bitvector::UnsetBit_Changed(long n)
 {
   DCASSERT(n>=0);
   DCASSERT(n<size);
@@ -250,11 +250,11 @@ inline bool intset::bitvector::UnsetBit_Changed(long n)
   // long word = n/bitwidth;
   if (!(dataword[0] & tweak)) return false;  // already unset
   dataword[0] &= ~tweak; // clear bit
-  return true; 
+  return true;
 }
 
 
-inline void intset::bitvector::SetRange(long b1, long b2) 
+inline void intset::bitvector::SetRange(long b1, long b2)
 {
   DCASSERT(b1>=0);
   DCASSERT(b1<size);
@@ -264,7 +264,7 @@ inline void intset::bitvector::SetRange(long b1, long b2)
   while ((b1 <= b2) && (b1 % bitwidth > 0)) Set(b1++);
   // do words at a time
   while (b1+bitwidthm1 <= b2) {
-    data[b1/bitwidth] = ~0; 
+    data[b1/bitwidth] = ~0;
     b1 += bitwidth;
   }
   // do stray bits at the end
@@ -272,7 +272,7 @@ inline void intset::bitvector::SetRange(long b1, long b2)
 }
 
 
-inline void intset::bitvector::UnsetRange(long b1, long b2) 
+inline void intset::bitvector::UnsetRange(long b1, long b2)
 {
   // printf("UnsetRange(%d,%d)\n", b1, b2);
   DCASSERT(b1>=0);
@@ -283,7 +283,7 @@ inline void intset::bitvector::UnsetRange(long b1, long b2)
   while ((b1 <= b2) && (b1 % bitwidth > 0)) Unset(b1++);
   // do words at a time
   while (b1+bitwidthm1 <= b2) {
-    data[b1/bitwidth] = 0; 
+    data[b1/bitwidth] = 0;
     b1 += bitwidth;
   }
   // do stray bits at the end
@@ -291,7 +291,7 @@ inline void intset::bitvector::UnsetRange(long b1, long b2)
 }
 
 
-inline long intset::bitvector::FirstSetAfter(long n) const 
+inline long intset::bitvector::FirstSetAfter(long n) const
 {
   unsigned long* dptr;
   if (n<0) {
@@ -321,7 +321,7 @@ inline long intset::bitvector::FirstSetAfter(long n) const
 }
 
 
-inline long intset::bitvector::FirstUnsetAfter(long n) const 
+inline long intset::bitvector::FirstUnsetAfter(long n) const
 {
   unsigned long* dptr;
   if (n<0) {
@@ -351,22 +351,22 @@ inline long intset::bitvector::FirstUnsetAfter(long n) const
 }
 
 
-inline void intset::bitvector::IntersectWith(const bitvector &B) 
+inline void intset::bitvector::IntersectWith(const bitvector &B)
 {
   DCASSERT(1==links);
-  if (size > B.size) 
+  if (size > B.size)
     UnsetRange(B.size, size-1);
   for (long w = MIN(NumWords(), B.NumWords())-1; w>=0; w--)
     data[w] &= B.data[w];
 }
 
 
-inline void intset::bitvector::UnionWith(const bitvector &B) 
+inline void intset::bitvector::UnionWith(const bitvector &B)
 {
   DCASSERT(1==links);
   if (B.size > size) {
     long oldsize = size;
-    Resize(B.size); 
+    Resize(B.size);
     UnsetRange(oldsize, size-1);
   }
   for (long w = MIN(NumWords(), B.NumWords())-1; w>=0; w--)
@@ -374,7 +374,7 @@ inline void intset::bitvector::UnionWith(const bitvector &B)
 }
 
 
-inline void intset::bitvector::DifferenceWith(const bitvector &B) 
+inline void intset::bitvector::DifferenceWith(const bitvector &B)
 {
   DCASSERT(1==links);
   for (long w = MIN(NumWords(), B.NumWords())-1; w>=0; w--)
@@ -392,7 +392,7 @@ inline void intset::bitvector
 }
 
 
-inline void intset::bitvector::Union(const bitvector &A, const bitvector &B) 
+inline void intset::bitvector::Union(const bitvector &A, const bitvector &B)
 {
   DCASSERT(1==links);
   Resize(MAX(A.size, B.size));
@@ -406,7 +406,7 @@ inline void intset::bitvector::Union(const bitvector &A, const bitvector &B)
 
 
 inline void intset::bitvector
-::Difference(const bitvector &A, const bitvector &B) 
+::Difference(const bitvector &A, const bitvector &B)
 {
   DCASSERT(1==links);
   Resize(A.size);
@@ -418,64 +418,81 @@ inline void intset::bitvector
 }
 
 
-inline bool intset::bitvector::Equals(const bitvector &B) const 
+inline int intset::bitvector::Compare(const bitvector &B) const
 {
-  // check overlap
-  unsigned long common = MIN(NumWords(), B.NumWords());
-  if (memcmp(data, B.data, common*sizeof(long))!=0) return false;
-  // make sure remaining B words, if any, are zero
-  for (long w = NumWords(); w<B.NumWords(); w++) 
-    if (B.data[w]) return false;
-  // make sure Remaining words, if any, are zero
+    // check overlap
+    long last = MIN(NumWords(), B.NumWords());
+    for (long w = 0; w<last; w++) {
+        if (data[w] < B.data[w]) return -1;
+        if (data[w] > B.data[w]) return +1;
+    }
+    // Any remaining B Words? They better be zero.
+    for (long w = last; w<B.NumWords(); w++) {
+        if (B.data[w]) return -1;
+    }
+    // Any remaining words? They better be zero.
+    for (long w = last; w<NumWords(); w++) {
+        if (data[w]) return +1;
+    }
+    return 0;
+}
+
+
+inline int intset::bitvector::CompareComplement(const bitvector &B) const
+{
+    // check overlap
+    long last = MIN(NumWords(), B.NumWords());
+    for (long w = 0; w<last-1; w++) {
+        if (data[w] < ~B.data[w]) return -1;
+        if (data[w] > ~B.data[w]) return +1;
+    }
+    // check the last word, ignoring bits past size
+    // this is done based on who is larger
+    long w = last-1;
+    if (NumWords() >= B.NumWords()) {
+        const unsigned long bd = (~B.data[w]) & B.tail_mask;
+        if (data[w] < bd) return -1;
+        if (data[w] > bd) return +1;
+        // Equal up to B's size; now see if we
+        // have any bits set beyond that.
+        return (FirstSetAfter(B.size-1) < 0) ? +1 : 0;
+    } else {
+        // NumWords() < B.NumWords()
+        if (data[w] < ~B.data[w]) return -1;
+        if (data[w] > ~B.data[w]) return +1;
+        // Equal up to our size; now see if
+        // ~B has any bits set beyond that.
+        return (B.FirstUnsetAfter(size-1) < 0) ? -1 : 0;
+    }
+}
+
+
+inline bool intset::bitvector::EmptyDifference(const bitvector &B) const
+{
   for (long w = B.NumWords(); w<NumWords(); w++)
-    if (data[w]) return false; 
-  return true;
-} 
-
-
-inline bool intset::bitvector::EqualsComplement(const bitvector &B) const 
-{
-  // check overlap
-  for (long w = MIN(NumWords(), B.NumWords())-2; w>=0; w--) 
-    if (data[w] != ~B.data[w]) return false;
-  // check the last word, igoring bits past size
-  long w = MIN(NumWords(), B.NumWords())-1;
-  if (NumWords() >= B.NumWords()) {
-    if ( data[w] != ((~B.data[w]) & B.tail_mask) ) return false; 
-    return FirstUnsetAfter(B.size-1) < 0;
-  } 
-  // NumWords() < B.NumWords()
-  if ( data[w] != ~B.data[w] ) return false; 
-  return B.FirstUnsetAfter(size-1) < 0;
-} 
-
-
-inline bool intset::bitvector::EmptyDifference(const bitvector &B) const 
-{
-  for (long w = B.NumWords(); w<NumWords(); w++)
-    if (data[w]) return false; 
+    if (data[w]) return false;
   for (long w = MIN(NumWords(), B.NumWords())-1; w>=0; w--)
     if (data[w] & ~B.data[w]) return false;
   return true;
 }
 
 
-inline bool intset::bitvector::EmptyIntersect(const bitvector &B) const 
+inline bool intset::bitvector::EmptyIntersect(const bitvector &B) const
 {
   for (long w = NumWords(); w<B.NumWords(); w++)
     if (B.data[w]) return false;
   for (long w = B.NumWords(); w<NumWords(); w++)
-    if (data[w]) return false; 
+    if (data[w]) return false;
   for (long w = MIN(NumWords(), B.NumWords())-1; w>=0; w--)
     if (data[w] & B.data[w]) return false;
   return true;
 }
 
 
-inline bool intset::bitvector::FullUnion(const bitvector &B) const 
+inline bool intset::bitvector::FullUnion(const bitvector &B) const
 {
   // check overlap
-  for (long w = MIN(NumWords(), B.NumWords())-2; w>=0; w--) 
+  for (long w = MIN(NumWords(), B.NumWords())-2; w>=0; w--)
     if (~(data[w] | B.data[w])) return false;
   long w = MIN(NumWords(), B.NumWords())-1;
   if (NumWords() == B.NumWords()) {
@@ -585,11 +602,31 @@ bool intset::isSingleCardinality() const
             isSingle = false; //if more than one item exist in set, isSingle is set to false & break from loop
             break;
          }
-      
+
     }
- 
+
   if (flip)   return !isSingle;
   else        return isSingle;
+}
+
+int intset::compare(const intset &x) const
+{
+    DCASSERT(data);
+    DCASSERT(x.data);
+
+    if (flip) {
+        if (x.flip) {
+            return -data->Compare(*x.data);
+        } else {
+            return -data->CompareComplement(*x.data);
+        }
+    } else {
+        if (x.flip) {
+            return data->CompareComplement(*x.data);
+        } else {
+            return data->Compare(*x.data);
+        }
+    }
 }
 
 void intset::addElement(long n)
@@ -711,10 +748,10 @@ void intset::operator+=(const intset &x)
       // ~this + x = ~ (this-x)
       data->DifferenceWith(*x.data);
     }
-  else 
+  else
     if (x.flip) {
       // this + ~x = ~ (x-this);
-      data->Difference(*x.data, *data);     
+      data->Difference(*x.data, *data);
       flip = true;
     } else {
       // this + x
@@ -778,8 +815,8 @@ bool operator==(const intset &x, const intset &y)
 {
   DCASSERT(x.data);
   DCASSERT(y.data);
-  if (x.flip == y.flip)   return x.data->Equals(*y.data);
-  else                    return x.data->EqualsComplement(*y.data);
+  if (x.flip == y.flip)   return 0==x.data->Compare(*y.data);
+  else                    return 0==x.data->CompareComplement(*y.data);
 }
 
 bool operator<=(const intset &x, const intset &y)
@@ -814,7 +851,7 @@ intset operator+ (const intset &x, const intset &y)
       answer.data->Difference(*x.data, *y.data);
       answer.flip = true;
     }
-  else 
+  else
     if (y.flip) {
       // x + ~y = ~ (y-x);
       answer.data->Difference(*y.data, *x.data);
@@ -845,7 +882,7 @@ intset operator* (const intset &x, const intset &y)
       answer.data->Difference(*y.data, *x.data);
       answer.flip = false;
     }
-  else 
+  else
     if (y.flip) {
       // x * ~y = x-y;
       answer.data->Difference(*x.data, *y.data);
@@ -876,7 +913,7 @@ intset operator- (const intset &x, const intset &y)
       answer.data->Union(*x.data, *y.data);
       answer.flip = true;
     }
-  else 
+  else
     if (y.flip) {
       // x - ~y = x*y;
       answer.data->Intersect(*x.data, *y.data);
@@ -886,7 +923,7 @@ intset operator- (const intset &x, const intset &y)
       answer.data->Difference(*x.data, *y.data);
       answer.flip = false;
     }
-  
+
   answer.size = answer.data->NumBits();
   return answer;
 }

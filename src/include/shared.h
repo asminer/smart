@@ -56,8 +56,7 @@ public:
                     positive, if o preceeds this object.
     */
     virtual int Compare(const shared_object* o) const {
-        DCASSERT(false);
-        return 0;
+        return this - o;
     }
 
     /// Compare with a string.

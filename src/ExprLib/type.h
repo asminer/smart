@@ -242,7 +242,6 @@ public:
   }
   virtual bool Print(std::ostream &s, int w=0) const;
   virtual int Compare(const shared_object *o) const;
-  virtual int Compare(const char* x) const;
 };
 
 

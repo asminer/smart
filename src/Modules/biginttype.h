@@ -42,7 +42,7 @@ public:
   bigint(const bigint &b);
   virtual ~bigint();
   virtual bool Print(std::ostream &s, int width) const;
-  virtual bool Equals(const shared_object *o) const;
+  virtual int Compare(const shared_object *o) const;
 
   // Handy stuff:
 

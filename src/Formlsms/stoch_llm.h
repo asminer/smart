@@ -324,8 +324,6 @@ public:
 
         // Shared object requirements
         virtual bool Print(std::ostream &s, int width) const;
-        virtual bool Equals(const shared_object* o) const;
-
 
       protected:
         static void showError(const char* str);

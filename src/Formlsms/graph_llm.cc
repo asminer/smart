@@ -250,11 +250,6 @@ bool graph_lldsm::reachgraph::Print(std::ostream &s, int width) const
   return true;
 }
 
-bool graph_lldsm::reachgraph::Equals(const shared_object* o) const
-{
-  return (this == o);
-}
-
 bool graph_lldsm::reachgraph::reportCTL()
 {
   return ctl_report.isActive();

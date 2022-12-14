@@ -60,11 +60,6 @@ bool lldsm::Print(std::ostream &s, int) const
   return true;
 }
 
-bool lldsm::Equals(const shared_object* ptr) const
-{
-  return (ptr == this);
-}
-
 void lldsm::reportMemUsage(exprman* em, const char* prefix) const
 {
 }
@@ -123,11 +118,6 @@ bool hldsm::Print(std::ostream &s, int) const
   return true;
 }
 
-bool hldsm::Equals(const shared_object* ptr) const
-{
-  return (ptr == this);
-}
-
 bool hldsm::StartWarning(const warning_msg &who, const expr* cause) const
 {
     if (cause) {
@@ -146,50 +136,6 @@ void hldsm::DoneWarning(const warning_msg &who) const
     }
     who.stop();
 }
-
-/*
-bool hldsm::StartError(const expr* cause) const
-{
-  if (!em->startError())  return false;
-  em->causedBy(cause);
-  return true;
-}
-
-void hldsm::OutOfBoundsError(const result &x) const
-{
-  if (!x.isOutOfBounds()) return;
-  const model_statevar* mv
-    = smart_cast <const model_statevar*> (x.getOutOfBounds());
-  DCASSERT(mv);
-  em->cerr() << ":";
-  em->newLine();
-  mv->printBoundsError(x);
-}
-
-void hldsm::SendError(const char* s) const
-{
-  em->cerr() << s;
-}
-
-void hldsm::SendRealError(const result &x) const
-{
-  DCASSERT(em->REAL);
-  em->REAL->print(em->cerr(), x);
-}
-
-void hldsm::DoneError() const
-{
-  em->newLine();
-  em->cerr() << "within model ";
-  if (Name()) em->cerr() << Name();
-  else        em->cerr() << "(no name)";
-  if (parent) {
-    em->cerr() << " instantiated " << parent->Where();
-  }
-  em->stopIO();
-}
-
-*/
 
 void hldsm::bailOut(const char* sfile, unsigned sline, const char* why) const
 {
@@ -404,23 +350,6 @@ void model_instance::DoneWarning(const warning_msg &who) const
     who << "within model " << Name() << " instantiated " << Where();
     who.stop();
 }
-
-/*
-bool model_instance::StartError(const expr* cause) const
-{
-  if (!em->startError())  return false;
-  em->causedBy(cause);
-  return true;
-}
-
-void model_instance::DoneError() const
-{
-  em->newLine();
-  em->cerr() << "within model " << Name() << " instantiated " << Where();
-  em->stopIO();
-}
-*/
-
 
 void model_instance::AcceptSymbolOwnership(symbol* a)
 {

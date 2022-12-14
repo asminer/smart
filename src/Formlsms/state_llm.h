@@ -211,7 +211,6 @@ public:
 
         // Shared object requirements
         virtual bool Print(std::ostream &s, int width) const;
-        virtual bool Equals(const shared_object* o) const;
 
         friend class init_statellm;
         friend class state_lldsm;   // overkill
