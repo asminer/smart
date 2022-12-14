@@ -49,7 +49,8 @@ protected:
 public:
   // Required for shared_object:
   virtual bool Print(std::ostream &s, int width) const;
-  virtual bool Equals(const shared_object *o) const;
+  virtual int Compare(const shared_object *o) const;
+  virtual int Compare(const char* x) const;
 
   /** For debugging, display the current node information.
         @param  s   Output stream to write to

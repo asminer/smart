@@ -353,7 +353,7 @@ void assign_stmt::Compute(traverse_data &x)
     if (delta > GetPrecision())
       x.setRepeat();
   } else if (! var->update.isNull()) {
-    if (! var->Type()->equals(var->current, var->update))
+    if (var->Type()->compare(var->current, var->update))
       x.setRepeat();
   }
 
@@ -593,7 +593,7 @@ void array_assign_stmt::Compute(traverse_data &x)
     if (delta > GetPrecision())
       x.setRepeat();
   } else if (! ccv->update.isNull()) {
-    if (! var->Type()->equals(ccv->current, ccv->update))
+    if (var->Type()->compare(ccv->current, ccv->update))
       x.setRepeat();
   }
 

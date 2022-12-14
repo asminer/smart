@@ -42,6 +42,7 @@ class interval_point {
     inline bool operator==(const interval_point &p) const {
       return (status == p.status) && (value == p.value);
     }
+    int compare(const interval_point &p, bool left) const;
 
     /*
     Getters
@@ -172,7 +173,8 @@ protected:
 public:
   // required for shared_object
   virtual bool Print(std::ostream &s, int width) const;
-  virtual bool Equals(const shared_object *o) const;
+  virtual int Compare(const shared_object *o) const;
+  virtual int Compare(const char* x) const;
 
   inline       interval_point& Left()       { return left; }
   inline const interval_point& Left() const { return left; }

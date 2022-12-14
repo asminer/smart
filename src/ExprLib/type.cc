@@ -85,12 +85,6 @@ const type* type::changeBaseType(const type* newbase) const
   return 0;
 }
 
-int type::compare(const result& a, const result& b) const
-{
-  DCASSERT(0);
-  return 0;
-}
-
 bool type::print(std::ostream &s, const result& r) const
 {
     DCASSERT(isPrintable());
@@ -167,15 +161,24 @@ void type::assignFromString(result& r, const char* s) const
   assign_normal(r, s);
 }
 
-bool type::equals(const result &x, const result &y) const
+int type::compare(const result &x, const result &y) const
 {
-  if (x.isNormal() && y.isNormal())  return equals_normal(x, y);
+  if (x.isNormal() && y.isNormal())  return compare_normal(x, y);
 
   if (x.isInfinity() && y.isInfinity())
-    return x.signInfinity() == y.signInfinity();
+    return x.signInfinity() - y.signInfinity();
 
-  if (x.isNull() && y.isNull()) return true;
-  return false;
+  if (x.isInfinity()) {
+      return x.signInfinity();
+  }
+  if (y.isInfinity()) {
+      return -y.signInfinity();
+  }
+
+  if (x.isNull() && y.isNull()) return 0;
+
+  if (x.isNull()) return -1;
+  return 1;
 }
 
 bool type::print_normal(std::ostream &s, const result& r) const
@@ -214,13 +217,13 @@ void type::assign_normal(result& r, const char* s) const
   DCASSERT(0);
 }
 
-bool type::equals_normal(const result &x, const result &y) const
+int type::compare_normal(const result &x, const result &y) const
 {
   shared_object* xo = x.getPtr();
   shared_object* yo = y.getPtr();
   DCASSERT(xo);
   DCASSERT(yo);
-  return xo->Equals(yo);
+  return xo->Compare(yo);
 }
 
 // ******************************************************************
@@ -249,15 +252,22 @@ bool typelist::Print(std::ostream &s, int) const
   return true;
 }
 
-bool typelist::Equals(const shared_object* o) const
+int typelist::Compare(const shared_object* o) const
 {
-  if (o==this) return true;
+  if (o==this) return 0;
   const typelist* otl = dynamic_cast <const typelist*> (o);
-  if (0==otl) return false;
-  if (nt != otl->nt) return false;
+  if (0==otl) return 1;
+  if (nt != otl->nt) return nt - otl->nt;
   for (int i=0; i<nt; i++)
-    if (list[i] != otl->list[i]) return false;
-  return true;
+    if (list[i] != otl->list[i]) return list[i] - otl->list[i];
+  return 0;
+}
+
+int typelist::Compare(const char*) const
+{
+    internal_error E(__FILE__, __LINE__);
+    E << "typelist::Compare(const char*)";
+    return 0;
 }
 
 // ******************************************************************

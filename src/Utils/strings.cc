@@ -113,30 +113,22 @@ bool shared_string::Print(std::ostream &s, int indent) const
     return true;
 }
 
-bool shared_string::Equals(const shared_object* o) const
+int shared_string::Compare(const shared_object* o) const
 {
-    if (o==this) return true;
-    const shared_string* s = dynamic_cast <const shared_string*> (o);
-    if (0==s) return false;
-    if ( (0==string) && (0==s->string) ) return true;
-    if ( (0==string) || (0==s->string) ) return false;
-    return (0==strcmp(string, s->string));
-}
-
-int shared_string::Compare(const shared_string* s) const
-{
-    if (0==s) return 1;
-    if ( (0==string) && (0==s->string) ) return 0;
-    if (0==string) return -1;
-    if (0==s->string) return 1;
+    if (o==this) return 0;
+    const shared_string *s = dynamic_cast<const shared_string*> (o);
+    if (!s) return 1;
+    if ( (!string) && (!s->string) ) return 0;
+    if (!string) return -1;
+    if (!s->string) return 1;
     return strcmp(string, s->string);
 }
 
 int shared_string::Compare(const char* s) const
 {
-    if ( (0==string) && (0==s) ) return 0;
-    if (0==string) return -1;
-    if (0==s) return 1;
+    if ( (!string) && (!s) ) return 0;
+    if (!string) return -1;
+    if (!s) return 1;
     return strcmp(string, s);
 }
 

@@ -31,9 +31,8 @@ class shared_string : public shared_object {
     public:
         inline const char* getStr() const { return string; }
         virtual bool Print(std::ostream &s, int indent=0) const;
-        virtual bool Equals(const shared_object *o) const;
-        int Compare(const shared_string* s) const;
-        int Compare(const char* x) const;
+        virtual int Compare(const shared_object* s) const;
+        virtual int Compare(const char* x) const;
 };
 
 #endif

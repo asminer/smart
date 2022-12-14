@@ -16,7 +16,7 @@ class bogus_expr : public expr {
 public:
   bogus_expr(const char* w);
   virtual bool Print(std::ostream &s, int width) const;
-  virtual bool Equals(const shared_object* o) const;
+  virtual int Compare(const shared_object* o) const;
   virtual void PrintType(std::ostream &s) const;
 protected:
   virtual void Traverse(traverse_data &x);

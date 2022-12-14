@@ -41,10 +41,16 @@ bool array_item::Print(std::ostream &s, int) const
   return true;
 }
 
-bool array_item::Equals(const shared_object*) const
+int array_item::Compare(const shared_object*) const
 {
   DCASSERT(0);
-  return false;
+  return 0;
+}
+
+int array_item::Compare(const char*) const
+{
+  DCASSERT(0);
+  return 0;
 }
 
 // ******************************************************************

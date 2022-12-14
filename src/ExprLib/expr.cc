@@ -270,7 +270,7 @@ bool expr::Matches(const expr* sym) const
   if (myname)
   if (strcmp(myname, sname))  return 0;
   if (aggtype)
-    return aggtype->Equals(sym->aggtype);
+    return 0==aggtype->Compare(sym->aggtype);
   else
     return simple == sym->simple;
 }
@@ -379,10 +379,17 @@ void expr::Traverse(traverse_data &x)
 }
 
 // Nice, conservative default.
-bool expr::Equals(const shared_object* o) const
+int expr::Compare(const shared_object* o) const
 {
-  if (o==this) return true;
-  return false;
+    const expr* e = dynamic_cast <const expr*> (o);
+    return this - e;
+}
+
+int expr::Compare(const char* x) const
+{
+    internal_error E(__FILE__, __LINE__);
+    E << "Calling expr::Compare(const char*)";
+    return 0;
 }
 
 long expr::getDelta() const

@@ -209,7 +209,8 @@ public:
 		index = ndx;
 	}
 
-	inline int Compare(const model_enum_value* s) const {
+	inline int Compare(const shared_object* o) const {
+        const model_enum_value* s = dynamic_cast <const model_enum_value*> (o);
 		DCASSERT(s);
 		return index - s->index;
 	}
@@ -264,6 +265,12 @@ public:
 	 */
 	void MakeSortedMap(long* indexes) const;
 
+    virtual int Compare(const shared_object* o) const {
+        return model_statevar::Compare(o);
+    }
+    virtual int Compare(const char* x) const {
+        return model_statevar::Compare(x);
+    }
 	// Required for sorting...
 	inline int Compare(long i, long j) const {
 		DCASSERT(indexes);CHECK_RANGE(0, i, num_values);CHECK_RANGE(0, j, num_values);
@@ -562,7 +569,9 @@ public:
 		// Not implemented yet
 		DCASSERT(0);
 	}
-	inline int Compare(shared_state* s) {
+    virtual int Compare(const shared_object* o) const {
+        const shared_state* s = dynamic_cast <const shared_state *> (o);
+        DCASSERT(s);
 		for (int i = 0; i < num_buckets; i++) {
 			if (s->bucket_ptr[i] < bucket_ptr[i])
 				return 1;
@@ -571,7 +580,7 @@ public:
 		}
 		return 0;
 	}
-	bool operator<(shared_state *other) {
+	inline bool operator<(shared_state *other) const {
 		for (int i = 0; i < num_buckets; i++) {
 			if (data[i] < other->data[i])
 				return true;

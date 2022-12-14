@@ -93,24 +93,6 @@ public:
   /// Neat trick: change the base type, keep set, proc, modifier status.
   virtual const type* changeBaseType(const type* newbase) const;
 
-  /** Comparison, for purposes of maintaining sets of this type.
-      Default behavior is to throw an error.
-      Works like "strcmp".
-      Any total ordering can be used for elements of the type,
-      even an ordering different from operators "<", ">", etc.
-      But it must be transitive:
-        compare(a,b)>0 and compare(b,c)>0 implies compare(a,c)>0
-      and it must be the case that
-        compare(a,b)==0 iff a==b
-
-      @param  a  First item.
-      @param  b  second item.
-      @return positive,   if a is larger than b,
-              zero,       if a equals b,
-              negative,   if a is less than b.
-  */
-  virtual int compare(const result& a, const result& b) const;
-
   /// Can we print objects of this type.
   inline bool isPrintable() const { return printable; }
   inline void setPrintable() { printable = true; }
@@ -164,12 +146,23 @@ public:
   */
   virtual void assignFromString(result& r, const char* s) const;
 
-  /** Determine if two results of this type are equal.
-        @param  x  First result.
-        @param  y  Second result.
-        @return true  iff x = y.
+  /** Comparison, for purposes of maintaining sets of this type.
+      Default behavior is to throw an error.
+      Works like "strcmp".
+      Any total ordering can be used for elements of the type,
+      even an ordering different from operators "<", ">", etc.
+      But it must be transitive:
+        compare(a,b)>0 and compare(b,c)>0 implies compare(a,c)>0
+      and it must be the case that
+        compare(a,b)==0 iff a==b
+
+      @param  a  First item.
+      @param  b  second item.
+      @return positive,   if a is larger than b,
+              zero,       if a equals b,
+              negative,   if a is less than b.
   */
-  virtual bool equals(const result &x, const result &y) const;
+  virtual int compare(const result& a, const result& b) const;
 
 protected:
   virtual bool print_normal(std::ostream &s, const result& r) const;
@@ -177,7 +170,7 @@ protected:
   virtual bool print_normal(std::ostream &s, const result& r, int w, int p) const;
   virtual void show_normal(std::ostream &s, const result& r) const;
   virtual void assign_normal(result& r, const char* s) const;
-  virtual bool equals_normal(const result &x, const result &y) const;
+  virtual int compare_normal(const result &x, const result &y) const;
 };
 
 
@@ -248,7 +241,8 @@ public:
     return nt;
   }
   virtual bool Print(std::ostream &s, int w=0) const;
-  virtual bool Equals(const shared_object *o) const;
+  virtual int Compare(const shared_object *o) const;
+  virtual int Compare(const char* x) const;
 };
 
 

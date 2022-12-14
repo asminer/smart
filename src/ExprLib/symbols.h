@@ -58,6 +58,8 @@ class symbol : public expr {
         inline bool WillSubstitute() const { return substitute_value; }
 
         virtual bool Print(std::ostream &s, int width=0) const;
+        virtual int Compare(const shared_object* o) const;
+        virtual int Compare(const char* x) const;
 
         virtual void Traverse(traverse_data &x);
 

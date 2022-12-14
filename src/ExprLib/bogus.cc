@@ -9,28 +9,30 @@
 bogus_expr::bogus_expr(const char* w)
     : expr( location::NOWHERE(), (typelist*) 0)
 {
-  which = w;
+    which = w;
 }
 
 bool bogus_expr::Print(std::ostream &s, int width) const
 {
-  s << which;
-  return (which[0]!=0);
+    s << which;
+    return (which[0]!=0);
 }
 
 void bogus_expr::PrintType(std::ostream &s) const
 {
-  s << which;
+    s << which;
 }
 
-bool bogus_expr::Equals(const shared_object* o) const
+int bogus_expr::Compare(const shared_object* o) const
 {
-  if (o==this) return true;
-  const bogus_expr* foo = dynamic_cast <const bogus_expr*> (o);
-  if (0==foo) return false;
-  if (0==which)  return (0==foo->which);
-  if (0==foo->which)  return false;
-  return 0==strcmp(which, foo->which);
+    if (o==this) return 0;
+    const bogus_expr* foo = dynamic_cast <const bogus_expr*> (o);
+    if (!foo) return 1;
+    if (!which) {
+        if (!foo->which) return 0;
+        return -1;
+    }
+    return strcmp(which, foo->which);
 }
 
 void bogus_expr::Traverse(traverse_data &x)

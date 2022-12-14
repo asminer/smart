@@ -275,7 +275,7 @@ bool model_def::SameParams() const
   for (int i=0; i<formals.getLength(); i++) {
     const type* t = formals.getType(i);
     DCASSERT(t);
-    if (! t->equals(last_params[i], current_params[i]))  return false;
+    if (t->compare(last_params[i], current_params[i]))  return false;
   }
   return true;
 }

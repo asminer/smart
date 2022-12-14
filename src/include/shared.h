@@ -33,7 +33,6 @@ public:
     inline long numRefs() const {
         return linkcount;
     }
-    virtual bool Equals(const shared_object *o) const = 0;
 
     /** Write the object to the given stream.
             @param  s       The output stream to write to.
@@ -48,6 +47,25 @@ public:
 
     */
     virtual bool Print(std::ostream &s, int width=0) const = 0;
+
+    /** Compare with ourself.
+        If objects will never be compared, it is fine
+        to have this method do nothing or abort.
+            @return 0, iff o equals this object;
+                    negative, if o succeeds this object;
+                    positive, if o preceeds this object.
+    */
+    virtual int Compare(const shared_object* o) const {
+        DCASSERT(false);
+        return 0;
+    }
+
+    /// Compare with a string.
+    /// TBD: kill this, and use a shared string in the other Compare?
+    virtual int Compare(const char* x) const {
+        DCASSERT(false);
+        return 0;
+    }
 
 protected:
     inline shared_object* ShareMe() {

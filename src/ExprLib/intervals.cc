@@ -15,163 +15,158 @@ interval_point::interval_point()
   setUnknown();
 }
 
+inline bool include_cmp(bool acont, bool bcont, bool left)
+{
+    // If interval points are equal,
+    // compare based on inclusion.
+
+    if (left) {
+        // [x < (x
+        if (acont) {
+            return bcont ? 0 : -1;
+        } else {
+            return bcont ? +1 : 0;
+        }
+    } else {
+        // x) < x]
+        if (acont) {
+            return bcont ? 0 : +1;
+        } else {
+            return bcont ? -1 : 0;
+        }
+    }
+}
+
+//
+// Return 1  if this <  p
+// Return -1 if this >  p
+// Return 0  if this == p
+// Return 2, -2 if we can't compare mathematically but can for storage
+int interval_point::compare(const interval_point &p, bool left) const
+{
+    // ordinary case
+    if (isNormal() && p.isNormal()) {
+        if (getValue() < p.getValue()) {
+            return -1;
+        }
+        if (p.getValue() < getValue()) {
+            return +1;
+        }
+        // equal; compare based on inclusion
+        return include_cmp(contains(), p.contains(), left);
+    }
+
+    // are they both infinity?
+    if (isInfinity() && p.isInfinity()) {
+        if (getSign() < p.getSign()) {
+            return -1;
+        }
+        if (p.getSign() < getSign()) {
+            return +1;
+        }
+        // equal, check for inclusion or not
+        return include_cmp(contains(), p.contains(), left);
+    }
+
+    //
+    // Is a infinity?
+    if (isInfinity() && p.isNormal()) {
+        if (getSign() < 0)    return -1;  // -oo < p
+        else                    return +1;  // p < oo
+    }
+    //
+    // Is p infinity?
+    if (p.isInfinity() && isNormal()) {
+        if (p.getSign() < 0)    return +1;  // -oo < a
+        else                    return -1;  // a < oo
+    }
+
+    // Remaining cases are not mathematically comparable.
+    // But we can compare for other purposes (i.e., checking
+    // for uniqueness, arbitrary ordering, etc.)
+
+    if (isNull()) {
+       if (p.isNull()) return 0;
+       else            return -2;
+    }
+    if (p.isNull()) return +2;
+
+    if (isUnknown()) {
+        if (p.isUnknown())  return 0;
+        else                return -2;
+    }
+    if (p.isUnknown()) return +2;
+
+    // Can we get here?
+    DCASSERT(0);
+    return 0;
+}
+
 void interval_point::setFrom(const result &v, const type* st)
 {
-  if (v.isNormal()) {
-    status = normal_closed;
-    if (st->getBaseType() == reals) {
-      value = v.getReal();
-    } else {
-      value = v.getInt();
+    if (v.isNormal()) {
+        status = normal_closed;
+        if (st->getBaseType() == reals) {
+            value = v.getReal();
+        } else {
+            value = v.getInt();
+        }
+        return;
     }
-    return;
-  }
-  if (v.isInfinity()) {
-    status = infinity_closed;
-    value = v.signInfinity();
-    return;
-  }
-  if (v.isUnknown()) {
-    setUnknown();
-  } else {
-    setNull();
-  }
+    if (v.isInfinity()) {
+        status = infinity_closed;
+        value = v.signInfinity();
+        return;
+    }
+    if (v.isUnknown()) {
+        setUnknown();
+    } else {
+        setNull();
+    }
 }
 
 void Minimum(interval_point &c, const interval_point &a, const interval_point &b, bool left)
 {
-  // ordinary case
-  if (a.isNormal() && b.isNormal()) {
-    if (a.getValue() < b.getValue()) {
-      c = a;
-      return;
+    // a or b is null, keep it null.
+    if (a.isNull() || b.isNull()) {
+        c.setNull();
+        return;
     }
-    if (b.getValue() < a.getValue()) {
-      c = b;
-      return;
+
+    // a or b is unknown, keep it unknown.
+    if (a.isUnknown() || b.isUnknown()) {
+        c.setUnknown();
+        return;
     }
-    // equal, check for inclusion or not
-    if (left)
-      c.setNormal(a.contains() || b.contains(), a.getValue());
-    else
-      c.setNormal(a.contains() && b.contains(), a.getValue());
-    return;
-  }
 
-  // a or b is null, keep it null.
-  if (a.isNull() || b.isNull()) {
-    c.setNull();
-    return;
-  }
-  DCASSERT(! a.isNull());
-  DCASSERT(! b.isNull());
-
-  // are they both infinity?
-  if (a.isInfinity() && b.isInfinity()) {
-    if (a.getSign() < b.getSign()) {
-      c = a;
-      return;
+    // Can do ordinary comparison.
+    if (a.compare(b, left) <= 0) {
+        c = a;
+    } else {
+        c = b;
     }
-    if (b.getSign() < a.getSign()) {
-      c = b;
-      return;
-    }
-    // equal, check for inclusion or not
-    if (left)
-      c.setInfinity(a.contains() || b.contains(), a.getSign());
-    else
-      c.setInfinity(a.contains() && b.contains(), a.getSign());
-    return;
-  }
-
-  // is a infinity?  (if so, b is finite)
-  if (a.isInfinity()) {
-    if (a.getSign() < 0)
-      c = a;    // -oo < b for sure
-    else
-      c = b;    // b < oo for sure
-    return;
-  }
-
-  // is b infinity?  (if so, a is finite)
-  if (b.isInfinity()) {
-    if (b.getSign() < 0)
-      c = b;    // -oo < a for sure
-    else
-      c = a;    // a < oo for sure
-    return;
-  }
-
-  // I think everything else is "unknown"
-  c.setUnknown();
 }
 
 void Maximum(interval_point &c, const interval_point &a, const interval_point &b, bool left)
 {
-  // ordinary case
-  if (a.isNormal() && b.isNormal()) {
-    if (a.getValue() < b.getValue()) {
-      c = b;
-      return;
+    // a or b is null, keep it null.
+    if (a.isNull() || b.isNull()) {
+        c.setNull();
+        return;
     }
-    if (b.getValue() < a.getValue()) {
-      c = a;
-      return;
+
+    // a or b is unknown, keep it unknown.
+    if (a.isUnknown() || b.isUnknown()) {
+        c.setUnknown();
+        return;
     }
-    // equal, check for inclusion or not
-    if (left)
-      c.setNormal(a.contains() && b.contains(), a.getValue());
-    else
-      c.setNormal(a.contains() || b.contains(), a.getValue());
-    return;
-  }
 
-  // a or b is null, keep it null.
-  if (a.isNull() || b.isNull()) {
-    c.setNull();
-    return;
-  }
-  DCASSERT(! a.isNull());
-  DCASSERT(! b.isNull());
-
-  // are they both infinity?
-  if (a.isInfinity() && b.isInfinity()) {
-    if (a.getSign() < b.getSign()) {
-      c = b;
-      return;
+    // Can do ordinary comparison.
+    if (a.compare(b, left) >= 0) {
+        c = a;
+    } else {
+        c = b;
     }
-    if (b.getSign() < a.getSign()) {
-      c = a;
-      return;
-    }
-    // equal, check for inclusion or not
-    if (left)
-      c.setInfinity(a.contains() && b.contains(), a.getSign());
-    else
-      c.setInfinity(a.contains() || b.contains(), a.getSign());
-    return;
-  }
-
-  // is a infinity?  (b is finite)
-  if (a.isInfinity()) {
-    if (a.getSign() < 0)
-      c = b;    // -oo < b for sure
-    else
-      c = a;    // b < oo for sure
-    return;
-  }
-
-  // is b infinity?  (a is finite)
-  if (b.isInfinity()) {
-    if (b.getSign() < 0)
-      c = a;    // -oo < a for sure
-    else
-      c = b;    // a < oo for sure
-    return;
-  }
-
-  // I think everything else is "unknown"
-  c.setUnknown();
 }
 
 
@@ -213,11 +208,21 @@ bool interval_object::Print(std::ostream &s, int width) const
     return true;
 }
 
-bool interval_object::Equals(const shared_object *o) const
+int interval_object::Compare(const shared_object *o) const
 {
-  const interval_object* i = dynamic_cast <const interval_object*> (o);
-  if (0==i) return false;
-  return  (left == i->left) && (right == i->right);
+    if (this == o) return 0;
+    const interval_object* i = dynamic_cast <const interval_object*> (o);
+    if (!i) return 1;
+
+    int cmp = left.compare(i->left, true);
+    if (cmp) return cmp;
+    return right.compare(i->right, false);
+}
+
+int interval_object::Compare(const char* ) const
+{
+    DCASSERT(0);
+    return 0;
 }
 
 // ******************************************************************

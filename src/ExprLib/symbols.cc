@@ -73,6 +73,22 @@ bool symbol::Print(std::ostream &s, int width) const
     return true;
 }
 
+int symbol::Compare(const shared_object* o) const
+{
+    const symbol *s = dynamic_cast<const symbol*> (o);
+    if (!s) return 1;
+    if ( (!name) && (!s->name) ) return 0;
+    if (!name) return -1;
+    return name->Compare(s->name);
+}
+
+int symbol::Compare(const char* s) const
+{
+    if ( (!name) && (!s) ) return 0;
+    if (!name) return  -1;
+    return name->Compare(s);
+}
+
 void symbol::Traverse(traverse_data &x)
 {
     DCASSERT(0==x.aggregate);

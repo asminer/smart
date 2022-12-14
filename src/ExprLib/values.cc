@@ -39,14 +39,14 @@ bool value::Print(std::ostream &s, int width) const
   return true;
 }
 
-bool value::Equals(const shared_object* o) const
+int value::Compare(const shared_object* o) const
 {
-  if (o==this) return true;
+  if (o==this) return 0;
   const value* foo = dynamic_cast <const value*> (o);
-  if (0==foo) return false;
-  if (foo->Type() != Type()) return false;
+  if (0==foo) return 1;
+  if (foo->Type() != Type()) return 1;  // Error out here?
   DCASSERT(Type());
-  return Type()->equals(val, foo->val);
+  return Type()->compare(val, foo->val);
 }
 
 void value::Compute(traverse_data &x)

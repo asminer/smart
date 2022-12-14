@@ -258,7 +258,7 @@ expr* superman::makeError() const
 
 bool superman::isError(const expr* e) const
 {
-  return error_expr->Equals(e);
+  return 0==error_expr->Compare(e);
 }
 
 expr* superman::makeDefault() const
@@ -268,14 +268,14 @@ expr* superman::makeDefault() const
 
 bool superman::isDefault(const expr* e) const
 {
-  return default_expr->Equals(e);
+  return 0==default_expr->Compare(e);
 }
 
 bool superman::isOrdinary(const expr* e) const
 {
-  if (0==e)                   return false;
-  if (error_expr->Equals(e))  return false;
-  return !default_expr->Equals(e);
+  if (0==e)                         return false;
+  if (0==error_expr->Compare(e))    return false;
+  return default_expr->Compare(e);
 }
 
 

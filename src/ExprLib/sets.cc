@@ -4,6 +4,7 @@
 #include "result.h"
 #include "type.h"
 #include "../include/heap.h"
+#include "../Utils/messages.h"
 
 #include <math.h>
 
@@ -33,7 +34,6 @@ set_converter::element_convert::element_convert()
 set_converter::element_convert::~element_convert()
 {
 }
-
 
 
 set_converter::set_converter(const element_convert &ec, shared_set *is)
@@ -69,11 +69,18 @@ bool set_converter::Print(std::ostream &s, int) const
   return oldset->Print(s, 0);
 }
 
-bool set_converter::Equals(const shared_object* o) const
+int set_converter::Compare(const shared_object* o) const
 {
   const set_converter* foo = dynamic_cast <const set_converter*> (o);
-  if (0==foo) return false;
-  return oldset->Equals(foo->oldset);
+  if (0==foo) return 1;
+  return oldset->Compare(foo->oldset);
+}
+
+int set_converter::Compare(const char*) const
+{
+    internal_error E(__FILE__, __LINE__);
+    E << "shared_set::compare(const char*)";
+    return 0;
 }
 
 
@@ -93,7 +100,7 @@ public:
   virtual void GetElement(long n, result &x) const;
   virtual long IndexOf(const result &x) const;
   virtual bool Print(std::ostream &s, int) const;
-  virtual bool Equals(const shared_object* o) const;
+  virtual int Compare(const shared_object* o) const;
 };
 
 // ******************************************************************
@@ -137,13 +144,13 @@ bool int_ivlset::Print(std::ostream &s, int) const
   return true;
 }
 
-bool int_ivlset::Equals(const shared_object* o) const
+int int_ivlset::Compare(const shared_object* o) const
 {
   const int_ivlset* foo = dynamic_cast <const int_ivlset*> (o);
-  if (0==foo) return false;
-  if (start != foo->start) return false;
-  if (stop != foo->stop) return false;
-  return (inc == foo->inc);
+  if (0==foo) return 1;
+  if (start != foo->start) return start - foo->start;
+  if (stop != foo->stop) return stop - foo->stop;
+  return inc - foo->inc;
 }
 
 // ******************************************************************
@@ -163,7 +170,7 @@ public:
   virtual void GetElement(long n, result &x) const;
   virtual long IndexOf(const result &x) const;
   virtual bool Print(std::ostream &s, int) const;
-  virtual bool Equals(const shared_object* o) const;
+  virtual int Compare(const shared_object* o) const;
 };
 
 // ******************************************************************
@@ -210,13 +217,14 @@ bool real_ivlset::Print(std::ostream &s, int) const
   return true;
 }
 
-bool real_ivlset::Equals(const shared_object* o) const
+int real_ivlset::Compare(const shared_object* o) const
 {
   const real_ivlset* foo = dynamic_cast <const real_ivlset*> (o);
-  if (0==foo) return false;
-  if (start != foo->start) return false;
-  if (stop != foo->stop) return false;
-  return (inc == foo->inc);
+  if (0==foo) return 1;
+  if (start != foo->start) return SIGN(start - foo->start);
+  if (stop != foo->stop) return SIGN(stop - foo->stop);
+  if (inc != foo->inc) return SIGN(inc - foo->inc);
+  return 0;
 }
 
 // ******************************************************************
@@ -242,7 +250,7 @@ public:
   virtual void GetElement(long n, result& x) const;
   virtual long IndexOf(const result &x) const;
   virtual bool Print(std::ostream &s, int) const;
-  virtual bool Equals(const shared_object* o) const;
+  virtual int Compare(const shared_object* o) const;
 };
 
 // ******************************************************************
@@ -312,17 +320,17 @@ bool objset::Print(std::ostream &s, int) const
     return true;
 }
 
-bool objset::Equals(const shared_object* o) const
+int objset::Compare(const shared_object* o) const
 {
   const objset* foo = dynamic_cast <const objset*> (o);
-  if (0==foo) return false;
-  if (Size() != foo->Size()) return false;
-  if (item_type != foo->item_type) return false;
+  if (0==foo) return 1;
+  if (Size() != foo->Size()) return Size() - foo->Size();
+  if (item_type != foo->item_type) return item_type - foo->item_type;
   for (int i=0; i<Size(); i++) {
-    if (item_type->compare(values[order[i]], foo->values[foo->order[i]]))
-    return false;
+    int cmp = item_type->compare(values[order[i]], foo->values[foo->order[i]]);
+    if (cmp) return cmp;
   }
-  return true;
+  return 0;
 }
 
 // ******************************************************************

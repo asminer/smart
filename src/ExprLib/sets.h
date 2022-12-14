@@ -64,7 +64,8 @@ public:
   virtual void GetElement(long n, result &x) const;
   virtual long IndexOf(const result &x) const;
   virtual bool Print(std::ostream &s, int) const;
-  virtual bool Equals(const shared_object* o) const;
+  virtual int Compare(const shared_object* o) const;
+  virtual int Compare(const char*) const;
 };
 
 

@@ -745,7 +745,7 @@ bool fplist::matches(symbol** pl, int np) const
     expr* tudef = fp->Default();
     if ((0==midef) != (0==tudef))   return false;
     if (0==midef)      continue;
-    if (! midef->Equals(tudef) )    return false;
+    if (midef->Compare(tudef) )    return false;
   }
   return true;
 }
