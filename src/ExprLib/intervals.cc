@@ -2,6 +2,28 @@
 #include "intervals.h"
 #include "exprman.h"
 
+// #define DEBUG_UNION
+// #define DEBUG_MAX_POINT
+
+std::ostream& operator<< (std::ostream &s, const interval_point &p)
+{
+    if (p.isUnknown()) {
+        return s << "?";
+    }
+    if (p.isNull()) {
+        return s << "null";
+    }
+    if (p.isInfinity()) {
+        s << (p.getSign()>0 ? '+' : '-') << "infinity";
+    } else {
+        s << p.getValue();
+    }
+    if (p.contains()) {
+        return s << ", included";
+    }
+    return s << ", excluded";
+}
+
 // ******************************************************************
 // *                                                                *
 // *                     interval_point methods                     *
@@ -15,7 +37,7 @@ interval_point::interval_point()
   setUnknown();
 }
 
-inline bool include_cmp(bool acont, bool bcont, bool left)
+inline int include_cmp(bool acont, bool bcont, bool left)
 {
     // If interval points are equal,
     // compare based on inclusion.
@@ -41,7 +63,7 @@ inline bool include_cmp(bool acont, bool bcont, bool left)
 // Return 1  if this <  p
 // Return -1 if this >  p
 // Return 0  if this == p
-// Return 2, -2 if we can't compare mathematically but can for storage
+// Return 2 or -2 if the answer is unknown
 int interval_point::compare(const interval_point &p, bool left) const
 {
     // ordinary case
@@ -70,13 +92,13 @@ int interval_point::compare(const interval_point &p, bool left) const
 
     //
     // Is a infinity?
-    if (isInfinity() && p.isNormal()) {
+    if (isInfinity() && !p.isNull()) {
         if (getSign() < 0)    return -1;  // -oo < p
         else                    return +1;  // p < oo
     }
     //
     // Is p infinity?
-    if (p.isInfinity() && isNormal()) {
+    if (p.isInfinity() && !isNull()) {
         if (p.getSign() < 0)    return +1;  // -oo < a
         else                    return -1;  // a < oo
     }
@@ -87,9 +109,9 @@ int interval_point::compare(const interval_point &p, bool left) const
 
     if (isNull()) {
        if (p.isNull()) return 0;
-       else            return -2;
+       else            return -1;
     }
-    if (p.isNull()) return +2;
+    if (p.isNull()) return +1;
 
     if (isUnknown()) {
         if (p.isUnknown())  return 0;
@@ -133,14 +155,15 @@ void Minimum(interval_point &c, const interval_point &a, const interval_point &b
         return;
     }
 
-    // a or b is unknown, keep it unknown.
-    if (a.isUnknown() || b.isUnknown()) {
+    int cmp = a.compare(b, left);
+
+    // Check for unknown comparisons
+    if ((cmp<-1) || (cmp>1)) {
         c.setUnknown();
         return;
     }
 
-    // Can do ordinary comparison.
-    if (a.compare(b, left) <= 0) {
+    if (cmp <= 0) {
         c = a;
     } else {
         c = b;
@@ -152,21 +175,32 @@ void Maximum(interval_point &c, const interval_point &a, const interval_point &b
     // a or b is null, keep it null.
     if (a.isNull() || b.isNull()) {
         c.setNull();
+#ifdef DEBUG_MAX_POINT
+        std::cerr << "\nmax of " << a << " and " << b << " is " << c << "\n";
+#endif
         return;
     }
 
-    // a or b is unknown, keep it unknown.
-    if (a.isUnknown() || b.isUnknown()) {
+    int cmp = a.compare(b, left);
+
+    // Check for unknown comparisons
+    if ((cmp<-1) || (cmp>1)) {
         c.setUnknown();
+#ifdef DEBUG_MAX_POINT
+        std::cerr << "\nmax of " << a << " and " << b << " is " << c << "\n";
+#endif
         return;
     }
 
-    // Can do ordinary comparison.
-    if (a.compare(b, left) >= 0) {
+    if (cmp >= 0) {
         c = a;
     } else {
         c = b;
     }
+#ifdef DEBUG_MAX_POINT
+    std::cerr << "\nmax of " << a << " and " << b << " is " << c << "\n";
+    std::cerr << "cmp is " << cmp << "\n";
+#endif
 }
 
 
@@ -235,8 +269,17 @@ void InitIntervals(const exprman* em)
 
 void computeUnion(interval_object &c, const interval_object &a, const interval_object &b)
 {
-  Minimum(c.Left(), a.Left(), b.Left(), true);
-  Maximum(c.Right(), a.Right(), b.Right(), false);
+    Minimum(c.Left(), a.Left(), b.Left(), true);
+    Maximum(c.Right(), a.Right(), b.Right(), false);
+#ifdef DEBUG_UNION
+    std::cerr << "Union of ";
+    a.Print(std::cerr);
+    std::cerr << " and ";
+    b.Print(std::cerr);
+    std::cerr << " is ";
+    c.Print(std::cerr);
+    std::cerr << "\n";
+#endif
 }
 
 void computeMinimum(interval_object &c, const interval_object &a, const interval_object &b)

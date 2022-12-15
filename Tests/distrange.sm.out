@@ -44,7 +44,7 @@ Random variable rand real(ri07) has range: [1, 4]
            above range for ri07 should be: [1, 4]
 
 Random variable rand real(ri08) has range: [8, 10]
-           above range for ri08 should be: [1, 8]
+           above range for ri08 should be: [8, 10]
 
 Random variable rand real(ri09) has range: [1, 10]
            above range for ri09 should be: [1, 10]

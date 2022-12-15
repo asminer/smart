@@ -172,7 +172,7 @@ protected:
   virtual ~interval_object();
 public:
   // required for shared_object
-  virtual bool Print(std::ostream &s, int width) const;
+  virtual bool Print(std::ostream &s, int width=0) const;
   virtual int Compare(const shared_object *o) const;
 
   inline       interval_point& Left()       { return left; }

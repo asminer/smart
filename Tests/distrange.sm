@@ -65,7 +65,7 @@ print("           above range for ri06 should be: [0, infinity)\n\n");
 print_range(ri07);
 print("           above range for ri07 should be: [1, 4]\n\n");
 print_range(ri08);
-print("           above range for ri08 should be: [1, 8]\n\n");
+print("           above range for ri08 should be: [8, 10]\n\n");
 print_range(ri09);
 print("           above range for ri09 should be: [1, 10]\n\n");
 print_range(ri10);
