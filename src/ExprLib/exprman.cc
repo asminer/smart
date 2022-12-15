@@ -50,6 +50,7 @@ void library::printReleaseDate(doc_formatter&) const
 
 // exprman::exprman(io_environ* i, option_manager* o)
 exprman::exprman(option_manager* o)
+    : promote_arg("promote_args", "When arguments are automatically promoted in a function call")
 {
   is_finalized = false;
   // io = i;
@@ -77,7 +78,7 @@ exprman::exprman(option_manager* o)
   NO_ENGINE = 0;
   BLOCKED_ENGINE = 0;
 
-  promote_arg.initialize(om, "promote_args", "When arguments are automatically promoted in a function call");
+  addToChecklist(om, promote_arg);
   promote_arg.Deactivate();
 }
 
@@ -408,20 +409,12 @@ exprman* Initialize_Expressions(option_manager* om)
   //
   // Option initialization
   //
-  expr::expr_debug.initialize(om, "exprs",
-      "When set, low-level expression and statement messages are displayed."
-  );
+  addToChecklist(om, expr::expr_debug);
 #ifdef EXPR_DEBUG
   expr::expr_debug.Activate();
 #endif
-
-  expr::waitlist_debug.initialize(om, "waitlist",
-      "When set, diagnostic messages are displayed regarding symbol waiting lists."
-  );
-
-  expr::model_debug.initialize(om, "models",
-      "When set, diagnostic messages are displayed regarding model construction."
-  );
+  addToChecklist(om, expr::waitlist_debug);
+  addToChecklist(om, expr::model_debug);
 
   // Other options to initialize
   InitTypeOptions(The_Man);

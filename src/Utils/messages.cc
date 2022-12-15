@@ -1,11 +1,6 @@
 
 #include "messages.h"
 
-// TBD: move options out!
-// transform initialize into a (friend?) function
-#include "../Options/optman.h"
-#include "../Options/options.h"
-
 #include "location.h"
 #include "sigman.h"
 
@@ -19,24 +14,12 @@
 // *                     switchable_msg methods                     *
 // ******************************************************************
 
-void switchable_msg::setName(const char* n)
-{
-    // some messages don't need the name
-}
-
-switchable_msg::switchable_msg(const char* optname)
+switchable_msg::switchable_msg(const char* optname, const char* myname,
+        const char* mydoc)
 {
     option_name = optname;
-}
-
-bool switchable_msg::initialize(const option_manager* om, checklist_enum* grp,
-        const char* name, const char* doc)
-{
-    setName(name);
-    if (0==om) return false;
-    option* opt = om->FindOption(option_name);
-    if (0==opt) return false;
-    return opt->addChecklistItem(grp, name, doc, active);
+    my_name = myname;
+    my_doc = mydoc;
 }
 
 // ******************************************************************
@@ -45,7 +28,8 @@ bool switchable_msg::initialize(const option_manager* om, checklist_enum* grp,
 
 outputStream warning_msg::Out(std::cerr);
 
-warning_msg::warning_msg() : switchable_msg("Warning")
+warning_msg::warning_msg(const char* myname, const char* mydoc)
+    : switchable_msg("Warning", myname, mydoc)
 {
     Activate();
 }
@@ -69,19 +53,13 @@ bool warning_msg::start(const location &L) const
 
 char named_msg::prefix[256];
 
-void named_msg::setName(const char* n)
-{
-    DCASSERT(0==name);
-    name = n;
-}
-
 const char* named_msg::setPrefix(char x) const
 {
     prefix[0] = 'x';
     unsigned i;
     for (i=0; i<250; i++) {
-        if (0 == name[i]) break;
-        prefix[i+1] = name[i];
+        if (0 == getName()[i]) break;
+        prefix[i+1] = getName()[i];
     }
     prefix[i++] = ':';
     prefix[i++] = ' ';
@@ -89,9 +67,9 @@ const char* named_msg::setPrefix(char x) const
     return prefix;
 }
 
-named_msg::named_msg(const char* optname) : switchable_msg(optname)
+named_msg::named_msg(const char* optn, const char* myn, const char* myd)
+    : switchable_msg(optn, myn, myd)
 {
-    name = 0;
 }
 
 
@@ -101,7 +79,8 @@ named_msg::named_msg(const char* optname) : switchable_msg(optname)
 
 outputStream reporting_msg::Out(std::cout);
 
-reporting_msg::reporting_msg() : named_msg("Report")
+reporting_msg::reporting_msg(const char* myname, const char* mydoc)
+    : named_msg("Report", myname, mydoc)
 {
     Deactivate();
 }
@@ -123,7 +102,8 @@ bool reporting_msg::start() const
 
 outputStream debugging_msg::Out(std::cerr);
 
-debugging_msg::debugging_msg() : named_msg("Debug")
+debugging_msg::debugging_msg(const char* myname, const char* mydoc)
+    : named_msg("Debug", myname, mydoc)
 {
     Deactivate();
 }

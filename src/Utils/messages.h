@@ -5,9 +5,6 @@
 #include "../include/defines.h"
 #include "outstream.h"
 
-class option_manager;
-class checklist_enum;
-
 class location;
 
 /**
@@ -17,36 +14,22 @@ class location;
  *
 */
 class switchable_msg {
-    friend class checklist_opt;
+//    friend class checklist_opt;
     const char* option_name;
+    const char* my_name;
+    const char* my_doc;
     bool active;
-protected:
-    // called by initialize().
-    virtual void setName(const char* n);
 public:
-    switchable_msg(const char* optname);
-
-    /**
-     *  Initialize checklist item for an option.
-     *      @param  om      Option manager that owns the option.
-     *      @param  grp     Group, or null, to add the item to also.
-     *      @param  name    Name of the checklist item.
-     *      @param  doc     Documentation for the checklist item.
-     *
-     *      @return true    Iff we were able to add the checklist item.
-     */
-    bool initialize(const option_manager* om, checklist_enum* grp,
-            const char* name, const char* doc);
-
-    inline bool initialize(const option_manager* om,
-            const char* name, const char* doc)
-    {
-        return initialize(om, 0, name, doc);
-    }
+    switchable_msg(const char* optname, const char* myname, const char* mydoc);
 
     inline void Activate()    { active = true; }
     inline void Deactivate()  { active = false; }
     inline bool isActive() const { return active; }
+
+    inline const char* optName() const  { return option_name; }
+    inline const char* getName() const  { return my_name; }
+    inline const char* getDoc()  const  { return my_doc; }
+    inline bool& Active()               { return active; }
 };
 
 
@@ -57,7 +40,7 @@ class warning_msg : public switchable_msg {
     public:
         static outputStream Out;
     public:
-        warning_msg();
+        warning_msg(const char* myname, const char* mydoc);
 
         inline static bool switchOutput(const char* outfile) {
             return Out.switchOutput(outfile);
@@ -84,17 +67,15 @@ class warning_msg : public switchable_msg {
 
 /*
  * Named messages.
- * The option name must be remembered.
+ * The option name is part of the message prefix.
  */
 class named_msg : public switchable_msg {
-        const char* name;
         static char prefix[256];
     protected:
-        virtual void setName(const char* n);
         const char* setPrefix(char x) const;
         const char* getPrefix() const { return prefix; }
     public:
-        named_msg(const char* optname);
+        named_msg(const char* optname, const char* mn, const char* md);
 };
 
 /*
@@ -104,7 +85,7 @@ class reporting_msg : public named_msg {
     public:
         static outputStream Out;
     public:
-        reporting_msg();
+        reporting_msg(const char* myname, const char* mydoc);
 
         inline static bool switchOutput(const char* outfile) {
             return Out.switchOutput(outfile);
@@ -136,7 +117,7 @@ class debugging_msg : public named_msg {
     public:
         static outputStream Out;
     public:
-        debugging_msg();
+        debugging_msg(const char* myname, const char* mydoc);
 
         inline static bool switchOutput(const char* outfile) {
             return Out.switchOutput(outfile);

@@ -1,6 +1,5 @@
 
 #include "../include/defines.h"
-#include "../Utils/textfmt.h"
 #include "../include/splay.h"
 
 #include "options.h"
@@ -11,6 +10,9 @@
 #include "stropt.h"
 #include "radio_opt.h"
 #include "checklist.h"
+
+#include "../Utils/textfmt.h"
+#include "../Utils/messages.h"
 
 //#define DEBUG_SORT
 
@@ -172,8 +174,22 @@ void option_heap::ListOptions(doc_formatter &df) const
 }
 
 
+// **************************************************************************
+// *                                                                        *
+// *                            Global interface                            *
+// *                                                                        *
+// **************************************************************************
+
 option_manager* MakeOptionManager()
 {
   return new option_heap;
 }
 
+bool addToChecklist(const option_manager* om, switchable_msg &m,
+        checklist_enum* grp)
+{
+    if (!om) return false;
+    option* opt = om->FindOption(m.optName());
+    if (!opt) return false;
+    return opt->addChecklistItem(grp, m.getName(), m.getDoc(), m.Active());
+}

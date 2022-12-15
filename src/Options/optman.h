@@ -7,6 +7,7 @@
 class doc_formatter;   // defined in streams.h
 class option;
 class shared_string;
+class switchable_msg;
 
 // **************************************************************************
 // *                        option_manager interface                        *
@@ -152,7 +153,19 @@ class option_manager {
 */
 option_manager* MakeOptionManager();
 
+/**
+    Add a switchable message to a checklist option and group.
+        @param  om      Option manager; must contain the option name
+                        specified in the switchable message.
+        @param  sm      Switchable message (see Utils/messages.h)
+        @param  grp     Group, if we group messages together;
+                        otherwise null pointer.
 
+        @return true    on success
+                false   otherwise
+ */
+bool addToChecklist(const option_manager* om, switchable_msg &m,
+        checklist_enum* grp = nullptr);
 
 #endif
 
