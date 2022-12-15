@@ -37,10 +37,11 @@ void yy_delete_buffer(yy_buffer_state*);
 
 class lexer_error : public error_msg {
     public:
-        lexer_error(const char* text=0);
+        lexer_error(bool warn=false, const char* text=0);
 };
 
-lexer_error::lexer_error(const char* text) : error_msg("ERROR")
+lexer_error::lexer_error(bool warn, const char* text)
+    : error_msg(warn ? "WARNING" : "ERROR")
 {
     Out << ' ' << Where();
     if (text) {
@@ -78,53 +79,7 @@ public:
     DCASSERT(parent);
     return parent->FindModif(s);
   }
-  /*
-  inline bool startInternal(const char* file, int line) {
-    DCASSERT(parent);
-    return parent->startInternal(file, line);
-  }
-  inline OutputStream& internal() {
-    DCASSERT(parent);
-    return parent->internal();
-  }
-  inline bool startError() {
-    DCASSERT(parent);
-    return parent->startError();
-  }
-  inline OutputStream& cerr() {
-    DCASSERT(parent);
-    return parent->cerr();
-  }
-  inline void stopError() {
-    DCASSERT(parent);
-    parent->stopError();
-  }
-  inline bool startWarning() {
-    DCASSERT(parent);
-    DCASSERT(parent->em);
-    if (parent->em->hasIO()) {
-      parent->em->startWarning();
-      parent->em->causedBy(Where());
-      return true;
-    }
-    return false;
-  }
-  inline OutputStream& warn() {
-    DCASSERT(parent);
-    DCASSERT(parent->em);
-    DCASSERT(parent->em->hasIO());
-    return parent->em->warn();
-  }
-  inline bool startDebug() {
-    return lexer_debug.startReport();
-  }
-  inline OutputStream& debug() {
-    return lexer_debug.report();
-  }
-  inline void stopDebug() {
-    lexer_debug.stopIO();
-  }
-  */
+
   inline bool StackFull() const { return (topfile+1 >= max_file_depth); }
 
   const location& Where() const;
@@ -562,7 +517,7 @@ int ProcessString()
   yylval.name = strdup(yytext+1);  // skip open quote
 
   if (yylval.name[yyleng-2] != '"') {
-    lexer_error E(yytext);
+    lexer_error E(false, yytext);
     E << "Unclosed quote";
   } else
     yylval.name[yyleng-2] = '\0'; // erase close quote
@@ -628,7 +583,7 @@ void UnclosedComment()
 
 void IllegalToken()
 {
-    lexer_error E(yytext);
+    lexer_error E(false, yytext);
     E << "Illegal syntactical element";
 }
 
@@ -666,8 +621,8 @@ void Include()
 
   // Bail out for empty strings
   if (stop-1==start) {
-      lexer_error E;
-      E << "Empty filename for include, ignoring";
+      lexer_error W(true);
+      W << "Empty filename for include, ignoring";
       return;
   }
 
@@ -679,9 +634,9 @@ void Include()
 
   // Check for circular dependency
   if (lexdata.AlreadyOpen(fn)) {
-      lexer_error E;
-      E << "circular file dependency caused by #include ";
-      E << fn << ", ignoring";
+      lexer_error W(true);
+      W << "circular file dependency caused by #include ";
+      W << fn << ", ignoring";
       free(fn);
       return;
   }
