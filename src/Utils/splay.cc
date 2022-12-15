@@ -74,12 +74,136 @@ void splayOfShared::traverse(tree_traversal &t)
 
 shared_object* splayOfShared::insert(shared_object* key)
 {
-    // TBD
+    if (!root) {
+        //
+        // Empty list/tree.
+        // Building the first node is the same, regardless :)
+        //
+        root = NewNode();
+        if (!root) return nullptr;
+        Item(root) = key;
+        Left(root) = 0;
+        Right(root) = 0;
+        return key;
+    }
+
+    //
+    // Put closest element at the root, and check for a match
+    int cmp = splay(key);
+    if (0==cmp) return Item(root);
+
+    //
+    // Need to add an element.
+    // First, see if it's time to convert to a tree
+    if (is_list && (num_elements > list2tree)) {
+        ConvertToTree();
+    }
+
+    //
+    // Build new root node
+    //
+    unsigned newroot = NewNode();
+    if (!newroot) return nullptr;
+    Item(newroot) = item;
+
+    //
+    // Connect new root to old root.
+    //
+    if (is_list) {
+        // We're a doubly-linked list.
+        if (cmp > 0) {
+            // Add us to the left of the root
+            Right(newroot) = root;
+            unsigned l = Left(root);
+            Left(newroot) = l;
+            if (l) Right(l) = newroot;
+            Left(root) = newroot;
+        } else {
+            // Add us to the right of the root
+            Left(newroot) = root;
+            unsigned r = Right(root);
+            Right(newroot) = r;
+            if (r) Left(r) = newroot;
+            Right(root) = newroot;
+        }
+    } else {
+        // We're a BST.
+        if (cmp > 0) {
+            // old root is our right child
+            Right(newroot) = root;
+            Left(newroot) = Left(root);
+            Left(root) = 0;
+        } else {
+            // old root is our left child
+            Left(newroot) = root;
+            Right(newroot) = Right(root);
+            Right(root) = 0;
+        }
+    }
+    root = newroot;
+    return key;
 }
 
 shared_object* splayOfShared::remove(shared_object* key)
 {
-    // TBD
+    if (!root)  return nullptr;
+    int cmp = splay(key);
+    if (cmp)    return nullptr;
+
+    //
+    // Item is definitely in the tree; need to remove it.
+    // First, check if it's time to convert back to a list.
+    //
+    if (!is_list && (num_elements < tree2list)) {
+        ConvertToList();
+    }
+
+    unsigned oldroot = root;
+    unsigned oldleft = Left(root);
+    unsigned oldright = Right(root);
+    if (is_list) {
+        //
+        // Remove from a doubly-linked list:
+        //      oldleft <-> oldroot <-> oldright
+        // Root will become either oldleft or oldright.
+        //
+        root = 0;
+        if (oldleft) {
+            Right(oldleft) = oldright;
+            root = oldleft;
+        }
+        if (oldright) {
+            Left(oldright) = oldleft;
+            root = oldright;
+        }
+    } else {
+        //
+        // Remove root node from the splay tree
+        //
+        //                  oldroot
+        //                 /      \
+        //           oldleft      oldright
+        if (oldleft) {
+            root = oldleft;
+            Splay(Item(oldroot));
+            // Reorder oldleft tree; it will make the
+            // largest element < oldroot the root,
+            // meaning it is guaranteed not to have a right child.
+            DCASSERT(!Right(root));
+            Right(root) = oldright;
+        } else {
+            // no left child, root can just become the right.
+            root = oldright;
+        }
+    }
+
+    //
+    // Tree has been reshaped.
+    // Recycle the old node and return.
+    //
+    shared_object* found = Item(oldroot);
+    recycleNode(oldroot);
+    return found;
 }
 
 void splayOfShared::show(std::ostream &s) const
@@ -152,9 +276,7 @@ unsigned splayOfShared::newNode()
         free_list = Right(free_list);
     } else {
         if (last_element >= max_elements)  Expand();
-        if (last_element >= max_elements)  {
-            throw "out of memory"
-        }
+        if (last_element >= max_elements)  return 0;
         ans = ++last_element;
     }
     ++num_elements;
@@ -265,73 +387,6 @@ int splayOfShared::splay(const shared_object* key)
     return cmp;
 }
 
-
-void splayOfShared::insert_after_splay(void* item, int cmp)
-{
-    if (!root) {
-        //
-        // Empty tree/list.
-        // Behavior is the same for both!
-        //
-        root = NewNode();
-        Item(root) = item;
-        Left(root) = 0;
-        Right(root) = 0;
-        return;
-    }
-
-    //
-    // Non-empty tree/list.
-    // First, check if we've reached the threshold
-    // for conversion to a tree.
-    //
-    if (is_list && (num_elements > list2tree)) {
-        ConvertToTree();
-    }
-
-    //
-    // Build new root node
-    //
-
-    unsigned newroot = NewNode();
-    Item(newroot) = item;
-
-    //
-    // Connect new root to old root.
-    //
-    if (is_list) {
-        // We're a doubly-linked list.
-        if (cmp > 0) {
-            // Add us to the left of the root
-            Right(newroot) = root;
-            unsigned l = Left(root);
-            Left(newroot) = l;
-            if (l) Right(l) = newroot;
-            Left(root) = newroot;
-        } else {
-            // Add us to the right of the root
-            Left(newroot) = root;
-            unsigned r = Right(root);
-            Right(newroot) = r;
-            if (r) Left(r) = newroot;
-            Right(root) = newroot;
-        }
-    } else {
-        // We're a BST.
-        if (cmp > 0) {
-            // old root is our right child
-            Right(newroot) = root;
-            Left(newroot) = Left(root);
-            Left(root) = 0;
-        } else {
-            // old root is our left child
-            Left(newroot) = root;
-            Right(newroot) = Right(root);
-            Right(root) = 0;
-        }
-    }
-    root = newroot;
-}
 
 bool splayOfShared::remove_list_root()
 {
