@@ -42,7 +42,7 @@ void splayOfShared::deleteAndClear()
     is_list = (list2tree > 0);
 }
 
-void splayOfShared::traverse(tree_traversal &t)
+void splayOfShared::traverse(tree_traversal &t) const
 {
     if (!root) return;
     unsigned i = root;
@@ -79,7 +79,7 @@ shared_object* splayOfShared::insert(shared_object* key)
         // Empty list/tree.
         // Building the first node is the same, regardless :)
         //
-        root = NewNode();
+        root = newNode();
         if (!root) return nullptr;
         Item(root) = key;
         Left(root) = 0;
@@ -102,9 +102,9 @@ shared_object* splayOfShared::insert(shared_object* key)
     //
     // Build new root node
     //
-    unsigned newroot = NewNode();
+    unsigned newroot = newNode();
     if (!newroot) return nullptr;
-    Item(newroot) = item;
+    Item(newroot) = key;
 
     //
     // Connect new root to old root.
@@ -185,7 +185,7 @@ shared_object* splayOfShared::remove(shared_object* key)
         //           oldleft      oldright
         if (oldleft) {
             root = oldleft;
-            Splay(Item(oldroot));
+            splay(Item(oldroot));
             // Reorder oldleft tree; it will make the
             // largest element < oldroot the root,
             // meaning it is guaranteed not to have a right child.
@@ -217,7 +217,7 @@ void splayOfShared::show(std::ostream &s) const
     for (unsigned i=1; i<=last_element; i++) {
         s << "\tnode # " << i << "\n";
         s << "\titem : ";
-        items[i]->Print(s, 0);
+        item[i]->Print(s, 0);
         s << "\n";
         s << "\tleft : " << left[i] << "\n";
         s << "\tright: " << right[i] << "\n";
@@ -234,9 +234,14 @@ void splayOfShared::Expand()
     unsigned new_elements = 2*max_elements;
     if (new_elements > 1024) new_elements = max_elements + 1024;
     if (new_elements < 4) new_elements = 4;
-    void** newitem = (void**) realloc(item, new_elements * sizeof(DATA*));
-    unsigned* newleft = (unsigned*) realloc(left, new_elements * sizeof(unsigned));
-    unsigned* newright = (unsigned*) realloc(right, new_elements * sizeof(unsigned));
+
+    shared_object** newitem = (shared_object**)
+        realloc(item, new_elements * sizeof(shared_object*));
+    unsigned* newleft = (unsigned*)
+        realloc(left, new_elements * sizeof(unsigned));
+    unsigned* newright = (unsigned*)
+        realloc(right, new_elements * sizeof(unsigned));
+
     if (newitem) item = newitem;
     if (newleft) left = newleft;
     if (newright) right = newright;
@@ -402,32 +407,4 @@ int splayOfShared::splay(const shared_object* key)
     return cmp;
 }
 
-
-bool splayOfShared::remove_list_root()
-{
-    //
-    // Check if we've shrunk enough to convert back to a list
-    //
-    if (!is_list && (num_elements < tree2list)) {
-        ConvertToList();
-    }
-    if (!is_list) return false;
-
-    // Remove from doubly-linked list
-
-    unsigned oldroot = root;
-    unsigned oldleft = Left(root);
-    unsigned oldright = Right(root);
-
-    root = 0;
-    if (oldleft) {
-        Right(oldleft) = oldright;
-        root = oldleft;
-    }
-    if (oldright) {
-        Left(oldright) = oldleft;
-        root = oldright;
-    }
-    return true;
-}
 

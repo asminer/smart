@@ -48,11 +48,6 @@ class splayOfShared {
             Delete all entries, and clear the tree.
         */
         void deleteAndClear();
-            for (unsigned i=0; i<last_element; i++) {
-                delete getItem(i);
-            }
-            clear();
-        }
 
         inline unsigned numElements() const { return num_elements; }
 
@@ -67,7 +62,7 @@ class splayOfShared {
                         an item equal to key according to Compare(), otherwise.
         */
         inline shared_object* find(const shared_object* key) {
-            if (0==Splay(key))  return Item(root);
+            if (0==splay(key))  return Item(root);
             else                return nullptr;
         }
 
@@ -77,7 +72,7 @@ class splayOfShared {
                                 the index (0..size-1) of the key, otherwise.
         */
         inline long findIndex(const shared_object* key) {
-            if (0==Splay(key))  return long(root)-1;
+            if (0==splay(key))  return long(root)-1;
             else                return -1;
         }
 
