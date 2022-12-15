@@ -455,14 +455,14 @@ inline int intset::bitvector::CompareComplement(const bitvector &B) const
         if (data[w] > bd) return +1;
         // Equal up to B's size; now see if we
         // have any bits set beyond that.
-        return (FirstSetAfter(B.size-1) < 0) ? +1 : 0;
+        return (FirstSetAfter(B.size-1) < 0) ? 0 : +1;
     } else {
         // NumWords() < B.NumWords()
         if (data[w] < ~B.data[w]) return -1;
         if (data[w] > ~B.data[w]) return +1;
         // Equal up to our size; now see if
         // ~B has any bits set beyond that.
-        return (B.FirstUnsetAfter(size-1) < 0) ? -1 : 0;
+        return (B.FirstUnsetAfter(size-1) < 0) ? 0 : -1;
     }
 }
 

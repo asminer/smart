@@ -3,6 +3,7 @@
 #include <string.h>
 #include "intset.h"
 
+// #define INTSET_DEVELOPMENT_CODE
 
 const int max_slots = 16;
 
@@ -21,7 +22,7 @@ int grabChar(const char* accept)
       continue;
     }
     for (int i=0; i<len; i++)
-      if (c == accept[i]) return c;   
+      if (c == accept[i]) return c;
   }
 }
 
@@ -34,7 +35,7 @@ void readBits(intset &s)
       s.removeElement(i);
     } else {
       s.addElement(i);
-    } 
+    }
   }
 }
 
@@ -72,7 +73,7 @@ void MakeNewSet()
   intset answer(size);
   readBits(answer);
   if (slot>=0 && slot < max_slots)
-    sets[slot] = answer;   
+    sets[slot] = answer;
 }
 
 void ShowSet()
@@ -174,7 +175,7 @@ bool Assertion()
     case 'n':
       if (correct == (sets[slotA] != sets[slotB])) return true;
       return Failed(correct, slotA, "!=", slotB);
-    
+
     case 'g':
       switch (op2) {
         case 'e':
@@ -186,8 +187,8 @@ bool Assertion()
           return Failed(correct, slotA, ">", slotB);
 
         default: return true;
-      } // switch op2  
-    
+      } // switch op2
+
     case 'l':
       switch (op2) {
         case 'e':
@@ -199,7 +200,7 @@ bool Assertion()
           return Failed(correct, slotA, "<", slotB);
 
         default: return true;
-      } // switch op2  
+      } // switch op2
   } // switch op1
   return true;
 }
@@ -231,13 +232,13 @@ bool RunFile(const char* fn)
       case EOF:  EndOfFile(fn);      return true;
       case 'n':  MakeNewSet();       break;
       case 's':  ShowSet();          break;
- 
+
       case 'c':  Complement();       break;
       case 'd':  Difference();       break;
       case 'i':  Intersect();        break;
       case 'u':  Union();            break;
 
-      case 'a':  
+      case 'a':
         if (Assertion()) break;
         return false;
     }
