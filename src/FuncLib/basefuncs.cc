@@ -446,7 +446,7 @@ void case_ci::Compute(traverse_data &x, expr** pass, int np)
   for (int i=2; i<np; i++) {
     SafeCompute(pass[i], x);
 
-    if (t->equals(*answer, key)) {
+    if (0==t->compare(*answer, key)) {
       x.aggregate = 1;
       SafeCompute(pass[i], x);
       x.aggregate = 0;
