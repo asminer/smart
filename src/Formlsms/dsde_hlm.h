@@ -281,7 +281,7 @@ class decision : public model_var {
   //std:: vector<result*> decisions;// not vector: one decision // will it be a vector of expr or just three valued number?//ask Dr. Miner is result compatible with exprmin a formula like aa & apD
   expr* enable_cond;
   int cost;
-  public:
+public:
   decision(const symbol* w, const model_instance* pn) : model_var(w,pn) {
   	dec = new result();
     dec->setUnknown();
@@ -291,22 +291,28 @@ class decision : public model_var {
 
   // decision(const char* fn, int line, const type* t, char* n,
 		// const model_instance* p);
-  protected:
+protected:
   ~decision() { }
-  public:
-    // add get and set method
-    inline result* getDecision(){
-      return dec; 
-    }
-    inline void setDecision(){
-    	dec->setBool(true);
+public:
+  // add get and set method
+  inline result* getDecision() {
+    return dec; 
+  }
 
-    }
-  inline bool isTaken(){
+  inline bool getDecisionValue() {
+    if (dec->isUnknown()) return false; 
+    else return dec->getBool();
+  }
+
+  inline void setDecision() {
+    dec->setBool(true);
+  }
+
+  inline bool isTaken() {
     if ((!dec->isUnknown()) && dec->getBool()) return true;
     else return false;
-	}
-	
+  }
+  
   inline void addEnablingCond(expr* e) {
     enable_cond=e;
   } 
@@ -326,34 +332,58 @@ class decision : public model_var {
 
 // **************************************************************************
 // *                                                                        *
-// *                            decisionset methods                         *
+// *                            decision_vector                             *
 // *                                                                        *
 // **************************************************************************
 
-class decisionset : public model_var {
+class decision_vector : public model_var {
+  /// Underlying data structure
+  /// Will be kept sorted based on cost
   std::vector<decision*> decisions;
 
-  public:
-  decisionset(const symbol* w, const model_instance* pn) : model_var(w,pn){}
+public:
+  decision_vector(const symbol* w, const model_instance* pn) : model_var(w,pn) {}
 
-  protected:
-  ~decisionset() { }
-  public:
-    // add get and set method
-    inline decision* getDecision(int i){
-      if(i < decisions.size()) {
-        return decisions[i]; 
+protected:
+  ~decision_vector() { }
+
+public:
+  inline decision* getDecision(int i){
+    if(i < decisions.size()) {
+      return decisions[i]; 
+    }
+    return NULL; // fix
+  }
+
+  inline int getNumDecisions() {
+    return decisions.size();
+  }
+
+  inline bool isEmpty() {
+    return decisions.empty();
+  }
+
+  inline void addDecision(decision* d){
+    decisions.push_back(d);
+  }
+
+  decision* getMinCostDecision() {
+    if (isEmpty()) return NULL;
+    
+    decision *d = decisions[0];
+    int min = d->getCost();
+    for (auto it = decisions.begin(); it != decisions.end(); ++it) {
+      int c = (*it)->getCost();
+      if (c < min) {
+        d = *it;
+        min = c;
       }
-      return NULL; // fix
     }
 
-    inline std::vector<decision*>* getDecisionSet() {
-      return &decisions;
-    }
+    return d;
+  }
 
-    inline void addDecision(decision* d){
-    	decisions.push_back(d);
-    }
+
 };
 
 // **************************************************************************

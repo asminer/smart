@@ -3121,39 +3121,6 @@ void pn_dec_value::Compute(traverse_data &x, expr** pass, int ndd)
 }
 
 // ******************************************************************
-// *                           randomize_decs                       *
-// ******************************************************************
-
-class pn_randomize_decs : public proc_noengine {
-public:
-  pn_randomize_decs();
-  virtual void Compute(traverse_data &x, expr** pass, int ndd);
-};
-
-pn_randomize_decs::pn_randomize_decs()
- : proc_noengine(Nothing, em->VOID, "randomize_decs", 2)
-{
-  SetDocumentation("Randomizes the values of decisions of pn.");
-}
-
-void pn_randomize_decs::Compute(traverse_data &x, expr** pass, int ndd)
-{
-  DCASSERT(x.answer);
-  DCASSERT(0==x.aggregate);
-  DCASSERT(pass);
-
-  model_instance* mi = grabModelInstance(x, pass[0]);
-  dsde_hlm* mypn;
-  mypn = smart_cast <dsde_hlm*> (mi->GetCompiledModel());
-
-  decision* d = smart_cast <decision*> (pass[1]);
-  DCASSERT(d);
-
-  if (d->isTaken()) x.answer->setBool(true);
-  else x.answer->setUnknown();
-}
-
-// ******************************************************************
 // *                                                                *
 // *                                                                *
 // *                         Initialization                         *
@@ -3340,24 +3307,23 @@ bool init_pnform::execute()
 
   // fill symbol table
   symbol_table* pnsyms = MakeSymbolTable();
-  pnsyms->AddSymbol(  new pn_init     );
-  pnsyms->AddSymbol(  new pn_bound    );
-  pnsyms->AddSymbol(  new pn_cost    );
-  pnsyms->AddSymbol(  new pn_arcs     );
-  pnsyms->AddSymbol(  new pn_inhibit  );
-  pnsyms->AddSymbol(  new pn_guard    );
-  pnsyms->AddSymbol( new pn_enable_dec);
-  pnsyms->AddSymbol(  new pn_firing   );
-  pnsyms->AddSymbol(  new pn_weight   );
-  pnsyms->AddSymbol(  new pn_weight2  );
-  pnsyms->AddSymbol(  new pn_assert   );
-  pnsyms->AddSymbol(  new pn_hide     );
-  pnsyms->AddSymbol(  new pn_tk       );
-  pnsyms->AddSymbol(  new pn_rate     );
-  pnsyms->AddSymbol(  new pn_enabled  );
-  pnsyms->AddSymbol(  new pn_is_taken  );
+  pnsyms->AddSymbol(  new pn_init       );
+  pnsyms->AddSymbol(  new pn_bound      );
+  pnsyms->AddSymbol(  new pn_cost       );
+  pnsyms->AddSymbol(  new pn_arcs       );
+  pnsyms->AddSymbol(  new pn_inhibit    );
+  pnsyms->AddSymbol(  new pn_guard      );
+  pnsyms->AddSymbol(  new pn_enable_dec );
+  pnsyms->AddSymbol(  new pn_firing     );
+  pnsyms->AddSymbol(  new pn_weight     );
+  pnsyms->AddSymbol(  new pn_weight2    );
+  pnsyms->AddSymbol(  new pn_assert     );
+  pnsyms->AddSymbol(  new pn_hide       );
+  pnsyms->AddSymbol(  new pn_tk         );
+  pnsyms->AddSymbol(  new pn_rate       );
+  pnsyms->AddSymbol(  new pn_enabled    );
+  pnsyms->AddSymbol(  new pn_is_taken   );
   pnsyms->AddSymbol(  new pn_dec_value  );
-  pnsyms->AddSymbol(  new pn_randomize_decs  );
   pnsyms->AddSymbol(  new pn_places(t_set_place)        );
   pnsyms->AddSymbol(  new pn_transitions(t_set_trans)   );
   pnsyms->AddSymbol(  new pn_decisions(t_set_decision)   );
