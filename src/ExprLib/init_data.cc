@@ -41,7 +41,7 @@ protected:
   virtual bool print_normal(std::ostream &s, const result& r, int w) const;
   virtual void show_normal(std::ostream &s, const result& r) const;
   virtual void assign_normal(result& r, const char* s) const;
-  virtual bool equals_normal(const result &x, const result &y) const;
+  virtual int compare_normal(const result &x, const result &y) const;
 };
 
 // ******************************************************************
@@ -80,9 +80,9 @@ void bool_type::assign_normal(result& r, const char* s) const
   r.setNull();
 }
 
-bool bool_type::equals_normal(const result &x, const result &y) const
+int bool_type::compare_normal(const result &x, const result &y) const
 {
-  return x.getBool() == y.getBool();
+  return int(x.getBool()) - int(y.getBool());
 }
 
 // ******************************************************************
@@ -94,13 +94,12 @@ bool bool_type::equals_normal(const result &x, const result &y) const
 class int_type : public simple_type {
 public:
   int_type();
-  virtual int compare(const result& a, const result& b) const;
 protected:
   virtual bool print_normal(std::ostream &s, const result& r) const;
   virtual bool print_normal(std::ostream &s, const result& r, int w) const;
   virtual void show_normal(std::ostream &s, const result& r) const;
   virtual void assign_normal(result& r, const char* s) const;
-  virtual bool equals_normal(const result &x, const result &y) const;
+  virtual int compare_normal(const result &x, const result &y) const;
 };
 
 // ******************************************************************
@@ -111,26 +110,6 @@ int_type::int_type()
 : simple_type("int", "Integer type", "Supported range is machine dependent, probably equivalent to a C 'long'.  Can also be infinity.")
 {
   setPrintable();
-}
-
-int int_type::compare(const result& a, const result& b) const
-{
-  if (a.isNormal() && b.isNormal()) {
-    return SIGN(a.getInt() - b.getInt());
-  }
-  if (a.isInfinity() && b.isInfinity()) {
-    // for purposes of sets, infinity = infinity
-    return SIGN(a.signInfinity() - b.signInfinity());
-  }
-  if (a.isInfinity()) {
-    return a.signInfinity();
-  }
-  if (b.isInfinity()) {
-    return -b.signInfinity();
-  }
-  // what else is left?
-  DCASSERT(0);
-  return 0;
 }
 
 bool int_type::print_normal(std::ostream &s, const result& r) const
@@ -170,9 +149,12 @@ void int_type::assign_normal(result& r, const char* s) const
   }
 }
 
-bool int_type::equals_normal(const result &x, const result &y) const
+int int_type::compare_normal(const result &x, const result &y) const
 {
-  return x.getInt() == y.getInt();
+    long cmp = x.getInt() - y.getInt();
+    if (cmp<0) return -1;
+    if (cmp>0) return  1;
+    return 0;
 }
 
 // ******************************************************************
@@ -184,14 +166,13 @@ bool int_type::equals_normal(const result &x, const result &y) const
 class real_type : public simple_type {
 public:
   real_type();
-  virtual int compare(const result& a, const result& b) const;
 protected:
   virtual bool print_normal(std::ostream &s, const result& r) const;
   virtual bool print_normal(std::ostream &s, const result& r, int w) const;
   virtual bool print_normal(std::ostream &s, const result& r, int w, int p) const;
   virtual void show_normal(std::ostream &s, const result& r) const;
   virtual void assign_normal(result& r, const char* s) const;
-  virtual bool equals_normal(const result &x, const result &y) const;
+  virtual int compare_normal(const result &x, const result &y) const;
 private:
   static double index_precision;
   static unsigned output_format;
@@ -210,29 +191,6 @@ real_type::real_type()
 : simple_type("real", "Floating-point real type", "Legal range is machine dependent, probably equivalent to a C 'double'.  Can also be infinity.")
 {
   setPrintable();
-}
-
-int real_type::compare(const result& a, const result& b) const
-{
-  if (a.isNormal() && b.isNormal()) {
-    double d = a.getReal() - b.getReal();
-    if (d < -index_precision)  return -1;
-    if (d > index_precision)  return 1;
-    return 0;
-  }
-  if (a.isInfinity() && b.isInfinity()) {
-    // for purposes of sets, infinity = infinity
-    return SIGN(a.signInfinity() - b.signInfinity());
-  }
-  if (a.isInfinity()) {
-    return a.signInfinity();
-  }
-  if (b.isInfinity()) {
-    return -b.signInfinity();
-  }
-  // what else is left?
-  DCASSERT(0);
-  return 0;
 }
 
 bool real_type::print_normal(std::ostream &s, const result& r) const
@@ -290,9 +248,12 @@ void real_type::assign_normal(result& r, const char* s) const
   if (foo[0])  r.setNull();   // bad string
 }
 
-bool real_type::equals_normal(const result &x, const result &y) const
+int real_type::compare_normal(const result &x, const result &y) const
 {
-  return x.getReal() == y.getReal();
+    double d = x.getReal() - y.getReal();
+    if (d < -index_precision)  return -1;
+    if (d > index_precision)  return 1;
+    return 0;
 }
 
 // ******************************************************************
