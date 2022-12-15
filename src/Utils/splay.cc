@@ -1,20 +1,19 @@
 
 #include "splay.h"
 
+unsigned* splayOfShared::stack = nullptr;
+unsigned  splayOfShared::stack_top = 0;
+unsigned  splayOfShared::stack_size = 0;
 
-unsigned* splay_void::stack = nullptr;
-unsigned  splay_void::stack_top = 0;
-unsigned  splay_void::stack_size = 0;
-
-splay_void::tree_traversal::tree_traversal()
+splayOfShared::tree_traversal::tree_traversal()
 {
 }
 
-splay_void::tree_traversal::~tree_traversal()
+splayOfShared::tree_traversal::~tree_traversal()
 {
 }
 
-splay_void::splay_void(unsigned l2t, unsigned t2l)
+splayOfShared::splayOfShared(unsigned l2t, unsigned t2l)
 {
     list2tree = l2t;
     tree2list = t2l;
@@ -25,14 +24,25 @@ splay_void::splay_void(unsigned l2t, unsigned t2l)
     is_list = (list2tree > 0);
 }
 
-splay_void::~splay_void()
+splayOfShared::~splayOfShared()
 {
     free(item);
     free(left);
     free(right);
 }
 
-void splay_void::traverse(tree_traversal &t)
+void splayOfShared::deleteAndClear()
+{
+    for (unsigned i=1; i<=last_element; i++) {
+        Delete(Item(i));
+        Item(i) = nullptr;
+    }
+    last_element = num_elements = 0;
+    free_list = root = 0;
+    is_list = (list2tree > 0);
+}
+
+void splayOfShared::traverse(tree_traversal &t)
 {
     if (!root) return;
     unsigned i = root;
@@ -62,21 +72,11 @@ void splay_void::traverse(tree_traversal &t)
     } // outer while
 }
 
-void splay_void::clear()
-{
-    for (unsigned i=1; i<=last_element; i++) {
-        Item(i) = nullptr;
-    }
-    last_element = num_elements = 0;
-    free_list = root = 0;
-    is_list = (list2tree > 0);
-}
-
 //
-// Protected methods
+// Private methods
 //
 
-void splay_void::Expand()
+void splayOfShared::Expand()
 {
     unsigned new_elements = 2*max_elements;
     if (new_elements > 1024) new_elements = max_elements + 1024;
@@ -91,7 +91,7 @@ void splay_void::Expand()
     max_elements = new_elements;
 }
 
-void splay_void::ConvertToTree()
+void splayOfShared::ConvertToTree()
 {
     unsigned i;
     for (i=Left(root); i; i=Left(i)) {
@@ -103,7 +103,7 @@ void splay_void::ConvertToTree()
     is_list = false;
 }
 
-void splay_void::ConvertToList()
+void splayOfShared::ConvertToList()
 {
     unsigned front = 0;
     StackClear();
@@ -130,7 +130,7 @@ void splay_void::ConvertToList()
     } // outer while
 }
 
-unsigned splay_void::newNode()
+unsigned splayOfShared::newNode()
 {
     unsigned ans;
     if (free_list) {
@@ -147,7 +147,7 @@ unsigned splay_void::newNode()
     return ans;
 }
 
-void splay_void::recycleNode(unsigned x)
+void splayOfShared::recycleNode(unsigned x)
 {
     DCASSERT(x);
 
@@ -167,14 +167,14 @@ void splay_void::recycleNode(unsigned x)
     --num_elements;
 }
 
-void splay_void::enlargeStack()
+void splayOfShared::enlargeStack()
 {
     stack_size += 256;
     stack = (unsigned*) realloc(stack, stack_size * sizeof(unsigned));
     DCASSERT(stack);
 }
 
-void splay_void::splay_reshape()
+void splayOfShared::splay_reshape()
 {
     unsigned child = Pop();
     unsigned parent = Pop();
@@ -204,7 +204,7 @@ void splay_void::splay_reshape()
 }
 
 
-void splay_void::insert_after_splay(void* item, int cmp)
+void splayOfShared::insert_after_splay(void* item, int cmp)
 {
     if (!root) {
         //
@@ -271,7 +271,7 @@ void splay_void::insert_after_splay(void* item, int cmp)
     root = newroot;
 }
 
-bool splay_void::remove_list_root()
+bool splayOfShared::remove_list_root()
 {
     //
     // Check if we've shrunk enough to convert back to a list
