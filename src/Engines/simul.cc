@@ -53,7 +53,6 @@ public:
   conf_intl(double hw, float cl);
 
   virtual bool Print(std::ostream &s, int prec) const;
-  virtual bool Equals(const shared_object *o) const;
 };
 
 conf_intl::conf_intl(double hw, float cl) : shared_object()
@@ -67,11 +66,6 @@ bool conf_intl::Print(std::ostream &s, int prec) const
   s << " +- " << formatted_real(half_width, 0, prec);
   s << " (" << conf_level*100 << "%)";
   return true;
-}
-
-bool conf_intl::Equals(const shared_object* o) const
-{
-  return (o == this);
 }
 
 // **************************************************************************

@@ -280,7 +280,6 @@ public:
   void Trash();
 
   virtual bool Print(std::ostream &s, int) const;
-  virtual bool Equals(const shared_object* o) const;
 };
 
 model_call_data::model_call_data(model_def* m, expr** p, int n)
@@ -319,12 +318,6 @@ bool model_call_data::Print(std::ostream &s, int) const
   return false;
 }
 
-bool model_call_data::Equals(const shared_object* o) const
-{
-  return (this == o);
-}
-
-
 /* =====================================================================
 
   Lists for associative arithmetic
@@ -341,7 +334,6 @@ public:
   virtual ~expr_term();
 
   virtual bool Print(std::ostream &s, int width) const;
-  virtual bool Equals(const shared_object* o) const;
 };
 
 expr_term::expr_term(int o, expr* t) : shared_object()
@@ -362,11 +354,6 @@ bool expr_term::Print(std::ostream &s, int) const
   else        s << "null";
   s << ")";
   return true;
-}
-
-bool expr_term::Equals(const shared_object* o) const
-{
-  return (this == o);
 }
 
 /* =====================================================================

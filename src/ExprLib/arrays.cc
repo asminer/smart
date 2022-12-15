@@ -67,7 +67,6 @@ struct array_desc : public shared_object {
   array_desc(shared_set *v);
   ~array_desc();
   virtual bool Print(std::ostream &s, int) const;
-  virtual bool Equals(const shared_object*) const;
 };
 
 // ******************************************************************
@@ -99,12 +98,6 @@ bool array_desc::Print(std::ostream &s, int) const
   DCASSERT(0);
   s << "array_desc";
   return true;
-}
-
-bool array_desc::Equals(const shared_object* o) const
-{
-  DCASSERT(0);
-  return false;
 }
 
 // ******************************************************************

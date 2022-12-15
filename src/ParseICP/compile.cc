@@ -168,7 +168,6 @@ public:
   virtual ~expr_term();
 
   virtual bool Print(std::ostream &s, int width) const;
-  virtual bool Equals(const shared_object* o) const;
 };
 
 expr_term::expr_term(int o, expr* t) : shared_object()
@@ -189,11 +188,6 @@ bool expr_term::Print(std::ostream &s, int) const
   else        s << "null";
   s << ")";
   return true;
-}
-
-bool expr_term::Equals(const shared_object* o) const
-{
-  return (this == o);
 }
 
 /* =====================================================================
