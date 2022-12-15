@@ -208,6 +208,21 @@ shared_object* splayOfShared::remove(shared_object* key)
 
 void splayOfShared::show(std::ostream &s) const
 {
+    if (is_list)    s << "Doubly-linked list\n";
+    else            s << "Splay tree\n";
+    s << "  root: " << root << "\n";
+    s << "  free: " << free_list << "\n";
+    s << "  nodes:\n";
+    s << "\t-------------------------------------------\n";
+    for (unsigned i=1; i<=last_element; i++) {
+        s << "\tnode # " << i << "\n";
+        s << "\titem : ";
+        items[i]->Print(s, 0);
+        s << "\n";
+        s << "\tleft : " << left[i] << "\n";
+        s << "\tright: " << right[i] << "\n";
+        s << "\t-------------------------------------------\n";
+    }
 }
 
 //
