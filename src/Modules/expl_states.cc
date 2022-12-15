@@ -29,12 +29,6 @@ bool substate_colls::Print(std::ostream &, int) const
   return false;
 }
 
-bool substate_colls::Equals(const shared_object* o) const
-{
-  // lazy
-  return (o==this);
-}
-
 // **************************************************************************
 // *                                                                        *
 // *                          separate_colls class                          *

@@ -445,6 +445,12 @@ public:
   */
   virtual double GetInitialState(int n, shared_state* s) const = 0;
 
+  virtual int Compare(const shared_object* o) const {
+      return hldsm::Compare(o);
+  }
+  virtual int Compare(const char* x) const {
+      return hldsm::Compare(x);
+  }
 
   // Used for ordering events.
   inline int Compare(long i, long j) const {

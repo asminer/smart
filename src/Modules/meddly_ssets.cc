@@ -184,22 +184,26 @@ bool meddly_stateset::Print(std::ostream &s, int) const
   return true;
 }
 
-bool meddly_stateset::Equals(const shared_object *o) const
+int meddly_stateset::Compare(const shared_object *o) const
 {
-  const meddly_stateset* ms = dynamic_cast <const meddly_stateset*> (o);
-  if (0==ms) return false;
+    const meddly_stateset* ms = dynamic_cast <const meddly_stateset*> (o);
+    DCASSERT(ms);
 
-  DCASSERT(vars);
-  if (!vars->Equals(ms->vars)) return false;
+    DCASSERT(vars);
+    int cmp = vars->Compare(ms->vars);
+    if (cmp) return cmp;
 
-  DCASSERT(mdd_wrap);
-  if (!mdd_wrap->Equals(ms->mdd_wrap)) return false;
+    DCASSERT(mdd_wrap);
+    cmp = mdd_wrap->Compare(ms->mdd_wrap);
+    if (cmp) return cmp;
 
-  if (states) {
-    return states->Equals(ms->states);
-  } else {
-    return 0==ms->states;
-  }
+    if (states) {
+        return states->Compare(ms->states);
+    }
+    if (ms->states) {
+        return - ms->states->Compare(states);
+    }
+    return 0;
 }
 
 shared_state* meddly_stateset::getSingleState() const

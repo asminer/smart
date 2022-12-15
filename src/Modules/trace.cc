@@ -108,12 +108,6 @@ bool trace::Print(std::ostream &s, int width) const
   return true;
 }
 
-bool trace::Equals(const shared_object *o) const
-{
-  DCASSERT(0);
-  return false;
-}
-
 // ******************************************************************
 // *                                                                *
 // *                       trace_data  class                        *
@@ -128,12 +122,6 @@ bool trace_data::Print(std::ostream &s, int width) const
 {
   // TODO: To be implemented
   return true;
-}
-
-bool trace_data::Equals(const shared_object *o) const
-{
-  DCASSERT(0);
-  return false;
 }
 
 // ******************************************************************

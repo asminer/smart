@@ -84,7 +84,6 @@ public:
   // required for shared objects
 
   virtual bool Print(std::ostream &, int) const;
-  virtual bool Equals(const shared_object*) const;
 };
 
 

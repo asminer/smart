@@ -125,7 +125,7 @@ public:
 
   // required for shared_object
   virtual bool Print(std::ostream &s, int width=0) const;
-  virtual bool Equals(const shared_object *o) const;
+  virtual int Compare(const shared_object *o) const;
 
   // for conversions to explicit statesets
 

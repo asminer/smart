@@ -342,19 +342,19 @@ bool statevect::Print(std::ostream &s, int width) const
   return true;
 }
 
-bool statevect::Equals(const shared_object *o) const
+int statevect::Compare(const shared_object *o) const
 {
-  const statevect* b = dynamic_cast <const statevect*> (o);
-  if (0==b) return false;
-  if (parent != b->parent) return false;  // TBD: may want to allow this
+    const statevect* b = dynamic_cast <const statevect*> (o);
+    DCASSERT(b);
+    DCASSERT(parent == b->parent);
+    DCASSERT(vectsize == b->vectsize);
 
-  DCASSERT(vectsize == b->vectsize);
-
-  for (long i=0; i<vectsize; i++) {
-    if (vect[i] != b->vect[i]) return false;
-    // TBD - check within epsilon?
-  }
-  return true;
+    for (long i=0; i<vectsize; i++) {
+        if (vect[i] < b->vect[i]) return -1;
+        if (vect[i] > b->vect[i]) return +1;
+        // TBD - check within epsilon?
+    }
+    return 0;
 }
 
 void statevect::greater_than(double v, intset* I) const

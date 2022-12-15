@@ -20,36 +20,6 @@
 
 // ******************************************************************
 // *                                                                *
-// *                       smart_output class                       *
-// *                                                                *
-// ******************************************************************
-
-/**
-    This little widget allows us to use our own I/O stuff
-    natively inside Meddly.
-*/
-/*
-class smart_output : public MEDDLY::output {
-  public:
-    smart_output(OutputStream &DS);
-    virtual ~smart_output();
-    virtual void put(char x);
-    virtual void put(const char* x, int w);
-    virtual void put(long x, int w);
-    virtual void put(unsigned long x, int w);
-    virtual void put_hex(unsigned long x, int w);
-    virtual void put(double x, int w, int p, char f);
-    virtual size_t write(size_t bytes, const unsigned char* buffer);
-    virtual void flush();
-
-  private:
-    OutputStream &ds;
-};
-*/
-
-
-// ******************************************************************
-// *                                                                *
 // *                      shared_domain  class                      *
 // *                                                                *
 // ******************************************************************
@@ -68,7 +38,7 @@ class shared_domain : public shared_object {
     virtual ~shared_domain();
   public:
     virtual bool Print(std::ostream &s, int) const;
-    virtual bool Equals(const shared_object* x) const;
+    virtual int Compare(const shared_object* o) const;
 
     // handy methods
     inline int getNumLevels() const {
@@ -112,7 +82,7 @@ protected:
   virtual ~shared_ddedge();
 public:
   virtual bool Print(std::ostream &s, int) const;
-  virtual bool Equals(const shared_object* x) const;
+  virtual int Compare(const shared_object* o) const;
 
   inline MEDDLY::forest* getForest() const {
     return E.getForest();

@@ -46,7 +46,6 @@ public:
   virtual const trace* getSubtrace(int i) const;
 
   virtual bool Print(std::ostream &s, int width) const;
-  virtual bool Equals(const shared_object *o) const;
 
 private:
   static exprman* em;
@@ -66,7 +65,6 @@ public:
   trace_data();
 
   virtual bool Print(std::ostream &s, int width) const;
-  virtual bool Equals(const shared_object *o) const;
 };
 
 #endif

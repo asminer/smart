@@ -16,83 +16,6 @@
 
 // ******************************************************************
 // *                                                                *
-// *                      smart_output methods                      *
-// *                                                                *
-// ******************************************************************
-
-/*
-smart_output::smart_output(OutputStream &DS) : output(), ds(DS)
-{
-}
-
-smart_output::~smart_output()
-{
-}
-
-void smart_output::put(char x)
-{
-  ds.Put(x);
-}
-
-void smart_output::put(const char* x, int w)
-{
-  ds.Put(x, w);
-}
-
-void smart_output::put(long x, int w)
-{
-  ds.Put(x, w);
-}
-
-void smart_output::put(unsigned long x, int w)
-{
-  ds.Put(x, w);
-}
-
-void smart_output::put_hex(unsigned long x, int w)
-{
-  ds.PutHex(x); // width?
-}
-
-void smart_output::put(double x, int w, int p, char f)
-{
-  OutputStream::real_format old_rf = ds.GetRealFormat();
-
-  switch (f) {
-    case 'e':
-        ds.SetRealFormat(OutputStream::RF_SCIENTIFIC);
-        break;
-
-    case 'f':
-        ds.SetRealFormat(OutputStream::RF_FIXED);
-        break;
-
-    default:
-        ds.SetRealFormat(OutputStream::RF_GENERAL);
-        break;
-  };
-  ds.Put(x, w, p);
-
-  ds.SetRealFormat(old_rf);
-}
-
-size_t smart_output::write(size_t bytes, const unsigned char* buffer)
-{
-  // hmm.
-  for (int i=0; i<bytes; i++) {
-    ds.Put(buffer[i]);
-  }
-  return bytes; // everything will work!  no worries, right?
-}
-
-void smart_output::flush()
-{
-  ds.flush();
-}
-*/
-
-// ******************************************************************
-// *                                                                *
 // *                     shared_domain  methods                     *
 // *                                                                *
 // ******************************************************************
@@ -118,11 +41,11 @@ bool shared_domain::Print(std::ostream &s, int) const
   return true;
 }
 
-bool shared_domain::Equals(const shared_object* x) const
+int shared_domain::Compare(const shared_object* x) const
 {
   const shared_domain* foo = dynamic_cast <const shared_domain*> (x);
-  if (0==foo) return false;
-  return D == foo->D;
+  DCASSERT(foo);
+  return D - foo->D;
 }
 
 
@@ -213,11 +136,14 @@ bool shared_ddedge::Print(std::ostream &s, int) const
   return true;
 }
 
-bool shared_ddedge::Equals(const shared_object* x) const
+int shared_ddedge::Compare(const shared_object* x) const
 {
   const shared_ddedge* foo = dynamic_cast <const shared_ddedge*> (x);
-  if (0==foo) return false;
-  return E == foo->E;
+  DCASSERT(foo);
+
+  int cmp = E.getForest() - foo->E.getForest();
+  if (cmp) return cmp;
+  return E.getNode() - foo->E.getNode();
 }
 
 void shared_ddedge::startIterator()
