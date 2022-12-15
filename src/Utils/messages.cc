@@ -1,6 +1,8 @@
 
 #include "messages.h"
 
+// TBD: move options out!
+// transform initialize into a (friend?) function
 #include "../Options/optman.h"
 #include "../Options/options.h"
 
