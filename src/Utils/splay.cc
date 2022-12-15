@@ -72,6 +72,20 @@ void splayOfShared::traverse(tree_traversal &t)
     } // outer while
 }
 
+shared_object* splayOfShared::insert(shared_object* key)
+{
+    // TBD
+}
+
+shared_object* splayOfShared::remove(shared_object* key)
+{
+    // TBD
+}
+
+void splayOfShared::show(std::ostream &s) const
+{
+}
+
 //
 // Private methods
 //
@@ -174,15 +188,62 @@ void splayOfShared::enlargeStack()
     DCASSERT(stack);
 }
 
-void splayOfShared::splay_reshape()
+int splayOfShared::splay(const shared_object* key)
 {
-    unsigned child = Pop();
+    if (!root) return -1;   // empty tree
+    int cmp;
+    if (is_list) {
+        //
+        // Doubly-linked list.
+        // Move root pointer to correct spot in the list.
+        //
+        cmp = Item(root)->Compare(key);
+        if (0==cmp) return 0;  // key is already at the root.
+        if (cmp > 0) {
+            // traverse to the left
+            while (Left(root)) {
+                root = Left(root);
+                cmp = Item(root)->Compare(key);
+                if (cmp <= 0) return cmp;
+            } // while
+            return cmp;
+        } else {
+            // traverse to the right
+            while (Right(root)) {
+                root = Right(root);
+                cmp = Item(root)->Compare(key);
+                if (cmp >= 0) return cmp;
+            } // while
+            return cmp;
+        }
+        DCASSERT(0);
+    }
+    //
+    // Must be a splay tree.
+    // Trace the search path to the key or leaf.
+    //
+    unsigned child = root;
+    StackClear();
+    while (child) {
+        Push(child);
+        cmp = Item(child)->Compare(key);
+        if (0==cmp)   break;
+        if (cmp > 0)  child = Left(child);
+        else          child = Right(child);
+    } // while child
+    //
+    // Now, re-shape the tree in a series of rotations,
+    // that will bring the last node in our search
+    // (match or not) to the root of the tree.
+    //
+    child = Pop();
     unsigned parent = Pop();
     unsigned grandp = Pop();
     unsigned greatgp = Pop();
     while (parent) {
         // splay step
         if (!grandp) {
+            // we're one level away
             TreeRotate(child, parent, grandp);
             break;
         }
@@ -195,12 +256,13 @@ void splayOfShared::splay_reshape()
             TreeRotate(child, parent, grandp);
             TreeRotate(child, grandp, greatgp);
         }
-        // continue
+        // continue up the tree
         parent = greatgp;
         grandp = Pop();
         greatgp = Pop();
     } // while parent
     root = child;
+    return cmp;
 }
 
 
