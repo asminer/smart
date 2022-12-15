@@ -35,4 +35,10 @@ class shared_string : public shared_object {
         virtual int Compare(const char* x) const;
 };
 
+inline std::ostream& operator<< (std::ostream& s, const shared_string &x)
+{
+    x.Print(s);
+    return s;
+}
+
 #endif

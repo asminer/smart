@@ -217,10 +217,10 @@ void splayOfShared::show(std::ostream &s) const
     for (unsigned i=1; i<=last_element; i++) {
         s << "\tnode # " << i << "\n";
         s << "\titem : ";
-        item[i]->Print(s, 0);
+        Item(i)->Print(s, 0);
         s << "\n";
-        s << "\tleft : " << left[i] << "\n";
-        s << "\tright: " << right[i] << "\n";
+        s << "\tleft : " << Left(i) << "\n";
+        s << "\tright: " << Right(i) << "\n";
         s << "\t-------------------------------------------\n";
     }
 }

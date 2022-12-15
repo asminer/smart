@@ -38,20 +38,19 @@ int main()
 
   dict.show(cout);
 
-  /*
   cout << "Copying to array of strings\n";
   cout.flush();
 
-  long length = dict.NumElements();
-  myitem** sorted = new myitem* [length];
+  unsigned length = dict.numElements();
+  shared_string** sorted = new shared_string* [length];
 
-  dict.CopyToArray(sorted);
+  copy_traversal <shared_string> copy(sorted, length);
+  dict.traverse(copy);
 
   cout << "Sorted list of words:\n";
-  for (long i=0; i<length; i++) {
-    cout << "\t" << sorted[i]->Word() << "\n";
+  for (unsigned i=0; i<length; i++) {
+    cout << "\t" << *sorted[i] << "\n";
   }
-  */
 
   cout << "Done\n";
   cout.flush();

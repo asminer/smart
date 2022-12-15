@@ -6,7 +6,7 @@ SUBDIRS = _LSLib _RngLib _SimLib _IntSets _StateLib _GraphLib _MCLib _Meddly
 
 
 ## List executables that we build
-bin_PROGRAMS = smart icp testsplay test_init lextest
+bin_PROGRAMS = smart icp lextest
 
 
 BUILT_SOURCES = \
@@ -258,32 +258,6 @@ icp_SOURCES = \
 
 icp_LDADD = _Meddly/src/libmeddly.la
 
-
-## ============================================================
-##
-## testsplay
-##
-## ============================================================
-
-testsplay_SOURCES = \
-  TestApps/testsplay.cc \
-  Utils/strings.cc \
-  Utils/location.cc
-
-## ============================================================
-##
-## test_init
-##
-## ============================================================
-
-test_init_SOURCES = \
-  Utils/test_init.cc \
-  Utils/initializer.cc \
-  Utils/messages.cc \
-  Utils/outstream.cc \
-  Utils/location.cc \
-  Utils/strings.cc \
-  Utils/sigman.cc
 
 ## ============================================================
 ##

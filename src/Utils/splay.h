@@ -218,4 +218,21 @@ class splayOfShared {
         bool is_list;
 };
 
+template <class SHARED>
+class copy_traversal : public splayOfShared::tree_traversal {
+        SHARED** array;
+        unsigned length;
+        unsigned slot;
+    public:
+        copy_traversal(SHARED** a, unsigned len) {
+            array = a;
+            length = len;
+            slot = 0;
+        }
+        virtual void visit(shared_object* item) {
+            DCASSERT(slot < length);
+            array[slot++] = dynamic_cast <SHARED*> (item);
+        }
+};
+
 #endif
