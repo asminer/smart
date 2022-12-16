@@ -24,8 +24,7 @@ option::error int_opt::SetValue(long b)
 
 void int_opt::ShowHeader(std::ostream &s) const
 {
-    Print(s);
-    s << " " << value;
+    s << *this << " " << value;
 }
 
 void int_opt::ShowRange(doc_formatter &df) const

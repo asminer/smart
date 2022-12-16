@@ -98,8 +98,7 @@ void radio_opt::Finish()
 
 void radio_opt::ShowHeader(std::ostream &s) const
 {
-    Print(s);
-    s << ' ' << possible[which]->Name();
+    s << *this << ' ' << possible[which]->Name();
 }
 
 void radio_opt::ShowRange(doc_formatter &df) const

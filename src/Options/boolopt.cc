@@ -21,8 +21,7 @@ option::error bool_opt::SetValue(bool b)
 
 void bool_opt::ShowHeader(std::ostream &s) const
 {
-    Print(s);
-    s << " " << value;
+    s << *this << " " << value;
 }
 
 void bool_opt::ShowRange(doc_formatter &df) const

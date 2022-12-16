@@ -141,7 +141,7 @@ engine::~engine()
 {
   // Is this ever called?
   delete[] children;
-  delete options;
+  Delete(options);
 }
 
 void engine::AddSubEngine(subengine* child)

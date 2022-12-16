@@ -47,8 +47,7 @@ option::error real_opt::SetValue(double b)
 
 void real_opt::ShowHeader(std::ostream &s) const
 {
-    Print(s);
-    s << " " << value;
+    s << *this << ' ' << value;
 }
 
 void real_opt::ShowRange(doc_formatter &df) const

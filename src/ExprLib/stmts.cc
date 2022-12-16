@@ -134,11 +134,7 @@ optassign_val::~optassign_val()
 
 bool optassign_val::Print(std::ostream &s, int w) const
 {
-    s << padding(w);
-    opt->show(s);
-    s << ' ';
-    val->Print(s);
-    s << '\n';
+    s << padding(w) << *opt << ' ' << *val << '\n';
     return true;
 }
 
@@ -190,9 +186,7 @@ void optassign_val::Compute(traverse_data &td)
         W << "Value ";
         DCASSERT(val->Type());
         val->Type()->print(W.stream(), foo);
-        W << " out of range for option ";
-        opt->show(W.stream());
-        W << ", ignoring";
+        W << " out of range for option " << *opt << ", ignoring";
         break;
     }
 
@@ -242,11 +236,7 @@ optassign_id::~optassign_id()
 
 bool optassign_id::Print(std::ostream &s, int w) const
 {
-    s << padding(w);
-    opt->show(s);
-    s << ' ';
-    val->show(s);
-    s << '\n';
+    s << padding(w) << *opt << ' ' << *val << '\n';
     return true;
 }
 
@@ -263,11 +253,8 @@ void optassign_id::Compute(traverse_data &td)
 
     case option::RangeError: {
         unnamed_warning W(Where());
-        W << "Illegal value ";
-        val->show(W.stream());
-        W << " for option ";
-        opt->show(W.stream());
-        W << ", ignoring";
+        W << "Illegal value " << *val << " for option ";
+        W << *opt << ", ignoring";
         break;
     }
 
@@ -321,13 +308,9 @@ opt_checker::~opt_checker()
 
 bool opt_checker::Print(std::ostream &s, int w) const
 {
-    s << padding(w);
-    opt->show(s);
-    s << (check ? "+ " : "- ");
-    vals[0]->show(s);
+    s << padding(w) << *opt << (check ? "+ " : "- ") << *vals[0];
     for (int i=1; i<numvals; i++) {
-        s << ", ";
-        vals[i]->show(s);
+        s << ", " << *vals[i];
     }
     s << std::endl;
     return true;
@@ -381,9 +364,7 @@ expr* exprman::makeOptionStatement(const location &W,
   if (0==ot) {
     // we have a selection-type option, trying to plug a value.
     typechecking_error E(W);
-    E << "Option ";
-    o->show(E.stream());
-    E << " is a selction-type option";
+    E << "Option " << *o << " is a selction-type option";
     Delete(e);
     return makeError();
   }
@@ -392,9 +373,7 @@ expr* exprman::makeOptionStatement(const location &W,
   DCASSERT(et);
   if (!isPromotable(et, ot)) {
       typechecking_error E(W);
-      E << "Option ";
-      o->show(E.stream());
-      E << " expects type " << ot->getName();
+      E << "Option " << *o << " expects type " << ot->getName();
       return makeError();
   }
 
@@ -412,9 +391,7 @@ expr* exprman::makeOptionStatement(const location &W,
     // check option type
     if (option::RadioButton != o->Type()) {
         typechecking_error E(W);
-        E << "Option ";
-        o->show(E.stream());
-        E << " is not a selection-type option";
+        E << "Option " << *o << " is not a selection-type option";
         return makeError();
     }
 
@@ -422,10 +399,7 @@ expr* exprman::makeOptionStatement(const location &W,
     if (v != o->FindConstant(v->Name())) {
         // We can only get here if the caller is foobar.
         typechecking_error E(W);
-        E << "Option ";
-        o->show(E.stream());
-        E << " cannot be set to ";
-        v->show(E.stream());
+        E << "Option " << *o << " cannot be set to " << *v;
         return makeError();
     }
 
@@ -447,9 +421,7 @@ expr* exprman::makeOptionStatement(const location &W,
     // check option type
     if (option::Checklist != o->Type()) {
         typechecking_error E(W);
-        E << "Option ";
-        o->show(E.stream());
-        E << " is not a checklist-type option";
+        E << "Option " << *o << " is not a checklist-type option";
         return makeError();
     }
 

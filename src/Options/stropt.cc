@@ -24,8 +24,7 @@ option::error string_opt::SetValue(shared_string* v)
 
 void string_opt::ShowHeader(std::ostream &s) const
 {
-    Print(s);
-    s << ' ';
+    s << *this << ' ';
     if (value) s << '"' << value->getStr() << '"';
     else s << "null";
 }
