@@ -168,19 +168,23 @@ void converge_var::Compute(traverse_data &x)
 /** Abstract base class for statements appearing within a converge block.
 */
 class fixpoint_stmt : public expr {
-  static double precision;
-  static unsigned relative;
-  static bool use_current;
-public:
-  fixpoint_stmt(const location &W);
+    protected:
+        static debugging_msg converge_debug;
+    private:
+        static double precision;
+        static unsigned relative;
+        static bool use_current;
+        static inline void init(shared_object* o, const char* doc) {
+            message_initializer::exec(converge_debug, doc, o);
+        }
+    public:
+        fixpoint_stmt(const location &W);
 
-  inline double GetPrecision() const { return precision; }
-  inline bool RelativePrecision() const { return relative; }
-  inline bool UseCurrent() const { return use_current; }
+        inline double GetPrecision() const { return precision; }
+        inline bool RelativePrecision() const { return relative; }
+        inline bool UseCurrent() const { return use_current; }
 
-  friend class converge_initializer;
-public:
-  static debugging_msg converge_debug;
+        friend class converge_initializer;
 };
 
 debugging_msg fixpoint_stmt::converge_debug("converges");
@@ -780,16 +784,22 @@ class converge_initializer : public initializer {
 };
 
 converge_initializer::converge_initializer()
-    : initializer("converge.cc", 1, 1)
+    : initializer("converge.cc", 1, 2)
 {
     builds_resource(0, "converge.cc");
     needs_resource(1, "OM");
+    needs_resource(2, fixpoint_stmt::converge_debug.optName());
 }
 
 void converge_initializer::execute()
 {
     option_manager* OM = dynamic_cast <option_manager*> (get_object(1));
     if (!OM) return;
+
+    fixpoint_stmt::init(
+        get_object(2),
+        "Use to view the sequence of assignments during the execution of a converge statement."
+    );
 
     converge_stmt::max_iters = 1000;
     OM->addIntOption("MaxConvergeIters",
@@ -821,9 +831,4 @@ void converge_initializer::execute()
 
 
 static converge_initializer _the_converge_init;
-
-static message_initializer _conv_debug(fixpoint_stmt::converge_debug,
-    "Use to view the sequence of assignments during the execution of a converge statement."
-);
-
 

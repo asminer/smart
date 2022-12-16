@@ -108,12 +108,12 @@ static checklist_initializer _warning_init(
 // **********************************************************************
 
 checklistgroup_initializer::checklistgroup_initializer(const char* main,
-    const char* name, const char* doc, unsigned ni)
+    unsigned ni, const char* name, const char* doc)
     : initializer("checklistgroup_initializer", 1, 1)
 {
+    gitems = ni;
     gname = name;
     gdoc = doc;
-    gitems = ni;
 
     builds_resource(0, gname);
     needs_resource(1, main);
@@ -121,11 +121,17 @@ checklistgroup_initializer::checklistgroup_initializer(const char* main,
 
 void checklistgroup_initializer::execute()
 {
-    option* main = dynamic_cast <option*> (get_object(1));
+    shared_object* obj = exec(get_object(1), gitems, gname, gdoc);
+    DCASSERT(obj);
+    set_object(0, obj);
+}
 
-    if (0==main) return;      // Error out here?
-
-    set_object(0, main->addChecklistGroup(gname, gdoc, gitems));
+shared_object* checklistgroup_initializer::exec(shared_object* _main,
+    unsigned items, const char* name, const char* doc)
+{
+    option* main = dynamic_cast <option*> (_main);
+    if (!main) return nullptr;
+    return main->addChecklistGroup(name, doc, items);
 }
 
 // **********************************************************************
@@ -155,10 +161,17 @@ message_initializer::message_initializer(switchable_msg &m,
 
 void message_initializer::execute()
 {
-    option* opt = dynamic_cast<option*> (get_object(1));
-    DCASSERT(opt);
-    checklist_enum* grp = dynamic_cast<checklist_enum*> (get_object(2));
-    // grp may be null, that's ok
-    set_object(0, opt->addChecklistItem(grp, msg.getName(), doc, msg.Active()));
+    shared_object* obj = exec(msg, doc, get_object(1), get_object(2));
+    DCASSERT(obj);
+    set_object(0, obj);
 }
 
+shared_object* message_initializer::exec(switchable_msg &msg,
+        const char* doc, shared_object* _opt, shared_object* _grp)
+{
+    option* opt = dynamic_cast<option*> (_opt);
+    if (!opt) return nullptr;
+    checklist_enum* grp = dynamic_cast<checklist_enum*> (_grp);
+    // No problem if grp is null
+    return opt->addChecklistItem(grp, msg.getName(), doc, msg.Active());
+}

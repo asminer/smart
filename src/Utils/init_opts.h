@@ -14,14 +14,20 @@ class checklistgroup_initializer : public initializer {
     public:
         /** Initialize a checklist group.
                 @param  main    Main checklist option name, e.g., "Warning"
+                @param  ni      Max number of items in the group
                 @param  name    Group name, e.g., "pn_ALL"
                 @param  doc     Group documentation
-                @param  ni      Max number of items in the group
         */
-        checklistgroup_initializer(const char* main, const char* name,
-                const char* doc, unsigned ni);
+        checklistgroup_initializer(const char* main, unsigned ni,
+                const char* name, const char* doc);
     protected:
         virtual void execute();
+    public:
+        // This is what execute() does,
+        // but a parameterized version in case we can't use
+        // this object directly.
+        static shared_object* exec(shared_object* main, unsigned items,
+                const char* name, const char* doc);
 };
 
 
@@ -46,6 +52,12 @@ class message_initializer : public initializer {
         message_initializer(switchable_msg &m, const char* doc);
     protected:
         virtual void execute();
+    public:
+        // This is what execute() does,
+        // but a parameterized version in case we can't use
+        // this object directly.
+        static shared_object* exec(switchable_msg &msg, const char* doc,
+                shared_object* option, shared_object* group = nullptr);
 };
 
 #endif
