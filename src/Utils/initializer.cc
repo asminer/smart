@@ -482,7 +482,6 @@ void initializer::show(error_msg &E) const
         E << res_list[i]->name;
         E.newLine();
     }
-    E << "====================";
     E.newLine('-');
 }
 
