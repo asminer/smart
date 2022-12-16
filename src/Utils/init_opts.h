@@ -56,12 +56,15 @@ class message_initializer : public initializer {
                 const char* name, const char* doc);
     protected:
         virtual void execute();
-    public:
-        // This is what execute() does,
-        // but a parameterized version in case we can't use
-        // this object directly.
-        static shared_object* exec(switchable_msg &msg, const char* doc,
-                shared_object* option, shared_object* group = nullptr);
 };
+
+/**
+    Initialize a switchable message,
+    and build and return a checklist item for it.
+
+    Called by message_initializer::execute().
+*/
+shared_object* initialize(switchable_msg &msg, const char* name,
+        const char* doc, shared_object* option, shared_object* group = nullptr);
 
 #endif

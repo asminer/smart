@@ -165,17 +165,20 @@ message_initializer::message_initializer(switchable_msg &m,
 
 void message_initializer::execute()
 {
-    shared_object* obj = exec(msg, doc, get_object(1), get_object(2));
+    shared_object* obj =
+        initialize(msg, nullptr, doc, get_object(1), get_object(2));
     DCASSERT(obj);
     set_object(0, obj);
 }
 
-shared_object* message_initializer::exec(switchable_msg &msg,
+shared_object* initialize(switchable_msg &msg, const char* name,
         const char* doc, shared_object* _opt, shared_object* _grp)
 {
+    if (name) msg.setName(name);
     option* opt = dynamic_cast<option*> (_opt);
     if (!opt) return nullptr;
     checklist_enum* grp = dynamic_cast<checklist_enum*> (_grp);
     // No problem if grp is null
     return opt->addChecklistItem(grp, msg.getName(), doc, msg.Active());
 }
+

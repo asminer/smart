@@ -177,8 +177,7 @@ class fixpoint_stmt : public expr {
         static inline void init(shared_object* o,
                 const char* name, const char* doc)
         {
-            converge_debug.setName(name);
-            message_initializer::exec(converge_debug, doc, o);
+            initialize(converge_debug, name, doc, o);
         }
     public:
         fixpoint_stmt(const location &W);
