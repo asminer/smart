@@ -2,7 +2,8 @@
 #include "evm_form.h"
 #include "../Options/options.h"
 #include "../Options/optman.h"
-#include "../ExprLib/startup.h"
+#include "../Utils/init_opts.h"
+
 #include "../ExprLib/exprman.h"
 #include "../ExprLib/formalism.h"
 #include "../ExprLib/casting.h"
@@ -1223,23 +1224,28 @@ void evm_assert::Compute(traverse_data &x, expr** pass, int np)
 // *                                                                *
 // ******************************************************************
 
-class init_evmform : public startup {
-  public:
-    init_evmform();
-    virtual bool execute();
+class init_evmform : public initializer {
+    public:
+        init_evmform();
+    protected:
+        virtual void execute();
 };
 init_evmform the_evmform_startup;
 
-init_evmform::init_evmform() : startup("init_evmform")
+init_evmform::init_evmform() : initializer("evm_form.cc", 1, 5)
 {
-  usesResource("em");
-  usesResource("CML");
-  buildsResource("formalisms");
+    builds_resource(0, "evm_form.cc");
+    needs_resource(1, "OM");
+    needs_resource(2, "Warning");
+    needs_resource(3, "Debug");
+    // Not sure about these
+    needs_resource(4, "em");     // for types
+    needs_resource(5, "CML");    // common measures
 }
 
-bool init_evmform::execute()
+void init_evmform::execute()
 {
-  if (0==em) return false;
+    DCASSERT(em);
 
   // set up and register intvar types
   simple_type* t_intvar  = new void_type("intvar", "Integer variable", "Integer variable for a generic event-variable model.");
@@ -1289,69 +1295,85 @@ bool init_evmform::execute()
   evm->setFunctions(evmsyms);
   evm->addCommonFuncs(CML);
 
-
-  // Set up options
-  evm_def::evm_debug.initialize(em->OptMan(), "evms",
-    "When set, diagnostic messages are displayed regarding evm (event & variable model) construction."
-  );
-
-  option* warning = em->findOption("Warning");
-  checklist_enum* evmwarnings = warning ? warning->addChecklistGroup(
-    "evm_ALL", "Group of all evm warnings", 8
-  ) : 0;
-
-  evm_def::no_event.initialize(em->OptMan(), evmwarnings, "evm_no_event",
-    "For absence of events in event & variable models"
-  );
-  evm_def::no_vars.initialize(em->OptMan(), evmwarnings, "evm_no_vars",
-    "For absence of variables in event & variable models"
-  );
-  evm_def::no_part.initialize(em->OptMan(), evmwarnings, "evm_no_part",
-    "If some, but not all, variables are assiged to groups using partition"
-  );
-  evm_def::dup_part.initialize(em->OptMan(), evmwarnings, "evm_dup_part",
-    "For multiple partition definitions for a variable"
-  );
-  evm_def::dup_range.initialize(em->OptMan(), evmwarnings, "evm_dup_range",
-    "For duplicate variable ranges in event & variable models"
-  );
-  evm_def::dup_assign.initialize(em->OptMan(), evmwarnings, "evm_dup_assign",
-    "For multiple assignments on the same variable and event in event & variable models"
-  );
-  evm_def::dup_init.initialize(em->OptMan(), evmwarnings, "evm_dup_init",
-    "For multiple calls to init for the same variable in event & variable models"
-  );
-  evm_def::dup_hide.initialize(em->OptMan(), evmwarnings, "evm_dup_hide",
-    "For multiple calls to hide for the same variable in event & variable models"
-  );
-
-  if (em->OptMan()) {
-    option* sty = em->OptMan()->addRadioOption("EVMStateStyle",
-        "How to display a state in an event & variable model",
-        4, evm_hlm::StateStyle
+    //
+    // Set up options
+    //
+    initialize_msg(evm_def::evm_debug,
+        "evms",
+        "When set, diagnostic messages are displayed regarding evm (event & variable model) construction.",
+        get_object(3, "Debug")
     );
-    sty->addRadioButton(
-        "INDEXED",
-        "Format is [v1:1, v2:0, v3:2, v4:0, v5:0, v6:1]",
-        evm_hlm::INDEXED
+    shared_object* evmwarnings = initialize_group(
+        get_object(2, "Warning"), 8,
+        "evm_ALL", "Group of all evm warnings"
     );
-    sty->addRadioButton(
-        "SAFE",
-        "Format is [v1, v3:2, v6]",
-        evm_hlm::SAFE
+    initialize_msg(evm_def::no_event,
+        "evm_no_event",
+        "For absence of events in event & variable models",
+        get_object(2, "Warning"), evmwarnings
     );
-    sty->addRadioButton(
-        "SPARSE",
-        "Format is [v1:1, v3:2, v6:1]",
-        evm_hlm::SPARSE
+    initialize_msg(evm_def::no_vars,
+        "evm_no_vars",
+        "For absence of variables in event & variable models",
+        get_object(2, "Warning"), evmwarnings
     );
-    sty->addRadioButton(
-        "VECTOR",
-        "Format is [1, 0, 2, 0, 0, 1]",
-        evm_hlm::VECTOR
+    initialize_msg(evm_def::no_part,
+        "evm_no_part",
+        "If some, but not all, variables are assiged to groups using partition",
+        get_object(2, "Warning"), evmwarnings
     );
-  }
-  evm_hlm::StateStyle = evm_hlm::SPARSE;
+    initialize_msg(evm_def::dup_part,
+        "evm_dup_part",
+        "For multiple partition definitions for a variable",
+        get_object(2, "Warning"), evmwarnings
+    );
+    initialize_msg(evm_def::dup_range,
+        "evm_dup_range",
+        "For duplicate variable ranges in event & variable models",
+        get_object(2, "Warning"), evmwarnings
+    );
+    initialize_msg(evm_def::dup_assign,
+        "evm_dup_assign",
+        "For multiple assignments on the same variable and event in event & variable models",
+        get_object(2, "Warning"), evmwarnings
+    );
+    initialize_msg(evm_def::dup_init,
+        "evm_dup_init",
+        "For multiple calls to init for the same variable in event & variable models",
+        get_object(2, "Warning"), evmwarnings
+    );
+    initialize_msg(evm_def::dup_hide,
+        "evm_dup_hide",
+        "For multiple calls to hide for the same variable in event & variable models",
+        get_object(2, "Warning"), evmwarnings
+    );
 
-  return true;
+    option_manager* om = dynamic_cast<option_manager*> (get_object(1, "OM"));
+    if (om) {
+        option* sty = om->addRadioOption("EVMStateStyle",
+            "How to display a state in an event & variable model",
+            4, evm_hlm::StateStyle
+        );
+        sty->addRadioButton(
+            "INDEXED",
+            "Format is [v1:1, v2:0, v3:2, v4:0, v5:0, v6:1]",
+            evm_hlm::INDEXED
+        );
+        sty->addRadioButton(
+            "SAFE",
+            "Format is [v1, v3:2, v6]",
+            evm_hlm::SAFE
+        );
+        sty->addRadioButton(
+            "SPARSE",
+            "Format is [v1:1, v3:2, v6:1]",
+            evm_hlm::SPARSE
+        );
+        sty->addRadioButton(
+            "VECTOR",
+            "Format is [1, 0, 2, 0, 0, 1]",
+            evm_hlm::VECTOR
+        );
+    }
+    evm_hlm::StateStyle = evm_hlm::SPARSE;
 }

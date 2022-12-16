@@ -419,17 +419,19 @@ void initializer::needs_resource(unsigned slot, const char* res)
 #endif
 }
 
-void initializer::set_object(unsigned slot, shared_object* o)
+void initializer::set_object(unsigned slot, shared_object* o, const char* name)
 {
     CHECK_RANGE(0, slot, max_built);
     DCASSERT(res_list[slot]);
+    DCASSERT(!name || 0==strcmp(res_list[slot]->name, name));
     res_list[slot]->set_object(o);
 }
 
-shared_object* initializer::get_object(unsigned slot)
+shared_object* initializer::get_object(unsigned slot, const char* name)
 {
     CHECK_RANGE(0, slot, max_resources);
     DCASSERT(res_list[slot]);
+    DCASSERT(!name || 0==strcmp(res_list[slot]->name, name));
     return res_list[slot]->get_object();
 }
 

@@ -5,30 +5,16 @@
 #include "messages.h"
 
 /**
-    Initializer for a group of items, in a checklist option.
+    Initialize a group of checklists,
+    and build and return a checklist item for it.
+
+        @param  main    Main option the checklist items are tied to
+        @param  item    Number of items (max) in this group
+        @param  name    Name of the group
+        @param  doc     Documentation
 */
-class checklistgroup_initializer : public initializer {
-        const char* gname;
-        const char* gdoc;
-        unsigned gitems;
-    public:
-        /** Initialize a checklist group.
-                @param  main    Main checklist option name, e.g., "Warning"
-                @param  ni      Max number of items in the group
-                @param  name    Group name, e.g., "pn_ALL"
-                @param  doc     Group documentation
-        */
-        checklistgroup_initializer(const char* main, unsigned ni,
-                const char* name, const char* doc);
-    protected:
-        virtual void execute();
-    public:
-        // This is what execute() does,
-        // but a parameterized version in case we can't use
-        // this object directly.
-        static shared_object* exec(shared_object* main, unsigned items,
-                const char* name, const char* doc);
-};
+shared_object* initialize_group(shared_object* main, unsigned items,
+        const char* name, const char* doc);
 
 
 /**
@@ -64,7 +50,7 @@ class message_initializer : public initializer {
 
     Called by message_initializer::execute().
 */
-shared_object* initialize(switchable_msg &msg, const char* name,
+shared_object* initialize_msg(switchable_msg &msg, const char* name,
         const char* doc, shared_object* option, shared_object* group = nullptr);
 
 #endif

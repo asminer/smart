@@ -1312,22 +1312,22 @@ init_dsde::init_dsde() : initializer("init_dsde", 1, 1)
 
 void init_dsde::execute()
 {
-    initialize(dsde_def::dup_part,
+    initialize_msg(dsde_def::dup_part,
         "dup_part",
 	    "For multiple partition definitions for a state variable",
         get_object(1)
     );
-    initialize(dsde_def::no_part,
+    initialize_msg(dsde_def::no_part,
         "no_part",
 		"If some, but not all, state variables are assiged to groups using partition",
         get_object(1)
     );
-    initialize(dsde_def::dup_prio,
+    initialize_msg(dsde_def::dup_prio,
         "dup_prio",
 		"For multiple priority level definitions for a model event",
         get_object(1)
     );
-    initialize(dsde_hlm::ignored_prio,
+    initialize_msg(dsde_hlm::ignored_prio,
         "ignored_prio",
 		"For ignored priority pairs (between events in different priority levels)",
         get_object(1)

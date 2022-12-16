@@ -1906,7 +1906,7 @@ void function_initializer::execute()
     top_user_func::stack_size = init_stack_size;
     top_user_func::stack_top = 0;
 
-    option_manager* OM = dynamic_cast <option_manager*> (get_object(1));
+    option_manager* OM = dynamic_cast <option_manager*> (get_object(1, "OM"));
     if (!OM) return;
 
     stack_size_watcher* sw = new stack_size_watcher();

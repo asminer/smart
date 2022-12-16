@@ -135,16 +135,20 @@ class initializer {
                 @param  slot    The build slot; must be in the range
                                 [0, max_build).
                 @param  o       Object to set for the resource.
+                @param  name    If given, we will sanity check the
+                                name against the one in the slot.
         */
-        void set_object(unsigned slot, shared_object* o);
+        void set_object(unsigned slot, shared_object* o, const char* name=nullptr);
 
         /**
             Get an object for a resource.
                 @param  slot    The resource slot; must be in the range
                                 [0, max_build + max_needs)
+                @param  name    If given, we will sanity check the
+                                name against the one in the slot.
                 @return         Object associated with the resource.
         */
-        shared_object* get_object(unsigned slot);
+        shared_object* get_object(unsigned slot, const char* name=nullptr);
 
     private:
         /**

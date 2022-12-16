@@ -177,7 +177,7 @@ class fixpoint_stmt : public expr {
         static inline void init(shared_object* o,
                 const char* name, const char* doc)
         {
-            initialize(converge_debug, name, doc, o);
+            initialize_msg(converge_debug, name, doc, o);
         }
     public:
         fixpoint_stmt(const location &W);
@@ -795,7 +795,7 @@ converge_initializer::converge_initializer()
 
 void converge_initializer::execute()
 {
-    option_manager* OM = dynamic_cast <option_manager*> (get_object(1));
+    option_manager* OM = dynamic_cast <option_manager*> (get_object(1, "OM"));
     if (!OM) return;
 
     fixpoint_stmt::init(
