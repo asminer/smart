@@ -2,11 +2,11 @@
 
 #include "dsde_hlm.h"
 
-#include "../ExprLib/startup.h"
 #include "../ExprLib/sets.h"
 #include "../SymTabs/symtabs.h"
-#include "../Options/options.h"
 #include "../include/heap.h"
+
+#include "../Utils/init_opts.h"
 
 // #define DEBUG_PART
 // #define DEBUG_PRIO
@@ -1296,36 +1296,42 @@ void dsde_priolist::Compute(traverse_data &x, expr** pass, int np) {
 // *                                                                *
 // ******************************************************************
 
-class init_dsde: public startup {
+class init_dsde: public initializer {
     public:
 	    init_dsde();
-	    virtual bool execute();
+    protected:
+	    virtual void execute();
 };
-init_dsde the_dsde_startup;
+static init_dsde the_dsde_startup;
 
-init_dsde::init_dsde() : startup("init_dsde")
+init_dsde::init_dsde() : initializer("init_dsde", 1, 1)
 {
-	usesResource("em");
+    builds_resource(0, "dsde_hlm.cc");
+    needs_resource(1, dsde_def::dup_part.optName());
 }
 
-bool init_dsde::execute()
+void init_dsde::execute()
 {
-	if (0 == em) return false;
-
-    dsde_def::dup_part.initialize(em->OptMan(), "dup_part",
-	    "For multiple partition definitions for a state variable"
+    initialize(dsde_def::dup_part,
+        "dup_part",
+	    "For multiple partition definitions for a state variable",
+        get_object(1)
     );
-    dsde_def::no_part.initialize(em->OptMan(), "no_part",
-		"If some, but not all, state variables are assiged to groups using partition"
+    initialize(dsde_def::no_part,
+        "no_part",
+		"If some, but not all, state variables are assiged to groups using partition",
+        get_object(1)
     );
-    dsde_def::dup_prio.initialize(em->OptMan(), "dup_prio",
-		"For multiple priority level definitions for a model event"
+    initialize(dsde_def::dup_prio,
+        "dup_prio",
+		"For multiple priority level definitions for a model event",
+        get_object(1)
     );
-    dsde_hlm::ignored_prio.initialize(em->OptMan(), "ignored_prio",
-		"For ignored priority pairs (between events in different priority levels)"
+    initialize(dsde_hlm::ignored_prio,
+        "ignored_prio",
+		"For ignored priority pairs (between events in different priority levels)",
+        get_object(1)
     );
-
-	return true;
 }
 
 // **************************************************************************
