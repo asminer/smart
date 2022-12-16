@@ -134,15 +134,23 @@ void checklistgroup_initializer::execute()
 // *                                                                    *
 // **********************************************************************
 
-message_initializer::message_initializer(switchable_msg &m, const char* d,
-    const char* g) : initializer("message_initializer", 1, 2), msg(m)
+message_initializer::message_initializer(const char* g, switchable_msg &m,
+    const char* d) : initializer("message_initializer", 1, 2), msg(m)
 {
     doc = d;
-    group = g;
 
     builds_resource(0, m.getName());
     needs_resource(1, m.optName());
-    needs_resource(2, group);
+    needs_resource(2, g);
+}
+
+message_initializer::message_initializer(switchable_msg &m,
+    const char* d) : initializer("message_initializer", 1, 2), msg(m)
+{
+    doc = d;
+
+    builds_resource(0, m.getName());
+    needs_resource(1, m.optName());
 }
 
 void message_initializer::execute()

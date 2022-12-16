@@ -31,15 +31,19 @@ class checklistgroup_initializer : public initializer {
 class message_initializer : public initializer {
         switchable_msg &msg;
         const char* doc;
-        const char* group;
     public:
+        /** Initialize a switchable message.
+                @param  group   Group the message belongs to
+                @param  m       The message
+                @param  doc     Documentation
+        */
+        message_initializer(const char* group, switchable_msg &m, const char* doc);
+
         /** Initialize a switchable message.
                 @param  m       The message
                 @param  doc     Documentation
-                @param  group   Group it belongs to, or null
         */
-        message_initializer(switchable_msg &m, const char* doc,
-                const char* gr=nullptr);
+        message_initializer(switchable_msg &m, const char* doc);
     protected:
         virtual void execute();
 };
