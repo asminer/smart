@@ -48,19 +48,16 @@ class initializer {
         /// Our state
         status state;
 
-        /// Array of needed resources.
-        resource** need_list;
-        /// Dimension of need_list array.
-        unsigned max_needs;
-        /// Index of next needed resource
-        unsigned next_needs;
-
-        /// Array of built resources
-        resource** build_list;
-        /// Dimension of build_list array.
-        unsigned max_build;
-        /// Index of next built resource
-        unsigned next_build;
+        /// Array of resources; built first.
+        resource** res_list;
+        /// Number of built resources (max).
+        unsigned max_built;
+        /// Number of needed resources (max).
+        unsigned max_needed;
+        /// Total number of resources (always max_built + max_needed).
+        unsigned max_resources;
+        /// Number of resources we're waiting on.
+        unsigned wait_count;
 
         /// List of initializers that may need to run
         static initializer* Waiting;
@@ -117,39 +114,37 @@ class initializer {
         /**
             Indicate that this initializer
             is a builder for the named resource.
-            Cannot be called more than max_bld times.
-                @return A handle to the resource, or 0.
+                @param  slot    The build slot; must be in the range
+                                [0, max_build)
+                @param  name    Resource name.
         */
-        unsigned builds_resource(const char* name);
-
-        /**
-            Set an object for a build resource.
-                @param  h   Resource handle, as returned by builds_resource().
-                @param  o   Object to set for the resource.
-        */
-        void set_build_object(unsigned h, shared_object* o);
-
-        /**
-            Get an object for a build resource.
-                @param  h   Resource handle, as returned by builds_resource().
-                @return     Object associated with the resource.
-        */
-        shared_object* get_build_object(unsigned h);
+        void builds_resource(unsigned slot, const char* name);
 
         /**
             Indicate that this initializer
             requires the named resource to be initialized,
             before it can execute.
-            Cannot be called more than max_nds times.
+                @param  slot    The needed resource slot; must be in
+                                the range [max_build, max_build + max_needs)
+                @param  name    Resource name
         */
-        unsigned needs_resource(const char* name);
+        void needs_resource(unsigned slot, const char* name);
 
         /**
-            Get an object for a needed resource.
-                @param  h   Resource handle, as returned by builds_resource().
-                @return     Object associated with the resource.
+            Set an object for a resource (that we build).
+                @param  slot    The build slot; must be in the range
+                                [0, max_build).
+                @param  o       Object to set for the resource.
         */
-        shared_object* get_needed_object(unsigned h);
+        void set_object(unsigned slot, shared_object* o);
+
+        /**
+            Get an object for a resource.
+                @param  slot    The resource slot; must be in the range
+                                [0, max_build + max_needs)
+                @return         Object associated with the resource.
+        */
+        shared_object* get_object(unsigned slot);
 
     private:
         /**

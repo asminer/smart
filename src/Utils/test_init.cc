@@ -18,15 +18,15 @@ myinit::myinit(const char* name, const char* b, const char* n1, const char* n2)
     : initializer(name, 1, 2)
 {
     if (b) {
-        builds_resource(b);
+        builds_resource(0, b);
     }
 
     if (n1) {
-        needs_resource(n1);
+        needs_resource(1, n1);
     }
 
     if (n2) {
-        needs_resource(n2);
+        needs_resource(2, n2);
     }
 }
 

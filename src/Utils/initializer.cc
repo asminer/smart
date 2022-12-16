@@ -52,7 +52,7 @@ class initializer::resource {
 
         ~resource();
 
-        inline bool is_ready() const { return 0==wait_builders; }
+        inline bool is_ready() const { return !wait_builders; }
 
         /// Indicate that IN is a builder for this resource
         inline void add_builder(initializer* IN) {
@@ -278,29 +278,23 @@ initializer* initializer::Waiting = nullptr;
 initializer::initializer(const char* _name, unsigned maxbld, unsigned maxnds)
 {
     name = _name;
-    max_build = maxbld;
-    max_needs = maxnds;
+    max_built = maxbld;
+    max_needed = maxnds;
+    max_resources = max_built + max_needed;
+    wait_count = 0;
     state = init;
 
 #ifdef DEBUG
     std::cerr << "Building initializer: " << name << "\n";
 #endif
 
-    if (max_build) {
-        build_list = new resource* [max_build];
-        for (unsigned i=0; i<max_build; i++) {
-            build_list[i] = nullptr;
+    res_list = nullptr;
+    if (max_resources) {
+        res_list = new resource* [max_resources];
+        for (unsigned i=0; i<max_resources; i++) {
+            res_list[i] = nullptr;
         }
     }
-    next_build = 0;
-
-    if (max_needs) {
-        need_list = new resource* [max_needs];
-        for (unsigned i=0; i<max_needs; i++) {
-            need_list[i] = nullptr;
-        }
-    }
-    next_needs = 0;
 
     // Add us to the waiting list
     next = Waiting;
@@ -373,135 +367,86 @@ void initializer::execute_all(bool _debug)
 
 void initializer::cleanup()
 {
-    delete[] build_list;
-    build_list = nullptr;
-    next_build = 0;
-
-    delete[] need_list;
-    need_list = nullptr;
-    next_needs = 0;
+    delete[] res_list;
+    res_list = nullptr;
 }
 
-unsigned initializer::builds_resource(const char* res)
+void initializer::builds_resource(unsigned slot, const char* res)
 {
     DCASSERT(init == state);
+    CHECK_RANGE(0, slot, max_built);
+    if (0==res) return;
 
-    if (0==res) return 0;
+    if (res_list[slot]) {
+        internal_error E(__FILE__, __LINE__);
+        E << "Initializer " << name << " rebuilding slot " << slot;
+        return;
+    }
 
 #ifdef DEBUG
     std::cerr << "    builds " << res << "\n";
 #endif
 
-    if (next_build >= max_build) {
-        internal_error E(__FILE__, __LINE__);
-        E << "Initializer " << name
-          << " build overflow: more than " << max_build;
-        return 0;
-    }
     resource* r = resource::find(res);
     r->add_builder(this);
-    build_list[next_build++] = r;
+    res_list[slot] = r;
 #ifdef DEBUG
     std::cerr << "        done\n";
 #endif
-    return next_build;  // resource slot plus 1
 }
 
-void initializer::set_build_object(unsigned h, shared_object* o)
-{
-    if (0==h) return;
-    h--;
-    resource* r = nullptr;
-    if (h < max_build) r = build_list[h];
-
-    if (!r) {
-        internal_error E(__FILE__, __LINE__);
-        E << "No resource for build handle " << h;
-    }
-
-    r->set_object(o);
-}
-
-shared_object* initializer::get_build_object(unsigned h)
-{
-    if (0==h) return nullptr;
-    h--;
-    resource* r = nullptr;
-    if (h < max_build) r = build_list[h];
-
-    if (!r) {
-        internal_error E(__FILE__, __LINE__);
-        E << "No resource for build handle " << h;
-    }
-
-    return r->get_object();
-}
-
-unsigned initializer::needs_resource(const char* res)
+void initializer::needs_resource(unsigned slot, const char* res)
 {
     DCASSERT(init == state);
+    CHECK_RANGE(max_built, slot, max_resources);
+    if (0==res) return;
 
-    if (0==res) return 0;
+    if (res_list[slot]) {
+        internal_error E(__FILE__, __LINE__);
+        E << "Initializer " << name << " re-needing slot " << slot;
+        return;
+    }
 
 #ifdef DEBUG
     std::cerr << "    needs  " << res << "\n";
 #endif
-
-    if (next_needs >= max_needs) {
-        internal_error E(__FILE__, __LINE__);
-        E << "Initializer " << name
-          << " needs overflow: more than " << max_needs;
-        return 0;
-    }
+    ++wait_count;
     resource* r = resource::find(res);
     r->add_subscriber(this);
-    need_list[next_needs++] = r;
+    res_list[slot] = r;
 #ifdef DEBUG
     std::cerr << "        done\n";
 #endif
-    return next_needs;
 }
 
-shared_object* initializer::get_needed_object(unsigned h)
+void initializer::set_object(unsigned slot, shared_object* o)
 {
-    if (0==h) return nullptr;
-    h--;
-    resource* r = nullptr;
-    if (h < max_needs) r = need_list[h];
+    CHECK_RANGE(0, slot, max_built);
+    DCASSERT(res_list[slot]);
+    res_list[slot]->set_object(o);
+}
 
-    if (!r) {
-        internal_error E(__FILE__, __LINE__);
-        E << "No resource for needed handle " << h;
-    }
-
-    return r->get_object();
+shared_object* initializer::get_object(unsigned slot)
+{
+    CHECK_RANGE(0, slot, max_resources);
+    DCASSERT(res_list[slot]);
+    return res_list[slot]->get_object();
 }
 
 void initializer::notify(resource *r)
 {
     DCASSERT(waiting == state);
+    DCASSERT(r);
+    DCASSERT(r->is_ready());
 
-    // Resource r is now ready
-    // find it in our needs array, move it to the end, decrement next_needs
-    // when next_needs becomes 0, we can execute
-
-    for (unsigned i=0; i<next_needs; i++) {
-        if (need_list[i] != r) continue;
-        // found it
-
-        if (i+1 != next_needs) {
-            // Not the last element.
-            // Make it so by swapping.
-            need_list[i] = need_list[next_needs-1];
-            need_list[next_needs-1] = r;
-        }
-        --next_needs;
-
-        run_or_wait();
-        return;
+    // Find resource r in our list
+    for (unsigned i=max_built; i<max_resources; ++i) {
+        if (res_list[i] != r) continue;
+        DCASSERT(wait_count);
+        --wait_count;
     }
 
-    // Not found; don't change anything
+    run_or_wait();
 }
 
 void initializer::run_or_wait()
@@ -510,7 +455,7 @@ void initializer::run_or_wait()
 
     DCASSERT( running != state );
 
-    if (next_needs) {
+    if (wait_count) {
         state = waiting;
         return;
     }
@@ -520,8 +465,8 @@ void initializer::run_or_wait()
     }
     execute();
     // Notify resources we build
-    for (unsigned i=0; i<max_build; i++) {
-        build_list[i]->done_builder(this);
+    for (unsigned i=0; i<max_built; i++) {
+        if (res_list[i]) res_list[i]->done_builder(this);
     }
     state = complete;
 }
@@ -530,17 +475,14 @@ void initializer::show(error_msg &E) const
 {
     E << "Initializer '" << name << "'";
     E.newLine('+');
-    E << "Needs : ";
-    for (unsigned i=0; i<next_needs; i++) {
-        if (i) E << ", ";
-        E << need_list[i]->name;
+    for (unsigned i=0; i<max_resources; i++) {
+        if (!res_list[i]) continue;
+        if (i < max_built)  E << "Builds " << res_list[i]->name;
+        else                E << "Needs  " << res_list[i]->name;
+        E << res_list[i]->name;
+        E.newLine();
     }
-    E.newLine();
-    E << "Builds: ";
-    for (unsigned i=0; i<next_build; i++) {
-        if (i) E << ", ";
-        E << build_list[i]->name;
-    }
+    E << "====================";
     E.newLine('-');
 }
 
