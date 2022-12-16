@@ -1,6 +1,8 @@
 
 #include "init_opts.h"
+#include "../Options/options.h"
 #include "../Options/optman.h"
+#include "../Options/checklist.h"
 
 // **********************************************************************
 // *                                                                    *
@@ -16,7 +18,6 @@ static option_manager* OM;
     Builds resource OM.
 */
 class optman_initializer : public initializer {
-        unsigned handle;
     public:
         optman_initializer();
     protected:
@@ -26,7 +27,7 @@ class optman_initializer : public initializer {
 optman_initializer::optman_initializer()
     : initializer("optman_initializer", 1, 0)
 {
-    handle = builds_resource("OM");
+    builds_resource(0, "OM");
     OM = nullptr;
 }
 
@@ -37,7 +38,7 @@ void optman_initializer::execute()
         internal_error E(__FILE__, __LINE__);
         E << "MakeOptionManager() returned null pointer";
     }
-    set_build_object(handle, OM);
+    set_object(0, OM);
 }
 
 static optman_initializer _omi;
@@ -59,9 +60,6 @@ static optman_initializer _omi;
 class checklist_initializer : public initializer {
         const char* optname;
         const char* optdoc;
-
-        unsigned om_handle;
-        unsigned option_handle;
     public:
         checklist_initializer(const char* name, const char* doc);
     protected:
@@ -74,18 +72,17 @@ checklist_initializer::checklist_initializer(const char* name, const char* doc)
     optname = name;
     optdoc = doc;
 
-    om_handle = needs_resource("OM");
-    option_handle = builds_resource(name);
+    builds_resource(0, name);
+    needs_resource(1, "OM");
 }
 
 void checklist_initializer::execute()
 {
-    option_manager* OM = dynamic_cast <option_manager*>
-        (get_needed_resource(om_handle));
+    option_manager* OM = dynamic_cast <option_manager*> (get_object(1));
 
     if (0==OM) return;      // Error out here?
 
-    set_built_resource(option_handle, OM->addChecklistOption(optname, optdoc));
+    set_object(0, OM->addChecklistOption(optname, optdoc));
 }
 
 static checklist_initializer _report_init(
@@ -111,23 +108,23 @@ static checklist_initializer _warning_init(
 // **********************************************************************
 
 checklistgroup_initializer::checklistgroup_initializer(const char* main,
-    const char* name, const char* doc)
+    const char* name, const char* doc, unsigned ni)
     : initializer("checklistgroup_initializer", 1, 1)
 {
-    mainopt = main;
-    groupname = name;
-    groupdoc = doc;
+    gname = name;
+    gdoc = doc;
+    gitems = ni;
 
-    main_handle = needs_resource(main);
-    group_nahdle = builds_resource(name);
+    builds_resource(0, gname);
+    needs_resource(1, main);
 }
 
 void checklistgroup_initializer::execute()
 {
-    option* main = dynamic_cast <option*> (get_needed_resource(main_handle));
+    option* main = dynamic_cast <option*> (get_object(1));
 
     if (0==main) return;      // Error out here?
 
-    set_built_resource(group_handle, main->addChecklistGroup(groupname, groupdoc));
+    set_object(0, main->addChecklistGroup(gname, gdoc, gitems));
 }
 
