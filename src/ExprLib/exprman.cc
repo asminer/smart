@@ -2,6 +2,8 @@
 #include "exprman.h"
 #include "../Options/options.h"
 #include "../Options/optman.h"
+#include "../Utils/init_opts.h"
+
 #include "result.h"
 #include "engine.h"
 
@@ -50,8 +52,12 @@ void library::printReleaseDate(doc_formatter&) const
 
 // exprman::exprman(io_environ* i, option_manager* o)
 exprman::exprman(option_manager* o)
-    : promote_arg("promote_args", "When arguments are automatically promoted in a function call")
+    : promote_arg("promote_args")
 {
+    new message_initializer(promote_arg,
+        "When arguments are automatically promoted in a function call");
+    promote_arg.Deactivate();
+
   is_finalized = false;
   // io = i;
   om = o;
@@ -77,9 +83,6 @@ exprman::exprman(option_manager* o)
 
   NO_ENGINE = 0;
   BLOCKED_ENGINE = 0;
-
-  addToChecklist(om, promote_arg);
-  promote_arg.Deactivate();
 }
 
 exprman::~exprman()
@@ -409,16 +412,13 @@ exprman* Initialize_Expressions(option_manager* om)
   //
   // Option initialization
   //
-  addToChecklist(om, expr::expr_debug);
 #ifdef EXPR_DEBUG
   expr::expr_debug.Activate();
 #endif
-  addToChecklist(om, expr::waitlist_debug);
-  addToChecklist(om, expr::model_debug);
 
   // Other options to initialize
   InitTypeOptions(The_Man);
-  InitConvergeOptions(The_Man);
+  // InitConvergeOptions(The_Man);
   InitFunctions(The_Man);
   InitModelDefs(The_Man);
   InitLLM(The_Man);

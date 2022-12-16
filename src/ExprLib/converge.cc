@@ -2,6 +2,8 @@
 #include "converge.h"
 #include "../Options/optman.h"
 #include "../Options/options.h"
+#include "../Utils/init_opts.h"
+
 #include "exprman.h"
 #include "symbols.h"
 #include "result.h"
@@ -38,7 +40,7 @@ public:
 
   inline long GetMaxIters() const { return max_iters; }
 
-  friend void InitConvergeOptions(exprman* om);
+  friend class converge_initializer;
 };
 
 long converge_stmt::max_iters = 1000;
@@ -176,12 +178,12 @@ public:
   inline bool RelativePrecision() const { return relative; }
   inline bool UseCurrent() const { return use_current; }
 
-  friend void InitConvergeOptions(exprman* om);
-protected:
+  friend class converge_initializer;
+public:
   static debugging_msg converge_debug;
 };
 
-debugging_msg fixpoint_stmt::converge_debug;
+debugging_msg fixpoint_stmt::converge_debug("converges");
 double fixpoint_stmt::precision;
 unsigned fixpoint_stmt::relative;
 bool fixpoint_stmt::use_current;
@@ -766,45 +768,62 @@ expr* exprman::makeArrayCvgAssign(const location &W, symbol* arr, expr* rhs) con
 
 // ******************************************************************
 // *                                                                *
-// *                           Front  end                           *
+// *                          Initializers                          *
 // *                                                                *
 // ******************************************************************
 
+class converge_initializer : public initializer {
+    public:
+        converge_initializer();
+    protected:
+        virtual void execute();
+};
 
-void InitConvergeOptions(exprman* em)
+converge_initializer::converge_initializer()
+    : initializer("converge.cc", 1, 1)
 {
-  if (0==em)  return;
-  if (0==em->OptMan()) return;
-
-  fixpoint_stmt::converge_debug.initialize(em->OptMan(), "converges",
-      "Use to view the sequence of assignments during the execution of a converge statement."
-  );
-
-  converge_stmt::max_iters = 1000;
-  em->OptMan()->addIntOption("MaxConvergeIters",
-      "Maximum number of iterations of a converge statement.",
-      converge_stmt::max_iters, 1, 2000000000
-  );
-
-  fixpoint_stmt::precision = 1e-5;
-  em->OptMan()->addRealOption("ConvergePrecision",
-      "Desired precision for values within a converge statement.",
-      fixpoint_stmt::precision, true, false, 0, true, false, 1
-  );
-
-  option* prec_test = em->OptMan()->addRadioOption("ConvergePrecisionTest",
-      "Comparison to use for convergence test of values within a converge statement.",
-      2, fixpoint_stmt::relative
-  );
-  DCASSERT(prec_test);
-  prec_test->addRadioButton("ABSOLUTE", "Use absolute precision", 0);
-  prec_test->addRadioButton("RELATIVE", "Use relative precision", 1);
-  fixpoint_stmt::relative = 1;
-
-  fixpoint_stmt::use_current = true;
-  em->OptMan()->addBoolOption("UseCurrent",
-      "Should variables within a converge statement be updated immediately.",
-      fixpoint_stmt::use_current
-  );
+    builds_resource(0, "converge.cc");
+    needs_resource(1, "OM");
 }
+
+void converge_initializer::execute()
+{
+    option_manager* OM = dynamic_cast <option_manager*> (get_object(1));
+    if (!OM) return;
+
+    converge_stmt::max_iters = 1000;
+    OM->addIntOption("MaxConvergeIters",
+        "Maximum number of iterations of a converge statement.",
+        converge_stmt::max_iters, 1, 2000000000
+    );
+
+    fixpoint_stmt::precision = 1e-5;
+    OM->addRealOption("ConvergePrecision",
+        "Desired precision for values within a converge statement.",
+        fixpoint_stmt::precision, true, false, 0, true, false, 1
+    );
+
+    option* prec_test = OM->addRadioOption("ConvergePrecisionTest",
+        "Comparison to use for convergence test of values within a converge statement.",
+        2, fixpoint_stmt::relative
+    );
+    DCASSERT(prec_test);
+    prec_test->addRadioButton("ABSOLUTE", "Use absolute precision", 0);
+    prec_test->addRadioButton("RELATIVE", "Use relative precision", 1);
+    fixpoint_stmt::relative = 1;
+
+    fixpoint_stmt::use_current = true;
+    OM->addBoolOption("UseCurrent",
+        "Should variables within a converge statement be updated immediately.",
+        fixpoint_stmt::use_current
+    );
+}
+
+
+static converge_initializer _the_converge_init;
+
+static message_initializer _conv_debug(fixpoint_stmt::converge_debug,
+    "Use to view the sequence of assignments during the execution of a converge statement."
+);
+
 

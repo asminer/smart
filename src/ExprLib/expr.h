@@ -202,15 +202,16 @@ public:
 
 class expr : public shared_object {
   // static things and their manipulation.
-protected:
-  /// Type to use for statements.
-  static const type* STMT;
+public:
   /// Expression debugging.
   static debugging_msg expr_debug;
   /// Symbol waiting list debugging.
   static debugging_msg waitlist_debug;
   /// Model debugging.
   static debugging_msg model_debug;
+protected:
+  /// Type to use for statements.
+  static const type* STMT;
   /// Expression manager, for "global" options and such.
   static exprman* em;
   // friend, needed to initialize the static items.

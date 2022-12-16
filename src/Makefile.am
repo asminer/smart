@@ -49,6 +49,7 @@ smart_SOURCES = \
   Utils/textfmt.cc \
   Utils/sigman.cc \
   Utils/strings.cc \
+  Utils/init_opts.cc \
   \
   Options/optman.cc \
   Options/options.cc \
@@ -187,6 +188,7 @@ icp_SOURCES = \
   Utils/textfmt.cc \
   Utils/sigman.cc \
   Utils/strings.cc \
+  Utils/init_opts.cc \
   \
   Options/optman.cc \
   Options/options.cc \

@@ -6,6 +6,7 @@
 #include "expr.h"
 #include "symbols.h"
 #include "../Options/options.h"
+#include "../Utils/init_opts.h"
 #include "../include/list.h"
 #include "type.h"
 #include "result.h"
@@ -109,23 +110,25 @@ bool traverse_data::Print(std::ostream &s) const
 // ******************************************************************
 
 const type* expr::STMT = 0;
-debugging_msg expr::expr_debug(
-    "exprs",
+
+debugging_msg expr::expr_debug("exprs");
+debugging_msg expr::waitlist_debug("waitlist");
+debugging_msg expr::model_debug("models");
+
+static message_initializer _e_debug(expr::expr_debug,
     "When set, low-level expression and statement messages are displayed."
 );
-
-debugging_msg expr::waitlist_debug(
-    "waitlist",
+static message_initializer _e_wait(expr::waitlist_debug,
     "When set, diagnostic messages are displayed regarding symbol waiting lists."
 );
-
-debugging_msg expr::model_debug(
-    "models",
+static message_initializer _e_model(expr::model_debug,
     "When set, diagnostic messages are displayed regarding model construction."
 );
 
+
 exprman* expr::em = 0;
 long expr::global_IDnum = 0;
+
 
 expr::expr(const location &W, const type* t) : shared_object()
 {
