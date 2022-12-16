@@ -477,8 +477,8 @@ void initializer::show(error_msg &E) const
     E.newLine('+');
     for (unsigned i=0; i<max_resources; i++) {
         if (!res_list[i]) continue;
-        if (i < max_built)  E << "Builds " << res_list[i]->name;
-        else                E << "Needs  " << res_list[i]->name;
+        if (i < max_built)  E << "Builds ";
+        else                E << "Needs  ";
         E << res_list[i]->name;
         E.newLine();
     }
