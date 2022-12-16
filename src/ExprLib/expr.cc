@@ -111,17 +111,20 @@ bool traverse_data::Print(std::ostream &s) const
 
 const type* expr::STMT = 0;
 
-debugging_msg expr::expr_debug("exprs");
-debugging_msg expr::waitlist_debug("waitlist");
-debugging_msg expr::model_debug("models");
+debugging_msg expr::expr_debug;
+debugging_msg expr::waitlist_debug;
+debugging_msg expr::model_debug;
 
 static message_initializer _e_debug(expr::expr_debug,
+    "exprs",
     "When set, low-level expression and statement messages are displayed."
 );
 static message_initializer _e_wait(expr::waitlist_debug,
+    "waitlist",
     "When set, diagnostic messages are displayed regarding symbol waiting lists."
 );
 static message_initializer _e_model(expr::model_debug,
+    "models",
     "When set, diagnostic messages are displayed regarding model construction."
 );
 

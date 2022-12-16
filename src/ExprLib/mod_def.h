@@ -37,11 +37,11 @@ class model_var;
       "Substitute" will return the current model_instance.
 */
 class model_def : public function {
+public:
   /// Warning option.
   static warning_msg not_our_var;
 
-  friend void InitModelDefs(exprman* em);
-
+private:
   /// Formal parameters of the model
   fplist formals;
 
@@ -243,15 +243,6 @@ public:
 
     friend class errmsg;
 };
-
-// ******************************************************************
-// *                                                                *
-// *                           Front  end                           *
-// *                                                                *
-// ******************************************************************
-
-/// Initialize model def options.
-void InitModelDefs(exprman* em);
 
 #endif
 

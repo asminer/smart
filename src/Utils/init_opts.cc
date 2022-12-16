@@ -141,8 +141,10 @@ shared_object* checklistgroup_initializer::exec(shared_object* _main,
 // **********************************************************************
 
 message_initializer::message_initializer(const char* g, switchable_msg &m,
-    const char* d) : initializer("message_initializer", 1, 2), msg(m)
+    const char* name, const char* d)
+    : initializer("message_initializer", 1, 2), msg(m)
 {
+    m.setName(name);
     doc = d;
 
     builds_resource(0, m.getName());
@@ -151,8 +153,10 @@ message_initializer::message_initializer(const char* g, switchable_msg &m,
 }
 
 message_initializer::message_initializer(switchable_msg &m,
-    const char* d) : initializer("message_initializer", 1, 2), msg(m)
+    const char* name, const char* d)
+    : initializer("message_initializer", 1, 2), msg(m)
 {
+    m.setName(name);
     doc = d;
 
     builds_resource(0, m.getName());

@@ -41,15 +41,19 @@ class message_initializer : public initializer {
         /** Initialize a switchable message.
                 @param  group   Group the message belongs to
                 @param  m       The message
+                @param  name    The message name
                 @param  doc     Documentation
         */
-        message_initializer(const char* group, switchable_msg &m, const char* doc);
+        message_initializer(const char* group, switchable_msg &m,
+                const char* name, const char* doc);
 
         /** Initialize a switchable message.
                 @param  m       The message
+                @param  name    The message name
                 @param  doc     Documentation
         */
-        message_initializer(switchable_msg &m, const char* doc);
+        message_initializer(switchable_msg &m,
+                const char* name, const char* doc);
     protected:
         virtual void execute();
     public:

@@ -14,10 +14,10 @@
 // *                     switchable_msg methods                     *
 // ******************************************************************
 
-switchable_msg::switchable_msg(const char* optname, const char* myname)
+switchable_msg::switchable_msg(const char* optname)
 {
     option_name = optname;
-    my_name = myname;
+    my_name = nullptr;
 }
 
 // ******************************************************************
@@ -26,8 +26,7 @@ switchable_msg::switchable_msg(const char* optname, const char* myname)
 
 outputStream warning_msg::Out(std::cerr);
 
-warning_msg::warning_msg(const char* myname)
-    : switchable_msg("Warning", myname)
+warning_msg::warning_msg() : switchable_msg("Warning")
 {
     Activate();
 }
@@ -65,8 +64,7 @@ const char* named_msg::setPrefix(char x) const
     return prefix;
 }
 
-named_msg::named_msg(const char* optn, const char* myn)
-    : switchable_msg(optn, myn)
+named_msg::named_msg(const char* optn) : switchable_msg(optn)
 {
 }
 
@@ -77,8 +75,7 @@ named_msg::named_msg(const char* optn, const char* myn)
 
 outputStream reporting_msg::Out(std::cout);
 
-reporting_msg::reporting_msg(const char* myname)
-    : named_msg("Report", myname)
+reporting_msg::reporting_msg() : named_msg("Report")
 {
     Deactivate();
 }
@@ -100,8 +97,7 @@ bool reporting_msg::start() const
 
 outputStream debugging_msg::Out(std::cerr);
 
-debugging_msg::debugging_msg(const char* myname)
-    : named_msg("Debug", myname)
+debugging_msg::debugging_msg() : named_msg("Debug")
 {
     Deactivate();
 }

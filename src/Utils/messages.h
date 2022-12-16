@@ -19,7 +19,7 @@ class switchable_msg {
     const char* my_name;
     bool active;
 public:
-    switchable_msg(const char* optname, const char* myname);
+    switchable_msg(const char* optname);
 
     inline void Activate()    { active = true; }
     inline void Deactivate()  { active = false; }
@@ -27,6 +27,7 @@ public:
 
     inline const char* optName() const  { return option_name; }
     inline const char* getName() const  { return my_name; }
+    inline void setName(const char* n)  { my_name = n; }
     inline bool& Active()               { return active; }
 };
 
@@ -38,7 +39,7 @@ class warning_msg : public switchable_msg {
     public:
         static outputStream Out;
     public:
-        warning_msg(const char* myname);
+        warning_msg();
 
         inline static bool switchOutput(const char* outfile) {
             return Out.switchOutput(outfile);
@@ -73,7 +74,7 @@ class named_msg : public switchable_msg {
         const char* setPrefix(char x) const;
         const char* getPrefix() const { return prefix; }
     public:
-        named_msg(const char* optname, const char* mn);
+        named_msg(const char* optname);
 };
 
 /*
@@ -83,7 +84,7 @@ class reporting_msg : public named_msg {
     public:
         static outputStream Out;
     public:
-        reporting_msg(const char* myname);
+        reporting_msg();
 
         inline static bool switchOutput(const char* outfile) {
             return Out.switchOutput(outfile);
@@ -115,7 +116,7 @@ class debugging_msg : public named_msg {
     public:
         static outputStream Out;
     public:
-        debugging_msg(const char* myname);
+        debugging_msg();
 
         inline static bool switchOutput(const char* outfile) {
             return Out.switchOutput(outfile);

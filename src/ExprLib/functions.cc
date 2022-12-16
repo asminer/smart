@@ -1,8 +1,9 @@
 
-#include "../Utils/textfmt.h"
 #include "exprman.h"
 #include "../Options/options.h"
 #include "../Options/optman.h"
+#include "../Utils/textfmt.h"
+#include "../Utils/initializer.h"
 #include "functions.h"
 #include "mod_def.h"
 #include "mod_inst.h"
@@ -1387,8 +1388,7 @@ public:
   virtual int Traverse(traverse_data &x, expr** pass, int np);
 
   // friends, because of stack manipulation
-  friend void InitFunctions(exprman* om);
-
+  friend class function_initializer;
   friend class stack_size_watcher;
 };
 
@@ -1879,24 +1879,43 @@ expr* DefineUserFunction(const exprman* em, const location &W,
 }
 
 
+// ******************************************************************
+// *                                                                *
+// *                           Initialize                           *
+// *                                                                *
+// ******************************************************************
 
-void InitFunctions(exprman* em)
+class function_initializer : public initializer {
+    public:
+        function_initializer();
+    protected:
+        virtual void execute();
+};
+
+function_initializer::function_initializer()
+    : initializer("functions.cc", 1, 1)
 {
-  top_user_func::stack = new result[init_stack_size];
-  top_user_func::stackptr = top_user_func::stack;
-  top_user_func::stack_size = init_stack_size;
-  top_user_func::stack_top = 0;
+    builds_resource(0, "functions.cc");
+    needs_resource(1, "OM");
+}
 
-  if (0==em) return;
-  if (0==em->OptMan()) return;
+void function_initializer::execute()
+{
+    top_user_func::stack = new result[init_stack_size];
+    top_user_func::stackptr = top_user_func::stack;
+    top_user_func::stack_size = init_stack_size;
+    top_user_func::stack_top = 0;
 
-  stack_size_watcher* sw = new stack_size_watcher();
-  option* o = em->OptMan()->addIntOption("StackSize",
+    option_manager* OM = dynamic_cast <option_manager*> (get_object(1));
+    if (!OM) return;
+
+    stack_size_watcher* sw = new stack_size_watcher();
+    option* o = OM->addIntOption("StackSize",
           "Size of run-time stack to use for function calls.",
           sw->Link(),
           0,
           LONG_MAX
-  );
-  o->registerWatcher(sw);
+    );
+    o->registerWatcher(sw);
 }
 

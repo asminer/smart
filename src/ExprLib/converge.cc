@@ -174,7 +174,10 @@ class fixpoint_stmt : public expr {
         static double precision;
         static unsigned relative;
         static bool use_current;
-        static inline void init(shared_object* o, const char* doc) {
+        static inline void init(shared_object* o,
+                const char* name, const char* doc)
+        {
+            converge_debug.setName(name);
             message_initializer::exec(converge_debug, doc, o);
         }
     public:
@@ -187,7 +190,7 @@ class fixpoint_stmt : public expr {
         friend class converge_initializer;
 };
 
-debugging_msg fixpoint_stmt::converge_debug("converges");
+debugging_msg fixpoint_stmt::converge_debug;
 double fixpoint_stmt::precision;
 unsigned fixpoint_stmt::relative;
 bool fixpoint_stmt::use_current;
@@ -798,6 +801,7 @@ void converge_initializer::execute()
 
     fixpoint_stmt::init(
         get_object(2),
+        "converges",
         "Use to view the sequence of assignments during the execution of a converge statement."
     );
 

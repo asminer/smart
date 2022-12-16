@@ -2,8 +2,9 @@
 #include "mod_def.h"
 #include "mod_inst.h"
 #include "mod_vars.h"
-#include "../Utils/strings.h"
 #include "../Options/options.h"
+#include "../Utils/strings.h"
+#include "../Utils/init_opts.h"
 #include "arrays.h"
 #include "exprman.h"
 
@@ -714,15 +715,12 @@ model_def::errmsg::~errmsg()
 
 // ******************************************************************
 // *                                                                *
-// *                           Front  end                           *
+// *                           Initialize                           *
 // *                                                                *
 // ******************************************************************
 
-void InitModelDefs(exprman* em)
-{
-    if (0==em) return;
-    model_def::not_our_var.initialize(em->OptMan(), "model_var_owner",
-        "For mismatches in model variable ownership"
-    );
-}
+static message_initializer _mod_def(model_def::not_our_var,
+    "model_var_owner",
+    "For mismatches in model variable ownership"
+);
 

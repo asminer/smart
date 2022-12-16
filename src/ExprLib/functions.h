@@ -754,7 +754,6 @@ void ResetUserFunctionParams(const exprman* em, const location &W,
 expr* DefineUserFunction(const exprman* em, const location &W,
                           symbol* userfunc, expr* rhs, model_def* mdl);
 
-void InitFunctions(exprman* om);
 
 #endif
 

@@ -52,9 +52,9 @@ void library::printReleaseDate(doc_formatter&) const
 
 // exprman::exprman(io_environ* i, option_manager* o)
 exprman::exprman(option_manager* o)
-    : promote_arg("promote_args")
 {
     new message_initializer(promote_arg,
+        "promote_args",
         "When arguments are automatically promoted in a function call");
     promote_arg.Deactivate();
 
@@ -419,8 +419,8 @@ exprman* Initialize_Expressions(option_manager* om)
   // Other options to initialize
   InitTypeOptions(The_Man);
   // InitConvergeOptions(The_Man);
-  InitFunctions(The_Man);
-  InitModelDefs(The_Man);
+  // InitFunctions(The_Man);
+  // InitModelDefs(The_Man);
   InitLLM(The_Man);
   InitIntervals(The_Man);
 
