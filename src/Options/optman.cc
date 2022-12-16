@@ -12,7 +12,6 @@
 #include "checklist.h"
 
 #include "../Utils/textfmt.h"
-#include "../Utils/messages.h"
 
 //#define DEBUG_SORT
 
@@ -191,11 +190,3 @@ option_manager* MakeOptionManager()
   return new option_heap;
 }
 
-bool addToChecklist(const option_manager* om, switchable_msg &m,
-        checklist_enum* grp)
-{
-    if (!om) return false;
-    option* opt = om->FindOption(m.optName());
-    if (!opt) return false;
-    return opt->addChecklistItem(grp, m.getName(), m.getDoc(), m.Active());
-}

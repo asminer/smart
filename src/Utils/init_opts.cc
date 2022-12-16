@@ -128,3 +128,29 @@ void checklistgroup_initializer::execute()
     set_object(0, main->addChecklistGroup(gname, gdoc, gitems));
 }
 
+// **********************************************************************
+// *                                                                    *
+// *                    message_initializer  methods                    *
+// *                                                                    *
+// **********************************************************************
+
+message_initializer::message_initializer(switchable_msg &m, const char* d,
+    const char* g) : initializer("message_initializer", 1, 2), msg(m)
+{
+    doc = d;
+    group = g;
+
+    builds_resource(0, m.getName());
+    needs_resource(1, m.optName());
+    needs_resource(2, group);
+}
+
+void message_initializer::execute()
+{
+    option* opt = dynamic_cast<option*> (get_object(1));
+    DCASSERT(opt);
+    checklist_enum* grp = dynamic_cast<checklist_enum*> (get_object(2));
+    // grp may be null, that's ok
+    set_object(0, opt->addChecklistItem(grp, msg.getName(), doc, msg.Active()));
+}
+

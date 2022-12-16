@@ -12,8 +12,7 @@ class checklistgroup_initializer : public initializer {
         const char* gdoc;
         unsigned gitems;
     public:
-        /**
-            Set up an initializer.
+        /** Initialize a checklist group.
                 @param  main    Main checklist option name, e.g., "Warning"
                 @param  name    Group name, e.g., "pn_ALL"
                 @param  doc     Group documentation
@@ -29,5 +28,20 @@ class checklistgroup_initializer : public initializer {
 /**
     Initializer for a switchable message.
 */
+class message_initializer : public initializer {
+        switchable_msg &msg;
+        const char* doc;
+        const char* group;
+    public:
+        /** Initialize a switchable message.
+                @param  m       The message
+                @param  doc     Documentation
+                @param  group   Group it belongs to, or null
+        */
+        message_initializer(switchable_msg &m, const char* doc,
+                const char* gr=nullptr);
+    protected:
+        virtual void execute();
+};
 
 #endif

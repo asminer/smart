@@ -116,7 +116,7 @@ class initializer {
             is a builder for the named resource.
                 @param  slot    The build slot; must be in the range
                                 [0, max_build)
-                @param  name    Resource name.
+                @param  name    Resource name.  Ignored if null.
         */
         void builds_resource(unsigned slot, const char* name);
 
@@ -126,7 +126,7 @@ class initializer {
             before it can execute.
                 @param  slot    The needed resource slot; must be in
                                 the range [max_build, max_build + max_needs)
-                @param  name    Resource name
+                @param  name    Resource name.  Ignored if null.
         */
         void needs_resource(unsigned slot, const char* name);
 
