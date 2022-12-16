@@ -47,7 +47,7 @@ option::error real_opt::SetValue(double b)
 
 void real_opt::ShowHeader(std::ostream &s) const
 {
-    show(s);
+    Print(s);
     s << " " << value;
 }
 

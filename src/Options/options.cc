@@ -44,9 +44,10 @@ option::~option()
     }
 }
 
-void option::show(std::ostream &s) const
+bool option::Print(std::ostream &s, int width) const
 {
     s << '#' << name;
+    return true;
 }
 
 option::error option::SetValue(bool)
@@ -99,37 +100,45 @@ void option::Finish()
   // default: nothing
 }
 
-int option::Compare(const option* b) const
+int option::Compare(const shared_object* b) const
 {
-  if (b)  return strcmp(Name(), b->Name());
-  else    return 1;
+    const shared_string* ss = dynamic_cast <const shared_string*> (b);
+    if (ss) {
+        return strcmp(Name(), ss->getStr());
+    }
+    const option* o = dynamic_cast <const option*> (b);
+    if (o)  {
+        return strcmp(Name(), o->Name());
+    } else {
+        return 1;
+    }
 }
 
 int option::Compare(const char* n) const
 {
-  return strcmp(Name(), n);
+    return strcmp(Name(), n);
 }
 
 bool option::isApropos(const doc_formatter &df, const char* keyword) const
 {
-  return      df.Matches(Name(), keyword);
+    return  df.Matches(Name(), keyword);
 }
 
 void option::PrintDocs(doc_formatter &df, const char* keyword) const
 {
 #ifndef DEVELOPMENT_CODE
-  if (IsUndocumented())  return;
+    if (IsUndocumented())  return;
 #endif
-  df.begin_heading();
-  ShowHeader(df.Out());
-  if (IsUndocumented())  df.Out() << " (undocumented)";
-  df.end_heading();
-  df.begin_indent();
-  df.Out() << documentation;
-  df.Out() << "\n";
-  ShowRange(df);
-  RecurseDocs(df, keyword);
-  df.end_indent();
+    df.begin_heading();
+    ShowHeader(df.Out());
+    if (IsUndocumented())  df.Out() << " (undocumented)";
+    df.end_heading();
+    df.begin_indent();
+    df.Out() << documentation;
+    df.Out() << "\n";
+    ShowRange(df);
+    RecurseDocs(df, keyword);
+    df.end_indent();
 }
 
 void option::RecurseDocs(doc_formatter &df, const char* keyword) const

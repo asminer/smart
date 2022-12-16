@@ -24,7 +24,7 @@ option::error int_opt::SetValue(long b)
 
 void int_opt::ShowHeader(std::ostream &s) const
 {
-    show(s);
+    Print(s);
     s << " " << value;
 }
 

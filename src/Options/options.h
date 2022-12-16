@@ -7,6 +7,7 @@
 #ifndef OPTIONS_H
 #define OPTIONS_H
 
+#include "../include/shared.h"
 #include <iostream>
 
 class doc_formatter;
@@ -25,7 +26,7 @@ class checklist_enum;
 /**  Base class for options.
      Some derived classes are "hidden" in options.cc.
 */
-class option {
+class option : public shared_object {
     public:
         /// Errors for options.
         enum error {
@@ -83,7 +84,10 @@ class option {
                 @param  d  Documentation for the option.
         */
         option(type t, const char* n, const char* d);
+    protected:
         virtual ~option();
+
+    public:
 
         inline type Type() const { return mytype; }
         inline const char* Name() const { return name; }
@@ -91,7 +95,7 @@ class option {
         inline bool IsUndocumented() const { return hidden; }
         inline void Hide() { hidden = true; }
 
-        void show(std::ostream &s) const;
+        virtual bool Print(std::ostream &s, int width=0) const;
 
         /** Set the value for a boolean option.
                 @param  b  Value to set.
@@ -143,8 +147,8 @@ class option {
         /// Will be called when the option list is finalized.
         virtual void Finish();
 
-        int Compare(const option* b) const;
-        int Compare(const char* name) const;
+        virtual int Compare(const shared_object* b) const;
+        virtual int Compare(const char* name) const;
 
         /// Determine if this option matches the given keyword.
         virtual bool isApropos(const doc_formatter &df, const char* keyword) const;

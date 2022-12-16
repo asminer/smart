@@ -10,6 +10,7 @@
 #define OPT_ENUM_H
 
 #include <iostream>
+#include "../include/shared.h"
 
 class doc_formatter;
 class option_manager;
@@ -24,17 +25,19 @@ class option_manager;
     Used by Radio button and checkbox type options.
     Neat trick!  We can have suboptions for these now!
 */
-class option_enum {
+class option_enum : public shared_object {
     public:
         option_enum(const char* n, const char* d);
+    protected:
         virtual ~option_enum();
+    public:
 
         inline const char* Name() const { return name; }
         inline const char* Documentation() const { return doc; }
 
-        void show(std::ostream &s) const;
+        bool Print(std::ostream &s, int width=0) const;
 
-        int Compare(const option_enum* b) const;
+        int Compare(const shared_object* b) const;
         int Compare(const char* name) const;
 
         inline const option_manager* readSettings() const { return settings; }

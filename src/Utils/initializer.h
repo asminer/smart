@@ -4,6 +4,8 @@
 
 #include "messages.h"
 
+class shared_object;
+
 // ******************************************************************
 // *                                                                *
 // *                       initializer  class                       *
@@ -116,8 +118,23 @@ class initializer {
             Indicate that this initializer
             is a builder for the named resource.
             Cannot be called more than max_bld times.
+                @return A handle to the resource, or 0.
         */
-        void builds_resource(const char* name);
+        unsigned builds_resource(const char* name);
+
+        /**
+            Set an object for a build resource.
+                @param  h   Resource handle, as returned by builds_resource().
+                @param  o   Object to set for the resource.
+        */
+        void set_build_object(unsigned h, shared_object* o);
+
+        /**
+            Get an object for a build resource.
+                @param  h   Resource handle, as returned by builds_resource().
+                @return     Object associated with the resource.
+        */
+        shared_object* get_build_object(unsigned h);
 
         /**
             Indicate that this initializer
@@ -125,7 +142,14 @@ class initializer {
             before it can execute.
             Cannot be called more than max_nds times.
         */
-        void needs_resource(const char* name);
+        unsigned needs_resource(const char* name);
+
+        /**
+            Get an object for a needed resource.
+                @param  h   Resource handle, as returned by builds_resource().
+                @return     Object associated with the resource.
+        */
+        shared_object* get_needed_object(unsigned h);
 
     private:
         /**

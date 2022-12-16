@@ -164,13 +164,13 @@ option_enum* checklist_opt::GetConstant(unsigned i) const
 
 void checklist_opt::ShowHeader(std::ostream &s) const
 {
-    show(s);
+    Print(s);
     s << " +/- values";
 }
 
 void checklist_opt::ShowCurrent(std::ostream &s) const
 {
-  show(s);
+  Print(s);
   s << " {";
   bool printed = false;
   for (unsigned i=0; i<numpossible; i++) if (possible[i]->IsChecked()) {

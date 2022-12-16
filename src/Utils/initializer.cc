@@ -39,6 +39,7 @@ class initializer::resource {
         initializer::node* wait_builders;
         initializer::node* done_builders;
         initializer::node* subscribers;
+        shared_object* data;
         resource* next;
 
         static resource* RLIST;
@@ -61,6 +62,16 @@ class initializer::resource {
         /// Indicate that IN needs this resource
         inline void add_subscriber(initializer* IN) {
             subscribers = new initializer::node(IN, subscribers);
+        }
+
+        /// Get the data for this resource
+        inline shared_object* get_object() {
+            return data;
+        }
+
+        /// Set the data for this resource
+        inline void set_object(shared_object* d) {
+            data = d;
         }
 
         /// Indicate that builder IN has executed
@@ -102,6 +113,7 @@ initializer::resource::resource(const char* n, resource* nxt)
     wait_builders = nullptr;
     done_builders = nullptr;
     subscribers = nullptr;
+    data = nullptr;
 #ifdef DEBUG
     std::cerr << "\tBuilt resource: " << name << "\n";
 #endif
@@ -112,6 +124,7 @@ initializer::resource::~resource()
     delete_list(wait_builders);
     delete_list(done_builders);
     delete_list(subscribers);
+    // Eventually: Delete(data);
 }
 
 void initializer::resource::done_builder(initializer* IN)
@@ -369,12 +382,11 @@ void initializer::cleanup()
     next_needs = 0;
 }
 
-
-void initializer::builds_resource(const char* res)
+unsigned initializer::builds_resource(const char* res)
 {
     DCASSERT(init == state);
 
-    if (0==res) return;
+    if (0==res) return 0;
 
 #ifdef DEBUG
     std::cerr << "    builds " << res << "\n";
@@ -384,7 +396,7 @@ void initializer::builds_resource(const char* res)
         internal_error E(__FILE__, __LINE__);
         E << "Initializer " << name
           << " build overflow: more than " << max_build;
-        return;
+        return 0;
     }
     resource* r = resource::find(res);
     r->add_builder(this);
@@ -392,13 +404,44 @@ void initializer::builds_resource(const char* res)
 #ifdef DEBUG
     std::cerr << "        done\n";
 #endif
+    return next_build;  // resource slot plus 1
 }
 
-void initializer::needs_resource(const char* res)
+void initializer::set_build_object(unsigned h, shared_object* o)
+{
+    if (0==h) return;
+    h--;
+    resource* r = nullptr;
+    if (h < max_build) r = build_list[h];
+
+    if (!r) {
+        internal_error E(__FILE__, __LINE__);
+        E << "No resource for build handle " << h;
+    }
+
+    r->set_object(o);
+}
+
+shared_object* initializer::get_build_object(unsigned h)
+{
+    if (0==h) return nullptr;
+    h--;
+    resource* r = nullptr;
+    if (h < max_build) r = build_list[h];
+
+    if (!r) {
+        internal_error E(__FILE__, __LINE__);
+        E << "No resource for build handle " << h;
+    }
+
+    return r->get_object();
+}
+
+unsigned initializer::needs_resource(const char* res)
 {
     DCASSERT(init == state);
 
-    if (0==res) return;
+    if (0==res) return 0;
 
 #ifdef DEBUG
     std::cerr << "    needs  " << res << "\n";
@@ -408,7 +451,7 @@ void initializer::needs_resource(const char* res)
         internal_error E(__FILE__, __LINE__);
         E << "Initializer " << name
           << " needs overflow: more than " << max_needs;
-        return;
+        return 0;
     }
     resource* r = resource::find(res);
     r->add_subscriber(this);
@@ -416,6 +459,22 @@ void initializer::needs_resource(const char* res)
 #ifdef DEBUG
     std::cerr << "        done\n";
 #endif
+    return next_needs;
+}
+
+shared_object* initializer::get_needed_object(unsigned h)
+{
+    if (0==h) return nullptr;
+    h--;
+    resource* r = nullptr;
+    if (h < max_needs) r = need_list[h];
+
+    if (!r) {
+        internal_error E(__FILE__, __LINE__);
+        E << "No resource for needed handle " << h;
+    }
+
+    return r->get_object();
 }
 
 void initializer::notify(resource *r)

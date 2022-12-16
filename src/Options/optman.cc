@@ -29,6 +29,12 @@ option_manager::~option_manager()
 {
 }
 
+bool option_manager::Print(std::ostream &s, int width) const
+{
+    s << "option_manager";
+    return true;
+}
+
 option* option_manager::addBoolOption(const char* name, const char* doc,
         bool &link)
 {

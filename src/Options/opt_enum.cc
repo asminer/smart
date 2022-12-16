@@ -4,6 +4,7 @@
 #include "options.h"
 #include "optman.h"
 #include "../Utils/textfmt.h"
+#include "../Utils/strings.h"
 
 #include <cstring>
 
@@ -26,16 +27,25 @@ option_enum::~option_enum()
     // for now, don't delete the settings
 }
 
-void option_enum::show(std::ostream &s) const
+bool option_enum::Print(std::ostream &s, int width) const
 {
     if (name)   s << name;
     else        s << "(no name)";
+    return true;
 }
 
-int option_enum::Compare(const option_enum* b) const
+int option_enum::Compare(const shared_object* b) const
 {
-    if (b)  return strcmp(Name(), b->Name());
-    else    return 1;
+    const shared_string* ss = dynamic_cast <const shared_string*> (b);
+    if (ss) {
+        return strcmp(Name(), ss->getStr());
+    }
+    const option_enum* oe = dynamic_cast <const option_enum*> (b);
+    if (oe)  {
+        return strcmp(Name(), oe->Name());
+    } else {
+        return 1;
+    }
 }
 
 int option_enum::Compare(const char* n) const

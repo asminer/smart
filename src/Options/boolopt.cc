@@ -21,7 +21,7 @@ option::error bool_opt::SetValue(bool b)
 
 void bool_opt::ShowHeader(std::ostream &s) const
 {
-    show(s);
+    Print(s);
     s << " " << value;
 }
 

@@ -98,7 +98,7 @@ void radio_opt::Finish()
 
 void radio_opt::ShowHeader(std::ostream &s) const
 {
-    show(s);
+    Print(s);
     s << ' ' << possible[which]->Name();
 }
 

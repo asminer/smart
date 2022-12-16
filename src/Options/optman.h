@@ -2,12 +2,14 @@
 #ifndef OPTMAN_H
 #define OPTMAN_H
 
+#include "../include/shared.h"
 #include <iostream>
 
 class doc_formatter;   // defined in streams.h
 class option;
 class shared_string;
 class switchable_msg;
+class checklist_enum;
 
 // **************************************************************************
 // *                        option_manager interface                        *
@@ -18,10 +20,14 @@ class switchable_msg;
     addition of options (during initialization) and
     retrieval of optiions (during computation).
 */
-class option_manager {
+class option_manager : public shared_object {
     public:
         option_manager();
+    protected:
         virtual ~option_manager();
+
+    public:
+        virtual bool Print(std::ostream &s, int width=0) const;
 
         /** Called when initialization is complete.
             After this is called, no new options may be added.
