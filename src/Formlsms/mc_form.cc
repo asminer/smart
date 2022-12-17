@@ -6,7 +6,9 @@
 
 #include "../Options/options.h"
 
-#include "../ExprLib/startup.h"
+#include "../Utils/init_opts.h"
+
+#include "../ExprLib/startup.h" // soon...
 #include "../ExprLib/exprman.h"
 #include "../ExprLib/formalism.h"
 
@@ -71,6 +73,7 @@ class markov_def : public model_def {
   static warning_msg dup_init;
   static warning_msg no_init;
   static warning_msg dup_arc;
+  friend class old_init_mcform;
   friend class init_mcform;
 public:
   markov_def(const location &W, const type* t, bool d, char*n,
@@ -665,41 +668,27 @@ void mc_tta::Compute(traverse_data &x, expr** pass, int np)
 // *                                                                *
 // ******************************************************************
 
-class init_mcform : public startup {
+class old_init_mcform : public startup {
   public:
-    init_mcform();
+    old_init_mcform();
     virtual bool execute();
   private:
     void FillSymbolTable(bool disc, formalism* mc);
 };
-init_mcform the_mcform_startup;
+old_init_mcform the_mcform_startup;
 
-init_mcform::init_mcform() : startup("init_mcform")
+old_init_mcform::old_init_mcform() : startup("init_mcform")
 {
   usesResource("em");
   usesResource("CML");
   buildsResource("formalisms");
 }
 
-bool init_mcform::execute()
+bool old_init_mcform::execute()
 {
   if (0==em) return false;
 
   bool ok;
-  // Set up options
-  markov_def::mc_debug.initialize(em->OptMan(), "mcs",
-    "When set, diagnostic messages are displayed regarding Markov chain (dtmc and ctmc formalism) model construction."
-  );
-
-  markov_def::dup_init.initialize(em->OptMan(), "mc_dup_init",
-    "For duplicatation of initial probabilities in Markov chain models"
-  );
-  markov_def::no_init.initialize(em->OptMan(), "mc_no_init",
-    "For absence of initial probabilities in Markov chain models"
-  );
-  markov_def::dup_arc.initialize(em->OptMan(), "mc_dup_arc",
-    "For duplicate arcs in Markov chain models"
-  );
 
   // Set up and register formalisms
   const char* longdocs = "The Markov chain formalisms dtmc and ctmc allow for direct specification of a discrete-time or continuous-time Markov chain. The two formalisms are nearly identical; the primary difference is that self-loops in a ctmc are ignored. States of the Markov chain are declared, and transition rates / probabilities are specified \"by hand\".";
@@ -739,7 +728,7 @@ bool init_mcform::execute()
   return true;
 }
 
-void init_mcform::FillSymbolTable(bool disc, formalism* mc)
+void old_init_mcform::FillSymbolTable(bool disc, formalism* mc)
 {
   // Build functions if necessary
   static symbol*  init = 0;
@@ -775,5 +764,48 @@ void init_mcform::FillSymbolTable(bool disc, formalism* mc)
   // Set the symbol table
   mc->setFunctions(mcsyms);
   mc->addCommonFuncs(CML);
+}
+
+// ******************************************************************
+
+class init_mcform : public initializer {
+    public:
+        init_mcform();
+        virtual void execute();
+};
+static init_mcform the_mcform_initializer;
+
+init_mcform::init_mcform() : initializer("mc_form.cc", 1, 2)
+{
+    builds_resource(0, "mc_form.cc");
+    needs_resource(1, "Warning");
+    needs_resource(2, "Debug");
+}
+
+void init_mcform::execute()
+{
+    // Set up options
+    initialize_msg(markov_def::dup_init,
+        "mc_dup_init",
+        "For duplicatation of initial probabilities in Markov chain models",
+        get_object(1, "Warning")
+    );
+    initialize_msg(markov_def::no_init,
+        "mc_no_init",
+        "For absence of initial probabilities in Markov chain models",
+        get_object(1, "Warning")
+    );
+    initialize_msg(markov_def::dup_arc,
+        "mc_dup_arc",
+        "For duplicate arcs in Markov chain models",
+        get_object(1, "Warning")
+    );
+
+    initialize_msg(markov_def::mc_debug,
+        "mcs",
+        "When set, diagnostic messages are displayed regarding Markov chain (dtmc and ctmc formalism) model construction.",
+        get_object(2, "Debug")
+    );
+
 }
 
