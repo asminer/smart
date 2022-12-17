@@ -2,7 +2,9 @@
 #include "evm_form.h"
 #include "../Options/options.h"
 #include "../Options/optman.h"
+
 #include "../Utils/init_opts.h"
+#include "../ExprLib/startup.h"
 
 #include "../ExprLib/exprman.h"
 #include "../ExprLib/formalism.h"
@@ -345,6 +347,7 @@ protected:
   static const unsigned VECTOR  = 3;
 
   friend class init_evmform;
+  friend class old_init_evmform;
 public:
   evm_hlm(const model_instance* s, model_statevar** V, int nv, model_event** E, int ne);
   virtual ~evm_hlm();
@@ -470,6 +473,7 @@ class evm_def : public dsde_def {
   static const type* event_type;
 
   friend class init_evmform;
+  friend class old_init_evmform;
 public:
   evm_def(const location &W, const type* t, char*n,
       formal_param **pl, int np);
@@ -1224,28 +1228,24 @@ void evm_assert::Compute(traverse_data &x, expr** pass, int np)
 // *                                                                *
 // ******************************************************************
 
-class init_evmform : public initializer {
+// TBD: work on killing these
+class old_init_evmform : public startup {
     public:
-        init_evmform();
-    protected:
-        virtual void execute();
+        old_init_evmform();
+        virtual bool execute();
 };
-init_evmform the_evmform_startup;
+old_init_evmform the_old_evmform_startup;
 
-init_evmform::init_evmform() : initializer("evm_form.cc", 1, 5)
+old_init_evmform::old_init_evmform() : startup("init_evmform")
 {
-    builds_resource(0, "evm_form.cc");
-    needs_resource(1, "OM");
-    needs_resource(2, "Warning");
-    needs_resource(3, "Debug");
-    // Not sure about these
-    needs_resource(4, "em");     // for types
-    needs_resource(5, "CML");    // common measures
+    usesResource("em");
+    usesResource("CML");
+    buildsResource("formalisms");
 }
 
-void init_evmform::execute()
+bool old_init_evmform::execute()
 {
-    DCASSERT(em);
+  if (0==em) return false;
 
   // set up and register intvar types
   simple_type* t_intvar  = new void_type("intvar", "Integer variable", "Integer variable for a generic event-variable model.");
@@ -1278,7 +1278,6 @@ void init_evmform::execute()
   if (!em->registerType(evm)) {
     internal_error E(__FILE__, __LINE__);
     E << "Couldn't register evm type";
-    return false;
   }
 
   // fill symbol table
@@ -1294,6 +1293,36 @@ void init_evmform::execute()
   Add_DSDE_eventfuncs(evm_def::event_type, evmsyms);
   evm->setFunctions(evmsyms);
   evm->addCommonFuncs(CML);
+  return true;
+}
+
+// ******************************************************************
+
+class init_evmform : public initializer {
+    public:
+        init_evmform();
+    protected:
+        virtual void execute();
+};
+static init_evmform the_evmform_initializer;
+
+init_evmform::init_evmform() : initializer("evm_form.cc", 1, 3)
+{
+    builds_resource(0, "evm_form.cc");
+    needs_resource(1, "OM");
+    needs_resource(2, "Warning");
+    needs_resource(3, "Debug");
+    // Not sure about these
+    // needs_resource(4, "em");     // for types
+    // needs_resource(5, "CML");    // common measures
+}
+
+void init_evmform::execute()
+{
+    //
+    // Option defaults
+    //
+    evm_hlm::StateStyle = evm_hlm::SPARSE;
 
     //
     // Set up options
@@ -1349,31 +1378,29 @@ void init_evmform::execute()
     );
 
     option_manager* om = dynamic_cast<option_manager*> (get_object(1, "OM"));
-    if (om) {
-        option* sty = om->addRadioOption("EVMStateStyle",
-            "How to display a state in an event & variable model",
-            4, evm_hlm::StateStyle
-        );
-        sty->addRadioButton(
-            "INDEXED",
-            "Format is [v1:1, v2:0, v3:2, v4:0, v5:0, v6:1]",
-            evm_hlm::INDEXED
-        );
-        sty->addRadioButton(
-            "SAFE",
-            "Format is [v1, v3:2, v6]",
-            evm_hlm::SAFE
-        );
-        sty->addRadioButton(
-            "SPARSE",
-            "Format is [v1:1, v3:2, v6:1]",
-            evm_hlm::SPARSE
-        );
-        sty->addRadioButton(
-            "VECTOR",
-            "Format is [1, 0, 2, 0, 0, 1]",
-            evm_hlm::VECTOR
-        );
-    }
-    evm_hlm::StateStyle = evm_hlm::SPARSE;
+    if (!om) return;
+    option* sty = om->addRadioOption("EVMStateStyle",
+        "How to display a state in an event & variable model",
+        4, evm_hlm::StateStyle
+    );
+    sty->addRadioButton(
+        "INDEXED",
+        "Format is [v1:1, v2:0, v3:2, v4:0, v5:0, v6:1]",
+        evm_hlm::INDEXED
+    );
+    sty->addRadioButton(
+        "SAFE",
+        "Format is [v1, v3:2, v6]",
+        evm_hlm::SAFE
+    );
+    sty->addRadioButton(
+        "SPARSE",
+        "Format is [v1:1, v3:2, v6:1]",
+        evm_hlm::SPARSE
+    );
+    sty->addRadioButton(
+        "VECTOR",
+        "Format is [1, 0, 2, 0, 0, 1]",
+        evm_hlm::VECTOR
+    );
 }

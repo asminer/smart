@@ -6,6 +6,9 @@
 
 #include "../Options/options.h"
 
+#include "../Utils/library.h"
+#include "../Utils/init_opts.h"
+
 #include "../ExprLib/startup.h"
 #include "../ExprLib/exprman.h"
 #include "../ExprLib/formalism.h"
@@ -44,6 +47,7 @@ class fsm_def : public model_def {
   static warning_msg no_init;
   static warning_msg dup_arc;
   friend class init_fsms;
+  friend class old_init_fsms;
 public:
   fsm_def(const location &W, const type* t, char*n,
       formal_param **pl, int np);
@@ -520,27 +524,20 @@ void fsm_deadlocked::Compute(traverse_data &x, expr** pass, int np)
 
 class fsm_lib : public library {
 public:
-  fsm_lib() : library(false, false) { }
-  virtual const char* getVersionString() const {
-    return GraphLib::Version();
-  }
-  virtual bool hasFixedPointer() const {
-    return true;
-  }
-
-  static void Init(exprman* em);
+  fsm_lib();
+  virtual void printVersion(std::ostream &s) const;
 };
+static fsm_lib the_fsm_lib;
 
-void fsm_lib::Init(exprman* em)
+fsm_lib::fsm_lib() : library(false, false)
 {
-  static fsm_lib* fsml = 0;
-
-  if (0==fsml) {
-    fsml = new fsm_lib;
-    em->registerLibrary(fsml);
-  }
+    registerLibrary(this);
 }
 
+void fsm_lib::printVersion(std::ostream &s) const
+{
+    s << GraphLib::Version();
+}
 
 // ******************************************************************
 // *                                                                *
@@ -550,39 +547,25 @@ void fsm_lib::Init(exprman* em)
 // *                                                                *
 // ******************************************************************
 
-class init_fsms : public startup {
+class old_init_fsms : public startup {
   public:
-    init_fsms();
+    old_init_fsms();
     virtual bool execute();
 };
-init_fsms the_fsm_startup;
+old_init_fsms the_fsm_startup;
 
-init_fsms::init_fsms() : startup("init_fsms")
+old_init_fsms::old_init_fsms() : startup("init_fsms")
 {
   usesResource("em");
   usesResource("CML");
   buildsResource("formalisms");
 }
 
-bool init_fsms::execute()
+bool old_init_fsms::execute()
 {
   if (0==em) return false;
 
   bool ok;
-  // Set up options
-  fsm_def::fsm_debug.initialize(em->OptMan(), "fsms",
-    "When set, diagnostic messages are displayed regarding FSM model construction."
-  );
-
-  fsm_def::dup_init.initialize(em->OptMan(), "fsm_dup_init",
-    "For duplicatation of initial states in finite state machine models"
-  );
-  fsm_def::no_init.initialize(em->OptMan(), "fsm_no_init",
-    "For absence of initial states in finite state machine models"
-  );
-  fsm_def::dup_arc.initialize(em->OptMan(), "fsm_dup_arc",
-    "For duplicate arcs in finite state machine models"
-  );
 
   // Set up and register formalisms
   const char* longdocs = "The finite state machine formalism fsm allows for direct specification of a finite state machine. States of the finite state machine are declared, and transitions between states are specified \"by hand\".";
@@ -618,9 +601,54 @@ bool init_fsms::execute()
   fsm->setFunctions(mcsyms);
   fsm->addCommonFuncs(CML);
 
-  // register libs
-  fsm_lib::Init(em);
-
   return true;
+}
+
+// ******************************************************************
+
+class init_fsms : public initializer {
+    public:
+        init_fsms();
+    protected:
+        virtual void execute();
+};
+static init_fsms the_fsm_initializer;
+
+init_fsms::init_fsms() : initializer("fsm_form.cc", 1, 2)
+{
+    builds_resource(0, "evm_form.cc");
+    needs_resource(1, "Warning");
+    needs_resource(2, "Debug");
+    // Not sure about these
+    // needs_resource(4, "em");     // for types
+    // needs_resource(5, "CML");    // common measures
+}
+
+void init_fsms::execute()
+{
+    //
+    // Set up options
+    //
+    initialize_msg(fsm_def::fsm_debug,
+        "fsms",
+        "When set, diagnostic messages are displayed regarding FSM model construction.",
+        get_object(2, "Debug")
+    );
+
+    initialize_msg(fsm_def::dup_init,
+        "fsm_dup_init",
+        "For duplicatation of initial states in finite state machine models",
+        get_object(1, "Warning")
+    );
+    initialize_msg(fsm_def::no_init,
+        "fsm_no_init",
+        "For absence of initial states in finite state machine models",
+        get_object(1, "Warning")
+    );
+    initialize_msg(fsm_def::dup_arc,
+        "fsm_dup_arc",
+        "For duplicate arcs in finite state machine models",
+        get_object(1, "Warning")
+    );
 }
 

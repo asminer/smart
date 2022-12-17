@@ -91,6 +91,14 @@ class symbol_table {
         }
 };
 
+//
+// TO DO:
+//
+//   (1) Make sure this uses the new splay class
+//   (2) Static member for the global symbol table
+//   (3) Static member for the global measure table (common measures)
+//          search this after searching the per-model measure table.
+//
 
 // symbol_table* MakeSymbolTable();  // any params necessary?
 
