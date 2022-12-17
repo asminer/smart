@@ -1,6 +1,7 @@
 
 #include "glue_meddly.h"
 #include "biginttype.h"
+#include "../Utils/library.h"
 #include "../Utils/textfmt.h"
 #include "../Options/optman.h"
 #include "../ExprLib/startup.h"
@@ -56,45 +57,38 @@ int shared_domain::Compare(const shared_object* x) const
 // ******************************************************************
 
 class mdd_lib : public library {
-  const char* version;
 public:
-  mdd_lib();
-  virtual ~mdd_lib();
-  virtual const char* getVersionString() const;
-  virtual bool hasFixedPointer() const { return false; }
-  virtual void printCopyright(doc_formatter &df) const;
-  virtual void printReleaseDate(doc_formatter &df) const;
+    mdd_lib();
+    virtual void printVersion(std::ostream &s) const;
+    virtual void printCopyright(doc_formatter &df) const;
+    virtual void printReleaseDate(std::ostream &s) const;
 };
 
 mdd_lib::mdd_lib() : library(true, true)
 {
-  version = MEDDLY::getLibraryInfo(0);
+    registerLibrary(this);
 }
 
-mdd_lib::~mdd_lib()
+void mdd_lib::printVersion(std::ostream &s) const
 {
-}
-
-const char* mdd_lib::getVersionString() const
-{
-  return version;
+    s << MEDDLY::getLibraryInfo(0);
 }
 
 void mdd_lib::printCopyright(doc_formatter &df) const
 {
-  df.begin_indent();
-  df.Out() << MEDDLY::getLibraryInfo(1) << "\n";
-  df.Out() << MEDDLY::getLibraryInfo(2) << "\n";
-  df.Out() << MEDDLY::getLibraryInfo(3) << "\n";
-  df.end_indent();
+    df.begin_indent();
+    df.Out() << MEDDLY::getLibraryInfo(1) << "\n";
+    df.Out() << MEDDLY::getLibraryInfo(2) << "\n";
+    df.Out() << MEDDLY::getLibraryInfo(3) << "\n";
+    df.end_indent();
 }
 
-void mdd_lib::printReleaseDate(doc_formatter &df) const
+void mdd_lib::printReleaseDate(std::ostream &s) const
 {
-  df.Out() << MEDDLY::getLibraryInfo(5);
+    s << MEDDLY::getLibraryInfo(5);
 }
 
-mdd_lib mdd_lib_data;
+static mdd_lib mdd_lib_data;
 
 
 // ******************************************************************
@@ -1096,9 +1090,6 @@ init_meddly::init_meddly() : startup("init_meddly")
 bool init_meddly::execute()
 {
   if (0==em)  return false;
-
-  // Library registry
-  em->registerLibrary(  &mdd_lib_data  );
 
   // Options
   //

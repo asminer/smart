@@ -490,14 +490,11 @@ init_my_exp_state_lib::init_my_exp_state_lib(my_exp_state_lib &sl)
     builds_resource(0, "my_exp_state_lib");
     needs_resource(1, "OM");
 
-    try_immediately();
+    try_immediately();  // late initialization
 }
 
 void init_my_exp_state_lib::execute()
 {
-    // FOR NOW:
-    std::cerr << "Inside init_my_exp_state_lib::execute()\n";
-
     // Set option defaults
     SL.storage = SL.HASHING;
     SL.substate_style = SL.SHARED;
