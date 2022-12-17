@@ -38,52 +38,6 @@ class doc_formatter;
 class general_conv;
 class specific_conv;
 
-/** Abstract base class for external libraries.
-    Right now, this is used only for "credits".
-
-    To register an external library, derive a class from this one
-    and implement the virtual functions.
-*/
-class library {
-  bool has_copyright;
-  bool has_release_date;
-public:
-  library(bool has_cr, bool has_date);
-  virtual ~library();
-
-  /** Can the library be determined from the pointer address?
-      If so, we can very quickly check for duplicates;
-      otherwise, we have to compare strings.
-
-        @return  true  iff getVersionString() is unique for the library.
-  */
-  virtual bool hasFixedPointer() const = 0;
-
-  /// Get the version string for a library.
-  virtual const char* getVersionString() const = 0;
-
-  /// Does the library have copyright info.
-  inline bool hasCopyright() const { return has_copyright; }
-
-  /** Print copyright info for a library.
-      Default is to dump core, i.e., assuming there is no copyright info
-      then this should not be called.
-      Otherwise, if there is copyright info, then this must be overridden
-      in the derived class.
-  */
-  virtual void printCopyright(doc_formatter &df) const;
-
-  /// Does the library have a release date.
-  inline bool hasReleaseDate() const { return has_release_date; }
-
-  /** Print release date for a library.
-      Default is to dump core.
-  */
-  virtual void printReleaseDate(doc_formatter &df) const;
-
-};
-
-
 /** Expression manager class.
     This is an abstract base class, to provide the interface and hide
     the (possibly vast) implementation details.
@@ -1263,29 +1217,6 @@ public:
   /// Get the ith registered engine type.
   virtual const engtype* getEngineTypeNumber(int i) const = 0;
 
-
-  // +-----------------------------------------------------------------+
-  // |                                                                 |
-  // |                      Supporting  libraries                      |
-  // |                                                                 |
-  // +-----------------------------------------------------------------+
-
-  /** Register an external supporting library.
-        @param  lib  The library to register.
-        @return  0,   on success.
-                1,  if \a lib is 0.
-                2,  if the manager is already finalized.
-                3,  if there is no version string for this library.
-                4,  if this library is a duplicate
-                    of another one registered.
-  */
-  virtual char registerLibrary(const library* lib) = 0;
-
-  /// Print version info for all registered supporting libraries.
-  virtual void printLibraryVersions(std::ostream &s) const = 0;
-
-  /// Print copyright info for all registered supporting libraries.
-  virtual void printLibraryCopyrights(doc_formatter &df) const = 0;
 
 protected:
   virtual ~exprman();  // don't want user to delete one...

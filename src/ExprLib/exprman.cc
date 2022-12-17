@@ -23,30 +23,6 @@
 #include "init_data.h"
 
 // ******************************************************************
-// *                        library  methods                        *
-// ******************************************************************
-
-library::library(bool has_cr, bool has_date)
-{
-  has_copyright = has_cr;
-  has_release_date = has_date;
-}
-
-library::~library()
-{
-}
-
-void library::printCopyright(doc_formatter&) const
-{
-  DCASSERT(0);
-}
-
-void library::printReleaseDate(doc_formatter&) const
-{
-  DCASSERT(0);
-}
-
-// ******************************************************************
 // *                        exprman  methods                        *
 // ******************************************************************
 

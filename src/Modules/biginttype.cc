@@ -8,6 +8,7 @@
 #include "../SymTabs/symtabs.h"
 #include "../ExprLib/functions.h"
 #include "../Utils/textfmt.h"
+#include "../Utils/library.h"
 #include "biginttype.h"
 
 #include <math.h>
@@ -21,38 +22,39 @@
 #ifdef HAVE_LIBGMP
 
 class gmp_lib : public library {
-  char* version;
-public:
-  gmp_lib();
-  virtual ~gmp_lib();
-  virtual const char* getVersionString() const;
-  virtual bool hasFixedPointer() const { return false; }
-  virtual void printCopyright(doc_formatter &df) const;
+        char* version;
+    public:
+        gmp_lib();
+        virtual ~gmp_lib();
+        virtual void printVersion(std::ostream &s) const;
+        virtual void printCopyright(doc_formatter &df) const;
 };
 
 gmp_lib::gmp_lib() : library(true, false)
 {
-  version = new char[40];
-  snprintf(version, 40, "GNU MP version %s (or higher)", gmp_version);
+    version = new char[40];
+    snprintf(version, 40, "GNU MP version %s (or higher)", gmp_version);
+
+    registerLibrary(this);
 }
 
 gmp_lib::~gmp_lib()
 {
-  delete[] version;
+    delete[] version;
 }
 
-const char* gmp_lib::getVersionString() const
+void gmp_lib::printVersion(std::ostream &s) const
 {
-  return version;
+    s << version;
 }
 
 void gmp_lib::printCopyright(doc_formatter &df) const
 {
-  df.begin_indent();
-  df.Out() << "Copyright (C) 1991, 1999 Free Software Foundation, Inc.\n";
-  df.Out() << "Released under the GNU Lesser General Public License, version 2\n";
-  df.Out() << "http://gmplib.org\n";
-  df.end_indent();
+    df.begin_indent();
+    df.Out() << "Copyright (C) 1991, 1999 Free Software Foundation, Inc.\n";
+    df.Out() << "Released under the GNU Lesser General Public License, version 2\n";
+    df.Out() << "http://gmplib.org\n";
+    df.end_indent();
 }
 
 gmp_lib gmp_lib_data;
@@ -2087,11 +2089,6 @@ init_bigints::init_bigints() : startup("init_bigints")
 bool init_bigints::execute()
 {
   if (0==em)  return false;
-
-  // Library registry
-#ifdef HAVE_LIBGMP
-  em->registerLibrary(  &gmp_lib_data  );
-#endif
 
   // Type registry
   simple_type* t_bigint = new bigint_type;

@@ -40,11 +40,6 @@ class superman : public exprman {
   const trinary_op** reg_trinary;
   const assoc_op** reg_assoc;
 
-  // List of registered libraries.
-  const library** extlibs;
-  int num_libs;
-  int max_libs;
-
   // Engine types, pre-Finalize():
   SplayOfPointers <engtype>* ETTree;
 
@@ -123,11 +118,6 @@ public:
   virtual int getNumEngineTypes() const;
   virtual const engtype* getEngineTypeNumber(int i) const;
 
-  // Supporting  libraries
-
-  virtual char registerLibrary(const library* lib);
-  virtual void printLibraryVersions(std::ostream &s) const;
-  virtual void printLibraryCopyrights(doc_formatter &df) const;
 };
 
 

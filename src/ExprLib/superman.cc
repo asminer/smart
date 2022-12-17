@@ -142,11 +142,6 @@ superman::superman(option_manager* o) : exprman(o)
   for (int i=0; i<top_none; i++)  reg_trinary[i] = 0;
   for (int i=0; i<aop_none; i++)  reg_assoc[i] = 0;
 
-  // library registry
-  num_libs = 0;
-  max_libs = 16;  // can be expanded
-  extlibs = (const library**) malloc(max_libs * sizeof(void*));
-
   // engine type registry
   ETTree = new SplayOfPointers <engtype> (16, 0);
   ETList = 0;
@@ -196,9 +191,6 @@ superman::~superman()
   delete[] reg_binary;
   delete[] reg_trinary;
   delete[] reg_assoc;
-
-  // library registry
-  free(extlibs);
 
   // engine type registry
   delete ETTree;
@@ -1082,68 +1074,4 @@ const engtype* superman::getEngineTypeNumber(int i) const
   CHECK_RANGE(0, i, num_ets);
   return ETList[i];
 }
-
-//
-//
-// Supporting  libraries
-//
-//
-
-char superman::registerLibrary(const library* lib)
-{
-  if (0==lib)         return 1;
-  if (isFinalized())  return 2;
-  // first, check for duplicates
-  const char* libv = lib->getVersionString();
-  if (0==libv)  return 3;
-  if (lib->hasFixedPointer()) {
-    // We can use a fast check...
-    for (int i=0; i<num_libs; i++)
-      if (extlibs[i]->getVersionString() == libv)
-    return 4;
-  } else {
-    // darn, gotta use strcmp
-    for (int i=0; i<num_libs; i++)
-      if (0==strcmp(libv, extlibs[i]->getVersionString()))
-    return 4;
-  }
-  // still here? register the library
-  if (num_libs >= max_libs) {
-    max_libs += 16;
-    extlibs = (const library**) realloc(extlibs, max_libs * sizeof(void*));
-  }
-  extlibs[num_libs] = lib;
-  num_libs++;
-  return 0;
-}
-
-void superman::printLibraryVersions(std::ostream &s) const
-{
-  for (int i=0; i<num_libs; i++) {
-    const char* v = extlibs[i]->getVersionString();
-    DCASSERT(v);
-    s << "\t" << v << "\n";
-  }
-}
-
-void superman::printLibraryCopyrights(doc_formatter &df) const
-{
-  for (int i=0; i<num_libs; i++) {
-    DCASSERT(extlibs[i]);
-    if (!extlibs[i]->hasCopyright()) continue;
-    df.Out() << "\n";
-    df.begin_heading();
-    const char* v = extlibs[i]->getVersionString();
-    DCASSERT(v);
-    df.Out() << v;
-    if (extlibs[i]->hasReleaseDate()) {
-      df.Out() << ", released ";
-      extlibs[i]->printReleaseDate(df);
-    }
-    df.end_heading();
-    extlibs[i]->printCopyright(df);
-  }
-}
-
-
 
