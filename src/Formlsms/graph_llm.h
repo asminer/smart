@@ -323,6 +323,7 @@ public:
       static void showError(const char* str);
       stateset* notImplemented(const char* op) const;
       stateset* incompatibleOperand(const char* op) const;
+      friend class old_init_graphllm;
       friend class init_graphllm;
       friend class graph_lldsm; // overkill
     };
@@ -521,6 +522,7 @@ private:
   static unsigned graph_display_style;
   static bool display_graph_node_names;
 
+  friend class old_init_graphllm;
   friend class init_graphllm;
 };
 

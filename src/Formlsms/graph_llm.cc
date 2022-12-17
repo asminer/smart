@@ -2,10 +2,12 @@
 #include "graph_llm.h"
 #include "../Options/options.h"
 #include "../Options/optman.h"
-#include "../ExprLib/startup.h"
+#include "../Utils/init_opts.h"
+#include "../ExprLib/startup.h" // soon...
 #include "../ExprLib/exprman.h"
 #include "../ExprLib/mod_vars.h"
 #include "../Modules/biginttype.h"
+
 // ******************************************************************
 // *                                                                *
 // *                      graph_lldsm  statics                      *
@@ -14,7 +16,7 @@
 
 unsigned graph_lldsm::graph_display_style;
 bool graph_lldsm::display_graph_node_names;
-long graph_lldsm::max_arc_display = 100000000;
+long graph_lldsm::max_arc_display;
 const char* MAX_ARC_DISPLAY_OPTION = "MaxArcDisplay";
 
 // ******************************************************************
@@ -290,79 +292,108 @@ stateset* graph_lldsm::reachgraph::incompatibleOperand(const char* op) const
 // *                                                                *
 // ******************************************************************
 
-class init_graphllm : public startup {
+class old_init_graphllm : public startup {
   public:
-    init_graphllm();
+    old_init_graphllm();
     virtual bool execute();
 };
-init_graphllm the_graphllm_startup;
+old_init_graphllm the_graphllm_startup;
 
-init_graphllm::init_graphllm() : startup("init_graphllm")
+old_init_graphllm::old_init_graphllm() : startup("init_graphllm")
 {
   usesResource("em");
 }
 
-bool init_graphllm::execute()
+bool old_init_graphllm::execute()
 {
   if (0==em) return false;
 
   graph_lldsm::reachgraph::em = em;
 
-  // ------------------------------------------------------------------
-  graph_lldsm::reachgraph::numpaths_report.initialize(em->OptMan(),
-    "num_paths",
-    "When set, performance data for counting number of paths is displayed."
-  );
-  graph_lldsm::reachgraph::ctl_report.initialize(em->OptMan(),
-    "CTL_engines",
-    "When set, CTL engine performance is reported."
-  );
+  return true;
+}
 
-  // ------------------------------------------------------------------
-  if (em->OptMan()) em->OptMan()->addIntOption(
-      MAX_ARC_DISPLAY_OPTION,
-      "The maximum number of arcs to display for a model.  If 0, the graph will be displayed whenever possible, regardless of the number of arcs.",
-      graph_lldsm::max_arc_display,
-      0, 1000000000
-  );
+// ******************************************************************
 
-  // ------------------------------------------------------------------
-  if (em->OptMan()) {
-    option* gds = em->OptMan()->addRadioOption("GraphDisplayStyle",
+class init_graphllm : public initializer {
+    public:
+        init_graphllm();
+    protected:
+        virtual void execute();
+};
+static init_graphllm the_graphllm_initializer;
+
+init_graphllm::init_graphllm() : initializer("graph_llm.cc", 1, 2)
+{
+    builds_resource(0, "graph_llm.cc");
+    needs_resource(1, "OM");
+    needs_resource(2, "Report");
+}
+
+void init_graphllm::execute()
+{
+    // ------------------------------------------------------------------
+    initialize_msg(graph_lldsm::reachgraph::numpaths_report,
+        "num_paths",
+        "When set, performance data for counting number of paths is displayed.",
+        get_object(2, "Report")
+    );
+    initialize_msg(graph_lldsm::reachgraph::ctl_report,
+        "CTL_engines",
+        "When set, CTL engine performance is reported.",
+        get_object(2, "Report")
+    );
+
+    // ------------------------------------------------------------------
+    graph_lldsm::graph_display_style = graph_lldsm::OUTGOING;
+    graph_lldsm::max_arc_display = 100000000;
+
+    option_manager* om = dynamic_cast<option_manager*> (get_object(1, "OM"));
+    if (!om) return;
+
+    // ------------------------------------------------------------------
+    om->addIntOption(
+        MAX_ARC_DISPLAY_OPTION,
+        "The maximum number of arcs to display for a model.  If 0, the graph will be displayed whenever possible, regardless of the number of arcs.",
+        graph_lldsm::max_arc_display,
+        0, 1000000000
+    );
+
+    // ------------------------------------------------------------------
+    option* gds = om->addRadioOption(
+        "GraphDisplayStyle",
         "Select the style to use when displaying a graph (e.g., using function show_arcs).  This does not affect the internal storage of the graph.",
         graph_lldsm::num_graph_display_styles,
         graph_lldsm::graph_display_style
     );
     gds->addRadioButton(
-      "DOT",
-      "Graphs are displayed in a format compatible with the graph visualization tool \"dot\".",
-      graph_lldsm::DOT
+        "DOT",
+        "Graphs are displayed in a format compatible with the graph visualization tool \"dot\".",
+        graph_lldsm::DOT
     );
     gds->addRadioButton(
-      "INCOMING",
-      "Graphs are displayed by listing the incoming edges for each node.",
-      graph_lldsm::INCOMING
+        "INCOMING",
+        "Graphs are displayed by listing the incoming edges for each node.",
+        graph_lldsm::INCOMING
     );
     gds->addRadioButton(
-      "OUTGOING",
-      "Graphs are displayed by listing the outgoing edges for each node.",
-      graph_lldsm::OUTGOING
+        "OUTGOING",
+        "Graphs are displayed by listing the outgoing edges for each node.",
+        graph_lldsm::OUTGOING
     );
     gds->addRadioButton(
-      "TRIPLES",
-      "Graphs are displayed by listing edges as triples FROM TO INFO, where INFO is any edge information (e.g., the rate).",
-      graph_lldsm::TRIPLES
+        "TRIPLES",
+        "Graphs are displayed by listing edges as triples FROM TO INFO, where INFO is any edge information (e.g., the rate).",
+        graph_lldsm::TRIPLES
     );
-  }
-  graph_lldsm::graph_display_style = graph_lldsm::OUTGOING;
 
-  // ------------------------------------------------------------------
-  if (em->OptMan()) em->OptMan()->addBoolOption("DisplayGraphNodeNames",
-      "When displaying a graph (e.g., using function show_arcs), should the nodes be referred to by \"name\" (the label of the node)?  Otherwise they are referred to by an index between 0 and the number of nodes-1.",
-      graph_lldsm::display_graph_node_names
-  );
+    // ------------------------------------------------------------------
+    om->addBoolOption(
+        "DisplayGraphNodeNames",
+        "When displaying a graph (e.g., using function show_arcs), should the nodes be referred to by \"name\" (the label of the node)?  Otherwise they are referred to by an index between 0 and the number of nodes-1.",
+        graph_lldsm::display_graph_node_names
+    );
 
-  return true;
 }
 
 
