@@ -2,6 +2,7 @@
 #include "expl_states.h"
 #include "../Options/optman.h"
 #include "../Options/options.h"
+#include "../Utils/initializer.h"
 #include "../ExprLib/mod_vars.h"
 #include "../ExprLib/mod_inst.h"
 #include "../include/heap.h"
@@ -370,25 +371,26 @@ exp_state_lib::exp_state_lib() : library(false, false)
 // **************************************************************************
 
 class my_exp_state_lib : public exp_state_lib {
-  static long max_stack_depth;
-  unsigned storage;
-  static const unsigned HASHING  = 0;
-  static const unsigned RED_BLACK  = 1;
-  static const unsigned SPLAY  = 2;
-  // methods for substate dbs
-  unsigned substate_style;
-  static const unsigned SEPARATED = 0;
-  static const unsigned SHARED = 1;
-  static const unsigned SYNCHRONIZED = 2;
+    friend class init_my_exp_state_lib;
+    static long max_stack_depth;
+    unsigned storage;
+    static const unsigned HASHING  = 0;
+    static const unsigned RED_BLACK  = 1;
+    static const unsigned SPLAY  = 2;
+    // methods for substate dbs
+    unsigned substate_style;
+    static const unsigned SEPARATED = 0;
+    static const unsigned SHARED = 1;
+    static const unsigned SYNCHRONIZED = 2;
 public:
-  my_exp_state_lib(exprman* em);
-  virtual const char* getVersionString() const;
-  virtual bool hasFixedPointer() const;
-  virtual const char* getDBMethod() const;
-  virtual StateLib::state_db* createStateDB(bool indexed, bool store_sizes)
-  const;
+    my_exp_state_lib();
+    virtual void printVersion(std::ostream &s) const;
 
-  virtual substate_colls* createSubstateDBs(int K, bool store_sizes) const;
+    virtual const char* getDBMethod() const;
+    virtual StateLib::state_db* createStateDB(bool indexed,
+            bool store_sizes) const;
+
+    virtual substate_colls* createSubstateDBs(int K, bool store_sizes) const;
 };
 
 long my_exp_state_lib::max_stack_depth;
@@ -397,73 +399,14 @@ long my_exp_state_lib::max_stack_depth;
 // *                        my_exp_state_lib methods                        *
 // **************************************************************************
 
-my_exp_state_lib::my_exp_state_lib(exprman* em) : exp_state_lib()
+my_exp_state_lib::my_exp_state_lib() : exp_state_lib()
 {
-    if (0==em) return;
-    if (0==em->OptMan()) return;
-
-    option* ess = em->OptMan()->addRadioOption(
-        "ExplicitStateStorage",
-        "Data structure to use for explicitly storing states.",
-        3, storage
-    );
-    ess->addRadioButton(
-        "HASHING",
-        "States are stored in a hash table.",
-        HASHING
-    );
-    ess->addRadioButton(
-        "RED_BLACK",
-        "States are stored in a red-black tree.",
-        RED_BLACK
-    );
-    ess->addRadioButton(
-        "SPLAY",
-        "States are stored in a splay tree.",
-        SPLAY
-    );
-    storage = HASHING;    // Default.  Currently fastest.
-
-
-    int shift = sizeof(long)*8-2;
-    max_stack_depth = 1L << shift;
-    em->OptMan()->addIntOption("ExplicitStateStackLimit",
-      "Maximum stack size to use for search trees for explicit state storage.",
-      max_stack_depth, 1, max_stack_depth
-    );
-
-
-    option* sss = em->OptMan()->addRadioOption(
-      "SubstateStorageStyle",
-      "For a model composed of submodels, how should the substates be stored.",
-      3, substate_style
-    );
-    sss->addRadioButton(
-        "SEPARATED",
-        "Substates are stored in separate collections.",
-        SEPARATED
-    );
-    sss->addRadioButton(
-        "SHARED",
-        "Substates are stored in a shared collection, but substate indexes are different for each submodel.",
-        SHARED
-    );
-    sss->addRadioButton(
-        "SYNCHRONIZED",
-        "Substates are stored in a common collection, with the same indexes.",
-        SYNCHRONIZED
-    );
-    substate_style = SHARED;
+    registerLibrary(this);
 }
 
-const char* my_exp_state_lib::getVersionString() const
+void my_exp_state_lib::printVersion(std::ostream &s) const
 {
-  return StateLib::LibraryVersion();
-}
-
-bool my_exp_state_lib::hasFixedPointer() const
-{
-  return false;
+    s << StateLib::LibraryVersion();
 }
 
 const char* my_exp_state_lib::getDBMethod() const
@@ -523,6 +466,97 @@ substate_colls* my_exp_state_lib
   return 0;
 }
 
+// **************************************************************************
+// *                                                                        *
+// *                      init_my_exp_state_lib  class                      *
+// *                                                                        *
+// **************************************************************************
+
+class init_my_exp_state_lib : public initializer {
+        my_exp_state_lib &SL;
+    public:
+        init_my_exp_state_lib(my_exp_state_lib &sl);
+    protected:
+        virtual void execute();
+};
+
+// **************************************************************************
+// *                     init_my_exp_state_lib  methods                     *
+// **************************************************************************
+
+init_my_exp_state_lib::init_my_exp_state_lib(my_exp_state_lib &sl)
+    : initializer("init_my_exp_state_lib", 1, 1), SL(sl)
+{
+    builds_resource(0, "my_exp_state_lib");
+    needs_resource(1, "OM");
+
+    try_immediately();
+}
+
+void init_my_exp_state_lib::execute()
+{
+    // FOR NOW:
+    std::cerr << "Inside init_my_exp_state_lib::execute()\n";
+
+    // Set option defaults
+    SL.storage = SL.HASHING;
+    SL.substate_style = SL.SHARED;
+    int shift = sizeof(long)*8-2;
+    SL.max_stack_depth = 1L << shift;
+
+    // Add options
+    option_manager* om = dynamic_cast<option_manager*> (get_object(1, "OM"));
+    if (!om) return;
+
+    option* ess = om->addRadioOption(
+        "ExplicitStateStorage",
+        "Data structure to use for explicitly storing states.",
+        3, SL.storage
+    );
+    ess->addRadioButton(
+        "HASHING",
+        "States are stored in a hash table.",
+        SL.HASHING
+    );
+    ess->addRadioButton(
+        "RED_BLACK",
+        "States are stored in a red-black tree.",
+        SL.RED_BLACK
+    );
+    ess->addRadioButton(
+        "SPLAY",
+        "States are stored in a splay tree.",
+        SL.SPLAY
+    );
+
+
+    om->addIntOption("ExplicitStateStackLimit",
+      "Maximum stack size to use for search trees for explicit state storage.",
+      SL.max_stack_depth, 1, SL.max_stack_depth
+    );
+
+
+    option* sss = om->addRadioOption(
+      "SubstateStorageStyle",
+      "For a model composed of submodels, how should the substates be stored.",
+      3, SL.substate_style
+    );
+    sss->addRadioButton(
+        "SEPARATED",
+        "Substates are stored in separate collections.",
+        SL.SEPARATED
+    );
+    sss->addRadioButton(
+        "SHARED",
+        "Substates are stored in a shared collection, but substate indexes are different for each submodel.",
+        SL.SHARED
+    );
+    sss->addRadioButton(
+        "SYNCHRONIZED",
+        "Substates are stored in a common collection, with the same indexes.",
+        SL.SYNCHRONIZED
+    );
+}
 
 // ******************************************************************
 // *                                                                *
@@ -641,14 +675,15 @@ coll_sorter2::~coll_sorter2()
 // *                                                                        *
 // **************************************************************************
 
-const exp_state_lib* InitExplicitStateStorage(exprman* em)
+const exp_state_lib* InitExplicitStateStorage()
 {
-  static const exp_state_lib* foo = 0;
-  if (!foo) {
-    foo = new my_exp_state_lib(em);
-    em->registerLibrary(foo);
-  }
-  return foo;
+    static const exp_state_lib* foo = nullptr;
+    if (!foo) {
+        my_exp_state_lib* _foo = new my_exp_state_lib();
+        new init_my_exp_state_lib(*_foo);
+        foo = _foo;
+    }
+    return foo;
 }
 
 void LexicalSort(const hldsm* hm, const StateLib::state_coll* ss, long* map)

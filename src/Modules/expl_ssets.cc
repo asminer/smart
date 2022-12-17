@@ -4,6 +4,8 @@
 #include "../ExprLib/mod_vars.h"
 #include "../Formlsms/graph_llm.h"
 
+#include "../Utils/library.h"
+
 #include "expl_ssets.h"
 #include "biginttype.h"
 
@@ -167,49 +169,20 @@ int expl_stateset::Compare(const shared_object *o) const
 // ******************************************************************
 
 class intset_lib : public library {
-public:
-  intset_lib();
-  virtual const char* getVersionString() const;
-  virtual bool hasFixedPointer() const { return true; }
+    public:
+        intset_lib();
+        virtual void printVersion(std::ostream &s) const;
 };
 
 intset_lib::intset_lib() : library(false, false)
 {
+    registerLibrary(this);
 }
 
-const char* intset_lib::getVersionString() const
+void intset_lib::printVersion(std::ostream &s) const
 {
-  return intset::getVersion();
+  s << intset::getVersion();
 }
 
 intset_lib intset_lib_data;
-
-// ******************************************************************
-// *                                                                *
-// *                                                                *
-// *                         Initialization                         *
-// *                                                                *
-// *                                                                *
-// ******************************************************************
-
-class init_explssets : public startup {
-  public:
-    init_explssets();
-    virtual bool execute();
-};
-init_explssets the_explsset_startup;
-
-init_explssets::init_explssets() : startup("init_explssets")
-{
-  usesResource("em");
-}
-
-bool init_explssets::execute()
-{
-  if (0==em)  return false;
-
-  // Library registry
-  em->registerLibrary(  &intset_lib_data );
-  return true;
-}
 

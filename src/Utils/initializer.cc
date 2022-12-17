@@ -41,6 +41,7 @@ class initializer::resource {
         initializer::node* subscribers;
         shared_object* data;
         resource* next;
+        bool done_building;
 
         static resource* RLIST;
     private:
@@ -52,15 +53,17 @@ class initializer::resource {
 
         ~resource();
 
-        inline bool is_ready() const { return !wait_builders; }
+        inline bool is_built() const { return done_building; }
 
         /// Indicate that IN is a builder for this resource
         inline void add_builder(initializer* IN) {
+            DCASSERT(!done_building);
             wait_builders = new initializer::node(IN, wait_builders);
         }
 
         /// Indicate that IN needs this resource
         inline void add_subscriber(initializer* IN) {
+            DCASSERT(!done_building);
             subscribers = new initializer::node(IN, subscribers);
         }
 
@@ -114,6 +117,7 @@ initializer::resource::resource(const char* n, resource* nxt)
     done_builders = nullptr;
     subscribers = nullptr;
     data = nullptr;
+    done_building = false;
 #ifdef DEBUG
     std::cerr << "\tBuilt resource: " << name << "\n";
 #endif
@@ -154,6 +158,7 @@ void initializer::resource::done_builder(initializer* IN)
         // Is our waiting list now empty?
         if (wait_builders) return;  // nope, we're done
 
+        done_building = true;
         // Waiting list just became empty.
         // That means the resource is ready.
         if (debug) {
@@ -279,8 +284,7 @@ initializer::initializer(const char* _name, unsigned maxbld, unsigned maxnds)
 {
     name = _name;
     max_built = maxbld;
-    max_needed = maxnds;
-    max_resources = max_built + max_needed;
+    max_resources = max_built + maxnds;
     wait_count = 0;
     state = init;
 
@@ -360,15 +364,22 @@ void initializer::execute_all(bool _debug)
     }
 
     //
-    // Destroy resources
+    // DON'T Destroy resources yet,
+    // for late initializers.
     //
-    resource::delete_all();
+    // resource::delete_all();
+
+    if (debug) {
+        std::cerr << "Finished running initializers\n";
+    }
 }
 
 void initializer::cleanup()
 {
     delete[] res_list;
     res_list = nullptr;
+    max_built = 0;
+    max_resources = 0;
 }
 
 void initializer::builds_resource(unsigned slot, const char* res)
@@ -410,10 +421,12 @@ void initializer::needs_resource(unsigned slot, const char* res)
 #ifdef DEBUG
     std::cerr << "    needs  " << res << "\n";
 #endif
-    ++wait_count;
     resource* r = resource::find(res);
-    r->add_subscriber(this);
     res_list[slot] = r;
+    if (!r->is_built()) {
+        ++wait_count;
+        r->add_subscriber(this);
+    }
 #ifdef DEBUG
     std::cerr << "        done\n";
 #endif
@@ -435,20 +448,30 @@ shared_object* initializer::get_object(unsigned slot, const char* name)
     return res_list[slot]->get_object();
 }
 
-void initializer::notify(resource *r)
+void initializer::try_immediately()
 {
-    DCASSERT(waiting == state);
-    DCASSERT(r);
-    DCASSERT(r->is_ready());
+    // We should be top on the waiting list.
+    // (If not, we'll bail out.) Pull us off.
 
-    // Find resource r in our list
-    for (unsigned i=max_built; i<max_resources; ++i) {
-        if (res_list[i] != r) continue;
-        DCASSERT(wait_count);
-        --wait_count;
-    }
+    if (Waiting != this) return;
+    Waiting = next;
+    next = nullptr;
 
+    //
+    // Run if possible.
+    //
     run_or_wait();
+
+    //
+    // See if we need to go back on the waiting list.
+    if (waiting == state) {
+        next = Waiting;
+        Waiting = this;
+        return;
+    }
+    DCASSERT(complete == state);
+    cleanup();
+    // Don't delete
 }
 
 void initializer::run_or_wait()
@@ -471,6 +494,22 @@ void initializer::run_or_wait()
         if (res_list[i]) res_list[i]->done_builder(this);
     }
     state = complete;
+}
+
+void initializer::notify(resource *r)
+{
+    DCASSERT(waiting == state);
+    DCASSERT(r);
+    DCASSERT(r->is_built());
+
+    // Find resource r in our list
+    for (unsigned i=max_built; i<max_resources; ++i) {
+        if (res_list[i] != r) continue;
+        DCASSERT(wait_count);
+        --wait_count;
+    }
+
+    run_or_wait();
 }
 
 void initializer::show(error_msg &E) const

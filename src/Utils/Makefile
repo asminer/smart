@@ -6,7 +6,7 @@ all: test_init test_splay
 clean:
 	rm *.o test_init test_splay
 
-CFLAGS= --std=c++11 -ggdb
+CFLAGS= --std=c++11 -ggdb -DDEVELOPMENT_CODE
 
 test_init: test_init.o initializer.o messages.o outstream.o location.o sigman.o strings.o
 	g++ $^ -o $@

@@ -50,6 +50,7 @@ smart_SOURCES = \
   Utils/sigman.cc \
   Utils/strings.cc \
   Utils/init_opts.cc \
+  Utils/library.cc \
   \
   Options/optman.cc \
   Options/options.cc \
@@ -189,6 +190,7 @@ icp_SOURCES = \
   Utils/sigman.cc \
   Utils/strings.cc \
   Utils/init_opts.cc \
+  Utils/library.cc \
   \
   Options/optman.cc \
   Options/options.cc \

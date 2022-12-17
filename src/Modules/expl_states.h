@@ -9,6 +9,7 @@
 #ifndef EXPL_STATES_H
 #define EXPL_STATES_H
 
+#include "../Utils/library.h"
 #include "../ExprLib/exprman.h"
 
 namespace StateLib {
@@ -90,12 +91,13 @@ public:
 /** Thin wrapper around state storage library.
 */
 class exp_state_lib : public library {
-public:
-  exp_state_lib();
-  virtual const char* getDBMethod() const = 0;
-  virtual StateLib::state_db*
-    createStateDB(bool indexed, bool store_sizes) const = 0;
-  virtual substate_colls* createSubstateDBs(int K, bool store_sizes) const = 0;
+    public:
+        exp_state_lib();
+        virtual const char* getDBMethod() const = 0;
+        virtual StateLib::state_db* createStateDB(bool indexed,
+                bool store_sizes) const = 0;
+        virtual substate_colls* createSubstateDBs(int K,
+                bool store_sizes) const = 0;
 };
 
 // ******************************************************************
@@ -108,12 +110,11 @@ public:
 /** Initialize as necessary, and return the explicit state storage library.
     If the library has already been initialized, then
     the function returns immediately.
-    Otherwise, we initialize the library using parameter \a em
+    Otherwise, we initialize the library
     (and return 0 if this is 0).
-      @param  em  Expression manager, or 0.
       @return Instance of the state library interface.
 */
-const exp_state_lib* InitExplicitStateStorage(exprman* em);
+const exp_state_lib* InitExplicitStateStorage();
 
 
 /** Determine proper lexical ordering for a collection of states.

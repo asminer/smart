@@ -52,9 +52,7 @@ class initializer {
         resource** res_list;
         /// Number of built resources (max).
         unsigned max_built;
-        /// Number of needed resources (max).
-        unsigned max_needed;
-        /// Total number of resources (always max_built + max_needed).
+        /// Total number of resources (max).
         unsigned max_resources;
         /// Number of resources we're waiting on.
         unsigned wait_count;
@@ -150,18 +148,30 @@ class initializer {
         */
         shared_object* get_object(unsigned slot, const char* name=nullptr);
 
-    private:
-        /**
-            Tell this initializer that one of the
-            resources it needs, is now ready.
-        */
-        void notify(resource *r);
 
+        /**
+            Indicate that the initializer should run right away,
+            if possible; otherwise it won't run until the next
+            call to execute_all().
+            Use this for any initializers that may be created
+            after main() is started.
+
+            This should be called at the very end of the constructor.
+        */
+        void try_immediately();
+
+    private:
         /**
             If the initializer is ready to run,
             then run it; otherwise make it wait.
         */
         void run_or_wait();
+
+        /**
+            Tell this initializer that one of the
+            resources it needs, is now ready.
+        */
+        void notify(resource *r);
 
         /**
             Display, when there's an error
