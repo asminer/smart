@@ -1,6 +1,8 @@
 
 #include "evm_form.h"
 #include "../Options/options.h"
+#include "../Utils/init_opts.h"
+
 #include "../ExprLib/startup.h"
 #include "../ExprLib/exprman.h"
 #include "../ExprLib/formalism.h"
@@ -548,6 +550,7 @@ class tam_def : public model_def {
     };
   }
 
+  friend class old_init_tamform;
   friend class init_tamform;
 
 public:
@@ -1425,21 +1428,21 @@ void tam_export::Compute(traverse_data &x, expr** pass, int np)
 // *                                                                *
 // ******************************************************************
 
-class init_tamform : public startup {
+class old_init_tamform : public startup {
   public:
-    init_tamform();
+    old_init_tamform();
     virtual bool execute();
 };
-init_tamform the_tamform_startup;
+old_init_tamform the_tamform_startup;
 
-init_tamform::init_tamform() : startup("init_tamform")
+old_init_tamform::old_init_tamform() : startup("init_tamform")
 {
   usesResource("em");
   usesResource("CML");
   buildsResource("formalisms");
 }
 
-bool init_tamform::execute()
+bool old_init_tamform::execute()
 {
   if (0==em) return false;
 
@@ -1509,50 +1512,101 @@ bool init_tamform::execute()
   );
   tam->setIdentifiers(tamids);
 
-  // warnings, reports, and such
-
-  tam_def::tam_debug.initialize(em->OptMan(), "tams",
-    "When set, diagnostic messages are displayed regarding tile assembly model construction."
-  );
-
-  option* warning = em->findOption("Warning");
-  checklist_enum* tamwarn = warning ? warning->addChecklistGroup(
-        "tam_ALL", "Group of all tile assembly model warnings", 11
-  ) : 0;
-
-  tam_def::dup_tiledef.initialize(em->OptMan(), tamwarn, "tam_dup_tiledef",
-    "For multiple glue type assignments to a given tile, in tile assembly models"
-  );
-  tam_def::dup_gluedef.initialize(em->OptMan(), tamwarn, "tam_dup_gluedef",
-    "For multiple glue strength assignments, in tile assembly models"
-  );
-  tam_def::dup_init.initialize(em->OptMan(), tamwarn, "tam_dup_init",
-    "For multiple initializations of the same square, in tile assembly models"
-  );
-  tam_def::dup_prio.initialize(em->OptMan(), tamwarn, "tam_dup_prio",
-      "For multiple priority assignments for the same square, in tile assembly models"
-  );
-  tam_def::dup_board.initialize(em->OptMan(), tamwarn, "tam_dup_board",
-      "For multiple board specifications, in tile assembly models"
-  );
-  tam_def::no_tiledef.initialize(em->OptMan(), tamwarn, "tam_no_tiledef",
-      "For tiles with no glue type assignments, in tile assembly models"
-  );
-  tam_def::no_gluedef.initialize(em->OptMan(), tamwarn, "tam_no_gluedef",
-      "For glues with no strength assignments, in tile assembly models"
-  );
-  tam_def::no_init.initialize(em->OptMan(), tamwarn, "tam_no_init",
-      "For missing board initializations, in tile assembly models"
-  );
-  tam_def::no_board.initialize(em->OptMan(), tamwarn, "tam_no_board",
-      "For missing board specifications, in tile assembly models"
-  );
-  tam_def::empty_board.initialize(em->OptMan(), tamwarn, "tam_empty_board",
-      "For board specifications with no squares, in tile assembly models"
-  );
-  tam_def::empty_tileset.initialize(em->OptMan(), tamwarn, "tam_empty_tileset",
-      "For tile assembly models with no tiles defined"
-  );
-
   return true;
 }
+
+// ******************************************************************
+
+class init_tamform : public initializer {
+    public:
+        init_tamform();
+    protected:
+        virtual void execute();
+};
+static init_tamform the_tamform_initializer;
+
+init_tamform::init_tamform() : initializer("tam_form.cc", 1, 2)
+{
+    builds_resource(0, "tam_form.cc");
+    needs_resource(1, "Warning");
+    needs_resource(2, "Debug");
+}
+
+void init_tamform::execute()
+{
+    //
+    // Warning messages
+    //
+
+    shared_object* tamwarn = initialize_group(
+        get_object(1, "Warning"), 11,
+        "tam_ALL", "Group of all tile assembly model warnings"
+    );
+
+    initialize_msg(tam_def::dup_tiledef,
+        "tam_dup_tiledef",
+        "For multiple glue type assignments to a given tile, in tile assembly models",
+        get_object(1, "Warning"), tamwarn
+    );
+    initialize_msg(tam_def::dup_gluedef,
+        "tam_dup_gluedef",
+        "For multiple glue strength assignments, in tile assembly models",
+        get_object(1, "Warning"), tamwarn
+    );
+    initialize_msg(tam_def::dup_init,
+        "tam_dup_init",
+        "For multiple initializations of the same square, in tile assembly models",
+        get_object(1, "Warning"), tamwarn
+    );
+    initialize_msg(tam_def::dup_prio,
+        "tam_dup_prio",
+        "For multiple priority assignments for the same square, in tile assembly models",
+        get_object(1, "Warning"), tamwarn
+    );
+    initialize_msg(tam_def::dup_board,
+        "tam_dup_board",
+        "For multiple board specifications, in tile assembly models",
+        get_object(1, "Warning"), tamwarn
+    );
+    initialize_msg(tam_def::no_tiledef,
+        "tam_no_tiledef",
+        "For tiles with no glue type assignments, in tile assembly models",
+        get_object(1, "Warning"), tamwarn
+    );
+    initialize_msg(tam_def::no_gluedef,
+        "tam_no_gluedef",
+        "For glues with no strength assignments, in tile assembly models",
+        get_object(1, "Warning"), tamwarn
+    );
+    initialize_msg(tam_def::no_init,
+        "tam_no_init",
+        "For missing board initializations, in tile assembly models",
+        get_object(1, "Warning"), tamwarn
+    );
+    initialize_msg(tam_def::no_board,
+        "tam_no_board",
+        "For missing board specifications, in tile assembly models",
+        get_object(1, "Warning"), tamwarn
+    );
+    initialize_msg(tam_def::empty_board,
+        "tam_empty_board",
+        "For board specifications with no squares, in tile assembly models",
+        get_object(1, "Warning"), tamwarn
+    );
+    initialize_msg(tam_def::empty_tileset,
+        "tam_empty_tileset",
+        "For tile assembly models with no tiles defined",
+        get_object(1, "Warning"), tamwarn
+    );
+
+    //
+    // Debug messages
+    //
+
+    initialize_msg(tam_def::tam_debug,
+        "tams",
+        "When set, diagnostic messages are displayed regarding tile assembly model construction.",
+        get_object(2, "Debug")
+    );
+}
+
