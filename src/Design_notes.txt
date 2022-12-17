@@ -6,20 +6,29 @@ How to reorganize code, ideas for gradual migration
 
 Utils/      Global utilities like streams, options, etc.,
             that nearly everything needs.
+            Splay trees of shared objects.
+            -> remove old template splay trees
+            Heaps of shared objects?  (who uses heaps?)
+
+Symtabs:    remove; use Exprlib/symb_tab instead
 
 
-Streams: replace OutputStream with ostream;
-
-
-Report: move internally to a named_report object
 
 
 ======================================================================
 
 Long-ish term lexer / parser rewrite plan:
 
-	* shared strings move to lexer directory
-  * use 'location' object instead of filename + lineno, "everywhere"
+Global symbol tables -> statics in symtabs class
+
+Type and formalism registry -> statics in type?
+
+Operation registry -> statics in unary_op, binary_op, assoc_op, etc?
+
+Most expression building from exprman: can be statics in expr?
+
+Goal: eliminate exprman, superman completely
+
 
   * Global directory for "environment" stuff
       option manager moves here
