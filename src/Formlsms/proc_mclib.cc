@@ -120,7 +120,7 @@ mclib_process::~mclib_process()
 GraphLib::node_renumberer* mclib_process::initChain(GraphLib::dynamic_graph *g)
 {
   // Classify states
-  GraphLib::timer_hook *sw = my_timer ? my_timer->switchMe() : 0;
+  GraphLib::timer_hook *sw = my_timer.switchMe();
   GraphLib::abstract_classifier* ac = g->determineSCCs(0, 1, true, sw);
   GraphLib::static_classifier C;
   GraphLib::node_renumberer *Ren = ac->buildRenumbererAndStatic(C);

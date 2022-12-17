@@ -17,14 +17,14 @@ struct LS_Options;
 class timer;
 
 class markov_process : public stochastic_lldsm::process {
+      friend class init_markovproc;
   protected:
     class reporter : public GraphLib::timer_hook {
-      const exprman* em;
+      friend class init_markovproc;
       reporting_msg report;
       timer watch;
     public:
-      reporter(const exprman* The_em);
-      virtual ~reporter();
+      reporter();
       virtual void start(const char* w);
       virtual void stop();
       inline reporter* switchMe() { return report.isActive() ? this : 0; }
@@ -51,7 +51,7 @@ class markov_process : public stochastic_lldsm::process {
     static const unsigned BY_COLUMNS = 0;
     static const unsigned BY_ROWS    = 1;
   protected:
-    static reporter* my_timer;
+    static reporter my_timer;
 
   public:
     inline static bool storeByRows() { return BY_ROWS == access; }

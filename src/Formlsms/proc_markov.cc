@@ -6,7 +6,10 @@
 #include "../Options/opt_enum.h"
 #include "../Options/radio_opt.h"
 
-#include "../ExprLib/startup.h"
+#include "../Utils/library.h"
+#include "../Utils/init_opts.h"
+
+// #include "../ExprLib/startup.h"
 #include "../ExprLib/mod_inst.h"
 #include "../ExprLib/mod_vars.h"
 #include "../ExprLib/exprman.h"
@@ -22,11 +25,11 @@
 // *                                                                *
 // ******************************************************************
 
-LS_Options* markov_process::lsopts = 0;
+LS_Options* markov_process::lsopts = nullptr;
 unsigned markov_process::solver;
 reporting_msg markov_process::report;
 unsigned markov_process::access = markov_process::BY_COLUMNS;
-markov_process::reporter* markov_process::my_timer = 0;
+markov_process::reporter markov_process::my_timer;
 
 // ******************************************************************
 // *                                                                *
@@ -182,16 +185,8 @@ const char* markov_process::getSolver()
 // *                                                                *
 // ******************************************************************
 
-markov_process::reporter::reporter(const exprman* The_em)
+markov_process::reporter::reporter()
 : GraphLib::timer_hook()
-{
-  em = The_em;
-  report.initialize(em->OptMan(), "mc_finish",
-    "When set, performance details for Markov chain finalization steps are reported."
-  );
-}
-
-markov_process::reporter::~reporter()
 {
 }
 
@@ -225,15 +220,15 @@ void markov_process::reporter::stop()
 // ******************************************************************
 
 class mc_lib : public library {
-public:
-  mc_lib() : library(false, false) { }
-  virtual const char* getVersionString() const {
-    return MCLib::Version();
-  }
-  virtual bool hasFixedPointer() const {
-    return true;
-  }
+    public:
+        mc_lib() : library(false, false) {
+            registerLibrary(this);
+        }
+        virtual void printVersion(std::ostream &s) const {
+            s << MCLib::Version();
+        }
 };
+static mc_lib the_mc_lib;
 
 // ******************************************************************
 // *                                                                *
@@ -242,15 +237,15 @@ public:
 // ******************************************************************
 
 class ls_lib : public library {
-public:
-  ls_lib() : library(false, false) { }
-  virtual const char* getVersionString() const {
-    return LS_LibraryVersion();
-  }
-  virtual bool hasFixedPointer() const {
-    return true;
-  }
+    public:
+        ls_lib() : library(false, false) {
+            registerLibrary(this);
+        }
+        virtual void printVersion(std::ostream &s) const {
+            s << LS_LibraryVersion();
+        }
 };
+static ls_lib the_ls_lib;
 
 // ******************************************************************
 // *                                                                *
@@ -260,109 +255,102 @@ public:
 // *                                                                *
 // ******************************************************************
 
-class init_markovproc : public startup {
-  public:
-    init_markovproc();
-    virtual bool execute();
+class init_markovproc : public initializer {
+    public:
+        init_markovproc();
+    protected:
+        virtual void execute();
 
-    option_manager* makeSubsettings(unsigned i, bool auxvectors);
+        option_manager* makeSubsettings(unsigned i, bool auxvectors);
 };
-init_markovproc the_markovproc_startup;
+static init_markovproc the_markovproc_startup;
 
-init_markovproc::init_markovproc() : startup("init_markovproc")
+init_markovproc::init_markovproc() : initializer("proc_markov.cc", 1, 2)
 {
-  usesResource("em");
+    builds_resource(0, "proc_markov.cc");
+    needs_resource(1, "OM");
+    needs_resource(2, "Report");
 }
 
-bool init_markovproc::execute()
+void init_markovproc::execute()
 {
-  if (0==em)  return false;
-
-  static mc_lib* mcl = 0;
-  static ls_lib* lsl = 0;
-
-  if (0==mcl) {
-    mcl = new mc_lib;
-    em->registerLibrary(mcl);
-  }
-  if (0==lsl) {
-    lsl = new ls_lib;
-    em->registerLibrary(lsl);
-  }
-
-  if (0==markov_process::my_timer) {
-    markov_process::my_timer = new markov_process::reporter(em);
-  }
-
-  DCASSERT(0==markov_process::lsopts);
-
-  markov_process::lsopts = new LS_Options[markov_process::NUM_SOLVERS];
-  markov_process::lsopts[markov_process::GAUSS_SEIDEL].method = LS_Gauss_Seidel;
-  markov_process::lsopts[markov_process::JACOBI].method = LS_Jacobi;
-  markov_process::lsopts[markov_process::ROW_JACOBI].method = LS_Row_Jacobi;
-
-  markov_process::solver = markov_process::GAUSS_SEIDEL;
-
-  //
-  // Set up the radio buttons for the solvers
-  //
-  if (em->OptMan()) {
-    option* solvers = em->OptMan()->addRadioOption(
-      "MCSolver",
-      "Numerical method to use for solving linear systems during Markov chain analysis.",
-      3, markov_process::solver
+    initialize_msg(markov_process::my_timer.report,
+        "mc_finish",
+        "When set, performance details for Markov chain finalization steps are reported.",
+        get_object(2, "Report")
     );
 
-    option_enum* currsolv = solvers->addRadioButton(
-      "GAUSS_SEIDEL", "Gauss-Seidel",
-      markov_process::GAUSS_SEIDEL
+    initialize_msg(markov_process::report,
+        "mc_solve",
+        "When set, Markov chain solution performance is reported.",
+        get_object(2, "Report")
     );
-    currsolv->makeSettings(
+
+    DCASSERT(!markov_process::lsopts);
+
+    markov_process::lsopts = new LS_Options[markov_process::NUM_SOLVERS];
+    markov_process::lsopts[markov_process::GAUSS_SEIDEL].method = LS_Gauss_Seidel;
+    markov_process::lsopts[markov_process::JACOBI].method = LS_Jacobi;
+    markov_process::lsopts[markov_process::ROW_JACOBI].method = LS_Row_Jacobi;
+
+    markov_process::solver = markov_process::GAUSS_SEIDEL;
+
+    //
+    // Set up the radio buttons for the solvers
+    //
+    option_manager* om = dynamic_cast <option_manager*> (get_object(1, "OM"));
+    if (om) {
+        option* solvers = om->addRadioOption(
+            "MCSolver",
+            "Numerical method to use for solving linear systems during Markov chain analysis.",
+            3, markov_process::solver
+        );
+
+        option_enum* currsolv = solvers->addRadioButton(
+            "GAUSS_SEIDEL", "Gauss-Seidel",
+            markov_process::GAUSS_SEIDEL
+        );
+        currsolv->makeSettings(
             makeSubsettings(markov_process::GAUSS_SEIDEL, false)
-    );
+        );
 
-    currsolv = solvers->addRadioButton(
-      "JACOBI", "Jacobi, using matrix-vector multiply",
-      markov_process::JACOBI
-    );
-    currsolv->makeSettings(
+        currsolv = solvers->addRadioButton(
+            "JACOBI", "Jacobi, using matrix-vector multiply",
+            markov_process::JACOBI
+        );
+        currsolv->makeSettings(
             makeSubsettings(markov_process::JACOBI, true)
-    );
+        );
 
-    currsolv = solvers->addRadioButton(
-      "ROW_JACOBI", "Jacobi, visiting one matrix row at a time",
-      markov_process::ROW_JACOBI
-    );
-    currsolv->makeSettings(
+        currsolv = solvers->addRadioButton(
+            "ROW_JACOBI", "Jacobi, visiting one matrix row at a time",
+            markov_process::ROW_JACOBI
+        );
+        currsolv->makeSettings(
             makeSubsettings(markov_process::ROW_JACOBI, true)
-    );
+        );
 
 
-    option* mcby = em->OptMan()->addRadioOption("MCAccessBy",
-      "Specifiy initial storage method for Markov chains: by rows (required for simulations) or by columns (required for certain linear solvers).",
-      2, markov_process::access
-    );
+        option* mcby = om->addRadioOption("MCAccessBy",
+            "Specifiy initial storage method for Markov chains: by rows (required for simulations) or by columns (required for certain linear solvers).",
+            2, markov_process::access
+        );
 
-    mcby->addRadioButton(
-      "COLUMNS",
-      "Access to columns",
-      markov_process::BY_COLUMNS
-    );
-    mcby->addRadioButton(
-      "ROWS",
-      "Access to rows",
-      markov_process::BY_ROWS
-    );
-  }
+        mcby->addRadioButton(
+            "COLUMNS",
+            "Access to columns",
+            markov_process::BY_COLUMNS
+        );
+        mcby->addRadioButton(
+            "ROWS",
+            "Access to rows",
+            markov_process::BY_ROWS
+        );
+    } // if om
 
-  markov_process::solver = markov_process::GAUSS_SEIDEL;
-  markov_process::access = markov_process::BY_COLUMNS;
+    markov_process::solver = markov_process::GAUSS_SEIDEL;
+    markov_process::access = markov_process::BY_COLUMNS;
 
-  markov_process::report.initialize(em->OptMan(), "mc_solve",
-      "When set, Markov chain solution performance is reported."
-  );
-
-  return true;
 }
 
 option_manager* init_markovproc::makeSubsettings(unsigned i, bool auxvectors)
