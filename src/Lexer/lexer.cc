@@ -3,12 +3,16 @@
 
 #include "../Options/options.h"
 
+#include "../Utils/init_opts.h"
+
 #include "../ExprLib/exprman.h"
 
 #define BUFSIZE 16384
 #define MAX_LEXEME 1024
 
 // #define DEBUG_LEXER
+
+debugging_msg lexer::debug;
 
 //
 // ======================================================================
@@ -92,13 +96,6 @@ lexer::lexer(const exprman* _em, const char** fns, unsigned nfs)
     em = _em;
     DCASSERT(em);
 
-
-    debug.initialize(em->OptMan(), "lexer",
-        "When set, very low-level lexer messages are displayed."
-    );
-#ifdef DEBUG_LEXER
-    debug.Activate();
-#endif
 
     topfile = 0;
     filenames = fns;
@@ -754,4 +751,28 @@ void lexer::finish_attributed_token(token::type t)
           << MAX_LEXEME << " characters.";
     }
 }
+
+//
+// ======================================================================
+//
+
+class lexer_init : public initializer {
+    public:
+        lexer_init() : initializer("lexer.cc", 1, 1) {
+            builds_resource(0, "lexer.cc");
+            needs_resource(1, "Debug");
+        }
+    protected:
+        virtual void execute() {
+            initialize_msg(lexer::debug,
+                "lexer",
+                "When set, very low-level lexer messages are displayed.",
+                get_object(1, "Debug")
+            );
+#ifdef DEBUG_LEXER
+            debug.Activate();
+#endif
+        }
+};
+static lexer_init the_lexer_initializer;
 

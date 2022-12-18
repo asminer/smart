@@ -114,7 +114,7 @@ class lexer {
                 lexwarning(const location &L, const char* text=0);
         };
     private:
-        debugging_msg debug;
+        static debugging_msg debug;
 
         const exprman* em;
         const char** filenames;
@@ -215,6 +215,8 @@ class lexer {
                 debug.stop();
             }
         }
+
+        friend class lexer_init;
 };
 
 #endif
