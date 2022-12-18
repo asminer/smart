@@ -7,9 +7,11 @@
 #include <iomanip>
 
 // real format codes
+/*
 static const unsigned RF_GENERAL = 0;
 static const unsigned RF_FIXED = 1;
 static const unsigned RF_SCIENTIFIC = 2;
+*/
 
 outputStream outputStream::Out(std::cout);
 
@@ -39,18 +41,17 @@ void rfwatch::notify(const option*)
 outputStream::outputStream(std::ostream &_deflt) : deflt(_deflt)
 {
     activate();
-    realfmt = RF_GENERAL;
+    realfmt = GENERAL;
 
     update_real_format();
 
     clearIndent();
 
-    comma = 0;
+    comma = nullptr;
 }
 
 outputStream::~outputStream()
 {
-    Delete(comma);
 }
 
 /*
@@ -99,7 +100,7 @@ void outputStream::putWithCommas(long x)
     }
     putWithCommas(x/1000);
     if (comma) {
-        stream() << comma->getStr();
+        stream() << comma;
     }
     stream().fill('0');
     stream() << std::setw(3) << ABS(x%1000);
@@ -114,7 +115,7 @@ void outputStream::putWithCommas(unsigned long x)
     }
     putWithCommas(x/1000);
     if (comma) {
-        stream() << comma->getStr();
+        stream() << comma;
     }
     stream().fill('0');
     stream() << std::setw(3) << x%1000;
@@ -156,7 +157,7 @@ void outputStream::putWithCommas(const char* x)
         if (x[0] < '0') break;
         if (x[0] > '9') break;
         if (comma) {
-            stream() << comma->getStr();
+            stream() << comma;
         }
         stream() << x[0] << x[1] << x[2];
     }
@@ -167,9 +168,9 @@ void outputStream::putWithCommas(const char* x)
 void outputStream::update_real_format()
 {
     switch (realfmt) {
-        case RF_FIXED:          stream() << std::fixed;            return;
-        case RF_SCIENTIFIC:     stream() << std::scientific;       return;
-        default:                stream() << std::defaultfloat;     return;
+        case FIXED:         stream() << std::fixed;         return;
+        case SCIENTIFIC:    stream() << std::scientific;    return;
+        default:            stream() << std::defaultfloat;  return;
     }
 }
 

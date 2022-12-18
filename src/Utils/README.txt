@@ -3,7 +3,7 @@ Low-level building block utilities.
 
 File              Description
 ===============   ============================================================
-init_opts         Switchable message option initialization
+init_opts         Switchable message and output stream option initialization
 
 initializer       For decentralized initialization of static items.
                   Tracks and manages dependencies.

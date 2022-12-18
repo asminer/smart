@@ -57,6 +57,9 @@ class radio_opt : public option {
         virtual void RecurseDocs(doc_formatter &df, const char* keyword) const;
 
         virtual radio_button* addRadioButton(const char* n, const char* d, unsigned ndx);
+    protected:
+        unsigned findButtonWithIndex(unsigned ndx) const;
+        unsigned countButtonsWithIndex(unsigned ndx) const;
 };
 
 #endif

@@ -1,6 +1,7 @@
 
 #include "../include/defines.h"
 #include "../Utils/textfmt.h"
+#include "../Utils/messages.h"
 #include "radio_opt.h"
 #include "optman.h"
 #include <cstring>
@@ -48,7 +49,6 @@ option::error radio_opt::SetValue(option_enum* x)
     radio_button* rb = smart_cast <radio_button*> (x);
     if (0==rb) return WrongType;
     if (rb->getIndex() >= numpossible) return WrongType;
-    if (rb != possible[rb->getIndex()])  return WrongType;
     if (rb->getIndex() == which) return Success;
     if (! rb->AssignToMe()) return WrongType;
     which = rb->getIndex();
@@ -89,16 +89,41 @@ void radio_opt::Finish()
 {
     DCASSERT(numadded == numpossible);
 
+    //
+    // Sanity check: indexes are unique
+    //
     for (unsigned i=0; i<numpossible; i++) {
-        if (possible[i]->getIndex() == which) {
-            possible[i]->AssignToMe();
+        unsigned c = countButtonsWithIndex(possible[i]->getIndex());
+        if (c!=1) {
+            internal_error E(__FILE__, __LINE__);
+            E << "Option " << *this << " has " << c << " buttons with the same index";
+            E.newLine();
+            for (unsigned j=0; j<numpossible; j++) {
+                if (possible[j]->getIndex() == possible[i]->getIndex()) {
+                    E << "    " << *possible[j];
+                    E.newLine();
+                }
+            }
         }
     }
+
+    //
+    // Press the current button
+    //
+    unsigned i = findButtonWithIndex(which);
+    if (i >= numpossible) {
+        internal_error E(__FILE__, __LINE__);
+        E << "Option " << *this << " set to value " << which;
+        E << " with no matching button";
+    }
+
+    possible[i]->AssignToMe();
 }
 
 void radio_opt::ShowHeader(std::ostream &s) const
 {
-    s << *this << ' ' << possible[which]->Name();
+    unsigned i = findButtonWithIndex(which);
+    s << *this << ' ' << possible[i]->Name();
 }
 
 void radio_opt::ShowRange(doc_formatter &df) const
@@ -177,5 +202,22 @@ addRadioButton(const char* n, const char* d, unsigned ndx)
     possible[0] = new radio_button(n, d, ndx);
     ++numadded;
     return possible[0];
+}
+
+unsigned radio_opt::findButtonWithIndex(unsigned ndx) const
+{
+    for (unsigned i=0; i<numpossible; i++) {
+        if (possible[i]->getIndex() == ndx) return i;
+    }
+    return numpossible;
+}
+
+unsigned radio_opt::countButtonsWithIndex(unsigned ndx) const
+{
+    unsigned count = 0;
+    for (unsigned i=0; i<numpossible; i++) {
+        if (possible[i]->getIndex() == ndx) ++count;
+    }
+    return count;
 }
 

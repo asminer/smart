@@ -14,6 +14,10 @@ class shared_string;
 
 class outputStream {
     public:
+        static const unsigned GENERAL    = 0;
+        static const unsigned FIXED      = 1;
+        static const unsigned SCIENTIFIC = 2;
+    public:
         outputStream(std::ostream &_deflt);
 
         virtual ~outputStream();
@@ -21,23 +25,23 @@ class outputStream {
         outputStream(const outputStream &) = delete;
         void operator=(const outputStream &) = delete;
 
-        /**
-         * Build an option to set the real format for this stream.
-         *  @param  om      Option manager to get the option
-         *  @param  name    Name of the option
-         *  @param  doc     Documentation for the option
-         */
-        // void buildRealOption(option_manager* om, const char* name,
-                //const char* doc);
+        //
+        // Set the real format for this stream.
+        inline void set_real_format(unsigned rf) {
+            CHECK_RANGE(0, rf, 3);
+            realfmt = rf;
+            update_real_format();
+        }
 
-        /**
-         * Build an option to set the thousands separator for this stream.
-         *  @param  om      Option manager to get the option
-         *  @param  name    Name of the option
-         *  @param  doc     Documentation for the option
-         */
-        // void buildThousandsOption(option_manager* om, const char* name,
-                // const char* doc);
+        //
+        // Get the current real format for this stream.
+        inline unsigned get_real_format() const { return realfmt; }
+
+        //
+        // Set the comma separator for this stream.
+        inline void set_comma(const char* the_comma) {
+            comma = the_comma;
+        }
 
 
         /** Switch to a file with given name.
@@ -114,12 +118,13 @@ class outputStream {
         std::ofstream fout;
 
         unsigned realfmt;
-        shared_string* comma;
+        const char* comma;
 
         bool active;
 
         void update_real_format();
-        friend class rfwatch;
+        friend class real_watch;
+        friend class comma_watch;
 };
 
 template <class TYPE>

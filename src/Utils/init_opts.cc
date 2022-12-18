@@ -98,69 +98,6 @@ static checklist_initializer _warning_init(
 );
 
 
-// **********************************************************************
-// *                                                                    *
-// *                 checklistgroup_initializer methods                 *
-// *                                                                    *
-// **********************************************************************
-
-#if 0
-
-/**
-    Initializer for a group of items, in a checklist option.
-*/
-class checklistgroup_initializer : public initializer {
-        const char* gname;
-        const char* gdoc;
-        unsigned gitems;
-    public:
-        /** Initialize a checklist group.
-                @param  main    Main checklist option name, e.g., "Warning"
-                @param  ni      Max number of items in the group
-                @param  name    Group name, e.g., "pn_ALL"
-                @param  doc     Group documentation
-        */
-        checklistgroup_initializer(const char* main, unsigned ni,
-                const char* name, const char* doc);
-    protected:
-        virtual void execute();
-    public:
-        // This is what execute() does,
-        // but a parameterized version in case we can't use
-        // this object directly.
-        static shared_object* exec(shared_object* main, unsigned items,
-                const char* name, const char* doc);
-};
-
-
-checklistgroup_initializer::checklistgroup_initializer(const char* main,
-    unsigned ni, const char* name, const char* doc)
-    : initializer("checklistgroup_initializer", 1, 1)
-{
-    gitems = ni;
-    gname = name;
-    gdoc = doc;
-
-    builds_resource(0, gname);
-    needs_resource(1, main);
-}
-
-void checklistgroup_initializer::execute()
-{
-    shared_object* obj = exec(get_object(1), gitems, gname, gdoc);
-    DCASSERT(obj);
-    set_object(0, obj);
-}
-
-shared_object* checklistgroup_initializer::exec(shared_object* _main,
-    unsigned items, const char* name, const char* doc)
-{
-    option* main = dynamic_cast <option*> (_main);
-    if (!main) return nullptr;
-    return main->addChecklistGroup(name, doc, items);
-}
-
-#endif
 
 shared_object* initialize_group(shared_object* _main, unsigned items,
         const char* name, const char* doc)
@@ -219,3 +156,63 @@ shared_object* initialize_msg(switchable_msg &msg, const char* name,
     return opt->addChecklistItem(grp, msg.getName(), doc, msg.Active());
 }
 
+// **********************************************************************
+// *                                                                    *
+// *                 Real format option  initialization                 *
+// *                                                                    *
+// **********************************************************************
+
+class real_format_watch : public option::watcher {
+        outputStream& stream;
+    public:
+        unsigned link;
+    public:
+        real_format_watch(outputStream& s) : stream(s) {
+            link = stream.get_real_format();
+        }
+        virtual void notify(const option*) {
+            std::cerr << "notify new value is " << link << "\n";
+            stream.set_real_format(link);
+        }
+};
+
+class real_format_init : public initializer {
+    public:
+        real_format_init();
+    protected:
+        virtual void execute();
+
+        void buildOption(option_manager* om, outputStream &out,
+                const char* name, const char* doc);
+};
+static real_format_init the_real_format_init;
+
+real_format_init::real_format_init() : initializer("real_format_init", 1, 1)
+{
+    builds_resource(0, "real_format");
+    needs_resource(1, "OM");
+}
+
+void real_format_init::execute()
+{
+    option_manager* om = dynamic_cast <option_manager*> (get_object(1, "OM"));
+    if (!om) return;
+
+    buildOption(om, outputStream::globalOut(), "OutputRealFormat",
+            "Format to use for writing reals to the output stream");
+    buildOption(om, reporting_msg::Out, "ReportRealFormat",
+            "Format to use for writing reals to the reporting stream");
+}
+
+void real_format_init::buildOption(option_manager* om, outputStream &out,
+        const char* name, const char* doc)
+{
+    real_format_watch *w = new real_format_watch(out);
+    option* rbo = om->addRadioOption(name, doc, 3, w->link);
+    rbo->registerWatcher(w);
+
+    rbo->addRadioButton("FIXED", "Same as printf(%f)", outputStream::FIXED);
+    rbo->addRadioButton("GENERAL", "Same as printf(%g)", outputStream::GENERAL);
+    rbo->addRadioButton("SCIENTIFIC", "Same as printf(%e)", outputStream::SCIENTIFIC);
+    rbo->Finish();
+}
