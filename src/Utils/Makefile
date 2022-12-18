@@ -1,12 +1,17 @@
 #
 # Makefile for test programs.
 #
-all: test_init test_splay
+EXES= test_out test_init test_splay
+
+all: $(EXES)
 
 clean:
-	rm *.o test_init test_splay
+	rm *.o $(EXES)
 
 CFLAGS= --std=c++11 -ggdb -DDEVELOPMENT_CODE
+
+test_out: test_out.o outstream.o
+	g++ $^ -o $@
 
 test_init: test_init.o initializer.o messages.o outstream.o location.o sigman.o strings.o
 	g++ $^ -o $@

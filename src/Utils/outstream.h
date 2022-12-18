@@ -76,19 +76,19 @@ class outputStream {
         /*
          * Write a signed integer with commas.
          */
-        void putWithCommas(long x, int width=0);
+//        void putWithCommas(long x, int width=0);
 
         /*
          * Write an unsigned integer with commas.
          */
-        void putWithCommas(unsigned long x, int width=0);
+//        void putWithCommas(unsigned long x, int width=0);
 
         /*
          * Write an integer or real, encoded as a string, with commas.
          * The integer portion may start with -, +, or a digit,
          * and ends with the first non-digit.
          */
-        void putWithCommas(const char* x, int width=0);
+//        void putWithCommas(const char* x, int width=0);
 
 
         /*
@@ -136,8 +136,7 @@ class memoryCount {
          *  @param  b       Number of bytes
          *  @param  p       Desired precision
          */
-        inline memoryCount(size_t b, unsigned p) : bytes(b), prec(p) {
-        }
+        memoryCount(size_t b, unsigned p);
         std::ostream& show(std::ostream &s) const;
 };
 
@@ -147,25 +146,63 @@ class memoryCount {
 class formatted_int {
         long val;
         int width;
+        const char* comma;
     public:
-        inline formatted_int(long v, int w) : val(v), width(w) {
-        }
+        formatted_int(long v, int w, const char* c=nullptr);
         std::ostream& show(std::ostream &s) const;
 };
 
 /*
- * Formatted reals.
+ * Numbers, as strings.
  */
-class formatted_real {
+class formatted_number {
+        const char* val;
+        int width;
+        const char* comma;
+    public:
+        formatted_number(const char* v, int w, const char* c=nullptr);
+        std::ostream& show(std::ostream &s) const;
+};
+
+/*
+ * Reals in SCIENTIFIC (%e) format.
+ */
+class scientific_real {
         double val;
         int width;
         int prec;
+        const char* comma;
     public:
-        inline formatted_real(double v, int w, int p=-1)
-            : val(v), width(w), prec(p) {
-            }
+        scientific_real(double v, int w, int p=-1, const char* c=nullptr);
         std::ostream& show(std::ostream &s) const;
 };
+
+/*
+ * Reals in FIXED (%f) format.
+ */
+class fixed_real {
+        double val;
+        int width;
+        int prec;
+        const char* comma;
+    public:
+        fixed_real(double v, int w, int p=-1, const char* c=nullptr);
+        std::ostream& show(std::ostream &s) const;
+};
+
+/*
+ * Reals in GENERAL (%g) format.
+ */
+class general_real {
+        double val;
+        int width;
+        int prec;
+        const char* comma;
+    public:
+        general_real(double v, int w, int p=-1, const char* c=nullptr);
+        std::ostream& show(std::ostream &s) const;
+};
+
 
 /*
  * Formatted strings.
@@ -174,8 +211,7 @@ class formatted_string {
         const char* val;
         int width;
     public:
-        inline formatted_string(const char* v, int w) : val(v), width(w) {
-        }
+        formatted_string(const char* v, int w);
         std::ostream& show(std::ostream &s) const;
 };
 
@@ -207,10 +243,7 @@ class padding {
         unsigned count;
         char fill;
     public:
-        inline padding(unsigned n, char f=' ') {
-            count = n;
-            fill = f;
-        }
+        padding(unsigned n, char f=' ');
         std::ostream& show(std::ostream &s) const;
 };
 
@@ -224,7 +257,22 @@ inline std::ostream& operator<< (std::ostream &s, formatted_int m)
     return m.show(s);
 }
 
-inline std::ostream& operator<< (std::ostream &s, formatted_real m)
+inline std::ostream& operator<< (std::ostream &s, formatted_number m)
+{
+    return m.show(s);
+}
+
+inline std::ostream& operator<< (std::ostream &s, scientific_real m)
+{
+    return m.show(s);
+}
+
+inline std::ostream& operator<< (std::ostream &s, fixed_real m)
+{
+    return m.show(s);
+}
+
+inline std::ostream& operator<< (std::ostream &s, general_real m)
 {
     return m.show(s);
 }

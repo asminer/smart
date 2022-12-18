@@ -7,7 +7,11 @@
 
 outputStream outputStream::Out(std::cout);
 
-// ======================================================================
+// ******************************************************************
+// *                                                                *
+// *                      outputStream methods                      *
+// *                                                                *
+// ******************************************************************
 
 outputStream::outputStream(std::ostream &_deflt) : deflt(_deflt)
 {
@@ -41,21 +45,7 @@ void outputStream::defaultOutput()
     }
 }
 
-template <class item>
-inline void align_item(std::ostream &s, item x, int width)
-{
-    if (width < 0) {
-        s << std::setw(-width) << std::left << x;
-    } else {
-        s << std::setw(width) << std::right << x;
-    }
-
-}
-
-inline void show_string(std::ostream &s, const std::stringstream &ss, int width)
-{
-    align_item(s, ss.str(), width);
-}
+/*
 
 void outputStream::putWithCommas(long x, int width)
 {
@@ -140,7 +130,7 @@ void outputStream::putWithCommas(const char* x, int width)
     ss << x;
     show_string(stream(), ss, width);
 }
-
+*/
 
 void outputStream::update_real_format()
 {
@@ -212,63 +202,79 @@ void outputStream::Put(double data, int width, int prec)
 }
 */
 
-/*
-outputStream& outputStream::Output()
+// ******************************************************************
+// *                                                                *
+// *                   Helpers for adding  commas                   *
+// *                                                                *
+// ******************************************************************
+
+inline void align_string(std::ostream &s, const char* x, int width)
 {
-    static outputStream out(std::cout);
-    return out;
+    if (width < 0) {
+        s << std::setw(-width) << std::left << x;
+    } else {
+        s << std::setw(width) << std::right << x;
+    }
 }
 
-outputStream& outputStream::Error()
+static void show_with_commas(std::ostream &s, const char* x,
+        int width, const char* comma)
 {
-    static outputStream err(std::cerr);
-    return err;
-}
+    DCASSERT(x);
+    if (!comma) {
+        align_string(s, x, width);
+        return;
+    }
 
-std::ostream& outputStream::startError(const location &L, const char* text)
-{
-    std::ostream& cerr = Error().out();
-    cerr << "ERROR";
-    if (L) {
-        cerr << ' ' << L;
-        if (text) {
-            cerr << " at text '" << text << "'";
+    std::stringstream ss;
+    if (('-' == x[0]) || ('+' == x[0])) {
+        ss << x[0];
+        ++x;
+    }
+    unsigned digits=0;
+    for (; x[digits]; ++digits) {
+        if (x[digits] < '0') break;
+        if (x[digits] > '9') break;
+    }
+    if (digits > 3) {
+        switch (digits%3) {
+            case 1:
+                ss << x[0];
+                ++x;
+                break;
+            case 2:
+                ss << x[0] << x[1];
+                x += 2;
+                break;
+            default:
+                ss << x[0] << x[1] << x[2];
+                x += 3;
+                break;
+        }
+        for (; x[0]; x += 3) {
+            if (x[0] < '0') break;
+            if (x[0] > '9') break;
+            if (comma) {
+                ss << comma;
+            }
+            ss << x[0] << x[1] << x[2];
         }
     }
-    return cerr << ":\n    ";
+    ss << x;
+    align_string(s, ss.str().c_str(), width);
 }
 
-std::ostream& outputStream::startWarning(const location &L)
+// ******************************************************************
+// *                                                                *
+// *                      memoryCount  methods                      *
+// *                                                                *
+// ******************************************************************
+
+memoryCount::memoryCount(size_t b, unsigned p)
 {
-    std::ostream& cerr = Error().out();
-    cerr << "Warning";
-    if (L) {
-        cerr << ' ' << L;
-    }
-    return cerr << ":\n    ";
+    bytes = b;
+    prec = p;
 }
-*/
-
-/*
-std::ostream& outputStream::startInternal(const char* sfile, unsigned sline)
-{
-    std::ostream& cerr = Error().out();
-    return cerr << "INTERNAL in file " << sfile << " line " << sline << "\n    ";
-}
-
-void outputStream::stopInternal()
-{
-    Error().out() << std::endl;
-    signal_manager::clean_exit(1);
-}
-*/
-
-// ======================================================================
-//
-// Globals
-//
-// ======================================================================
-
 
 std::ostream& memoryCount::show(std::ostream &s) const
 {
@@ -306,36 +312,144 @@ std::ostream& memoryCount::show(std::ostream &s) const
     return s << units;
 }
 
-// ======================================================================
+// ******************************************************************
+// *                                                                *
+// *                     formatted_int  methods                     *
+// *                                                                *
+// ******************************************************************
+
+formatted_int::formatted_int(long v, int w, const char* c)
+{
+    val = v;
+    width = w;
+    comma = c;
+}
 
 std::ostream& formatted_int::show(std::ostream &s) const
 {
-    align_item(s, val, width);
+    std::stringstream ss;
+    ss << val;
+    show_with_commas(s, ss.str().c_str(), width, comma);
     return s;
 }
 
-// ======================================================================
+// ******************************************************************
+// *                                                                *
+// *                    formatted_number methods                    *
+// *                                                                *
+// ******************************************************************
 
-std::ostream& formatted_real::show(std::ostream &s) const
+formatted_number::formatted_number(const char* v, int w, const char* c)
 {
-    int oldprec = s.precision();
-    if (prec>=0) {
-        s.precision(prec);
-    }
-    align_item(s, val, width);
-    s.precision(oldprec);
+    val = v;
+    width = w;
+    comma = c;
+}
+
+std::ostream& formatted_number::show(std::ostream &s) const
+{
+    show_with_commas(s, val, width, comma);
     return s;
 }
 
-// ======================================================================
+// ******************************************************************
+// *                                                                *
+// *                    scientific_real  methods                    *
+// *                                                                *
+// ******************************************************************
+
+scientific_real::scientific_real(double v, int w, int p, const char* c)
+{
+    val = v;
+    width = w;
+    prec = p;
+    comma = c;
+}
+
+std::ostream& scientific_real::show(std::ostream &s) const
+{
+    std::stringstream ss;
+    if (prec>=0) ss.precision(prec);
+    ss << std::scientific << val;
+    show_with_commas(s, ss.str().c_str(), width, comma);
+    return s;
+}
+
+// ******************************************************************
+// *                                                                *
+// *                       fixed_real methods                       *
+// *                                                                *
+// ******************************************************************
+
+fixed_real::fixed_real(double v, int w, int p, const char* c)
+{
+    val = v;
+    width = w;
+    prec = p;
+    comma = c;
+}
+
+std::ostream& fixed_real::show(std::ostream &s) const
+{
+    std::stringstream ss;
+    if (prec>=0) ss.precision(prec);
+    ss << std::fixed << val;
+    show_with_commas(s, ss.str().c_str(), width, comma);
+    return s;
+}
+
+// ******************************************************************
+// *                                                                *
+// *                      general_real methods                      *
+// *                                                                *
+// ******************************************************************
+
+general_real::general_real(double v, int w, int p, const char* c)
+{
+    val = v;
+    width = w;
+    prec = p;
+    comma = c;
+}
+
+std::ostream& general_real::show(std::ostream &s) const
+{
+    std::stringstream ss;
+    if (prec>=0) ss.precision(prec);
+    ss << val;
+    show_with_commas(s, ss.str().c_str(), width, comma);
+    return s;
+}
+
+// ******************************************************************
+// *                                                                *
+// *                    formatted_string methods                    *
+// *                                                                *
+// ******************************************************************
+
+formatted_string::formatted_string(const char* v, int w)
+{
+    val = v;
+    width = w;
+}
 
 std::ostream& formatted_string::show(std::ostream &s) const
 {
-    align_item(s, val, width);
+    align_string(s, val, width);
     return s;
 }
 
-// ======================================================================
+// ******************************************************************
+// *                                                                *
+// *                        padding  methods                        *
+// *                                                                *
+// ******************************************************************
+
+padding::padding(unsigned n, char f)
+{
+    count = n;
+    fill = f;
+}
 
 std::ostream& padding::show(std::ostream &s) const
 {

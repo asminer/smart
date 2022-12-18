@@ -45,6 +45,10 @@ class type {
   bool printable;
 
 protected:
+  // TBD: other options here like
+  //        real format
+  //        comma separator for integers
+  //        comma separator for reals
   static const char* pos_infinity_string;
   static const char* neg_infinity_string;
   friend void InitTypeOptions(exprman* em);
