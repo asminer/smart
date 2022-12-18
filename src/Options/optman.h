@@ -117,7 +117,7 @@ class option_manager : public shared_object {
         *       @return  A new option, or NULL on error.
         */
         option* addStringOption(const char* name, const char* doc,
-                    shared_string* &link);
+                    const char* &link);
 
 
         /** Make, add, and return a new option of type "radio button",

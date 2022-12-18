@@ -4,13 +4,8 @@
 
 #include "../include/defines.h"
 
-#include <string>
 #include <iostream>
 #include <fstream>
-#include <sstream>
-
-class shared_string;
-// class option_manager;
 
 class outputStream {
     public:
@@ -36,13 +31,6 @@ class outputStream {
         //
         // Get the current real format for this stream.
         inline unsigned get_real_format() const { return realfmt; }
-
-        //
-        // Set the comma separator for this stream.
-        inline void set_comma(const char* the_comma) {
-            comma = the_comma;
-        }
-
 
         /** Switch to a file with given name.
          *  The current file, if any, is closed.
@@ -109,6 +97,8 @@ class outputStream {
          */
         static inline outputStream& globalOut() { return Out; }
 
+    public:
+        const char* comma;
     private:
         static outputStream Out;
 
@@ -118,13 +108,10 @@ class outputStream {
         std::ofstream fout;
 
         unsigned realfmt;
-        const char* comma;
 
         bool active;
 
         void update_real_format();
-        friend class real_watch;
-        friend class comma_watch;
 };
 
 template <class TYPE>

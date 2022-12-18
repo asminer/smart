@@ -4,14 +4,16 @@
 #include "../Utils/strings.h"
 #include "stropt.h"
 
-string_opt::string_opt(const char* n, const char* d, shared_string* &v)
-    : option(String, n, d), value(v)
+string_opt::string_opt(const char* n, const char* d, const char* &L)
+    : option(String, n, d), link(L)
 {
+    if (link)   value = new shared_string(link);
+    else        value = nullptr;
 }
 
 string_opt::~string_opt()
 {
-    Nullify(value);
+    Delete(value);
 }
 
 option::error string_opt::SetValue(shared_string* v)
@@ -19,6 +21,8 @@ option::error string_opt::SetValue(shared_string* v)
     if (0==v)      return RangeError;
     Delete(value);
     value = Share(v);
+    if (value)  link = value->getStr();
+    else        link = nullptr;
     return notifyWatchers();
 }
 

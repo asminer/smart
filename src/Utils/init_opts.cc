@@ -158,7 +158,7 @@ shared_object* initialize_msg(switchable_msg &msg, const char* name,
 
 // **********************************************************************
 // *                                                                    *
-// *                 Real format option  initialization                 *
+// *                    Stream option initialization                    *
 // *                                                                    *
 // **********************************************************************
 
@@ -175,35 +175,55 @@ class real_format_watch : public option::watcher {
         }
 };
 
-class real_format_init : public initializer {
+class stream_option_init : public initializer {
     public:
-        real_format_init();
+        stream_option_init();
     protected:
         virtual void execute();
 
-        void buildOption(option_manager* om, outputStream &out,
+        void buildRealOption(option_manager* om, outputStream &out,
                 const char* name, const char* doc);
 };
-static real_format_init the_real_format_init;
+static stream_option_init the_stream_option_init;
 
-real_format_init::real_format_init() : initializer("real_format_init", 1, 1)
+stream_option_init::stream_option_init()
+    : initializer("stream_option_init", 1, 1)
 {
-    builds_resource(0, "real_format");
+    builds_resource(0, "stream_options");
     needs_resource(1, "OM");
 }
 
-void real_format_init::execute()
+void stream_option_init::execute()
 {
     option_manager* om = dynamic_cast <option_manager*> (get_object(1, "OM"));
     if (!om) return;
 
-    buildOption(om, outputStream::globalOut(), "OutputRealFormat",
+    //
+    // Real format option
+    //
+
+    buildRealOption(om, outputStream::globalOut(), "OutputRealFormat",
             "Format to use for writing reals to the output stream");
-    buildOption(om, reporting_msg::Out, "ReportRealFormat",
+    buildRealOption(om, reporting_msg::Out, "ReportRealFormat",
             "Format to use for writing reals to the reporting stream");
+
+    //
+    // Thousands separator option
+    //
+
+    om->addStringOption(
+        "OutputThousandSeparator",
+        "Thousands separator to use for the output stream",
+        outputStream::globalOut().comma
+    );
+    om->addStringOption(
+        "ReportThousandSeparator",
+        "Thousands separator to use for the reporting stream",
+        reporting_msg::Out.comma
+    );
 }
 
-void real_format_init::buildOption(option_manager* om, outputStream &out,
+void stream_option_init::buildRealOption(option_manager* om, outputStream &out,
         const char* name, const char* doc)
 {
     real_format_watch *w = new real_format_watch(out);

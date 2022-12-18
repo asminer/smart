@@ -60,7 +60,7 @@ option* option_manager::addRealOption(const char* n, const char* d, double &v,
 
 
 option* option_manager::addStringOption(const char* name, const char* doc,
-        shared_string* &v)
+        const char* &v)
 {
     return addOption( new string_opt(name, doc, v) );
 }

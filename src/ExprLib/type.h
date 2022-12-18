@@ -45,8 +45,8 @@ class type {
   bool printable;
 
 protected:
-  static shared_string* pos_infinity_string;
-  static shared_string* neg_infinity_string;
+  static const char* pos_infinity_string;
+  static const char* neg_infinity_string;
   friend void InitTypeOptions(exprman* em);
 
   inline void setVoid() { is_void = true; }
@@ -55,10 +55,10 @@ public:
   virtual ~type();
 
   static const char* getPlusInfinityString() {
-      return pos_infinity_string ? pos_infinity_string->getStr() : 0;
+      return pos_infinity_string;
   }
   static const char* getMinusInfinityString() {
-      return neg_infinity_string ? neg_infinity_string->getStr() : 0;
+      return neg_infinity_string;
   }
 
   inline const char* getName() const { return name; }

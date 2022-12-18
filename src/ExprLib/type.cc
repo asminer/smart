@@ -8,8 +8,8 @@
 // *                          type methods                          *
 // ******************************************************************
 
-shared_string* type::pos_infinity_string;
-shared_string* type::neg_infinity_string;
+const char* type::pos_infinity_string;
+const char* type::neg_infinity_string;
 
 type::type(const char* n)
 {
@@ -579,15 +579,15 @@ void InitTypeOptions(exprman* em)
   if (0==em)  return;
   if (0==em->OptMan()) return;
 
-  type::pos_infinity_string = new shared_string("infinity");
-//  type::pos_infinity_string = new shared_string("+infinity");
+  type::pos_infinity_string = "infinity";
+//  type::pos_infinity_string = "+infinity";
   em->OptMan()->addStringOption(
       "PlusInfinityString",
       "Output string for positive infinity.",
       type::pos_infinity_string
   );
 
-  type::neg_infinity_string = new shared_string("-infinity");
+  type::neg_infinity_string = "-infinity";
   em->OptMan()->addStringOption(
       "MinusInfinityString",
       "Output string for negative infinity.",
