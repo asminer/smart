@@ -16,6 +16,7 @@ class hldsm;
 
 /// underlying process generation engine base class.
 class process_generator : public subengine {
+  friend class old_init_procgen;
   friend class init_procgen;
 protected:
   static reporting_msg report;

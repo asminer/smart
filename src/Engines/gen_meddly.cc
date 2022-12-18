@@ -3679,7 +3679,7 @@ void substate_varoption::initDomain(const exprman* em)
   //
   // Initialize substate collections
   //
-  const exp_state_lib* esl = InitExplicitStateStorage(0);
+  const exp_state_lib* esl = InitExplicitStateStorage();
   DCASSERT(esl);
   colls = esl->createSubstateDBs(num_levels, false);
   DCASSERT(colls);

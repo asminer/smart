@@ -1,13 +1,15 @@
 
 #include "gen_rg_base.h"
 
+#include "../Options/options.h"
+#include "../Options/optman.h"
+
+#include "../Utils/init_opts.h"
+
 #include "../ExprLib/startup.h"
 #include "../ExprLib/engine.h"
 #include "../ExprLib/exprman.h"
 #include "../ExprLib/mod_inst.h"
-
-#include "../Options/options.h"
-#include "../Options/optman.h"
 
 #include "../_Timer/timerlib.h"
 
@@ -108,32 +110,23 @@ bool process_generator
 // *                                                                *
 // ******************************************************************
 
-class init_procgen : public startup {
+class old_init_procgen : public startup {
   public:
-    init_procgen();
+    old_init_procgen();
     virtual bool execute();
 };
-init_procgen the_procgen_startup;
+old_init_procgen the_procgen_startup;
 
-init_procgen::init_procgen() : startup("init_procgen")
+old_init_procgen::old_init_procgen() : startup("init_procgen")
 {
   usesResource("em");
   buildsResource("procgen");
   buildsResource("engtypes");
 }
 
-bool init_procgen::execute()
+bool old_init_procgen::execute()
 {
   if (0==em)  return false;
-
-  // Initialize options
-  process_generator::report.initialize(em->OptMan(), "procgen",
-    "When set, process generation performance is reported."
-  );
-
-  process_generator::debug.initialize(em->OptMan(), "procgen",
-    "When set, process generation details are displayed."
-  );
 
   engtype* ProcessGeneration = MakeEngineType(em,
       "ProcessGeneration",
@@ -150,30 +143,65 @@ bool init_procgen::execute()
       "Explicit process generation"
   );
   RegisterEngine(ProcessGeneration, ExplicitProcessGenerationCOV);
-  /*
-    Vanishing elimiation styles - as an option
-  */
-  process_generator::remove_vanishing = process_generator::BY_SUBGRAPH;
-  if (em->OptMan()) {
-    option* rmvan = em->OptMan()->addRadioOption(
-      "RemoveVanishing",
-      "Method to remove vanishing states",
-      2, process_generator::remove_vanishing
+
+  return true;
+}
+
+// ******************************************************************
+
+class init_procgen : public initializer {
+    public:
+        init_procgen();
+    protected:
+        virtual void execute();
+};
+static init_procgen the_procgen_initializer;
+
+init_procgen::init_procgen() : initializer("gen_rg_base.cc", 1, 3)
+{
+    builds_resource(0, "gen_rg_base.cc");
+    needs_resource(1, "OM");
+    needs_resource(2, "Debug");
+    needs_resource(3, "Report");
+}
+
+void init_procgen::execute()
+{
+    initialize_msg(process_generator::report,
+        "procgen",
+        "When set, process generation performance is reported.",
+        get_object(3, "Report")
+    );
+
+    initialize_msg(process_generator::debug,
+        "procgen",
+        "When set, process generation details are displayed.",
+        get_object(2, "Debug")
+    );
+
+    /*
+        Vanishing elimiation styles - as an option
+    */
+    process_generator::remove_vanishing = process_generator::BY_SUBGRAPH;
+    option_manager* om = dynamic_cast <option_manager*> (get_object(1, "OM"));
+    if (!om) return;
+
+    option* rmvan = om->addRadioOption(
+        "RemoveVanishing",
+        "Method to remove vanishing states",
+        2, process_generator::remove_vanishing
     );
     DCASSERT(rmvan);
 
     rmvan->addRadioButton(
-      "BY_PATH",
-      "Recursively search vanishing paths until tangibles are reached.",
-      process_generator::BY_PATH
+        "BY_PATH",
+        "Recursively search vanishing paths until tangibles are reached.",
+        process_generator::BY_PATH
     );
     rmvan->addRadioButton(
-      "BY_SUBGRAPH",
-      "Explore vanishing portions of graph, then eliminate; can handle vanishing cycles.",
-      process_generator::BY_SUBGRAPH
+        "BY_SUBGRAPH",
+        "Explore vanishing portions of graph, then eliminate; can handle vanishing cycles.",
+        process_generator::BY_SUBGRAPH
     );
-  }
-
-
-  return true;
 }
+

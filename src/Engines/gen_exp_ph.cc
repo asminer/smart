@@ -499,7 +499,7 @@ bool init_phasegen::execute()
   if (0==em) return false;
 
   // Initialize state library
-  const exp_state_lib* sl = InitExplicitStateStorage(em);
+  const exp_state_lib* sl = InitExplicitStateStorage();
 
   // Register engines
   RegisterSubengine(em,

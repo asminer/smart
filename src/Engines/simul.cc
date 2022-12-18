@@ -9,6 +9,9 @@
 #include "../Options/options.h"
 #include "../Options/optman.h"
 
+#include "../Utils/library.h"
+#include "../Utils/init_opts.h"
+
 #include "../ExprLib/startup.h"
 #include "../ExprLib/exprman.h"
 #include "../ExprLib/engine.h"
@@ -24,20 +27,22 @@
 class rng_lib : public library {
   const rng_manager* rngm;
 public:
-  rng_lib(const rng_manager* rm);
-  virtual const char* getVersionString() const;
-  virtual bool hasFixedPointer() const { return false; }
+  rng_lib();
+  void set_rngm(const rng_manager* m) {
+      rngm = m;
+  }
+  virtual void printVersion(std::ostream &s) const;
 };
+static rng_lib the_rng_lib;
 
-rng_lib::rng_lib(const rng_manager* rm) : library(false, false)
+rng_lib::rng_lib() : library(false, false)
 {
-  rngm = rm;
+  rngm = nullptr;
 }
 
-const char* rng_lib::getVersionString() const
+void rng_lib::printVersion(std::ostream &s) const
 {
-  if (rngm)  return rngm->GetVersion();
-  return 0;
+  if (rngm)  s << rngm->GetVersion();
 }
 
 // **************************************************************************
@@ -107,8 +112,8 @@ public:
   friend class seed_watcher;
 };
 
-rng_manager* sim_engine::rngm = 0;
-rng_stream* sim_engine::rng_main = 0;
+rng_manager* sim_engine::rngm = nullptr;
+rng_stream* sim_engine::rng_main = nullptr;
 long sim_engine::Samples;
 double sim_engine::Confidence;
 double sim_engine::Precision;
@@ -358,110 +363,25 @@ void seed_watcher::notify(const option* opt)
 // *                                                                *
 // ******************************************************************
 
-class init_simul : public startup {
+class old_init_simul : public startup {
   public:
-    init_simul();
+    old_init_simul();
     virtual bool execute();
 };
-init_simul the_simul_startup;
+old_init_simul the_simul_startup;
 
-init_simul::init_simul() : startup("init_simul")
+old_init_simul::old_init_simul() : startup("init_simul")
 {
   usesResource("em");
   usesResource("engtypes");
 }
 
-bool init_simul::execute()
+bool old_init_simul::execute()
 {
   //
   // Simulation options
   //
   if (0==em) return false;
-
-  //
-  // Option defaults
-  //
-  sim_engine::Samples = 100000;
-  sim_engine::Confidence = 0.95;
-  sim_engine::Precision = 0.001;
-  sim_engine::Type = sim_engine::V_SAMPLES;
-
-  //
-  // Add options
-  //
-  if (em->OptMan()) {
-
-    em->OptMan()->addIntOption(
-      "SimSamples",
-      "Number of samples to collect during simulations, if fixed (see option SimType).",
-      sim_engine::Samples, 50, 2000000000
-    );
-
-    em->OptMan()->addRealOption(
-      "SimConfidence",
-      "Desired level of confidence for simulations, if fixed (see option SimType).",
-      sim_engine::Confidence, true, false, 0.0, true, false, 1.0
-    );
-
-    em->OptMan()->addRealOption(
-      "SimPrecision",
-      "Desired level of (relative) precision for simulations, i.e., the desired half-width size as a fraction of the interval midpoint, if fixed (see option SimType).  Note: for a fixed confidence, one more digit of precision requires 100 times more samples.",
-      sim_engine::Precision, true, false, 0.0, true, false, 1.0
-    );
-
-    option* stype = em->OptMan()->addRadioOption(
-      "SimType",
-      "Simulation parameters can be tuned with options SimSamples, SimConfidence, and SimPrecision.  However, only two of the three values can be fixed, as the third is a function of the other two.  This option essentially determines which of the three is allowed to vary in the simulation.",
-      3, sim_engine::Type
-    );
-    stype->addRadioButton(
-      "CONFIDENCE", "Level of confidence varies", sim_engine::V_CONFIDENCE
-    );
-    stype->addRadioButton(
-      "PRECISION", "Half-width precision varies", sim_engine::V_PRECISION
-    );
-    stype->addRadioButton(
-      "SAMPLES",
-      "Number of samples (i.e., iterations) varies", sim_engine::V_SAMPLES
-    );
-  }
-
-  monte_carlo_engine::report.initialize(em->OptMan(), "Monte_Carlo",
-    "When set, Monte Carlo Simulation performance data is displayed."
-  );
-
-  //
-  // RNG options and such.
-  //
-  DCASSERT(0== sim_engine::rngm);
-  sim_engine::rngm = RNG_MakeStreamManager();
-  if (sim_engine::rngm) {
-    sim_engine::rng_main = sim_engine::rngm->NewBlankStream();
-  }
-
-  if (em->OptMan()) {
-    //
-    // stream separation as an observed option
-    //
-    jump_watcher* jw = new jump_watcher();
-    em->OptMan()->addIntOption("RngStreamSeparation",
-      "Stream separation distance for creating multiple, independent RNG streams.  The exponent d is specified, and streams will be separated by a distance of at least 2^d.",
-      jw->Link(),
-      sim_engine::rngm->MinimumJumpValue(),
-      sim_engine::rngm->MaximumJumpValue()
-    )->registerWatcher(jw);
-
-    //
-    // RNG seed as an observed option
-    //
-    seed_watcher* sw = new seed_watcher();
-    em->OptMan()->addIntOption("SeedRng",
-      "Re-set the random number generator state based on the given seed value.",
-      sw->Link(), 0, LONG_MAX
-    )->registerWatcher(sw);
-
-  }
-
 
   //
   // Add engines
@@ -473,11 +393,115 @@ bool init_simul::execute()
     &the_sim_rr_avg
   );
 
-  //
-  // Register libraries
-  //
-  em->registerLibrary(  new rng_lib(sim_engine::rngm)  );
-
   return true;
 }
+
+// ******************************************************************
+
+class init_simul : public initializer {
+    public:
+        init_simul();
+    protected:
+        virtual void execute();
+};
+static init_simul the_simul_initializer;
+
+init_simul::init_simul() : initializer("simul.cc", 1, 2)
+{
+    builds_resource(0, "simul.cc");
+    needs_resource(1, "OM");
+    needs_resource(2, "Report");
+}
+
+void init_simul::execute()
+{
+    //
+    // Reporting
+    //
+    initialize_msg(monte_carlo_engine::report,
+        "Monte_Carlo",
+        "When set, Monte Carlo Simulation performance data is displayed.",
+        get_object(2, "Report")
+    );
+
+    //
+    // Set up RNG
+    //
+    DCASSERT(!sim_engine::rngm);
+    sim_engine::rngm = RNG_MakeStreamManager();
+    the_rng_lib.set_rngm(sim_engine::rngm);
+    if (sim_engine::rngm) {
+        sim_engine::rng_main = sim_engine::rngm->NewBlankStream();
+    }
+
+    //
+    // Option defaults
+    //
+    sim_engine::Samples = 100000;
+    sim_engine::Confidence = 0.95;
+    sim_engine::Precision = 0.001;
+    sim_engine::Type = sim_engine::V_SAMPLES;
+
+    //
+    // Set up options
+    //
+
+    option_manager* om = dynamic_cast <option_manager*> (get_object(1, "OM"));
+    if (!om) return;
+
+    om->addIntOption(
+        "SimSamples",
+        "Number of samples to collect during simulations, if fixed (see option SimType).",
+        sim_engine::Samples, 50, 2000000000
+    );
+
+    om->addRealOption(
+        "SimConfidence",
+        "Desired level of confidence for simulations, if fixed (see option SimType).",
+        sim_engine::Confidence, true, false, 0.0, true, false, 1.0
+    );
+
+    om->addRealOption(
+        "SimPrecision",
+        "Desired level of (relative) precision for simulations, i.e., the desired half-width size as a fraction of the interval midpoint, if fixed (see option SimType).  Note: for a fixed confidence, one more digit of precision requires 100 times more samples.",
+        sim_engine::Precision, true, false, 0.0, true, false, 1.0
+    );
+
+    option* stype = om->addRadioOption(
+        "SimType",
+        "Simulation parameters can be tuned with options SimSamples, SimConfidence, and SimPrecision.  However, only two of the three values can be fixed, as the third is a function of the other two.  This option essentially determines which of the three is allowed to vary in the simulation.",
+        3, sim_engine::Type
+    );
+    stype->addRadioButton(
+        "CONFIDENCE", "Level of confidence varies", sim_engine::V_CONFIDENCE
+    );
+    stype->addRadioButton(
+        "PRECISION", "Half-width precision varies", sim_engine::V_PRECISION
+    );
+    stype->addRadioButton(
+        "SAMPLES",
+        "Number of samples (i.e., iterations) varies", sim_engine::V_SAMPLES
+    );
+
+    //
+    // stream separation as an observed option
+    //
+    jump_watcher* jw = new jump_watcher();
+    om->addIntOption("RngStreamSeparation",
+        "Stream separation distance for creating multiple, independent RNG streams.  The exponent d is specified, and streams will be separated by a distance of at least 2^d.",
+        jw->Link(),
+        sim_engine::rngm->MinimumJumpValue(),
+        sim_engine::rngm->MaximumJumpValue()
+    )->registerWatcher(jw);
+
+    //
+    // RNG seed as an observed option
+    //
+    seed_watcher* sw = new seed_watcher();
+    om->addIntOption("SeedRng",
+        "Re-set the random number generator state based on the given seed value.",
+        sw->Link(), 0, LONG_MAX
+    )->registerWatcher(sw);
+}
+
 

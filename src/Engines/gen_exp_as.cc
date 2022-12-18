@@ -1031,7 +1031,7 @@ bool init_asynchgen::execute() {
 		return false;
 
 	// Initialize state library
-	const exp_state_lib* sl = InitExplicitStateStorage(em);
+	const exp_state_lib* sl = InitExplicitStateStorage();
 
 	// Register engines
 	RegisterSubengine(em, "ProcessGeneration", "EXPLICIT", new as_procgen(sl));

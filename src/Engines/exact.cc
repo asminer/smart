@@ -3,6 +3,8 @@
 
 #include "../Options/options.h"
 
+#include "../Utils/init_opts.h"
+
 #include "../ExprLib/startup.h"
 #include "../ExprLib/exprman.h"
 #include "../ExprLib/engine.h"
@@ -32,6 +34,7 @@ protected:
   static debugging_msg eng_debug;
   static reporting_msg eng_report;
   static engtype* ProcessGeneration;
+  friend class old_init_exactengines;
   friend class init_exactengines;
 public:
   exact_mcmsr();
@@ -980,30 +983,22 @@ void exact_ph_analyze::RunEngine(hldsm* foo, result &fls)
 // *                                                                *
 // ******************************************************************
 
-class init_exactengines : public startup {
+class old_init_exactengines : public startup {
   public:
-    init_exactengines();
+    old_init_exactengines();
     virtual bool execute();
 };
-init_exactengines the_exactengine_startup;
+old_init_exactengines the_exactengine_startup;
 
-init_exactengines::init_exactengines() : startup("init_exactengines")
+old_init_exactengines::old_init_exactengines() : startup("init_exactengines")
 {
   usesResource("em");
   usesResource("engtypes");
 }
 
-bool init_exactengines::execute()
+bool old_init_exactengines::execute()
 {
   if (0==em)  return false;
-
-  exact_mcmsr::eng_debug.initialize(em->OptMan(), "exact_solver",
-    "When set, diagnostic messages are displayed regarding Markov chain exact solution engines."
-  );
-
-  exact_mcmsr::eng_report.initialize(em->OptMan(), "exact_solver",
-    "When set, exact solution measure performance is reported."
-  );
 
   const char* exact = "EXACT";
   const char* desc = "Exact analysis of underlying stochastic process";
@@ -1021,3 +1016,35 @@ bool init_exactengines::execute()
   return true;
 }
 
+// ******************************************************************
+
+class init_exactengines : public initializer {
+    public:
+        init_exactengines();
+    protected:
+        virtual void execute();
+};
+static init_exactengines the_exactengine_initializer;
+
+init_exactengines::init_exactengines() : initializer("exact.cc", 1, 2)
+{
+    builds_resource(0, "exact.cc");
+    needs_resource(1, "Debug");
+    needs_resource(2, "Report");
+}
+
+void init_exactengines::execute()
+{
+    initialize_msg(exact_mcmsr::eng_debug,
+        "exact_solver",
+        "When set, diagnostic messages are displayed regarding Markov chain exact solution engines.",
+        get_object(1, "Debug")
+    );
+
+    initialize_msg(exact_mcmsr::eng_report,
+        "exact_solver",
+        "When set, exact solution measure performance is reported.",
+        get_object(2, "Report")
+    );
+
+}
