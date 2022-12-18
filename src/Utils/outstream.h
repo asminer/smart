@@ -76,19 +76,19 @@ class outputStream {
         /*
          * Write a signed integer with commas.
          */
-        void putWithCommas(long x);
+        void putWithCommas(long x, int width=0);
 
         /*
          * Write an unsigned integer with commas.
          */
-        void putWithCommas(unsigned long x);
+        void putWithCommas(unsigned long x, int width=0);
 
         /*
          * Write an integer or real, encoded as a string, with commas.
          * The integer portion may start with -, +, or a digit,
          * and ends with the first non-digit.
          */
-        void putWithCommas(const char* x);
+        void putWithCommas(const char* x, int width=0);
 
 
         /*
@@ -244,45 +244,6 @@ inline std::ostream& operator<< (std::ostream &s, padding p)
 {
     return p.show(s);
 }
-
-
-//
-// TBD: how to tie thousands separator to a std::ostream&
-//      current thoughts:
-//
-//      * DON'T.  For output thousands separator, put
-//        an option in type base class or something so
-//        that integer and bigint types have access,
-//        and add the commas when printing integers
-//        in those types.
-//
-//        For report thousands separator, put it
-//        in the report message class, and add a
-//        method to comma separate strings, longs, unsigned longs.
-//
-//
-//  TBD: how to correctly handle width and precision stuff
-//
-//      precision: must be passed to type/print stuff.
-//
-//      widths: in the function library for printing,
-//              for any item that is being printed,
-//              dump it to a string stream first,
-//              then print the string with the appropriate width.
-//
-//  TBD: how to print out byte sizes
-//
-//      make a simple class here, memcount or something,
-//      and overload << for it, so we can use
-//      something like
-//
-//          cout << memcount(1231312223) << "\n"
-//
-//      or maybe
-//
-//          cout << binprefix(1231241341, "bytes") << "\n";
-//
-
 
 
 #endif

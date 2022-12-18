@@ -9,6 +9,8 @@
 #include "../Modules/expl_states.h"
 #include "../Formlsms/dsde_hlm.h"
 #include "../Formlsms/rss_meddly.h"
+
+#include <sstream>
 #include<map>
 #include<vector>
 

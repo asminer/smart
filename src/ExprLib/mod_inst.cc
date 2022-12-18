@@ -9,6 +9,8 @@
 #include "measures.h"
 #include "engine.h"
 
+#include <sstream>
+
 // #define ARRAY_TRACE
 // #define DEBUG_PARTINFO
 

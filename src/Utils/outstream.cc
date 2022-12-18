@@ -1,40 +1,11 @@
 
 #include "outstream.h"
 #include "strings.h"
-// #include "../Options/optman.h"
-// #include "../Options/options.h"
 
 #include <iomanip>
-
-// real format codes
-/*
-static const unsigned RF_GENERAL = 0;
-static const unsigned RF_FIXED = 1;
-static const unsigned RF_SCIENTIFIC = 2;
-*/
+#include <sstream>
 
 outputStream outputStream::Out(std::cout);
-
-// ======================================================================
-
-/// Update the stream when the option changes
-/*
-class rfwatch : public option::watcher {
-        outputStream& stream;
-    public:
-        rfwatch(outputStream& s);
-        virtual void notify(const option* o);
-};
-
-rfwatch::rfwatch(outputStream &s) : stream(s)
-{
-}
-
-void rfwatch::notify(const option*)
-{
-    stream.update_real_format();
-}
-*/
 
 // ======================================================================
 
@@ -54,28 +25,6 @@ outputStream::~outputStream()
 {
 }
 
-/*
- *
-void outputStream::buildRealOption(option_manager* om,
-        const char* name, const char* doc)
-{
-    if (0==om) return;
-    option* rbo = om->addRadioOption(name, doc, 3, realfmt);
-    rbo->registerWatcher(new rfwatch(*this));
-
-    rbo->addRadioButton("FIXED", "Same as printf(%f)", RF_FIXED);
-    rbo->addRadioButton("GENERAL", "Same as printf(%g)", RF_GENERAL);
-    rbo->addRadioButton("SCIENTIFIC", "Same as printf(%e)", RF_SCIENTIFIC);
-}
-
-void outputStream::buildThousandsOption(option_manager* om,
-        const char* name, const char* doc)
-{
-    if (0==om) return;
-    om->addStringOption(name, doc, comma);
-}
-*/
-
 bool outputStream::switchOutput(const char* outfile)
 {
     if (fout.is_open()) fout.close();
@@ -92,41 +41,67 @@ void outputStream::defaultOutput()
     }
 }
 
-void outputStream::putWithCommas(long x)
+template <class item>
+inline void align_item(std::ostream &s, item x, int width)
 {
-    if ((x>-1000)&&(x<1000)) {
-        stream() << x;
-        return;
+    if (width < 0) {
+        s << std::setw(-width) << std::left << x;
+    } else {
+        s << std::setw(width) << std::right << x;
     }
-    putWithCommas(x/1000);
-    if (comma) {
-        stream() << comma;
-    }
-    stream().fill('0');
-    stream() << std::setw(3) << ABS(x%1000);
-    stream().fill(' ');
+
 }
 
-void outputStream::putWithCommas(unsigned long x)
+inline void show_string(std::ostream &s, const std::stringstream &ss, int width)
 {
-    if (x<1000) {
-        stream() << x;
-        return;
-    }
-    putWithCommas(x/1000);
-    if (comma) {
-        stream() << comma;
-    }
-    stream().fill('0');
-    stream() << std::setw(3) << x%1000;
-    stream().fill(' ');
+    align_item(s, ss.str(), width);
 }
 
-void outputStream::putWithCommas(const char* x)
+void outputStream::putWithCommas(long x, int width)
+{
+    std::stringstream ss;
+    ss.fill('0');
+
+    long base=1;
+    while (x/base <= -1000) base *= 1000;
+    while (x/base >=  1000) base *= 1000;
+
+    ss << x/base;
+    while (base>1) {
+        x = ABS(x % base);
+        base /= 1000;
+        if (comma) ss << comma;
+        ss << std::setw(3) << x/base;
+    }
+
+    show_string(stream(), ss, width);
+}
+
+void outputStream::putWithCommas(unsigned long x, int width)
+{
+    std::stringstream ss;
+    ss.fill('0');
+
+    unsigned long base=1;
+    while (x/base >=  1000) base *= 1000;
+
+    ss << x/base;
+    while (base>1) {
+        x = x % base;
+        base /= 1000;
+        if (comma) ss << comma;
+        ss << std::setw(3) << x/base;
+    }
+
+    show_string(stream(), ss, width);
+}
+
+void outputStream::putWithCommas(const char* x, int width)
 {
     if (nullptr == x) return;
+    std::stringstream ss;
     if (('-' == x[0]) || ('+' == x[0])) {
-        stream() << x[0];
+        ss << x[0];
         ++x;
     }
     unsigned digits=0;
@@ -135,21 +110,22 @@ void outputStream::putWithCommas(const char* x)
         if (x[digits] > '9') break;
     }
     if (digits < 4) {
-        stream() << x;
+        ss << x;
+        show_string(stream(), ss, width);
         return;
     }
     switch (digits%3) {
         case 1:
-            stream() << x[0];
+            ss << x[0];
             ++x;
             break;
         case 2:
-            stream() << x[0] << x[1];
+            ss << x[0] << x[1];
             x += 2;
             break;
 
         default:
-            stream() << x[0] << x[1] << x[2];
+            ss << x[0] << x[1] << x[2];
             x += 3;
             break;
     }
@@ -157,11 +133,12 @@ void outputStream::putWithCommas(const char* x)
         if (x[0] < '0') break;
         if (x[0] > '9') break;
         if (comma) {
-            stream() << comma;
+            ss << comma;
         }
-        stream() << x[0] << x[1] << x[2];
+        ss << x[0] << x[1] << x[2];
     }
-    stream() << x;
+    ss << x;
+    show_string(stream(), ss, width);
 }
 
 
@@ -333,11 +310,8 @@ std::ostream& memoryCount::show(std::ostream &s) const
 
 std::ostream& formatted_int::show(std::ostream &s) const
 {
-    if (width < 0) {
-        return s << std::setw(-width) << std::left << val;
-    } else {
-        return s << std::setw(width) << std::right << val;
-    }
+    align_item(s, val, width);
+    return s;
 }
 
 // ======================================================================
@@ -348,11 +322,7 @@ std::ostream& formatted_real::show(std::ostream &s) const
     if (prec>=0) {
         s.precision(prec);
     }
-    if (width < 0) {
-        s << std::setw(-width) << std::left << val;
-    } else {
-        s << std::setw(width) << std::right << val;
-    }
+    align_item(s, val, width);
     s.precision(oldprec);
     return s;
 }
@@ -361,11 +331,8 @@ std::ostream& formatted_real::show(std::ostream &s) const
 
 std::ostream& formatted_string::show(std::ostream &s) const
 {
-    if (width < 0) {
-        return s << std::setw(-width) << std::left << val;
-    } else {
-        return s << std::setw(width) << std::right << val;
-    }
+    align_item(s, val, width);
+    return s;
 }
 
 // ======================================================================
