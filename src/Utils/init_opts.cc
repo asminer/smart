@@ -171,7 +171,6 @@ class real_format_watch : public option::watcher {
             link = stream.get_real_format();
         }
         virtual void notify(const option*) {
-            std::cerr << "notify new value is " << link << "\n";
             stream.set_real_format(link);
         }
 };
