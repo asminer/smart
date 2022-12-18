@@ -1891,6 +1891,7 @@ class function_initializer : public initializer {
     protected:
         virtual void execute();
 };
+static function_initializer the_function_initializer;
 
 function_initializer::function_initializer()
     : initializer("functions.cc", 1, 1)

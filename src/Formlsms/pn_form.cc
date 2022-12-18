@@ -2818,7 +2818,7 @@ static init_pnform the_pnform_initializer;
 
 init_pnform::init_pnform() : initializer("pn_form.cc", 1, 3)
 {
-    builds_resource(0, "evm_form.cc");
+    builds_resource(0, "pn_form.cc");
     needs_resource(1, "OM");
     needs_resource(2, "Warning");
     needs_resource(3, "Debug");

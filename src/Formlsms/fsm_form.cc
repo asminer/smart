@@ -616,7 +616,7 @@ static init_fsms the_fsm_initializer;
 
 init_fsms::init_fsms() : initializer("fsm_form.cc", 1, 2)
 {
-    builds_resource(0, "evm_form.cc");
+    builds_resource(0, "fsm_form.cc");
     needs_resource(1, "Warning");
     needs_resource(2, "Debug");
     // Not sure about these
