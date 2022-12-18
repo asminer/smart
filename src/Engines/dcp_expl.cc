@@ -3,6 +3,9 @@
 
 #include "../Utils/textfmt.h"
 #include "../Utils/sigman.h"
+#include "../Utils/library.h"
+#include "../Utils/init_opts.h"
+
 #include "../Options/options.h"
 #include "../ExprLib/startup.h"
 #include "../ExprLib/exprman.h"
@@ -25,26 +28,25 @@
 // **************************************************************************
 
 class icp_state_lib : public library {
-public:
-  icp_state_lib();
-  virtual const char* getVersionString() const {
-    return StateLib::LibraryVersion();
-  }
-  virtual bool hasFixedPointer() const {
-    return false;
-  }
-  virtual void printCopyright(doc_formatter &df) const;
+    public:
+        icp_state_lib();
+        virtual void printVersion(std::ostream &s) const {
+            s << StateLib::LibraryVersion();
+        }
+        virtual void printCopyright(doc_formatter &df) const;
 };
+static icp_state_lib the_icp_state_lib;
 
 icp_state_lib::icp_state_lib() : library(false, false)
 {
+    registerLibrary(this);
 }
 
 void icp_state_lib::printCopyright(doc_formatter &df) const
 {
-  df.begin_indent();
-  df.Out() << "State library copyright info here\n";
-  df.end_indent();
+    df.begin_indent();
+    df.Out() << "State library copyright info here\n";
+    df.end_indent();
 }
 
 // ******************************************************************
@@ -260,7 +262,7 @@ void icp_stategen::Generate_NE_rec(int k)
 // abstract base class for min, max, sat engines
 class icp_ss_analyzer : public subengine {
   static engtype* SSGen;
-  friend class init_dcpengines;
+  friend class old_init_dcpengines;
 public:
   icp_ss_analyzer();
   virtual bool AppliesToModelType(hldsm::model_type mt) const;
@@ -521,36 +523,22 @@ void icp_satisfiable::SolveExplicit(no_event_model* nem,
 // *                                                                *
 // ******************************************************************
 
-class init_dcpengines : public startup {
+class old_init_dcpengines : public startup {
   public:
-    init_dcpengines();
+    old_init_dcpengines();
     virtual bool execute();
 };
-init_dcpengines the_dcpengine_startup;
+old_init_dcpengines the_dcpengine_startup;
 
-init_dcpengines::init_dcpengines() : startup("init_dcpengines")
+old_init_dcpengines::old_init_dcpengines() : startup("init_dcpengines")
 {
   usesResource("em");
   usesResource("engtypes");
 }
 
-bool init_dcpengines::execute()
+bool old_init_dcpengines::execute()
 {
   if (0==em) return false;
-
-  // Initialize libraries
-  static icp_state_lib state_lib_data;
-  em->registerLibrary(&state_lib_data);
-
-  // Initialize options
-  icp_stategen::report.initialize(em->OptMan(), "explicit_dcp_gen",
-    "When set, explicit reachability set performance is reported."
-  );
-
-  icp_stategen::debug.initialize(em->OptMan(), "explicit_dcp_gen",
-    "When set, explicit reachability set generation details are displayed."
-  );
-
 
   // Register engines
   icp_ss_analyzer::SSGen = em->findEngineType("ExplicitDCSolve");
@@ -583,5 +571,37 @@ bool init_dcpengines::execute()
   return true;
 }
 
+// ******************************************************************
 
+class init_dcpengines : public initializer {
+    public:
+        init_dcpengines();
+    protected:
+        virtual void execute();
+};
+static init_dcpengines the_dcpengine_initializer;
 
+init_dcpengines::init_dcpengines() : initializer("dcp_expl.cc", 1, 2)
+{
+    builds_resource(0, "dcp_expl.cc");
+    needs_resource(1, "Report");
+    needs_resource(2, "Debug");
+}
+
+void init_dcpengines::execute()
+{
+    //
+    // Reporting / debugging messages
+    //
+    initialize_msg(icp_stategen::report,
+        "explicit_dcp_gen",
+        "When set, explicit reachability set performance is reported.",
+        get_object(1, "Report")
+    );
+
+    initialize_msg(icp_stategen::debug,
+        "explicit_dcp_gen",
+        "When set, explicit reachability set generation details are displayed.",
+        get_object(2, "Debug")
+    );
+}

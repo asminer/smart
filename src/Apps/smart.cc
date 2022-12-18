@@ -248,6 +248,8 @@ int main(int argc, const char** argv, const char** env)
     E << "Deadlock in startups";
     return -1;
   }
+  // Run initializers
+  initializer::execute_all(false);
 
   // Parser initialization
   parse_module pm(em);

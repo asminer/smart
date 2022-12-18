@@ -49,6 +49,7 @@ smart_SOURCES = \
   Utils/textfmt.cc \
   Utils/sigman.cc \
   Utils/strings.cc \
+  Utils/initializer.cc \
   Utils/init_opts.cc \
   Utils/library.cc \
   \
@@ -189,6 +190,7 @@ icp_SOURCES = \
   Utils/textfmt.cc \
   Utils/sigman.cc \
   Utils/strings.cc \
+  Utils/initializer.cc \
   Utils/init_opts.cc \
   Utils/library.cc \
   \

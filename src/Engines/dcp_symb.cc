@@ -7,6 +7,8 @@
 #include "../Options/optman.h"
 #include "../Options/options.h"
 
+#include "../Utils/init_opts.h"
+
 #include "../ExprLib/startup.h"
 #include "../ExprLib/exprman.h"
 #include "../ExprLib/mod_inst.h"
@@ -266,6 +268,7 @@ protected:
   static unsigned combine_method;
   static const unsigned ACCUMULATE = 0;
   static const unsigned FOLD       = 1;
+  friend class old_init_dcpsymbolic;
   friend class init_dcpsymbolic;
 public:
   icp_symbgen();
@@ -585,7 +588,7 @@ shared_ddedge* icp_symbgen
 // abstract base class for min, max, sat engines
 class icp_mdd_analyzer : public subengine {
   static engtype* SSGen;
-  friend class init_dcpsymbolic;
+  friend class old_init_dcpsymbolic;
 public:
   icp_mdd_analyzer();
   virtual bool AppliesToModelType(hldsm::model_type mt) const;
@@ -961,33 +964,22 @@ void icp_mdd_sat
 // *                                                                *
 // ******************************************************************
 
-class init_dcpsymbolic : public startup {
+class old_init_dcpsymbolic : public startup {
   public:
-    init_dcpsymbolic();
+    old_init_dcpsymbolic();
     virtual bool execute();
 };
-init_dcpsymbolic the_dcpsymbolic_startup;
+old_init_dcpsymbolic the_dcpsymbolic_startup;
 
-init_dcpsymbolic::init_dcpsymbolic() : startup("init_dcpsymbolic")
+old_init_dcpsymbolic::old_init_dcpsymbolic() : startup("init_dcpsymbolic")
 {
   usesResource("em");
   usesResource("engtypes");
 }
 
-bool init_dcpsymbolic::execute()
+bool old_init_dcpsymbolic::execute()
 {
   if (0==em) return false;
-
-  // Initialize libraries
-  // InitMEDDLy(em);
-
-  // Initialize options
-  icp_symbgen::report.initialize(em->OptMan(), "implicit_dcp_gen",
-    "When set, implicit reachability set performance is reported."
-  );
-  icp_symbgen::debug.initialize(em->OptMan(), "implicit_dcp_gen",
-    "When set, implicit reachability set details are displayed."
-  );
 
   // accumulate vs. fold option
   icp_symbgen::combine_method = icp_symbgen::FOLD;
@@ -1042,4 +1034,37 @@ bool init_dcpsymbolic::execute()
   return true;
 }
 
+// ******************************************************************
+
+class init_dcpsymbolic : public initializer {
+    public:
+        init_dcpsymbolic();
+    protected:
+        virtual void execute();
+};
+static init_dcpsymbolic the_dcpsymbolic_initializer;
+
+init_dcpsymbolic::init_dcpsymbolic() : initializer("dcp_symb.cc", 1, 2)
+{
+    builds_resource(0, "dcp_symb.cc");
+    needs_resource(1, "Report");
+    needs_resource(2, "Debug");
+}
+
+void init_dcpsymbolic::execute()
+{
+    //
+    // Reporting / debugging messages
+    //
+    initialize_msg(icp_symbgen::report,
+        "implicit_dcp_gen",
+        "When set, implicit reachability set performance is reported.",
+        get_object(1, "Report")
+    );
+    initialize_msg(icp_symbgen::debug,
+        "implicit_dcp_gen",
+        "When set, implicit reachability set details are displayed.",
+        get_object(2, "Debug")
+    );
+}
 
