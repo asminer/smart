@@ -443,7 +443,7 @@ void initializer::set_object(unsigned slot, shared_object* o, const char* name)
 shared_object* initializer::get_object(unsigned slot, const char* name)
 {
     CHECK_RANGE(0, slot, max_resources);
-    DCASSERT(res_list[slot]);
+    if (!res_list[slot]) return nullptr;
     DCASSERT(!name || 0==strcmp(res_list[slot]->name, name));
     return res_list[slot]->get_object();
 }
