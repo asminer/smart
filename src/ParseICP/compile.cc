@@ -4,6 +4,7 @@
 #include "../Options/options.h"
 #include "../Options/optman.h"
 #include "../Utils/strings.h"
+#include "../Utils/init_opts.h"
 
 #include "../ExprLib/exprman.h"
 #include "../ExprLib/functions.h"
@@ -1137,6 +1138,46 @@ expr* BuildFunctionCall(char* n, parser_list* posparams)
 
 // ******************************************************************
 // *                                                                *
+// *                         Initialization                         *
+// *                                                                *
+// ******************************************************************
+
+class compile_init : public initializer {
+    public:
+        compile_init();
+    protected:
+        virtual void execute();
+};
+static compile_init the_compile_initializer;
+
+compile_init::compile_init() : initializer("compile.cc", 1, 1)
+{
+    builds_resource(0, "compile.cc");
+    needs_resource(1, "Debug");
+}
+
+void compile_init::execute()
+{
+    initialize_msg(parser_debug,
+        "parser",
+        "When set, very low-level parser messages are displayed.",
+        get_object(1, "Debug")
+    );
+    initialize_msg(compiler_debug,
+        "compiler",
+        "When set, low-level compiler messages are displayed.",
+        get_object(1, "Debug")
+    );
+#ifdef PARSER_DEBUG
+    parser_debug.Activate();
+#endif
+#ifdef COMPILE_DEBUG
+    compiler_debug.Activate();
+#endif
+}
+
+// ******************************************************************
+// *                                                                *
 // *                      Front-end  functions                      *
 // *                                                                *
 // ******************************************************************
@@ -1151,19 +1192,6 @@ void InitCompiler(parse_module* parent)
   ONE = new value(location::NOWHERE(), em->INT, one);
 
   MeasureNames.Clear();
-
-  parser_debug.initialize(em ? em->OptMan() : 0, "parser",
-    "When set, very low-level parser messages are displayed."
-  );
-  compiler_debug.initialize(em ? em->OptMan() : 0, "compiler",
-    "When set, low-level compiler messages are displayed."
-  );
-#ifdef PARSER_DEBUG
-  parser_debug.Activate();
-#endif
-#ifdef COMPILE_DEBUG
-  compiler_debug.Activate();
-#endif
 
   // Compiler stats
   list_depth = 0;

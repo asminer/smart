@@ -13,6 +13,8 @@
 #include "parse_icp.h"
 #include "../Options/options.h"
 
+#include "../Utils/init_opts.h"
+
 // #define LEXER_DEBUG
 
 const int my_buffer_size = 16384;
@@ -57,8 +59,9 @@ lexer_error::lexer_error(const char* text) : error_msg("ERROR")
 class inputfile;
 
 struct lexer_mod {
+    friend class lexer_init;
   parse_module* parent;
-  debugging_msg debug;
+  static debugging_msg debug;
   /// Stack of input files.
   inputfile** filestack;
   /// Top of file stack.
@@ -93,54 +96,8 @@ public:
     DCASSERT(parent);
     return parent->FindModif(s);
   }
-  /*
-  inline bool startInternal(const char* file, int line) {
-    DCASSERT(parent);
-    return parent->startInternal(file, line);
-  }
-  inline OutputStream& internal() {
-    DCASSERT(parent);
-    return parent->internal();
-  }
-  inline bool startError() {
-    DCASSERT(parent);
-    return parent->startError();
-  }
-  inline OutputStream& cerr() {
-    DCASSERT(parent);
-    return parent->cerr();
-  }
-  inline void stopError() {
-    DCASSERT(parent);
-    parent->stopError();
-  }
-  inline bool startWarning() {
-    DCASSERT(parent);
-    DCASSERT(parent->em);
-    if (parent->em->hasIO()) {
-      parent->em->startWarning();
-      parent->em->causedBy(Where());
-      return true;
-    }
-    return false;
-  }
-  inline OutputStream& warn() {
-    DCASSERT(parent);
-    DCASSERT(parent->em);
-    DCASSERT(parent->em->hasIO());
-    return parent->em->warn();
-  }
-  inline bool startDebug() {
-    return lexer_debug.startReport();
-  }
-  inline OutputStream& debug() {
-    return lexer_debug.report();
-  }
-  inline void stopDebug() {
-    lexer_debug.stopIO();
-  }
-  */
 };
+debugging_msg lexer_mod::debug;
 
 lexer_mod lexdata;
 
@@ -590,12 +547,6 @@ void lexer_mod::Initialize(parse_module* p)
 {
   if (p == parent)  return;
   parent = p;
-  debug.initialize(parent ? parent->OptMan() : 0, "lexer",
-    "When set, very low-level lexer messages are displayed."
-  );
-#ifdef LEXER_DEBUG
-  lexer_debug.Activate();
-#endif
 }
 
 bool lexer_mod::AlreadyOpen(const char* name) const
@@ -698,6 +649,38 @@ bool lexer_mod::SetInputs(const char** files, int filecount)
   return false;
 }
 
+
+// ==================================================================
+//
+//                             Initialization
+//
+// ==================================================================
+
+class lexer_init : public initializer {
+    public:
+        lexer_init();
+    protected:
+        virtual void execute();
+};
+static lexer_init the_lexer_initializer;
+
+lexer_init::lexer_init() : initializer("lexer.cc", 1, 1)
+{
+    builds_resource(0, "lexer.cc");
+    needs_resource(1, "Debug");
+}
+
+void lexer_init::execute()
+{
+    initialize_msg(lexer_mod::debug,
+        "lexer",
+        "When set, very low-level lexer messages are displayed.",
+        get_object(1, "Debug")
+    );
+#ifdef LEXER_DEBUG
+    lexer_mod::debug.Activate();
+#endif
+}
 
 // ==================================================================
 //

@@ -10,6 +10,8 @@
 */
 
 #include "../Options/optman.h"
+#include "../Utils/library.h"
+#include "../Utils/initializer.h"
 #include "../ExprLib/startup.h"
 #include "../ExprLib/exprman.h"
 #include "../ParseICP/parse_icp.h"
@@ -43,17 +45,6 @@ bool first_init::execute()
 }
 
 // ============================================================
-
-void InitOptions(option_manager* om)
-{
-  if (0==om)  return;
-  om->addChecklistOption("Report",
-    "Switches to control what information, if any, is written to the report stream."
-  );
-  om->addChecklistOption("Debug",
-    "Switches to control what low-level debugging information, if any, is written to the report stream."
-  );
-}
 
 void SolveMeasures(outputStream& s, parse_module* pm)
 {
@@ -98,8 +89,7 @@ int main(int argc, const char** argv, const char** env)
   */
 
   // Option module initialization
-  option_manager* om = MakeOptionManager();
-  InitOptions(om);
+  option_manager* om = getGlobalOptionManager();
 
   // Expression module initialization
   // exprman* em = Initialize_Expressions(&myio, om);
@@ -112,6 +102,7 @@ int main(int argc, const char** argv, const char** env)
     E << "Deadlock in startups";
     return -1;
   }
+  initializer::execute_all();
 
   // Parser initialization
   parse_module pm(em);
@@ -131,8 +122,7 @@ int main(int argc, const char** argv, const char** env)
     // ==================================================================
     out << "\nICP version 0.1\n";
     out << "\nSupporting libraries:\n";
-    if (em)   em->printLibraryVersions(out.stream());
-    else      out << "\nERROR, no expression manager available\n";
+    library::printLibraryVersions(out.stream());
     out << "\n";
     out << "Usage : \n";
     out << "icp <file1> <file2> ... <filen>\n";
@@ -149,7 +139,7 @@ int main(int argc, const char** argv, const char** env)
   //
   // Cleanup
   //
-  delete om;
+  // delete om;
   destroyExpressionManager(em);
 
   return 0;
