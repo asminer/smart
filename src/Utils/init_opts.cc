@@ -162,6 +162,7 @@ shared_object* initialize_msg(switchable_msg &msg, const char* name,
 // *                                                                    *
 // **********************************************************************
 
+/*
 class real_format_watch : public option::watcher {
         outputStream& stream;
     public:
@@ -235,3 +236,4 @@ void stream_option_init::buildRealOption(option_manager* om, outputStream &out,
     rbo->addRadioButton("SCIENTIFIC", "Same as printf(%e)", outputStream::SCIENTIFIC);
     rbo->Finish();
 }
+*/
