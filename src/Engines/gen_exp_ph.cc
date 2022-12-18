@@ -68,7 +68,7 @@ protected:
   inline void reached(bool tang, long num, double rate, const shared_state* st) const {
     if (!debug.start()) return;
     if (rate) {
-      debug << " (" << formatted_real(rate, 4) << ")";
+      debug << " (" << general_real(rate, 4) << ")";
     }
     debug << " --> ";
     st->Print(debug.stream());

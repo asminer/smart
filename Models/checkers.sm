@@ -18,8 +18,7 @@ int N := 4; // board size
 
 # EVMStateStyle VECTOR
 
-# ReportThousandSeparator ","
-# OutputThousandSeparator ","
+# ThousandSeparator ","
 
 
 evm checkers := {
@@ -34,7 +33,7 @@ evm checkers := {
   init(b[1][4] : 1);
   init(b[4][1] : 2);
   init(b[4][3] : 2);
-  
+
   intvar turn;
   range(turn : {1..2});
   intvar jumping_i, jumping_j;
@@ -50,18 +49,18 @@ evm checkers := {
     event nj_se[i][j];
     priority(nj_se[i][j]:1);
 
-    guard(nj_se[i][j] : 
+    guard(nj_se[i][j] :
       (eval(b[i][j]) == 1 & eval(turn) == 1)  // red pawn
-      | 
+      |
       eval(b[i][j])-2 == eval(turn)           // any king
     );
     guard(nj_se[i][j] : eval(b[i+1][j+1]) == 0);
-    guard(nj_se[i][j] : eval(jumping_i) == 0);  
-    guard(nj_se[i][j] : eval(jumping_j) == 0);  
+    guard(nj_se[i][j] : eval(jumping_i) == 0);
+    guard(nj_se[i][j] : eval(jumping_j) == 0);
 
     assign(b[i][j] : nj_se[i][j] : 0);
-    assign(b[i+1][j+1] : nj_se[i][j] : 
-      cond(i==N-1 & eval(turn)==1, 
+    assign(b[i+1][j+1] : nj_se[i][j] :
+      cond(i==N-1 & eval(turn)==1,
           3,                        // promote to king
           eval(b[i][j])
       )
@@ -74,18 +73,18 @@ evm checkers := {
     event nj_sw[i][j];
     priority(nj_sw[i][j]:1);
 
-    guard(nj_sw[i][j] : 
+    guard(nj_sw[i][j] :
       (eval(b[i][j]) == 1 & eval(turn) == 1)  // red pawn
-      | 
+      |
       eval(b[i][j])-2 == eval(turn)           // any king
     );
     guard(nj_sw[i][j] : eval(b[i+1][j-1]) == 0);
-    guard(nj_sw[i][j] : eval(jumping_i) == 0);  
-    guard(nj_sw[i][j] : eval(jumping_j) == 0);  
+    guard(nj_sw[i][j] : eval(jumping_i) == 0);
+    guard(nj_sw[i][j] : eval(jumping_j) == 0);
 
     assign(b[i][j] : nj_sw[i][j] : 0);
-    assign(b[i+1][j-1] : nj_sw[i][j] : 
-      cond(i==N-1 & eval(turn)==1, 
+    assign(b[i+1][j-1] : nj_sw[i][j] :
+      cond(i==N-1 & eval(turn)==1,
           3,                        // promote to king
           eval(b[i][j])
       )
@@ -98,18 +97,18 @@ evm checkers := {
     event nj_ne[i][j];
     priority(nj_ne[i][j]:1);
 
-    guard(nj_ne[i][j] : 
+    guard(nj_ne[i][j] :
       (eval(b[i][j]) == 2 & eval(turn) == 2)  // black pawn
-      | 
+      |
       eval(b[i][j])-2 == eval(turn)           // any king
     );
     guard(nj_ne[i][j] : eval(b[i-1][j+1]) == 0);
-    guard(nj_ne[i][j] : eval(jumping_i) == 0);  
-    guard(nj_ne[i][j] : eval(jumping_j) == 0);  
+    guard(nj_ne[i][j] : eval(jumping_i) == 0);
+    guard(nj_ne[i][j] : eval(jumping_j) == 0);
 
     assign(b[i][j] : nj_ne[i][j] : 0);
-    assign(b[i-1][j+1] : nj_ne[i][j] : 
-      cond(i==2 & eval(turn)==2, 
+    assign(b[i-1][j+1] : nj_ne[i][j] :
+      cond(i==2 & eval(turn)==2,
           4,                        // promote to king
           eval(b[i][j])
       )
@@ -122,18 +121,18 @@ evm checkers := {
     event nj_nw[i][j];
     priority(nj_nw[i][j]:1);
 
-    guard(nj_nw[i][j] : 
+    guard(nj_nw[i][j] :
       (eval(b[i][j]) == 2 & eval(turn) == 2)  // black pawn
-      | 
+      |
       eval(b[i][j])-2 == eval(turn)           // any king
     );
     guard(nj_nw[i][j] : eval(b[i-1][j-1]) == 0);
-    guard(nj_nw[i][j] : eval(jumping_i) == 0);  
-    guard(nj_nw[i][j] : eval(jumping_j) == 0);  
+    guard(nj_nw[i][j] : eval(jumping_i) == 0);
+    guard(nj_nw[i][j] : eval(jumping_j) == 0);
 
     assign(b[i][j] : nj_nw[i][j] : 0);
-    assign(b[i-1][j-1] : nj_nw[i][j] : 
-      cond(i==2 & eval(turn)==2, 
+    assign(b[i-1][j-1] : nj_nw[i][j] :
+      cond(i==2 & eval(turn)==2,
           4,                        // promote to king
           eval(b[i][j])
       )
@@ -150,23 +149,23 @@ evm checkers := {
     event j_se[i][j];
     priority(j_se[i][j]:2);
 
-    guard(j_se[i][j] : 
+    guard(j_se[i][j] :
       (eval(b[i][j]) == 1 & eval(turn) == 1)  // red pawn
-      | 
+      |
       eval(b[i][j])-2 == eval(turn)           // any king
     );
     guard(j_se[i][j] : eval(b[i+2][j+2]) == 0);
-    guard(j_se[i][j] : 
-              eval(b[i+1][j+1]) == 3-eval(turn) | 
+    guard(j_se[i][j] :
+              eval(b[i+1][j+1]) == 3-eval(turn) |
               eval(b[i+1][j+1]) == 5-eval(turn)
     );
-    guard(j_se[i][j] : eval(jumping_i) == 0 | eval(jumping_i) == i);  
-    guard(j_se[i][j] : eval(jumping_j) == 0 | eval(jumping_j) == j);  
+    guard(j_se[i][j] : eval(jumping_i) == 0 | eval(jumping_i) == i);
+    guard(j_se[i][j] : eval(jumping_j) == 0 | eval(jumping_j) == j);
 
     assign(b[i][j] : j_se[i][j] : 0);
     assign(b[i+1][j+1] : j_se[i][j] : 0);
     assign(b[i+2][j+2] : j_se[i][j] :
-      cond(i==N-2 & eval(turn)==1, 
+      cond(i==N-2 & eval(turn)==1,
           3,                        // promote to king
           eval(b[i][j])
       )
@@ -180,23 +179,23 @@ evm checkers := {
     event j_sw[i][j];
     priority(j_sw[i][j]:2);
 
-    guard(j_sw[i][j] : 
+    guard(j_sw[i][j] :
       (eval(b[i][j]) == 1 & eval(turn) == 1)  // red pawn
-      | 
+      |
       eval(b[i][j])-2 == eval(turn)           // any king
     );
     guard(j_sw[i][j] : eval(b[i+2][j-2]) == 0);
-    guard(j_sw[i][j] : 
+    guard(j_sw[i][j] :
               eval(b[i+1][j-1]) == 3-eval(turn) |
               eval(b[i+1][j-1]) == 5-eval(turn)
     );
-    guard(j_sw[i][j] : eval(jumping_i) == 0 | eval(jumping_i) == i);  
-    guard(j_sw[i][j] : eval(jumping_j) == 0 | eval(jumping_j) == j);  
+    guard(j_sw[i][j] : eval(jumping_i) == 0 | eval(jumping_i) == i);
+    guard(j_sw[i][j] : eval(jumping_j) == 0 | eval(jumping_j) == j);
 
     assign(b[i][j] : j_sw[i][j] : 0);
     assign(b[i+1][j-1] : j_sw[i][j] : 0);
-    assign(b[i+2][j-2] : j_sw[i][j] : 
-      cond(i==N-2 & eval(turn)==1, 
+    assign(b[i+2][j-2] : j_sw[i][j] :
+      cond(i==N-2 & eval(turn)==1,
           3,                        // promote to king
           eval(b[i][j])
       )
@@ -210,23 +209,23 @@ evm checkers := {
     event j_ne[i][j];
     priority(j_ne[i][j]:2);
 
-    guard(j_ne[i][j] : 
+    guard(j_ne[i][j] :
       (eval(b[i][j]) == 2 & eval(turn) == 2)  // black pawn
-      | 
+      |
       eval(b[i][j])-2 == eval(turn)           // any king
     );
     guard(j_ne[i][j] : eval(b[i-2][j+2]) == 0);
-    guard(j_ne[i][j] : 
+    guard(j_ne[i][j] :
               eval(b[i-1][j+1]) == 3-eval(turn) |
               eval(b[i-1][j+1]) == 5-eval(turn)
     );
-    guard(j_ne[i][j] : eval(jumping_i) == 0 | eval(jumping_i) == i);  
-    guard(j_ne[i][j] : eval(jumping_j) == 0 | eval(jumping_j) == j);  
+    guard(j_ne[i][j] : eval(jumping_i) == 0 | eval(jumping_i) == i);
+    guard(j_ne[i][j] : eval(jumping_j) == 0 | eval(jumping_j) == j);
 
     assign(b[i][j] : j_ne[i][j] : 0);
     assign(b[i-1][j+1] : j_ne[i][j] : 0);
-    assign(b[i-2][j+2] : j_ne[i][j] : 
-      cond(i==3 & eval(turn)==2, 
+    assign(b[i-2][j+2] : j_ne[i][j] :
+      cond(i==3 & eval(turn)==2,
           4,                        // promote to king
           eval(b[i][j])
       )
@@ -240,23 +239,23 @@ evm checkers := {
     event j_nw[i][j];
     priority(j_nw[i][j]:2);
 
-    guard(j_nw[i][j] : 
+    guard(j_nw[i][j] :
       (eval(b[i][j]) == 2 & eval(turn) == 2)  // black pawn
-      | 
+      |
       eval(b[i][j])-2 == eval(turn)           // any king
     );
     guard(j_nw[i][j] : eval(b[i-2][j-2]) == 0);
-    guard(j_nw[i][j] : 
+    guard(j_nw[i][j] :
               eval(b[i-1][j-1]) == 3-eval(turn) |
               eval(b[i-1][j-1]) == 5-eval(turn)
     );
-    guard(j_nw[i][j] : eval(jumping_i) == 0 | eval(jumping_i) == i);  
-    guard(j_nw[i][j] : eval(jumping_j) == 0 | eval(jumping_j) == j);  
+    guard(j_nw[i][j] : eval(jumping_i) == 0 | eval(jumping_i) == i);
+    guard(j_nw[i][j] : eval(jumping_j) == 0 | eval(jumping_j) == j);
 
     assign(b[i][j] : j_nw[i][j] : 0);
     assign(b[i-1][j-1] : j_nw[i][j] : 0);
-    assign(b[i-2][j-2] : j_nw[i][j] : 
-      cond(i==3 & eval(turn)==2, 
+    assign(b[i-2][j-2] : j_nw[i][j] :
+      cond(i==3 & eval(turn)==2,
           4,                        // promote to king
           eval(b[i][j])
       )

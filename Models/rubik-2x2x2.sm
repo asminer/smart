@@ -1,5 +1,5 @@
 
-// 
+//
 // 2x2x2 Rubik's cube.
 //
 // We use an encoding scheme very close to Valmari's
@@ -7,7 +7,7 @@
 
 pn rubik2(bool ccw, bool cw, bool dbl) := {
 
-  place p0, r0, 
+  place p0, r0,
         p1, r1,
         p2, r2,
         p3, r3,
@@ -22,10 +22,10 @@ pn rubik2(bool ccw, bool cw, bool dbl) := {
     p6, p5, p4, p3, p2, p1, p0,
     r6, r5, r4, r3, r2, r1, r0
   );
-  
+
   init (p1:1, p2:2, p3:3, p4:4, p5:5, p6:6);
 
-  trans F, L, T,      // counter-clockwise rotations 
+  trans F, L, T,      // counter-clockwise rotations
         Fr, Lr, Tr,   // clockwise rotations
         F2, L2, T2;   // double rotations
 
@@ -151,12 +151,12 @@ pn rubik2(bool ccw, bool cw, bool dbl) := {
   bigint na := num_arcs;
 
   for (int d in {0..25}) {
-    stateset r[d] :=  cond(d==0, 
-                        initial, 
+    stateset r[d] :=  cond(d==0,
+                        initial,
                         EY(r[d-1]) | r[d-1]
                       );
     stateset f[d] :=  cond(d==0,
-                        initial, 
+                        initial,
                         r[d] \ r[d-1]
                       );
     bigint size[d] := card(f[d]);
@@ -189,7 +189,7 @@ print("\t", rc2.na, " edges in reachability graph\n");
 
 print("\nOf those reachable states,\n");
 for (int i in {0..25}) {
-  cond(rc2.size[i]>0, 
+  cond(rc2.size[i]>0,
     print(rc2.size[i]:8, " require ", i:2, " moves from solved state\n"),
     null
   );

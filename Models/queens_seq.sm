@@ -1,7 +1,7 @@
 
-/* 
+/*
    N queens problem, as an "event & variable" model.
- 
+
    This is really a benchmark model, but we include it also as a test.
    Also useful to test "heavy duty" CTL stuff.
 */
@@ -33,8 +33,8 @@ evm queens(int N) := {
         guard(  put[i][j] : eval(row[k])    != j );
 
         // no diagonal left attacks
-        cond( j>k, 
-          guard( put[i][j] : eval(row[i-k])  != j-k ), 
+        cond( j>k,
+          guard( put[i][j] : eval(row[i-k])  != j-k ),
           null
         );
 
@@ -55,8 +55,7 @@ evm queens(int N) := {
 
 # StateDisplayOrder LEXICAL
 # Report + procgen
-# OutputThousandSeparator ","
-# ReportThousandSeparator ","
+# ThousandSeparator ","
 
 int N := read_int("the board dimension and number of queens");
 compute(N);

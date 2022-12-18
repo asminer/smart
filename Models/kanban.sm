@@ -7,7 +7,7 @@
 
 bigint poly1(bigint x) := div(x*x*x+6*x*x+11*x+6, 6);
 
-bigint poly2(bigint x) := 
+bigint poly2(bigint x) :=
   div(3*x*x*x*x*x + 30*x*x*x*x + 115*x*x*x + 210*x*x + 182*x + 60, 60);
 
 bigint square(bigint n) := n*n;
@@ -19,7 +19,7 @@ pn kanban(int n) := {
   pm2, pb2, pkan2, pout2,
   pm3, pb3, pkan3, pout3,
   pm4, pb4, pkan4, pout4;
-  
+
   init(pkan1:n, pkan2:n, pkan3:n, pkan4:n);
 
   partition(
@@ -34,7 +34,7 @@ pn kanban(int n) := {
   bound( {pm3, pb3, pkan3, pout3} : n);
   bound( {pm4, pb4, pkan4, pout4} : n);
 
-  trans  tin1, tr1, tb1, tg1, 
+  trans  tin1, tr1, tb1, tg1,
   ts1_23,
   tr2, tb2, tg2,
   tr3, tb3, tg3,
@@ -102,8 +102,7 @@ pn kanban(int n) := {
 # }
 
 # StateDisplayOrder LEXICAL
-# OutputThousandSeparator ","
-# ReportThousandSeparator ","
+# ThousandSeparator ","
 
 int N := read_int("N");
 compute(N);

@@ -6,7 +6,7 @@
 pn bd(int n, real BR, real DR) := {
   place pop;
   trans birth, death;
-  
+
   arcs(birth:pop, pop:death);
   inhibit(pop:birth:n);
 
@@ -27,6 +27,6 @@ compute(BR);
 compute(DR);
 
 for (int i in {0..10}) {
-  print("Size ", i:2, " empty: ", bd(i, BR, DR).p_empty, " full: ", 
+  print("Size ", i:2, " empty: ", bd(i, BR, DR).p_empty, " full: ",
         bd(i, BR, DR).p_full, " avg: ", bd(i, BR, DR).avg_pop, "\n");
 }

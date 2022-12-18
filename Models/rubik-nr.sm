@@ -1,12 +1,12 @@
 
-/* 
+/*
    Rubik's cube.
 
    Partition: states on top of rotations,
               edges on top of corners.
 
    No rotations.
-   
+
 */
 
 evm rubik_norot := {
@@ -16,12 +16,12 @@ evm rubik_norot := {
   intvar wog, wbo, wrb, wgr, ygo, yob, ybr, yrg;
 
   range({wo, wg, wr, wb, yo, yg, yr, yb, ob, og, rb, rg} : {1..12});
-  
+
   range({wog, wbo, wrb, wgr, ygo, yob, ybr, yrg} : {1..8});
 
   init(
-    wo:1, wg:2, wr:3, wb:4, 
-    yo:5, yg:6, yr:7, yb:8, 
+    wo:1, wg:2, wr:3, wb:4,
+    yo:5, yg:6, yr:7, yb:8,
     ob:9, og:10, rb:11, rg:12,
     wog:1, wbo:2, wrb:3, wgr:4, ygo:5, yob:6, ybr:7, yrg:8
   );
@@ -38,7 +38,7 @@ evm rubik_norot := {
     white_2, orange_2, green_2, blue_2, red_2, yellow_2,
     // counter clockwise
     white_3, orange_3, green_3, blue_3, red_3, yellow_3;
-  
+
   assign(
     //
     // Clockwise rotations:
@@ -214,7 +214,7 @@ evm rubik_norot := {
     ybr : yellow_3 : eval(yob),
     yrg : yellow_3 : eval(ybr)
   );
-  
+
   bigint m1 := num_states;
 };
 

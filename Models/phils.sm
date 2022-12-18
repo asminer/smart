@@ -1,9 +1,9 @@
 
-pn phils(int N) := { 
+pn phils(int N) := {
   for (int i in {0..N-1}) {
     place Fork[i], Idle[i], WaitL[i], HasL[i], WaitR[i], HasR[i];
-    trans GoEat[i], GetL[i], GetR[i], Release[i]; 
-    init(Idle[i]:1, Fork[i]:1);       
+    trans GoEat[i], GetL[i], GetR[i], Release[i];
+    init(Idle[i]:1, Fork[i]:1);
     partition(Fork[i]);
     partition(Idle[i], WaitL[i], HasL[i], WaitR[i], HasR[i]);
 //    partition({Idle[i], WaitL[i], HasL[i], WaitR[i], HasR[i]});
@@ -15,13 +15,13 @@ pn phils(int N) := {
     arcs(Idle[i]:GoEat[i], GoEat[i]:WaitL[i], GoEat[i]:WaitR[i],
          WaitL[i]:GetL[i], Fork[i]:GetL[i], GetL[i]:HasL[i],
          WaitR[i]:GetR[i], Fork[(i+1) % N]:GetR[i], GetR[i]:HasR[i],
-         HasL[i]:Release[i], HasR[i]:Release[i], Release[i]:Idle[i], 
+         HasL[i]:Release[i], HasR[i]:Release[i], Release[i]:Idle[i],
          Release[i]:Fork[i], Release[i]:Fork[(i+1) % N]);
     // inhibitors for pregeneration
 //    inhibit(
 //  Fork[(i+1) % N]:Release[i]
 //    );
-  } 
+  }
   bigint m1 := num_states;
   bigint m2 := num_arcs;
   stateset eat  := reachable & potential(tk(HasL[0])>0 & tk(HasR[0])>0);
@@ -37,8 +37,7 @@ for(int i in {1..3*N+1}) {
 
 # StateDisplayOrder LEXICAL
 # Report + procgen
-# OutputThousandSeparator ","
-# ReportThousandSeparator ","
+# ThousandSeparator ","
 
 print("Expecting ", fib[3*N+1] + fib[3*N-1], " states\n");
 

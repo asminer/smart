@@ -38,8 +38,7 @@ pn stack(int depth, int vals) := {
 # Report + procgen
 # PNMarkingStyle VECTOR
 
-# OutputThousandSeparator ","
-# ReportThousandSeparator ","
+# ThousandSeparator ","
 
 bigint states(int d, int v) := cond(d==0, 1, v*states(d-1, v));
 bigint edges(int d, int v) :=
@@ -62,9 +61,9 @@ print(stack(d,v).ns, " reachable states\n");
 print(stack(d,v).na, " edges\n\n");
 
 cond(states(d,v) != stack(d,v).ns,
-  print("We didn't get the expected number of states!\n\n"), 
+  print("We didn't get the expected number of states!\n\n"),
   cond(edges(d,v) != stack(d,v).na,
-    print("We didn't get the expected number of edges!\n\n"), 
+    print("We didn't get the expected number of edges!\n\n"),
     print("Everything matched theory :^)\n\n")
   )
 );

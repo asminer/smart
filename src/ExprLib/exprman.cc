@@ -393,7 +393,7 @@ exprman* Initialize_Expressions(option_manager* om)
 #endif
 
   // Other options to initialize
-  InitTypeOptions(The_Man);
+  // InitTypeOptions(The_Man);
   // InitConvergeOptions(The_Man);
   // InitFunctions(The_Man);
   // InitModelDefs(The_Man);

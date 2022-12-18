@@ -8,14 +8,14 @@
     Since we can always put one queen per row, we search for
     solutions with fewer than Q queens.
 
-    State: 
+    State:
       q: for each row, position of the queen (or 0 for none)
       c: for each square, is it covered?
       sol: is this a solution?
       avail: number of queens left to place.
 */
 
-bigint prod_from(int a, int b) := 
+bigint prod_from(int a, int b) :=
   cond(a>b, 1, cond(a<b, a*prod_from(a+1, b), a));
 
 bigint pow(int x, int a) :=
@@ -94,8 +94,7 @@ evm queen(int N, int Q) := {
 
 # StateDisplayOrder LEXICAL
 # Report + procgen
-# OutputThousandSeparator ","
-# ReportThousandSeparator ","
+# ThousandSeparator ","
 # StatesetPrintIndexes false
 
 int N := read_int("the board dimension");

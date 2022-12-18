@@ -18,6 +18,6 @@ compute(BR);
 compute(DR);
 
 for (int i in {0..10}) {
-  print("Size ", i:2, " empty: ", bd(i, BR, DR).p_empty, 
+  print("Size ", i:2, " empty: ", bd(i, BR, DR).p_empty,
         " full: ", bd(i, BR, DR).p_full, "\n");
 }

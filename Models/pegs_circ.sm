@@ -28,7 +28,7 @@ pn circ(int N) := {
       hole[i] : left_to[i]
     );
   }
-  
+
   int ns := num_states;
 };
 

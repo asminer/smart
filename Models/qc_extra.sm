@@ -4,7 +4,7 @@
     Given an NxN chessboard, place enough queens on the board
     so that no other piece may be placed on the board without
     being attacked by one of the queens.
-    
+
     Except with this version, we allow queens to be placed in
     row or column N+1.  (Or, equivalently, we have an N+1 x N+1
     chessboard but we only need to cover squares 1..N x 1..N).
@@ -12,14 +12,14 @@
     Since we can always put one queen per row, we search for
     solutions with fewer than Q queens.
 
-    State: 
+    State:
       q: for each row, position of the queen (or 0 for none)
       c: for each square, is it covered?
       sol: is this a solution?
       avail: number of queens left to place.
 */
 
-bigint prod_from(int a, int b) := 
+bigint prod_from(int a, int b) :=
   cond(a>b, 1, cond(a<b, a*prod_from(a+1, b), a));
 
 bigint pow(int x, int a) :=
@@ -60,7 +60,7 @@ evm queen(int N, int Q) := {
     assign( avail : put[i][j] : eval(avail)-1,
             q[i] : put[i][j] : j
     );
-    cond( i<=N & j<=N, 
+    cond( i<=N & j<=N,
       assign(c[i][j] : put[i][j] : 1),
       null
     );
@@ -96,7 +96,7 @@ evm queen(int N, int Q) := {
   stateset covers := reachable & potential(eval(sol)==1);
   stateset noextrow := reachable & potential(eval(q[N+1])<1);
   for (int i in {1..N}) {
-    stateset noextcol[i] := potential(eval(q[i])<=N) & 
+    stateset noextcol[i] := potential(eval(q[i])<=N) &
                               cond(i==1, reachable, noextcol[i-1]);
   }
   stateset propcovers := covers & noextrow & noextcol[N];
@@ -105,8 +105,7 @@ evm queen(int N, int Q) := {
 
 # StateDisplayOrder LEXICAL
 # Report + procgen
-# OutputThousandSeparator ","
-# ReportThousandSeparator ","
+# ThousandSeparator ","
 # StatesetPrintIndexes false
 
 int N := read_int("the board dimension");

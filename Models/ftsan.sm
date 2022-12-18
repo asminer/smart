@@ -14,7 +14,7 @@
 pn ftmps(int N) := {
   // N = number of replicated computers.
   // We use 3 CPUs, 2 I/O ports, 3 memory modules
- 
+
   place comp_failed;
 
   for (int i in {1..N}) {
@@ -204,7 +204,7 @@ pn ftmps(int N) := {
   );
 
   }
-  
+
   partition(comp_failed);
 
   bigint m1 := num_states;

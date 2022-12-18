@@ -5,7 +5,7 @@
     so that no other piece may be placed on the board without
     being attacked by one of the knights.
 
-    State: 
+    State:
       k: for each square, does it contain a knight or not.
       c: for each square, is it covered?
 */
@@ -41,15 +41,14 @@ evm knights(int N) := {
     cond( i<N-1 & j>1   , assign( c[i+2][j-1] : put[i][j] : 1), null );
     cond( i<N-1 & j<N   , assign( c[i+2][j+1] : put[i][j] : 1), null );
 
-  } 
+  }
   int ne := num_events(true);
   bigint ns := num_states;
 };
 
 # StateDisplayOrder LEXICAL
 # Report + procgen
-# OutputThousandSeparator ","
-# ReportThousandSeparator ","
+# ThousandSeparator ","
 
 int N := read_int("the board dimension");
 compute(N);

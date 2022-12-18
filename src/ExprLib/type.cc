@@ -3,11 +3,16 @@
 #include "result.h"
 #include "exprman.h"
 #include "../Options/optman.h"
+#include "../Options/options.h"
+#include "../Utils/initializer.h"
 
 // ******************************************************************
 // *                          type methods                          *
 // ******************************************************************
 
+unsigned type::real_format;
+const char* type::int_comma;
+const char* type::real_comma;
 const char* type::pos_infinity_string;
 const char* type::neg_infinity_string;
 
@@ -85,31 +90,7 @@ const type* type::changeBaseType(const type* newbase) const
   return 0;
 }
 
-bool type::print(std::ostream &s, const result& r) const
-{
-    DCASSERT(isPrintable());
-    if (r.isUnknown()) {
-        s << '?';
-        return true;
-    }
-    if (r.isInfinity()) {
-        if (r.signInfinity() < 0) {
-            DCASSERT(neg_infinity_string);
-            s << getMinusInfinityString();
-        } else {
-            DCASSERT(pos_infinity_string);
-            s << getPlusInfinityString();
-        }
-        return true;
-    }
-    if (r.isNull()) {
-        s << "null";
-        return true;
-    }
-    return print_normal(s, r);
-}
-
-bool type::print(std::ostream &s, const result& r, int width) const
+bool type::print(std::ostream &s, const result& r, int width, int prec) const
 {
     DCASSERT(isPrintable());
     if (r.isUnknown()) {
@@ -130,17 +111,7 @@ bool type::print(std::ostream &s, const result& r, int width) const
         s << formatted_string("null", width);
         return true;
     }
-    return print_normal(s, r, width);
-}
-
-bool type::print(std::ostream &s, const result& r, int width, int prec) const
-{
-  DCASSERT(isPrintable());
-  if (r.isUnknown() || r.isInfinity() || r.isNull()) {
-    print(s, r, width);
-    return true;
-  }
-  return print_normal(s, r, width, prec);
+    return print_normal(s, r, width, prec);
 }
 
 void type::show(std::ostream &s, const result& r) const
@@ -181,25 +152,15 @@ int type::compare(const result &x, const result &y) const
   return 1;
 }
 
-bool type::print_normal(std::ostream &s, const result& r) const
-{
-  return print_normal(s, r, 0);
-}
-
-bool type::print_normal(std::ostream &s, const result& r, int w) const
-{
-  shared_object* foo = r.getPtr();
-  if (foo) {
-    foo->Print(s, w);
-    return true;
-  }
-  DCASSERT(0);
-  return false;
-}
-
 bool type::print_normal(std::ostream &s, const result& r, int w, int p) const
 {
-  return print_normal(s, r, w);
+    shared_object* foo = r.getPtr();
+    if (foo) {
+        foo->Print(s, w);
+        return true;
+    }
+    DCASSERT(0);
+    return false;
 }
 
 void type::show_normal(std::ostream &s, const result& r) const
@@ -323,15 +284,15 @@ const type* simple_type::changeBaseType(const type* newbase) const
 // ******************************************************************
 
 void_type::void_type(const char* n, const char* sd, const char* ld)
-: simple_type(n, sd, ld)
+    : simple_type(n, sd, ld)
 {
-  setVoid();
+    setVoid();
 }
 
 int void_type::compare(const result& a, const result &b) const
 {
-  DCASSERT(getSetOfThis());
-  return SIGN(long(a.getPtr()) - long(b.getPtr()));
+    DCASSERT(getSetOfThis());
+    return SIGN(long(a.getPtr()) - long(b.getPtr()));
 }
 
 // ******************************************************************
@@ -555,6 +516,74 @@ const type* set_type::changeBaseType(const type* newbase) const
 
 // ******************************************************************
 // *                                                                *
+// *                         Initialization                         *
+// *                                                                *
+// ******************************************************************
+
+class type_initializer : public initializer {
+    public:
+        type_initializer();
+    protected:
+        virtual void execute();
+};
+static type_initializer the_type_initializer;
+
+type_initializer::type_initializer() : initializer("type.cc", 1, 1)
+{
+    builds_resource(0, "type.cc");
+    needs_resource(1, "OM");
+}
+
+void type_initializer::execute()
+{
+    type::real_format = type::GENERAL;
+    type::int_comma = "";
+    type::real_comma = "";
+    type::pos_infinity_string = "infinity";
+//  type::pos_infinity_string = "+infinity";
+    type::neg_infinity_string = "-infinity";
+
+    //
+    // Add options
+    //
+    option_manager* om = dynamic_cast <option_manager*> (get_object(1, "OM"));
+    if (!om) return;
+
+    option* rfopt = om->addRadioOption("RealFormat",
+            "hu",
+            3, type::real_format
+    );
+    rfopt->addRadioButton("FIXED", "Same as printf(%f)", type::FIXED);
+    rfopt->addRadioButton("GENERAL", "Same as printf(%g)", type::GENERAL);
+    rfopt->addRadioButton("SCIENTIFIC", "Same as printf(%e)", type::SCIENTIFIC);
+    rfopt->Finish();
+
+    om->addStringOption(
+        "IntThousandSeparator",
+        "Thousands separator to use when displaying integers (including bigint)",
+        type::int_comma
+    );
+    om->addStringOption(
+        "RealThousandSeparator",
+        "Thousands separator to use when displaying reals",
+        type::real_comma
+    );
+
+    om->addStringOption(
+        "PlusInfinityString",
+        "Output string for positive infinity.",
+        type::pos_infinity_string
+    );
+
+    om->addStringOption(
+        "MinusInfinityString",
+        "Output string for negative infinity.",
+        type::neg_infinity_string
+    );
+}
+
+// ******************************************************************
+// *                                                                *
 // *                           Front  end                           *
 // *                                                                *
 // ******************************************************************
@@ -572,26 +601,5 @@ type* newProcType(const char* n, type* base)
 type* newSetType(const char* n, simple_type* base)
 {
   return new set_type(n, base);
-}
-
-void InitTypeOptions(exprman* em)
-{
-  if (0==em)  return;
-  if (0==em->OptMan()) return;
-
-  type::pos_infinity_string = "infinity";
-//  type::pos_infinity_string = "+infinity";
-  em->OptMan()->addStringOption(
-      "PlusInfinityString",
-      "Output string for positive infinity.",
-      type::pos_infinity_string
-  );
-
-  type::neg_infinity_string = "-infinity";
-  em->OptMan()->addStringOption(
-      "MinusInfinityString",
-      "Output string for negative infinity.",
-      type::neg_infinity_string
-  );
 }
 

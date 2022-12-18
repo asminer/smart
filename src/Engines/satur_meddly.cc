@@ -2264,7 +2264,7 @@ void meddly_frontier::generateRSS(meddly_varoption &x, timer &w)
     }
     if (debug.start()) {
       debug << "\tdone F:=F-S  ";
-      debug << formatted_real(F.getCardinality(), 13);
+      debug << general_real(F.getCardinality(), 13);
       debug << " states in frontier set\n";
       debug.stop();
     }
@@ -2280,7 +2280,7 @@ void meddly_frontier::generateRSS(meddly_varoption &x, timer &w)
     }
     if (debug.start()) {
       debug << "\tdone S:=S+F  ";
-      debug << formatted_real(F.getCardinality(), 13);
+      debug << general_real(F.getCardinality(), 13);
       debug << " reachable states so far";
       debug.newLine();
       long nodes = x.getMddForest()->getCurrentNumNodes();
@@ -2361,7 +2361,7 @@ void meddly_nextall::generateRSS(meddly_varoption &x, timer &w)
     }
     if (debug.start()) {
       debug << "\tdone S:=S+S'  ";
-      debug << formatted_real(S->E.getCardinality(), 13);
+      debug << general_real(S->E.getCardinality(), 13);
       debug << " reachable states so far";
       debug.newLine();
       long nodes = x.getMddForest()->getCurrentNumNodes();

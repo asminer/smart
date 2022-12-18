@@ -5,7 +5,7 @@ dtmc sort5 := {
     init (s[i][j][k][l][m] : 1);
   }
   for (int i in {1..5}, int j in {1..5}, int k in {1..5}, int l in {1..5}, int m in {1..5}) {
-    cond (i>j, 
+    cond (i>j,
       arcs(
         s[i][j][k][l][m] : s[j][i][k][l][m] : 1
       ),

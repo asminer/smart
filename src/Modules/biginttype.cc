@@ -103,6 +103,11 @@ bigint::~bigint()
 
 bool bigint::Print(std::ostream &s, int width) const
 {
+    return Print(s, width, nullptr);
+}
+
+bool bigint::Print(std::ostream &s, int width, const char* comma) const
+{
   int digits = mpz_sizeinbase(value, 10)+2;
   if (digits > bufsize) {
     int newbufsize = (1+digits / 1024) * 1024;
@@ -118,7 +123,7 @@ bool bigint::Print(std::ostream &s, int width) const
   }
   mpz_get_str(buffer, 10, value);
 
-  s << formatted_string(buffer, width);
+  s << formatted_number(buffer, width, comma);
   return true;
 }
 
@@ -156,18 +161,12 @@ bigint::~bigint()
 
 bool bigint::Print(std::ostream &s, int width) const
 {
-  if (bufsize < 24) {
-    char* newbuf = (char*) realloc(buffer, 24);
-    if (newbuf) {
-      buffer = newbuf;
-      bufsize = 24;
-    } else {
-      s.Put("memory overflow");
-      return true;
-    }
-  }
-  snprintf(buffer, bufsize, "%ld", value);
-  s.PutInteger(buffer, width);
+    return Print(s, width, nullptr);
+}
+
+bool bigint::Print(std::ostream &s, int width, const char* comma) const
+{
+  s << formatted_int(value, width, comma);
   return true;
 }
 
@@ -187,10 +186,12 @@ int bigint::Compare(const shared_object *o) const
 // ******************************************************************
 
 class bigint_type : public simple_type {
-public:
-  bigint_type();
-protected:
-  virtual void assign_normal(result& r, const char* s) const;
+    public:
+        bigint_type();
+    protected:
+        virtual bool print_normal(std::ostream &s, const result& r,
+                int w=0, int p=-1) const;
+        virtual void assign_normal(result& r, const char* s) const;
 };
 
 // ******************************************************************
@@ -199,12 +200,18 @@ protected:
 
 bigint_type::bigint_type() : simple_type("bigint", "Large integers", "Integers that may be larger than the machine-supportable integers; can be arbitrarily long, limited only by available memory.")
 {
-  setPrintable();
+    setPrintable();
+}
+
+bool bigint_type::print_normal(std::ostream &s, const result& r, int w, int p) const
+{
+    bigint* b = smart_cast <bigint*> (r.getPtr());
+    return b->Print(s, w, int_comma);
 }
 
 void bigint_type::assign_normal(result& r, const char* s) const
 {
-  r.setPtr(new bigint(s));
+    r.setPtr(new bigint(s));
 }
 
 // ******************************************************************

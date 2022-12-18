@@ -1,5 +1,5 @@
 
-/*   
+/*
   FMS model taken from
    "A decomposition approach for stochastic reward net models"
    by G. Ciardo and K. Trivedi
@@ -9,14 +9,14 @@
 
 pn fms(int N, int Np) := {
   place
-      P1, P1wM1, P1M1, M1, P1d, P1s, P1wP2, 
-      P12, P12wM3, P12M3, M3, P12s, 
-      P2, P2wM2, P2M2, M2, P2d, P2wP1, P2s, 
+      P1, P1wM1, P1M1, M1, P1d, P1s, P1wP2,
+      P12, P12wM3, P12M3, M3, P12s,
+      P2, P2wM2, P2M2, M2, P2d, P2wP1, P2s,
       P3, P3M2, P3s;
 
   init(P1 : N, P2 : N, P3 : N, M1 : 3, M2 : 1, M3 : 2);
 
-  bound({P1, P1wM1, P1d, P1s, P1wP2, P12, P12wM3, P12s, 
+  bound({P1, P1wM1, P1d, P1s, P1wP2, P12, P12wM3, P12s,
          P2, P2wM2, P2d, P2wP1, P2s, P3, P3M2, P3s} : N);
   bound({P1M1, M1} : 3, {P12M3, M3} : 2, {P2M2, M2} : 1);
 
@@ -28,12 +28,12 @@ pn fms(int N, int Np) := {
   );
 
   trans
-      tM1, tM2, tM3, tx, 
-      tP1e, tP1j, tP2e, tP2j, 
+      tM1, tM2, tM3, tx,
+      tP1e, tP1j, tP2e, tP2j,
 
-      tP1, tP1M1, tP1s, 
-      tP2, tP2M2, tP2s, 
-      tP12, tP12M3, tP12s, 
+      tP1, tP1M1, tP1s,
+      tP2, tP2M2, tP2s,
+      tP12, tP12M3, tP12s,
       tP3, tP3M2, tP3s;
 
   firing(
@@ -122,7 +122,7 @@ pn fms(int N, int Np) := {
   real through2 := avg_ss(rate(tP2));
   real through3 := avg_ss(rate(tP3));
   real through12 := avg_ss(rate(tP12));
-  real phi := avg_ss(400*rate(tP1) + 600*rate(tP2) + 100*rate(tP3) + 1100*rate(tP12)); 
+  real phi := avg_ss(400*rate(tP1) + 600*rate(tP2) + 100*rate(tP3) + 1100*rate(tP12));
 };
 
 start_timer(0);

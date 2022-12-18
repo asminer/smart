@@ -25,8 +25,7 @@ pn swaps(int N) := {
 
 # StateDisplayOrder LEXICAL
 # Report + procgen
-# OutputThousandSeparator ","
-# ReportThousandSeparator ","
+# ThousandSeparator ","
 
 int N := read_int("the array size");
 compute(N);

@@ -2575,7 +2575,7 @@ void print_cdist::Compute(traverse_data &x, expr** pass, int np)
   out << "# t        PDF at t\n";
   for (long i=dist.left_trunc(); i<=dist.right_trunc(); i++) {
     out << "  ";
-    out << formatted_real(i*dt, -9);
+    out << scientific_real(i*dt, -9);
     out << dist.f(i) << "\n";
   }
   if (dist.f_infinity()) {

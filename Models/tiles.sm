@@ -49,8 +49,7 @@ evm tiles(int n, int m) := {
 
 # EVMStateStyle VECTOR
 
-# OutputThousandSeparator ","
-# ReportThousandSeparator ","
+# ThousandSeparator ","
 
 // # Debug + procgen
 # Report + procgen

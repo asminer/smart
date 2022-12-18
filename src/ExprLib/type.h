@@ -38,34 +38,39 @@ class simple_type;
     easier without introducing too much overhead.
 */
 class type {
-  const char* name;
-  bool is_void;
-  bool func_definable;
-  bool var_definable;
-  bool printable;
+        const char* name;
+        bool is_void;
+        bool func_definable;
+        bool var_definable;
+        bool printable;
 
-protected:
-  // TBD: other options here like
-  //        real format
-  //        comma separator for integers
-  //        comma separator for reals
-  static const char* pos_infinity_string;
-  static const char* neg_infinity_string;
-  friend void InitTypeOptions(exprman* em);
+    protected:
+        static const unsigned GENERAL    = 0;
+        static const unsigned FIXED      = 1;
+        static const unsigned SCIENTIFIC = 2;
 
-  inline void setVoid() { is_void = true; }
+        static unsigned real_format;    // format for reals
+        static const char* int_comma;   // thousands sep for ints
+        static const char* real_comma;  // thousands sep for reals
+        static const char* pos_infinity_string;
+        static const char* neg_infinity_string;
+
+        friend class type_initializer;
+
+        inline void setVoid() { is_void = true; }
+
 public:
-  type(const char* n);
-  virtual ~type();
+        type(const char* n);
+        virtual ~type();
 
-  static const char* getPlusInfinityString() {
-      return pos_infinity_string;
-  }
-  static const char* getMinusInfinityString() {
-      return neg_infinity_string;
-  }
+        static const char* getPlusInfinityString() {
+            return pos_infinity_string;
+        }
+        static const char* getMinusInfinityString() {
+            return neg_infinity_string;
+        }
 
-  inline const char* getName() const { return name; }
+        inline const char* getName() const { return name; }
   inline bool matches(const char* n) const { return 0 == strcmp(n, name); }
   virtual bool matchesOWD(const char* n) const;
 
@@ -105,25 +110,10 @@ public:
       We must be "printable" according to isPrintable().
         @param  s  Stream to write to.
         @param  r  Result to display.
+        @param  w  Width to use (defaults to 0).
+        @param  p  Precision to use (negative for default).
   */
-  bool print(std::ostream &s, const result& r) const;
-
-  /** Print a result of this type.
-      We must be "printable" according to isPrintable().
-        @param  s  Stream to write to.
-        @param  r  Result to display.
-        @param  w  Width to use.
-  */
-  bool print(std::ostream &s, const result& r, int w) const;
-
-  /** Print a result of this type.
-      We must be "printable" according to isPrintable().
-        @param  s  Stream to write to.
-        @param  r  Result to display.
-        @param  w  Width to use.
-        @param  p  Precision to use.
-  */
-  bool print(std::ostream &s, const result& r, int w, int p) const;
+  bool print(std::ostream &s, const result& r, int w=0, int p=-1) const;
 
   /** Show a result.
       Just like print(), except for strings:
@@ -169,9 +159,8 @@ public:
   virtual int compare(const result& a, const result& b) const;
 
 protected:
-  virtual bool print_normal(std::ostream &s, const result& r) const;
-  virtual bool print_normal(std::ostream &s, const result& r, int w) const;
-  virtual bool print_normal(std::ostream &s, const result& r, int w, int p) const;
+  virtual bool print_normal(std::ostream &s, const result& r,
+                int w=0, int p=-1) const;
   virtual void show_normal(std::ostream &s, const result& r) const;
   virtual void assign_normal(result& r, const char* s) const;
   virtual int compare_normal(const result &x, const result &y) const;
@@ -306,11 +295,11 @@ public:
 /** void types with no value, such as void, "state" or "place".
 */
 class void_type : public simple_type {
-public:
-  void_type(const char* n, const char* sd, const char* ld);
+    public:
+        void_type(const char* n, const char* sd, const char* ld);
 
-  /// Default comparison: check addresses of "other" field pointers.
-  virtual int compare(const result& a, const result& b) const;
+        /// Default comparison: check addresses of "other" field pointers.
+        virtual int compare(const result& a, const result& b) const;
 };
 
 // ******************************************************************
@@ -337,7 +326,6 @@ type* newModifiedType(const char* n, modifier m, simple_type* base);
 type* newProcType(const char* n, type* base);
 type* newSetType(const char* n, simple_type* base);
 
-void InitTypeOptions(exprman* em);
 
 
 #endif

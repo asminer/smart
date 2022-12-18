@@ -5,8 +5,7 @@
 
 # EVMStateStyle VECTOR
 
-# ReportThousandSeparator ","
-# OutputThousandSeparator ","
+# ThousandSeparator ","
 
 evm connect4(int height, int width) := {
   for (int i in {0..height-1}, int j in {0..width-1}) {
@@ -24,83 +23,83 @@ evm connect4(int height, int width) := {
 
   for (int i in {0..height-1}, int j in {0..width-1}) {
     event try[i][j];
-    guard(try[i][j] : 
-            0==eval(b[i][j]) & 
-            0==eval(vwin) & 
-            0==eval(hwin) & 
+    guard(try[i][j] :
+            0==eval(b[i][j]) &
+            0==eval(vwin) &
+            0==eval(hwin) &
             0==eval(dwin)
     );
-    cond(i>0, 
+    cond(i>0,
       guard(try[i][j] : 0!=eval(b[i-1][j])), null
     );
     assign(b[i][j] : try[i][j] : eval(turn));
     assign(turn : try[i][j] : 3-eval(turn));
     assign(vwin : try[i][j] : // vertical win
       cond(
-        ( (i>2) & eval(b[i-1][j])==eval(turn) 
-                & eval(b[i-2][j])==eval(turn) 
+        ( (i>2) & eval(b[i-1][j])==eval(turn)
+                & eval(b[i-2][j])==eval(turn)
                 & eval(b[i-3][j])==eval(turn) )
         , eval(turn), 0
       )
     );
     assign(hwin : try[i][j] : // horizontal wins
       cond(
-        ( (j>2) & eval(b[i][j-3])==eval(turn) 
-                & eval(b[i][j-2])==eval(turn) 
+        ( (j>2) & eval(b[i][j-3])==eval(turn)
+                & eval(b[i][j-2])==eval(turn)
                 & eval(b[i][j-1])==eval(turn) )
         |
-        ( (j>1) & (j+1<width) & eval(b[i][j-2])==eval(turn) 
-                              & eval(b[i][j-1])==eval(turn) 
+        ( (j>1) & (j+1<width) & eval(b[i][j-2])==eval(turn)
+                              & eval(b[i][j-1])==eval(turn)
                               & eval(b[i][j+1])==eval(turn) )
         |
-        ( (j>0) & (j+2<width) & eval(b[i][j-1])==eval(turn) 
-                              & eval(b[i][j+1])==eval(turn) 
+        ( (j>0) & (j+2<width) & eval(b[i][j-1])==eval(turn)
+                              & eval(b[i][j+1])==eval(turn)
                               & eval(b[i][j+2])==eval(turn) )
         |
-        ( (j+3<width) & eval(b[i][j+1])==eval(turn) 
-                      & eval(b[i][j+2])==eval(turn) 
+        ( (j+3<width) & eval(b[i][j+1])==eval(turn)
+                      & eval(b[i][j+2])==eval(turn)
                       & eval(b[i][j+3])==eval(turn) )
         , eval(turn), 0
       )
     );
     assign(dwin : try[i][j] : // diagonal wins
-      cond( 
+      cond(
         // "forward" diagonal
-        ( (j>2) & (i>2) & eval(b[i-3][j-3])==eval(turn) 
-                        & eval(b[i-2][j-2])==eval(turn) 
+        ( (j>2) & (i>2) & eval(b[i-3][j-3])==eval(turn)
+                        & eval(b[i-2][j-2])==eval(turn)
                         & eval(b[i-1][j-1])==eval(turn) )
         |
         ( (j>1) & (j+1<width) &
-          (i>1) & (i+1<height)  & eval(b[i-2][j-2])==eval(turn) 
-                                & eval(b[i-1][j-1])==eval(turn) 
+          (i>1) & (i+1<height)  & eval(b[i-2][j-2])==eval(turn)
+                                & eval(b[i-1][j-1])==eval(turn)
                                 & eval(b[i+1][j+1])==eval(turn) )
         |
         ( (j>0) & (j+2<width) &
-          (i>0) & (i+2<height)  & eval(b[i-1][j-1])==eval(turn) 
-                                & eval(b[i+1][j+1])==eval(turn) 
+          (i>0) & (i+2<height)  & eval(b[i-1][j-1])==eval(turn)
+                                & eval(b[i+1][j+1])==eval(turn)
                                 & eval(b[i+2][j+2])==eval(turn) )
         |
-        ( (j+3<width) & (i+3<height)  & eval(b[i+1][j+1])==eval(turn) 
-                                      & eval(b[i+2][j+2])==eval(turn) 
+        ( (j+3<width) & (i+3<height)  & eval(b[i+1][j+1])==eval(turn)
+                                      & eval(b[i+2][j+2])==eval(turn)
                                       & eval(b[i+3][j+3])==eval(turn) )
         |
         // "backward" diagonal
-        ( (j+3<width) & (i>2) & eval(b[i-3][j+3])==eval(turn) 
-                              & eval(b[i-2][j+2])==eval(turn) 
+        ( (j+3<width) & (i>2) & eval(b[i-3][j+3])==eval(turn)
+                              & eval(b[i-2][j+2])==eval(turn)
                               & eval(b[i-1][j+1])==eval(turn) )
         |
-        ( (j>0) & (j+2<width) & 
-          (i>1) & (i+1<height)  & eval(b[i-2][j+2])==eval(turn) 
-                                & eval(b[i-1][j+1])==eval(turn) 
+        ( (j>0) & (j+2<width) &
+          (i>1) & (i+1<height)  & eval(b[i-2][j+2])==eval(turn)
+                                & eval(b[i-1][j+1])==eval(turn)
                                 & eval(b[i+1][j-1])==eval(turn) )
         |
-        ( (j>1) & (j+1<width) & 
-          (i>0) & (i+2<height)  & eval(b[i-1][j+1])==eval(turn) 
-                                & eval(b[i+1][j-1])==eval(turn) 
+        ( (j>1) & (j+1<width) &
+          (i>0) & (i+2<height)  & eval(b[i-1][j+1])==eval(turn)
+                                & eval(b[i+1][j-1])==eval(turn)
                                 & eval(b[i+2][j-2])==eval(turn) )
         |
-        ( (j>2) & (i+3<height)  & eval(b[i+1][j-1])==eval(turn) 
-                                & eval(b[i+2][j-2])==eval(turn) 
+        ( (j>2) & (i+3<height)  & eval(b[i+1][j-1])==eval(turn)
+                                & eval(b[i+2][j-2])==eval(turn)
                                 & eval(b[i+3][j-3])==eval(turn) )
         , eval(turn), 0
       )

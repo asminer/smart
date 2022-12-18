@@ -38,7 +38,7 @@ class bool_type : public simple_type {
 public:
   bool_type();
 protected:
-  virtual bool print_normal(std::ostream &s, const result& r, int w) const;
+  virtual bool print_normal(std::ostream &s, const result& r, int w, int p=-1) const;
   virtual void show_normal(std::ostream &s, const result& r) const;
   virtual void assign_normal(result& r, const char* s) const;
   virtual int compare_normal(const result &x, const result &y) const;
@@ -54,7 +54,7 @@ bool_type::bool_type()
   setPrintable();
 }
 
-bool bool_type::print_normal(std::ostream &s, const result& r, int w) const
+bool bool_type::print_normal(std::ostream &s, const result& r, int w, int p) const
 {
   if (r.getBool())  s << formatted_string("true", w);
   else              s << formatted_string("false", w);
@@ -95,8 +95,7 @@ class int_type : public simple_type {
 public:
   int_type();
 protected:
-  virtual bool print_normal(std::ostream &s, const result& r) const;
-  virtual bool print_normal(std::ostream &s, const result& r, int w) const;
+  virtual bool print_normal(std::ostream &s, const result& r, int w, int p=-1) const;
   virtual void show_normal(std::ostream &s, const result& r) const;
   virtual void assign_normal(result& r, const char* s) const;
   virtual int compare_normal(const result &x, const result &y) const;
@@ -112,15 +111,9 @@ int_type::int_type()
   setPrintable();
 }
 
-bool int_type::print_normal(std::ostream &s, const result& r) const
+bool int_type::print_normal(std::ostream &s, const result& r, int w, int p) const
 {
-    s << r.getInt();
-    return true;
-}
-
-bool int_type::print_normal(std::ostream &s, const result& r, int w) const
-{
-    s << formatted_int(r.getInt(), w);
+    s << formatted_int(r.getInt(), w, int_comma);
     return true;
 }
 
@@ -167,8 +160,6 @@ class real_type : public simple_type {
 public:
   real_type();
 protected:
-  virtual bool print_normal(std::ostream &s, const result& r) const;
-  virtual bool print_normal(std::ostream &s, const result& r, int w) const;
   virtual bool print_normal(std::ostream &s, const result& r, int w, int p) const;
   virtual void show_normal(std::ostream &s, const result& r) const;
   virtual void assign_normal(result& r, const char* s) const;
@@ -193,37 +184,27 @@ real_type::real_type()
   setPrintable();
 }
 
-bool real_type::print_normal(std::ostream &s, const result& r) const
-{
-#ifdef DEBUG_REAL_TYPE
-  fprintf(stderr, "print_normal %lf\n", r.getReal());
-#endif
-  s << r.getReal();
-  shared_object* o = r.getPtr();
-  if (o) o->Print(s, 0); // confidence interval, or something similar
-  return true;
-}
-
-bool real_type::print_normal(std::ostream &s, const result& r, int w) const
-{
-#ifdef DEBUG_REAL_TYPE
-  fprintf(stderr, "print_normal %lf:%d\n", r.getReal(), w);
-#endif
-  s << formatted_real(r.getReal(), w);
-  shared_object* o = r.getPtr();
-  if (o) o->Print(s, 0); // confidence interval, or something similar
-  return true;
-}
-
 bool real_type::print_normal(std::ostream &s, const result& r, int w, int p) const
 {
 #ifdef DEBUG_REAL_TYPE
-  fprintf(stderr, "print_normal %lf:%d:%d\n", r.getReal(), w, p);
+    fprintf(stderr, "print_normal %lf:%d\n", r.getReal(), w);
 #endif
-  s << formatted_real(r.getReal(), w, p);
-  shared_object* o = r.getPtr();
-  if (o) o->Print(s, 0); // confidence interval, or something similar
-  return true;
+    switch (real_format) {
+        case FIXED:
+                    s << fixed_real(r.getReal(), w, p, real_comma);
+                    break;
+
+        case SCIENTIFIC:
+
+                    s << scientific_real(r.getReal(), w, p, real_comma);
+                    break;
+
+        default:
+                    s << general_real(r.getReal(), w, p, real_comma);
+    }
+    shared_object* o = r.getPtr();
+    if (o) o->Print(s, 0); // confidence interval, or something similar
+    return true;
 }
 
 void real_type::show_normal(std::ostream &s, const result& r) const

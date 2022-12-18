@@ -1,11 +1,11 @@
 
-/* 
+/*
    Partial rubik's cube.
 
    Just the corners; one transition per rotation.
 
    Partition: states on top of rotations.
-   
+
 */
 
 int onethree(int a) := 4-a;
@@ -33,7 +33,7 @@ pn rubik := {
   trans
   // Clockwise
     white, orange, green, blue, red, yellow;
-  
+
   arcs(
         // Clockwise rotations:
 
@@ -45,7 +45,7 @@ pn rubik := {
       wbo : white : tk(wbo),
       wrb : white : tk(wrb),
       wgr : white : tk(wgr),
-  
+
       white : wog_r : tk(wgr_r),
       white : wbo_r : tk(wog_r),
       white : wrb_r : tk(wbo_r),
@@ -64,7 +64,7 @@ pn rubik := {
       wbo : orange : tk(wbo),
       ygo : orange : tk(ygo),
       yob : orange : tk(yob),
-  
+
       orange : wog_r : onethree(tk(wbo_r)),
       orange : wbo_r : onethree(tk(yob_r)),
       orange : ygo_r : onethree(tk(wog_r)),
@@ -83,7 +83,7 @@ pn rubik := {
       wgr : green : tk(wgr),
       yrg : green : tk(yrg),
       ygo : green : tk(ygo),
-  
+
       green : wog_r : onetwo(tk(ygo_r)),
       green : wgr_r : onetwo(tk(wog_r)),
       green : yrg_r : onetwo(tk(wgr_r)),
@@ -102,7 +102,7 @@ pn rubik := {
       wbo : blue : tk(wbo),
       yob : blue : tk(yob),
       ybr : blue : tk(ybr),
-  
+
       blue : wrb_r : onetwo(tk(ybr_r)),
       blue : wbo_r : onetwo(tk(wrb_r)),
       blue : yob_r : onetwo(tk(wbo_r)),
@@ -121,7 +121,7 @@ pn rubik := {
       wrb : red : tk(wrb),
       ybr : red : tk(ybr),
       yrg : red : tk(yrg),
-  
+
       red : wgr_r : onethree(tk(yrg_r)),
       red : wrb_r : onethree(tk(wgr_r)),
       red : ybr_r : onethree(tk(wrb_r)),
@@ -140,7 +140,7 @@ pn rubik := {
       yrg : yellow : tk(yrg),
       ybr : yellow : tk(ybr),
       yob : yellow : tk(yob),
-  
+
       yellow : ygo_r : tk(yob_r),
       yellow : yrg_r : tk(ygo_r),
       yellow : ybr_r : tk(yrg_r),
@@ -151,7 +151,7 @@ pn rubik := {
       yellow : yob : tk(ybr)
 
   );
-  
+
   bigint m1 := num_states;
 };
 

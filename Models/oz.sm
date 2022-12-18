@@ -20,8 +20,8 @@ dtmc oz := {
   real n_ss := prob_ss(in_state(n));
   real s_ss := prob_ss(in_state(s));
 
-  real temp_ss := avg_ss(cond(in_state(r), 
-                              50, 
+  real temp_ss := avg_ss(cond(in_state(r),
+                              50,
                               cond(in_state(s), 25, 80)
                               )
       );

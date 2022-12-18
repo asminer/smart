@@ -42,7 +42,7 @@ evm ttt := {
   assign(   b22 : m22 : eval(turn),
             turn: m22 : 3-eval(turn),
             winner : m22 : cond(
-              (eval(b11)==eval(turn) & eval(b33)==eval(turn)) | 
+              (eval(b11)==eval(turn) & eval(b33)==eval(turn)) |
               (eval(b12)==eval(turn) & eval(b32)==eval(turn)) |
               (eval(b21)==eval(turn) & eval(b23)==eval(turn)) |
               (eval(b31)==eval(turn) & eval(b13)==eval(turn)),
@@ -57,7 +57,7 @@ evm ttt := {
   assign(   b11 : m11 : eval(turn),
             turn: m11 : 3-eval(turn),
             winner : m11 : cond(
-              (eval(b12)==eval(turn) & eval(b13)==eval(turn)) | 
+              (eval(b12)==eval(turn) & eval(b13)==eval(turn)) |
               (eval(b21)==eval(turn) & eval(b31)==eval(turn)) |
               (eval(b22)==eval(turn) & eval(b33)==eval(turn)),
               eval(turn), 0
@@ -70,7 +70,7 @@ evm ttt := {
   assign(   b13 : m13 : eval(turn),
             turn: m13 : 3-eval(turn),
             winner : m13 : cond(
-              (eval(b12)==eval(turn) & eval(b11)==eval(turn)) | 
+              (eval(b12)==eval(turn) & eval(b11)==eval(turn)) |
               (eval(b23)==eval(turn) & eval(b33)==eval(turn)) |
               (eval(b22)==eval(turn) & eval(b31)==eval(turn)),
               eval(turn), 0
@@ -83,7 +83,7 @@ evm ttt := {
   assign(   b31 : m31 : eval(turn),
             turn: m31 : 3-eval(turn),
             winner : m31 : cond(
-              (eval(b21)==eval(turn) & eval(b11)==eval(turn)) | 
+              (eval(b21)==eval(turn) & eval(b11)==eval(turn)) |
               (eval(b32)==eval(turn) & eval(b33)==eval(turn)) |
               (eval(b22)==eval(turn) & eval(b13)==eval(turn)),
               eval(turn), 0
@@ -96,7 +96,7 @@ evm ttt := {
   assign(   b33 : m33 : eval(turn),
             turn: m33 : 3-eval(turn),
             winner : m33 : cond(
-              (eval(b32)==eval(turn) & eval(b31)==eval(turn)) | 
+              (eval(b32)==eval(turn) & eval(b31)==eval(turn)) |
               (eval(b23)==eval(turn) & eval(b13)==eval(turn)) |
               (eval(b22)==eval(turn) & eval(b11)==eval(turn)),
               eval(turn), 0
@@ -161,7 +161,7 @@ evm ttt := {
                       eval(winner)==0 &
                       eval(b11)>0 & eval(b12)>0 & eval(b13)>0 &
                       eval(b21)>0 & eval(b22)>0 & eval(b23)>0 &
-                      eval(b31)>0 & eval(b32)>0 & eval(b33)>0 
+                      eval(b31)>0 & eval(b32)>0 & eval(b33)>0
                     );
 
   bigint xwg := num_paths(initial, xwins);

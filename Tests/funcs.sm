@@ -26,7 +26,7 @@ print("Duplication errors:\n");
 int plus(int c, int d) := 2*a+b;
 real times(int x, int y:=1) := x*y;
 int summation(int a, int a, int a) := a+a+a;
-	
+
 print("Bad function calls:\n");
 plus(3,4,5);
 times(2.2, 2.4);
@@ -42,7 +42,7 @@ print("should get 10: ", plus(plus(plus(1,2), 3), 4), "\n");
 real promote1(int a, int b) := a+b;
 real promote2(int c, real d) := c+d+0.1;
 
-# OutputRealFormat FIXED
+# RealFormat FIXED
 
 print("should be 5.0: ", promote1(2,3):2:1, "\n");
 print("should be 5.1: ", promote2(2,3.0):2:1, "\n");
@@ -84,7 +84,7 @@ int mybinary(int a, int b);
 int myident := 0;
 
 int square(int a) := mybinary(a,a);
-int mypow(int a, int b) := 
+int mypow(int a, int b) :=
   cond(b==0,
     myident,
     cond( b%2==0,
@@ -112,7 +112,7 @@ int myfwd(int a, int b) := a+b;
 print("defined:\n");
 print(myfoo(3,4), "\n");
 
-/* 
+/*
    Default parameters that aren't provided
 */
 
@@ -120,7 +120,7 @@ print("This is an error:\n");
 int error1 := myfoo(default, 3);
 
 
-/* 
+/*
    Illegal places to define functions
 */
 
@@ -174,7 +174,7 @@ mynamed(a:=8);
 */
 
 print("Duplicates:\n");
-real mynamed(int a) := a/2;   
+real mynamed(int a) := a/2;
 real mynamed(real x:=0.0, int a, int b:=1, real x:=0.0) := a*b+a*x;
 real mynamed(int a, real y:=0.0, int c:=0, int d:=0) := a*y+c*d;
 
@@ -194,7 +194,7 @@ print("\n\nJust for kicks:\n\n");
 
 int TS := 13;
 
-int pascal(int i, int j) := cond(j==0 | j>i, 0, 
+int pascal(int i, int j) := cond(j==0 | j>i, 0,
                            cond(i==1, 1, pascal(i-1, j-1) + pascal(i-1, j))
 			  );
 

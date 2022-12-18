@@ -24,7 +24,7 @@ pn flip(int n) := {
 int N := read_int("N");
 compute(N);
 
-# OutputThousandSeparator ","
+# ThousandSeparator ","
 
 print("Theoretical:\n",
       two2i(N), " states\n",
