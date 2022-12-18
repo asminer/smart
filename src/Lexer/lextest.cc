@@ -5,6 +5,7 @@
 
 #include "config.h"
 #include "../Options/optman.h"
+#include "../Utils/initializer.h"
 #include "../ExprLib/exprman.h"
 #include "../ExprLib/startup.h"
 #include "lexer.h"
@@ -38,20 +39,9 @@ bool first_init::execute()
 
 // ============================================================
 
-void InitOptions(option_manager* om)
-{
-    if (0==om)  return;
-    om->addChecklistOption("Debug",
-      "Switches to control what low-level debugging information, if any, is written to the report stream."
-    );
-}
-
-// ============================================================
-
-int Usage(exprman* em)
+int Usage()
 {
     using namespace std;
-    if (0==em) return 1;
     cout << "\n";
     cout << "Usage : \n";
     cout << "lextest <file1> <file2> ... <filen>\n";
@@ -64,9 +54,10 @@ int Usage(exprman* em)
 
 int main(int argc, const char** argv)
 {
+    if (1==argc) return Usage();
+
     // Options
-    option_manager* om = MakeOptionManager();
-    InitOptions(om);
+    option_manager* om = getGlobalOptionManager();
 
     // Expressions
     exprman* em = Initialize_Expressions(om);
@@ -78,6 +69,9 @@ int main(int argc, const char** argv)
         E << "Deadlock in startups";
         return -1;
     }
+
+    // Run initializers
+    initializer::execute_all();
 
     // Lexer initialization
     lexer LEX(em, argv+1, argc-1);
@@ -96,7 +90,6 @@ int main(int argc, const char** argv)
     //
     // Cleanup
     //
-    delete om;
     destroyExpressionManager(em);
 
     return 0;

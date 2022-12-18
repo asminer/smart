@@ -278,6 +278,8 @@ lextest_SOURCES = \
   Utils/sigman.cc \
   Utils/strings.cc \
   Utils/textfmt.cc \
+  Utils/initializer.cc \
+  Utils/init_opts.cc \
   \
   Options/optman.cc \
   Options/options.cc \
