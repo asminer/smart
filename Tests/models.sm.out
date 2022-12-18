@@ -144,7 +144,7 @@ ERROR in file models.sm near line 211:
 ERROR in file models.sm near line 212:
 	Bad value: 10 for index i in array ma
 ERROR in file models.sm near line 213:
-	Measure pi in model array ma is is an array
+	Measure pi in model array ma is an array
 ERROR in file models.sm near line 213:
 	No match for compute(error)
 index out of bounds errors:

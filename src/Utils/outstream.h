@@ -8,12 +8,6 @@
 #include <fstream>
 
 class outputStream {
-    /*
-    public:
-        static const unsigned GENERAL    = 0;
-        static const unsigned FIXED      = 1;
-        static const unsigned SCIENTIFIC = 2;
-        */
     public:
         outputStream(std::ostream &_deflt);
 
@@ -21,20 +15,6 @@ class outputStream {
 
         outputStream(const outputStream &) = delete;
         void operator=(const outputStream &) = delete;
-
-        //
-        // Set the real format for this stream.
-        /*
-        inline void set_real_format(unsigned rf) {
-            CHECK_RANGE(0, rf, 3);
-            realfmt = rf;
-            update_real_format();
-        }
-
-        //
-        // Get the current real format for this stream.
-        inline unsigned get_real_format() const { return realfmt; }
-        */
 
         /** Switch to a file with given name.
          *  The current file, if any, is closed.
@@ -78,31 +58,11 @@ class outputStream {
         }
 
         /*
-         * Write a signed integer with commas.
-         */
-//        void putWithCommas(long x, int width=0);
-
-        /*
-         * Write an unsigned integer with commas.
-         */
-//        void putWithCommas(unsigned long x, int width=0);
-
-        /*
-         * Write an integer or real, encoded as a string, with commas.
-         * The integer portion may start with -, +, or a digit,
-         * and ends with the first non-digit.
-         */
-//        void putWithCommas(const char* x, int width=0);
-
-
-        /*
          * For lack of a better place: global output stream
          * Basically, cout but with possibility of redirection to a file.
          */
         static inline outputStream& globalOut() { return Out; }
 
-    // public:
-        // const char* comma;
     private:
         static outputStream Out;
 
@@ -111,11 +71,7 @@ class outputStream {
         std::ostream &deflt;
         std::ofstream fout;
 
-        // unsigned realfmt;
-
         bool active;
-
-        // void update_real_format();
 };
 
 template <class TYPE>

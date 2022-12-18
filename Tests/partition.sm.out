@@ -5,7 +5,6 @@ Levels for a flat Petri net:
 WARNING:
     user-specified partition groups all variables together;
     possibly missing call to partition()?
-    
 Level 1:
 	a, b, c, d
 Using the un-numbered version:

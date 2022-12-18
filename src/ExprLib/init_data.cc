@@ -237,108 +237,7 @@ int real_type::compare_normal(const result &x, const result &y) const
     return 0;
 }
 
-// ******************************************************************
-// *                                                                *
-// *                        rf_watcher class                        *
-// *                                                                *
-// ******************************************************************
 
-/*
-class rf_watcher : public option::watcher {
-        std::ostream &os;
-    public:
-        unsigned selected;
-        std::ostream::real_format formats[3];
-    public:
-        rf_watcher(std::ostream &s);
-        virtual void notify(const option* o);
-};
-
-rf_watcher::rf_watcher(std::ostream &s) : os(s)
-{
-}
-
-void rf_watcher::notify(const option* o)
-{
-    os.SetRealFormat(formats[selected]);
-}
-
-
-void MakeRFOption(exprman* em, std::ostream &s, const char* n, const char* d)
-{
-    if (!em->hasIO()) return;
-    if (0==em->OptMan()) return;
-
-    rf_watcher* rw = new rf_watcher(s);
-    option* rbo = em->OptMan()->addRadioOption(n, d, 3, rw->selected);
-    DCASSERT(rbo);
-    rbo->registerWatcher(rw);
-
-    rbo->addRadioButton("FIXED", "Same as printf(%f)", 0);
-    rw->formats[0] = std::ostream::RF_FIXED;
-
-    rbo->addRadioButton("GENERAL", "Same as printf(%g)", 1);
-    rw->formats[1] = std::ostream::RF_GENERAL;
-
-    rbo->addRadioButton("SCIENTIFIC", "Same as printf(%e)", 2);
-    rw->formats[2] = std::ostream::RF_SCIENTIFIC;
-
-    rw->selected = 1;
-}
-*/
-
-void MakeRealFormatOptions(exprman* em)
-{
-    if (0==em) return;
-    //
-    // TBD
-    //
-    /*
-    MakeRFOption(
-      em,
-      em->cout(),
-      "OutputRealFormat",
-      "Format to use for writing reals to the output stream"
-    );
-
-    MakeRFOption(
-      em,
-      em->report(),
-      "ReportRealFormat",
-      "Format to use for writing reals to the reporting stream"
-    );
-    */
-}
-
-// ******************************************************************
-// *                                                                *
-// *                       thousands  options                       *
-// *                                                                *
-// ******************************************************************
-
-void MakeSeparatorOptions(exprman* em)
-{
-  // if (!em->hasIO())  return;
-  if (0==em->OptMan()) return;
-
-  //
-  // TBD
-  //
-
-  /*
-  em->OptMan()->addStringOption(
-      "OutputThousandSeparator",
-      "Thousands separator to use for the output stream",
-      em->cout().linkThousands()
-  );
-
-  em->OptMan()->addStringOption(
-      "ReportThousandSeparator",
-      "Thousands separator to use for the reporting stream",
-      em->report().linkThousands()
-  );
-  */
-}
 
 // ******************************************************************
 // *                                                                *
@@ -930,9 +829,6 @@ void InitTypes(exprman* em)
       true, false, 0,
       false, false, 0
   );
-
-  MakeRealFormatOptions(em);
-  MakeSeparatorOptions(em);
 
   // Operators
   InitBooleanOps(em);
