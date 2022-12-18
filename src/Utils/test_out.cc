@@ -15,7 +15,6 @@ inline void right(outputStream &out, long x)
 int main()
 {
     outputStream foo(std::cout);
-    foo.comma = ",";
 
     foo << "Hello, world!\n";
 

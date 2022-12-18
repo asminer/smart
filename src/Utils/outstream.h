@@ -8,10 +8,12 @@
 #include <fstream>
 
 class outputStream {
+    /*
     public:
         static const unsigned GENERAL    = 0;
         static const unsigned FIXED      = 1;
         static const unsigned SCIENTIFIC = 2;
+        */
     public:
         outputStream(std::ostream &_deflt);
 
@@ -22,6 +24,7 @@ class outputStream {
 
         //
         // Set the real format for this stream.
+        /*
         inline void set_real_format(unsigned rf) {
             CHECK_RANGE(0, rf, 3);
             realfmt = rf;
@@ -31,6 +34,7 @@ class outputStream {
         //
         // Get the current real format for this stream.
         inline unsigned get_real_format() const { return realfmt; }
+        */
 
         /** Switch to a file with given name.
          *  The current file, if any, is closed.
@@ -97,8 +101,8 @@ class outputStream {
          */
         static inline outputStream& globalOut() { return Out; }
 
-    public:
-        const char* comma;
+    // public:
+        // const char* comma;
     private:
         static outputStream Out;
 
@@ -107,11 +111,11 @@ class outputStream {
         std::ostream &deflt;
         std::ofstream fout;
 
-        unsigned realfmt;
+        // unsigned realfmt;
 
         bool active;
 
-        void update_real_format();
+        // void update_real_format();
 };
 
 template <class TYPE>
