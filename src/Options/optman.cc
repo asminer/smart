@@ -190,3 +190,12 @@ option_manager* MakeOptionManager()
   return new option_heap;
 }
 
+option_manager* getGlobalOptionManager()
+{
+    static option_manager* om = nullptr;
+    if (!om) {
+        om = new option_heap;
+    }
+    return om;
+}
+

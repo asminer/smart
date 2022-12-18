@@ -10,8 +10,6 @@
 // *                                                                    *
 // **********************************************************************
 
-static option_manager* OM;
-
 /**
     Build the global option manager.
     Requires nothing.
@@ -23,25 +21,24 @@ class optman_initializer : public initializer {
     protected:
         virtual void execute();
 };
+static optman_initializer the_optman_initializer;
 
 optman_initializer::optman_initializer()
     : initializer("optman_initializer", 1, 0)
 {
     builds_resource(0, "OM");
-    OM = nullptr;
 }
 
 void optman_initializer::execute()
 {
-    OM = MakeOptionManager();
+    option_manager* OM = getGlobalOptionManager();
     if (!OM) {
         internal_error E(__FILE__, __LINE__);
-        E << "MakeOptionManager() returned null pointer";
+        E << "getGlobalOptionManager() returned null pointer";
     }
     set_object(0, OM, "OM");
 }
 
-static optman_initializer _omi;
 
 // **********************************************************************
 // *                                                                    *

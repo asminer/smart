@@ -8,6 +8,8 @@
 #include "../Options/options.h"
 #include "../Options/optman.h"
 
+#include "../Utils/init_opts.h"
+
 #include <vector>
 #include <algorithm>
 #include <map>
@@ -122,32 +124,23 @@ double heuristic_varorder::alphaParameter = -1.0;
 // *                                                                *
 // ******************************************************************
 
-class init_static_varorder : public startup {
+class old_init_static_varorder : public startup {
 public:
-  init_static_varorder();
+  old_init_static_varorder();
   virtual bool execute();
 };
-init_static_varorder the_static_varorder_startup;
+old_init_static_varorder the_static_varorder_startup;
 
-init_static_varorder::init_static_varorder() : startup("init_static_varorder")
+old_init_static_varorder::old_init_static_varorder() : startup("init_static_varorder")
 {
   usesResource("em");
   buildsResource("varorders");
   buildsResource("engtypes");
 }
 
-bool init_static_varorder::execute()
+bool old_init_static_varorder::execute()
 {
   if (0==em)  return false;
-
-  // Initialize options
-  static_varorder::report.initialize(em->OptMan(), "varorder",
-      "When set, static variable ordering heuristic performance is reported."
-  );
-
-  static_varorder::debug.initialize(em->OptMan(), "varorder",
-      "When set, static variable ordering heuristic details are displayed."
-  );
 
   MakeEngineType(em,
                  "VariableOrdering",
@@ -243,6 +236,41 @@ bool init_static_varorder::execute()
   return true;
 }
 
+// ******************************************************************
+
+class init_static_varorder : public initializer {
+    public:
+        init_static_varorder();
+    protected:
+        virtual void execute();
+};
+static init_static_varorder the_static_varorder_initializer;
+
+init_static_varorder::init_static_varorder()
+    : initializer("order_base.cc", 1, 2)
+{
+    builds_resource(0, "order_base.cc");
+    needs_resource(1, "Report");
+    needs_resource(2, "Debug");
+}
+
+void init_static_varorder::execute()
+{
+    //
+    // Initialize reporting, debugging
+    //
+    initialize_msg(static_varorder::report,
+        "varorder",
+        "When set, static variable ordering heuristic performance is reported.",
+        get_object(1, "Report")
+    );
+
+    initialize_msg(static_varorder::debug,
+        "varorder",
+        "When set, static variable ordering heuristic details are displayed.",
+        get_object(2, "Debug")
+    );
+}
 
 
 // ******************************************************************

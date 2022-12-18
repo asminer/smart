@@ -47,7 +47,7 @@ public:
 protected:
     /**
         Check for duplicates.
-        Default behavior is to return false;
+        Default behavior is to compare pointers;
         if there is a situation where the same library
         could be added twice, then override this method.
     */

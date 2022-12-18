@@ -31,6 +31,11 @@ void library::printReleaseDate(std::ostream &) const
     DCASSERT(0);
 }
 
+bool library::is_duplicate(const library* lib) const
+{
+    return (lib == this);
+}
+
 //
 // Statics
 //
@@ -42,7 +47,6 @@ void library::registerLibrary(const library* lib)
     // Check for duplicates
 
     for (unsigned i=0; i<num_libs; i++) {
-        if (lib == extlibs[i]) return;
         if (lib->is_duplicate(extlibs[i])) return;
     }
 

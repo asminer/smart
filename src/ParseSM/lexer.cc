@@ -13,6 +13,8 @@
 #include "parse_sm.h"
 #include "../Options/options.h"
 
+#include "../Utils/init_opts.h"
+
 // #define LEXER_DEBUG
 
 const int my_buffer_size = 16384;
@@ -60,8 +62,10 @@ lexer_error::lexer_error(bool warn, const char* text)
 class inputfile;
 
 struct lexer_mod {
+    friend class lexer_initialize;
+
   parse_module* parent;
-  debugging_msg debug;
+  static debugging_msg debug;
   /// Stack of input files.
   inputfile** filestack;
   /// Top of file stack.
@@ -109,7 +113,7 @@ public:
 
   bool SetInputs(const char**, int);
 };
-
+debugging_msg lexer_mod::debug;
 lexer_mod lexdata;
 
 // ******************************************************************
@@ -682,12 +686,6 @@ void lexer_mod::Initialize(parse_module* p)
 {
   if (p == parent)  return;
   parent = p;
-  debug.initialize(parent ? parent->OptMan() : 0, "lexer",
-    "When set, very low-level lexer messages are displayed."
-  );
-#ifdef LEXER_DEBUG
-  debug.Activate();
-#endif
 }
 
 bool lexer_mod::AlreadyOpen(const char* name) const
@@ -790,6 +788,39 @@ bool lexer_mod::SetInputs(const char** files, int filecount)
   return false;
 }
 
+
+// ==================================================================
+//
+//                             Initialization
+//
+// ==================================================================
+
+class lexer_initializer : public initializer {
+    public:
+        lexer_initializer();
+    protected:
+        virtual void execute();
+};
+static lexer_initializer the_lexer_initializer;
+
+lexer_initializer::lexer_initializer()
+    : initializer("lexer.cc", 1, 1)
+{
+    builds_resource(0, "lexer.cc");
+    needs_resource(1, "Debug");
+}
+
+void lexer_initializer::execute()
+{
+    initialize_msg(lexer_mod::debug,
+        "lexer",
+        "When set, very low-level lexer messages are displayed.",
+        get_object(1, "Debug")
+    );
+#ifdef LEXER_DEBUG
+    lexer_mod::qdebug.Activate();
+#endif
+}
 
 // ==================================================================
 //

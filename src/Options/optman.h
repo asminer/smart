@@ -153,9 +153,14 @@ class option_manager : public shared_object {
 // **************************************************************************
 
 /** Make a new option manager.
-      @return A new manager, or NULL on error.
+        @return A new manager, or NULL on error.
 */
 option_manager* MakeOptionManager();
+
+/** Get the global optionn manager.
+        @return A pointer to the global ooption manager, or null on error.
+*/
+option_manager* getGlobalOptionManager();
 
 #endif
 

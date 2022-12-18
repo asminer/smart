@@ -30,6 +30,9 @@
 #include "../Utils/textfmt.h"
 #include "../Options/optman.h"
 
+#include "../Utils/library.h"
+#include "../Utils/initializer.h"
+
 #include "../ExprLib/exprman.h"
 #include "../ExprLib/startup.h"
 #include "../ExprLib/functions.h"
@@ -121,60 +124,44 @@ const char* first_init::getLongName()
 
 // ============================================================
 
-void InitOptions(option_manager* om)
+int Usage()
 {
-    if (0==om)  return;
-    om->addChecklistOption("Report",
-        "Switches to control what reports, if any, are written to the report stream."
-    );
-    om->addChecklistOption("Debug",
-        "Switches to control what low-level debugging information, if any, is written to the report stream."
-    );
-    om->addChecklistOption("Warning",
-        "Switches to control which warning messages are displayed and which are suppressed."
-    );
+    outputStream &out = outputStream::globalOut();
+    out << "\n" << first_init::getVersionString() << "\n";
+    out << "\nSupporting libraries:\n";
+    library::printLibraryVersions(out.stream());
+    out << "\n";
+    out << "Usage : \n";
+    out << "smart <file1> <file2> ... <filen>\n";
+    out << "      Use the filename `-' to denote standard input\n";
+    out << "\n";
+    out << "For full copyright information, type `smart -c'\n";
+    out << "For help, view documentation with `smart -h keywords'\n";
+    out << "\n";
+    return 0;
 }
 
-int Usage(exprman* em)
+int Copyrights()
 {
-  if (0==em) return 1;
-  outputStream &out = outputStream::globalOut();
-  out << "\n" << first_init::getVersionString() << "\n";
-  out << "\nSupporting libraries:\n";
-  em->printLibraryVersions(out.stream());
-  out << "\n";
-  out << "Usage : \n";
-  out << "smart <file1> <file2> ... <filen>\n";
-  out << "      Use the filename `-' to denote standard input\n";
-  out << "\n";
-  out << "For full copyright information, type `smart -c'\n";
-  out << "For help, view documentation with `smart -h keywords'\n";
-  out << "\n";
-  return 0;
-}
-
-int Copyrights(exprman* em)
-{
-  if (0==em) return 1;
-  doc_formatter df(80, outputStream::globalOut());
-  df.Out() << "\n";
-  df.begin_heading();
-  df.Out() << first_init::getVersionString();
-  if (SMART_DATE) {
-    df.Out() << ", released " << SMART_DATE << "\n";
-  }
-  df.end_heading();
-  df.begin_indent();
-  df.Out() << first_init::getLongName() << "\n";
-  df.Out() << "Copyright (C) 2017-2018, Gianfranco Ciardo and Andrew Miner\n";
-  df.Out() << "Released under the Apache License, version 2\n";
+    doc_formatter df(80, outputStream::globalOut());
+    df.Out() << "\n";
+    df.begin_heading();
+    df.Out() << first_init::getVersionString();
+    if (SMART_DATE) {
+        df.Out() << ", released " << SMART_DATE << "\n";
+    }
+    df.end_heading();
+    df.begin_indent();
+    df.Out() << first_init::getLongName() << "\n";
+    df.Out() << "Copyright (C) 2017-2018, Gianfranco Ciardo and Andrew Miner\n";
+    df.Out() << "Released under the Apache License, version 2\n";
 #ifdef PACKAGE_URL
-  df.Out() << PACKAGE_URL << "\n";
+    df.Out() << PACKAGE_URL << "\n";
 #endif
-  df.end_indent();
-  em->printLibraryCopyrights(df);
-  df.Out() << "\n";
-  return 0;
+    df.end_indent();
+    library::printLibraryCopyrights(df);
+    df.Out() << "\n";
+    return 0;
 }
 
 
@@ -222,10 +209,10 @@ int process_args(parse_module& pm, exprman* em, symbol_table* st,
   int argc, const char** argv)
 {
   if (argc < 2)
-    return Usage(em);
+    return Usage();
 
   if (argc == 2 && argv[1][0] == '-' && argv[1][1] == 'c' && argv[1][2] == 0)
-    return Copyrights(em);
+    return Copyrights();
 
   if (argv[1][0] == '-' && argv[1][1] == 'h' && argv[1][2] == 0)
     return CmdLineHelp(em, st, argv+2, argc-2);
@@ -246,11 +233,9 @@ int main(int argc, const char** argv, const char** env)
   // CatchSignals(&myio);
 
   // Options
-  option_manager* om = MakeOptionManager();
-  InitOptions(om);
+  option_manager* om = getGlobalOptionManager();
 
   // Expressions
-  // exprman* em = Initialize_Expressions(&myio, om);
   exprman* em = Initialize_Expressions(om);
 
   // Start the symbol table for builtin functions
@@ -278,7 +263,6 @@ int main(int argc, const char** argv, const char** env)
   //
   // Cleanup
   //
-  delete om;
   destroyExpressionManager(em);
 
   return code;
