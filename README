@@ -21,3 +21,4 @@ bin-release/  Binaries for release
 doxy/         Documentation
 src/          Source code
 
+Developers/   Useful scripts for developers
