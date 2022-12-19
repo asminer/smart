@@ -123,7 +123,7 @@ void generateRGt(debugging_msg &debug, dsde_hlm &dsm, RG &rg) {
 				// find next tangible to explore; if none, break out
 				if (rg.hasUnexploredTangible()) {
 					from_id = exp_id = rg.getUnexploredTangible(curr_st);
-					// valid_from = true;
+					valid_from = true;
 				} else {
 					break;  // done exploring!
 				}

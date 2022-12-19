@@ -52,7 +52,7 @@ pn nim(int k, int N) := {
 
 # Report + procgen //, num_paths
 
-# ThousandSeparator ","
+# IntThousandSeparator ","
 
 # ExplicitUnfairAEF   specialized
 // # ExplicitUnfairAEF   iterative

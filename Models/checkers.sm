@@ -18,7 +18,7 @@ int N := 4; // board size
 
 # EVMStateStyle VECTOR
 
-# ThousandSeparator ","
+# IntThousandSeparator ","
 
 
 evm checkers := {

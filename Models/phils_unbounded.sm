@@ -29,7 +29,7 @@ for(int i in {1..3*N+1}) {
 
 # StateDisplayOrder LEXICAL
 # Report + procgen
-# ThousandSeparator ","
+# IntThousandSeparator ","
 
 // # Debug + procgen
 

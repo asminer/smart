@@ -105,7 +105,7 @@ evm queen(int N, int Q) := {
 
 # StateDisplayOrder LEXICAL
 # Report + procgen
-# ThousandSeparator ","
+# IntThousandSeparator ","
 # StatesetPrintIndexes false
 
 int N := read_int("the board dimension");

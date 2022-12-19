@@ -8,7 +8,7 @@
 
 # EVMStateStyle VECTOR
 
-# ThousandSeparator ","
+# IntThousandSeparator ","
 
 evm othello(int N, int M) := {
 

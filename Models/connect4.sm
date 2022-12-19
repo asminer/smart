@@ -5,7 +5,7 @@
 
 # EVMStateStyle VECTOR
 
-# ThousandSeparator ","
+# IntThousandSeparator ","
 
 evm connect4(int height, int width) := {
   for (int i in {0..height-1}, int j in {0..width-1}) {

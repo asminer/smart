@@ -102,7 +102,7 @@ pn kanban(int n) := {
 # }
 
 # StateDisplayOrder LEXICAL
-# ThousandSeparator ","
+# IntThousandSeparator ","
 
 int N := read_int("N");
 compute(N);

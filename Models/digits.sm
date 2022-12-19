@@ -20,7 +20,7 @@ pn digits(int D, int N) := {
 
 # PNMarkingStyle VECTOR
 # Report + rsgen
-# ThousandSeparator ","
+# IntThousandSeparator ","
 
 int D := read_int("Number of digits");
 int N := read_int("Value of digits");

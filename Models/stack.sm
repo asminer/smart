@@ -38,7 +38,7 @@ pn stack(int depth, int vals) := {
 # Report + procgen
 # PNMarkingStyle VECTOR
 
-# ThousandSeparator ","
+# IntThousandSeparator ","
 
 bigint states(int d, int v) := cond(d==0, 1, v*states(d-1, v));
 bigint edges(int d, int v) :=

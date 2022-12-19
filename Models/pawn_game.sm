@@ -31,7 +31,7 @@ int M := 3; // number of files (pawns)
 
 # EVMStateStyle VECTOR
 
-# ThousandSeparator ","
+# IntThousandSeparator ","
 
 evm pawn_game := {
   // state info

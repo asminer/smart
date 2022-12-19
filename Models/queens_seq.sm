@@ -55,7 +55,7 @@ evm queens(int N) := {
 
 # StateDisplayOrder LEXICAL
 # Report + procgen
-# ThousandSeparator ","
+# IntThousandSeparator ","
 
 int N := read_int("the board dimension and number of queens");
 compute(N);

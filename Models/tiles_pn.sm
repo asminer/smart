@@ -43,7 +43,7 @@ pn tiles(int n, int m) := {
 };
 
 # Warning - pn_zero_init
-# ThousandSeparator ","
+# IntThousandSeparator ","
 
 // # Debug + rsgen
 
