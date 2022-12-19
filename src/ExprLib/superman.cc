@@ -612,7 +612,7 @@ const type* superman::getTypeOf(unary_opcode op, const type* x) const
   // too many matches, this should not happen!
   internal_error E(__FILE__, __LINE__);
   E << "Cannot decide on unary operation: " << getOp(op) << " ";
-  if (x)  E << x->getName();
+  if (x)  E << *x;
   else    E << "notype";
   return 0;
 }
@@ -648,10 +648,10 @@ const type* superman
   // too many matches, this should not happen!
   internal_error E(__FILE__, __LINE__);
   E << "Cannot decide on binary operation: ";
-  if (lt) E << lt->getName();
+  if (lt) E << *lt;
   else    E << "notype";
   E << " " << getOp(op) << " ";
-  if (rt) E << rt->getName();
+  if (rt) E << *rt;
   else    E << "notype";
   return 0;
 }
@@ -687,13 +687,13 @@ const type* superman::getTypeOf(trinary_opcode op, const type* lt,
   // too many matches, this should not happen!
   internal_error E(__FILE__, __LINE__);
   E << "Cannot decide on trinary operation: ";
-  if (lt) E << lt->getName();
+  if (lt) E << *lt;
   else    E << "notype";
   E << " " << getFirst(op) << " ";
-  if (mt) E << mt->getName();
+  if (mt) E << *mt;
   else    E << "notype";
   E << " " << getSecond(op) << " ";
-  if (rt) E << rt->getName();
+  if (rt) E << *rt;
   else    E << "notype";
   return 0;
 }
@@ -729,10 +729,10 @@ const type* superman
   // too many matches, this should not happen!
   internal_error E(__FILE__, __LINE__);
   E << "Cannot decide on associative operation: ";
-  if (lt) E << lt->getName();
+  if (lt) E << *lt;
   else    E << "notype";
   E << " " << getOp(flip, op) << " ";
-  if (rt) E << rt->getName();
+  if (rt) E << *rt;
   else    E << "notype";
   return 0;
 }
@@ -984,12 +984,12 @@ expr* superman::makeAssocOp(const location &W, assoc_opcode op,
     typechecking_error E(W);
     E << "Undefined associative operation: ";
     if (opnds[0])   opnds[0]->PrintType(E.stream());
-    else            E << NULTYPE->getName();
+    else            E << *NULTYPE;
     for (int i=1; i<N; i++) {
         bool f = flip ? flip[i] : 0;
         E << " " << getOp(f, op) << " ";
         if (opnds[i]) opnds[i]->PrintType(E.stream());
-        else          E << NULTYPE->getName();
+        else          E << *NULTYPE;
     }
     for (int i=0; i<N; i++)  Delete(opnds[i]);
     delete[] opnds;
@@ -1011,12 +1011,12 @@ expr* superman::makeAssocOp(const location &W, assoc_opcode op,
   internal_error E(__FILE__, __LINE__, W);
   E << "Cannot decide on associative operation: ";
   if (opnds[0])   opnds[0]->PrintType(E.stream());
-  else            E << NULTYPE->getName();
+  else            E << *NULTYPE;
   for (int i=1; i<N; i++) {
     bool f = flip ? flip[i] : 0;
     E << " " << getOp(f, op) << " ";
     if (opnds[i])   opnds[i]->PrintType(E.stream());
-    else            E << NULTYPE->getName();
+    else            E << *NULTYPE;
   }
   return 0;
 }

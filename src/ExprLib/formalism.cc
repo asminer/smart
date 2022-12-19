@@ -5,8 +5,9 @@
 formalism::formalism(const char* n, const char* sd, const char* ld)
  : simple_type(n, sd, ld)
 {
-  funcs = 0;
-  idents = 0;
+    funcs = nullptr;
+    idents = nullptr;
+    setFormalism();
 }
 
 formalism::~formalism()
@@ -45,10 +46,12 @@ void formalism::addCommonFuncs(List <msr_func> &cfl)
   }
 }
 
+/*
 bool formalism::isAFormalism() const
 {
   return true;
 }
+*/
 
 bool formalism::isLegalMeasureType(const type* mtype) const
 {

@@ -43,6 +43,7 @@ class type {
         bool func_definable;
         bool var_definable;
         bool printable;
+        bool is_formalism;
 
     protected:
         static const unsigned GENERAL    = 0;
@@ -57,125 +58,130 @@ class type {
 
         friend class type_initializer;
 
-        inline void setVoid() { is_void = true; }
+        inline void setVoid()       { is_void = true; }
+        inline void setFormalism()  { is_formalism = true; }
 
 public:
         type(const char* n);
         virtual ~type();
 
-        /*
-        static const char* getPlusInfinityString() {
-            return pos_infinity_string;
+        inline std::ostream& showName(std::ostream &s) const {
+            return s << name;
         }
-        static const char* getMinusInfinityString() {
-            return neg_infinity_string;
-        }
-        */
 
+        // TBD: remove this
         inline const char* getName() const { return name; }
-  inline bool matches(const char* n) const { return 0 == strcmp(n, name); }
-  virtual bool matchesOWD(const char* n) const;
 
-  inline void NoFunctions() { func_definable = false; }
-  inline void NoVariables() { var_definable = false; }
+        /// Return true if the name matches.
+        bool matches(const char* n) const;
+        /// Return true if the name matches, and we're a
+        /// one-word, definable type.
+        virtual bool matchesOWD(const char* n) const;
 
-  inline bool canDefineFuncOfThis() const { return func_definable; }
-  inline bool canDefineVarOfThis() const { return var_definable; }
+        inline void NoFunctions() { func_definable = false; }
+        inline void NoVariables() { var_definable = false; }
 
-  inline bool isVoid() const { return is_void; }
-  virtual bool isAFormalism() const;
+        inline bool canDefineFuncOfThis() const { return func_definable; }
+        inline bool canDefineVarOfThis() const { return var_definable; }
 
-  virtual const type* getSetElemType() const;
-  inline bool isASet() const { return getSetElemType(); }
-  virtual const type* getSetOfThis() const;
+        inline bool isVoid() const { return is_void; }
+        inline bool isAFormalism() const { return is_formalism; }
 
-  virtual modifier getModifier() const;
-  virtual const type* modifyType(modifier m) const;
-  virtual const type* removeModif() const;
+        virtual const type* getSetElemType() const;
+        inline bool isASet() const { return getSetElemType(); }
+        virtual const type* getSetOfThis() const;
 
-  virtual bool hasProc() const;
-  virtual const type* removeProc() const;
-  virtual const type* addProc() const;
-  virtual void setProc(const type* t);
+        virtual modifier getModifier() const;
+        virtual const type* modifyType(modifier m) const;
+        virtual const type* removeModif() const;
 
-  /// Strips all set, proc, modifiers.
-  virtual const simple_type* getBaseType() const = 0;
+        virtual bool hasProc() const;
+        virtual const type* removeProc() const;
+        virtual const type* addProc() const;
+        virtual void setProc(const type* t);
 
-  /// Neat trick: change the base type, keep set, proc, modifier status.
-  virtual const type* changeBaseType(const type* newbase) const;
+        /// Strips all set, proc, modifiers.
+        virtual const simple_type* getBaseType() const = 0;
 
-  /// Can we print objects of this type.
-  inline bool isPrintable() const { return printable; }
-  inline void setPrintable() { printable = true; }
+        /// Neat trick: change the base type, keep set, proc, modifier status.
+        virtual const type* changeBaseType(const type* newbase) const;
 
-  /** Print an abnormal result.
-      These are the same output regardless of type.
-        @param  s   Stream to write to
-        @param  r   Result to display, must not be Normal().
-        @param  w   Width to use (defaults to 0)
-  */
-  static bool print_abnormal(std::ostream &s, const result& r, int w=0);
+        /// Can we print objects of this type.
+        inline bool isPrintable() const { return printable; }
+        inline void setPrintable() { printable = true; }
 
-  /** Print a result of this type.
-      We must be "printable" according to isPrintable().
-        @param  s  Stream to write to.
-        @param  r  Result to display.
-        @param  w  Width to use (defaults to 0).
-        @param  p  Precision to use (negative for default).
-  */
-   bool print(std::ostream &s, const result& r, int w=0, int p=-1) const;
+        /** Print an abnormal result.
+            These are the same output regardless of type.
+                @param  s   Stream to write to
+                @param  r   Result to display, must not be Normal().
+                @param  w   Width to use (defaults to 0)
+        */
+        static bool print_abnormal(std::ostream &s, const result& r, int w=0);
 
-  /** Show a result.
-      Just like print(), except for strings:
-      show() will give you "the string.\n",
-      while print() will give you the string.
-  */
-  void show(std::ostream &s, const result& r) const;
+        /** Print a result of this type.
+            We must be "printable" according to isPrintable().
+                @param  s  Stream to write to.
+                @param  r  Result to display.
+                @param  w  Width to use (defaults to 0).
+                @param  p  Precision to use (negative for default).
+        */
+        bool print(std::ostream &s, const result& r, int w=0, int p=-1) const;
 
-  /** Fill the result, from a string.
-      Works only for "simple" types.
-      If the desired type is "STRING", then we simply
-      copy the string.
-      If the desired type is "INT" or "REAL",
-      then the following special strings are recognized,
-      in addition to the usual numerical ones.
-        infinity  : for positive infinity
-        -infinity  : for negative infinity
-        ?    : for "don't know"
-      On return, the result will hold the appropriate value,
-      or null if the conversion was not possible.
-        @param  r  Where the result will be stored.
-        @param  s  Input string.
-        @return true on success.
-  */
-  virtual void assignFromString(result& r, const char* s) const;
+        /** Show a result.
+            Just like print(), except for strings:
+            show() will give you "the string.\n",
+            while print() will give you the string.
+        */
+        void show(std::ostream &s, const result& r) const;
 
-  /** Comparison, for purposes of maintaining sets of this type.
-      Default behavior is to throw an error.
-      Works like "strcmp".
-      Any total ordering can be used for elements of the type,
-      even an ordering different from operators "<", ">", etc.
-      But it must be transitive:
-        compare(a,b)>0 and compare(b,c)>0 implies compare(a,c)>0
-      and it must be the case that
-        compare(a,b)==0 iff a==b
+        /** Fill the result, from a string.
+            Works only for "simple" types.
+            If the desired type is "STRING", then we simply
+            copy the string.
+            If the desired type is "INT" or "REAL",
+            then the following special strings are recognized,
+            in addition to the usual numerical ones.
+                infinity  : for positive infinity
+                -infinity  : for negative infinity
+                ?    : for "don't know"
+            On return, the result will hold the appropriate value,
+            or null if the conversion was not possible.
+                @param  r  Where the result will be stored.
+                @param  s  Input string.
+                @return true on success.
+        */
+        virtual void assignFromString(result& r, const char* s) const;
 
-      @param  a  First item.
-      @param  b  second item.
-      @return positive,   if a is larger than b,
-              zero,       if a equals b,
-              negative,   if a is less than b.
-  */
-  virtual int compare(const result& a, const result& b) const;
+        /** Comparison, for purposes of maintaining sets of this type.
+            Default behavior is to throw an error.
+            Works like "strcmp".
+            Any total ordering can be used for elements of the type,
+            even an ordering different from operators "<", ">", etc.
+            But it must be transitive:
+                compare(a,b)>0 and compare(b,c)>0 implies compare(a,c)>0
+            and it must be the case that
+                compare(a,b)==0 iff a==b
+
+            @param  a  First item.
+            @param  b  second item.
+            @return positive,   if a is larger than b,
+                    zero,       if a equals b,
+                    negative,   if a is less than b.
+        */
+        virtual int compare(const result& a, const result& b) const;
 
 protected:
-  virtual bool print_normal(std::ostream &s, const result& r,
+        virtual bool print_normal(std::ostream &s, const result& r,
                 int w=0, int p=-1) const;
-  virtual void show_normal(std::ostream &s, const result& r) const;
-  virtual void assign_normal(result& r, const char* s) const;
-  virtual int compare_normal(const result &x, const result &y) const;
+        virtual void show_normal(std::ostream &s, const result& r) const;
+        virtual void assign_normal(result& r, const char* s) const;
+        virtual int compare_normal(const result &x, const result &y) const;
 };
 
+inline std::ostream& operator << (std::ostream &s, const type &t)
+{
+    return t.showName(s);
+}
 
 /// Safe way to get a modifier
 inline modifier GetModifier(const type* t)

@@ -25,7 +25,7 @@ public:
   formalism(const char* n, const char* sd, const char* ld);
   virtual ~formalism();
 
-  virtual bool isAFormalism() const;
+//   virtual bool isAFormalism() const;
 
 
   // Formalism-specific functions

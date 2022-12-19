@@ -17,76 +17,77 @@ const char* type::neg_infinity_string;
 
 type::type(const char* n)
 {
-  name = n;
-  is_void = false;
-  func_definable = true;
-  var_definable = true;
-  printable = false;
+    name = n;
+    is_void = false;
+    func_definable = true;
+    var_definable = true;
+    printable = false;
+    is_formalism = false;
 }
 
 type::~type()
 {
 }
 
-bool type::matchesOWD(const char* n) const
+bool type::matches(const char* n) const
 {
-  return matches(n);
+    return 0 == strcmp(n, name);
 }
 
-bool type::isAFormalism() const
+bool type::matchesOWD(const char* n) const
 {
-  return false;
+    return 0 == strcmp(n, name);
 }
 
 const type* type::getSetElemType() const
 {
-  return 0;
+    return nullptr;
 }
 
 const type* type::getSetOfThis() const
 {
-  return 0;
+    return nullptr;
 }
 
 modifier type::getModifier() const
 {
-  return DETERM;
+    return DETERM;
 }
 
 const type* type::modifyType(modifier m) const
 {
-  if (DETERM == m)  return this;
-  return 0;
+    if (DETERM == m)  return this;
+    return nullptr;
 }
 
 const type* type::removeModif() const
 {
-  return this;
+    return this;
 }
 
 bool type::hasProc() const
 {
-  return false;
+    return false;
 }
 
 const type* type::removeProc() const
 {
-  return this;
+    return this;
 }
 
 const type* type::addProc() const
 {
-  return 0;
+    return nullptr;
 }
 
 void type::setProc(const type* t)
 {
-  DCASSERT(0);
+    DCASSERT(0);
 }
 
 const type* type::changeBaseType(const type* newbase) const
 {
-  return 0;
+    return nullptr;
 }
 
 bool type::print_abnormal(std::ostream &s, const result& r, int width)
@@ -121,20 +122,20 @@ bool type::print(std::ostream &s, const result& r, int w, int p) const
 
 void type::show(std::ostream &s, const result& r) const
 {
-  if (r.isUnknown() || r.isInfinity() || r.isNull()) {
-    print(s, r);
-    return;
-  }
-  return show_normal(s, r);
+    if (r.isNormal()) {
+        show_normal(s, r);
+    } else {
+       print_abnormal(s, r);
+    }
 }
 
 void type::assignFromString(result& r, const char* s) const
 {
-  if (0==s) {
-    r.setNull();
-    return;
-  }
-  assign_normal(r, s);
+    if (!s) {
+        r.setNull();
+        return;
+    }
+    assign_normal(r, s);
 }
 
 int type::compare(const result &x, const result &y) const
@@ -233,15 +234,15 @@ int typelist::Compare(const shared_object* o) const
 // *                      simple_type  methods                      *
 // ******************************************************************
 
-simple_type::simple_type(const char* n, const char* sd, const char* ld)
-: type (n)
+simple_type::simple_type(const char* n, const char* sd,
+    const char* ld) : type (n)
 {
   short_docs = sd;
   long_docs = ld;
-  phase_this = 0;
-  rand_this = 0;
-  proc_this = 0;
-  set_this = 0;
+  phase_this = nullptr;
+  rand_this = nullptr;
+  proc_this = nullptr;
+  set_this = nullptr;
 }
 
 simple_type::~simple_type()
