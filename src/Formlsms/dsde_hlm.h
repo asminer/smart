@@ -379,10 +379,38 @@ public:
         min = c;
       }
     }
-
-    return d;
   }
 
+  class cost_iterator: public std::iterator<
+                          std::input_iterator_tag,
+                          decision_vector *,
+                          int,
+                          const decision_vector *,
+                          decision_vector
+                          > {
+    decision_vector *dv;
+
+  public:
+
+    explicit cost_iterator(decision_vector *d) {
+      dv = d;
+    }
+
+    cost_iterator& operator++() {
+      return *this;
+    }
+    
+    cost_iterator operator++(int) {cost_iterator retval = *this; ++(*this); return retval;}
+    
+    bool operator==(cost_iterator other) const { return true; }
+    
+    bool operator!=(cost_iterator other) const {return !(*this == other);}
+    
+    reference operator*() const { return *dv; }
+  };
+
+  cost_iterator cost_begin() { return cost_iterator(this); }
+  cost_iterator cost_end() { return cost_iterator(this); }
 
 };
 

@@ -7,6 +7,7 @@
 #include "../ExprLib/mod_vars.h"
 #include "../ExprLib/values.h"
 #include "graph_llm.h"
+#include "dsde_hlm.h"
 
 #include "../Modules/biginttype.h"
 #include "../Modules/statesets.h"
@@ -1498,7 +1499,11 @@ void CTL_min_decision_cost_base::Compute(traverse_data &x, expr** pass, int np)
   DCASSERT(x.answer);
   DCASSERT(0==x.aggregate);
   DCASSERT(pass);
+  
   const graph_lldsm* llm = getLLM(x, pass[0]);
+  const hldsm* hlm = llm->GetParent();
+
+
   // stateset* p = grabParam(llm, pass[1], x);
   // setAnswer(x, llm->EX(revTime(), p));
   // Delete(p);
