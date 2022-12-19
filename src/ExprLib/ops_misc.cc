@@ -289,7 +289,7 @@ aggregates::aggregates(const location &W, expr **x, int nc)
   DCASSERT(nc>0);
   // determine the type
   typelist* tl = new typelist(nc);
-  for (int i=0; i<nc; i++) {
+  for (unsigned i=0; i<nc; i++) {
     tl->SetItem(i, em->SafeType(x[i]));
   }
   SetType(tl);

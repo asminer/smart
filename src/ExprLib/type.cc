@@ -197,37 +197,43 @@ int type::compare_normal(const result &x, const result &y) const
 // *                        typelist methods                        *
 // ******************************************************************
 
-typelist::typelist(int n) : shared_object()
+typelist::typelist(unsigned n) : shared_object()
 {
-  list = new const type*[n];
-  nt = n;
+    list = new const type*[n];
+    nt = n;
 }
 
 typelist::~typelist()
 {
-  delete[] list;
+    delete[] list;
 }
 
 bool typelist::Print(std::ostream &s, int) const
 {
-  DCASSERT(list);
-  s << ( list[0] ? list[0]->getName() : "error" );
-  for (int i=1; i<nt; i++) {
-    s << ':';
-    s << ( list[i] ? list[i]->getName() : "error" );
-  }
-  return true;
+    DCASSERT(list);
+
+    for (unsigned i=0; i<nt; i++) {
+        if (i) s << ':';
+        if (list[i]) {
+            s << *list[i];
+        } else {
+            s << "error";
+        }
+    }
+    return true;
 }
 
 int typelist::Compare(const shared_object* o) const
 {
-  if (o==this) return 0;
-  const typelist* otl = dynamic_cast <const typelist*> (o);
-  if (0==otl) return 1;
-  if (nt != otl->nt) return nt - otl->nt;
-  for (int i=0; i<nt; i++)
-    if (list[i] != otl->list[i]) return list[i] - otl->list[i];
-  return 0;
+    if (o==this) return 0;
+    const typelist* otl = dynamic_cast <const typelist*> (o);
+    if (0==otl) return 1;
+    if (nt > otl->nt) return 1;
+    if (nt < otl->nt) return -1;
+    for (unsigned i=0; i<nt; i++) {
+        if (list[i] != otl->list[i]) return list[i] - otl->list[i];
+    }
+    return 0;
 }
 
 // ******************************************************************

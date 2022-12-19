@@ -61,7 +61,7 @@ class type {
         inline void setVoid()       { is_void = true; }
         inline void setFormalism()  { is_formalism = true; }
 
-public:
+    public:
         type(const char* n);
         virtual ~type();
 
@@ -170,7 +170,7 @@ public:
         */
         virtual int compare(const result& a, const result& b) const;
 
-protected:
+    protected:
         virtual bool print_normal(std::ostream &s, const result& r,
                 int w=0, int p=-1) const;
         virtual void show_normal(std::ostream &s, const result& r) const;
@@ -186,38 +186,38 @@ inline std::ostream& operator << (std::ostream &s, const type &t)
 /// Safe way to get a modifier
 inline modifier GetModifier(const type* t)
 {
-  if (t)  return t->getModifier();
-  return NO_SUCH_MODIFIER;
+    if (t)  return t->getModifier();
+    return NO_SUCH_MODIFIER;
 }
 
 inline bool HasProc(const type* t)
 {
-  if (t)  return t->hasProc();
-  return false;
+    if (t)  return t->hasProc();
+    return false;
 }
 
 inline const simple_type* GetBase(const type* t)
 {
-  if (t)  return t->getBaseType();
-  return 0;
+    if (t)  return t->getBaseType();
+    return nullptr;
 }
 
 inline const type* ModifyType(modifier m, const type* t)
 {
-  if (t)  return t->modifyType(m);
-  return 0;
+    if (t)  return t->modifyType(m);
+    return nullptr;
 }
 
 inline const type* ProcifyType(const type* t)
 {
-  if (t)  return t->addProc();
-  return 0;
+    if (t)  return t->addProc();
+    return nullptr;
 }
 
 inline const type* ApplyPM(const type* pm, const type* bt)
 {
-  if (0==pm)  return bt;
-  return pm->changeBaseType(bt);
+    if (!pm)  return bt;
+    return pm->changeBaseType(bt);
 }
 
 // ******************************************************************
@@ -230,27 +230,28 @@ inline const type* ApplyPM(const type* pm, const type* bt)
     And it allows us to "share" them :^)
 */
 class typelist : public shared_object {
-  const type** list;
-  int nt;
-public:
-  typelist(int nt);
-  virtual ~typelist();
-  inline void SetItem(int n, const type* t) {
-    DCASSERT(list);
-    CHECK_RANGE(0, n, nt);
-    DCASSERT(t);
-    list[n] = t;
-  }
-  inline const type* GetItem(int n) const {
-    DCASSERT(list);
-    CHECK_RANGE(0, n, nt);
-    return list[n];
-  }
-  inline int Length() const {
-    return nt;
-  }
-  virtual bool Print(std::ostream &s, int w=0) const;
-  virtual int Compare(const shared_object *o) const;
+        const type** list;
+        unsigned nt;
+    public:
+        typelist(unsigned nt);
+        virtual ~typelist();
+        inline void SetItem(unsigned n, const type* t) {
+            DCASSERT(list);
+            DCASSERT(n < nt);
+            DCASSERT(t);
+            list[n] = t;
+        }
+        inline const type* GetItem(unsigned n) const {
+            DCASSERT(list);
+            DCASSERT(n < nt);
+            return list[n];
+        }
+        inline unsigned Length() const {
+            return nt;
+        }
+        // Required for shared_object
+        virtual bool Print(std::ostream &s, int w=0) const;
+        virtual int Compare(const shared_object *o) const;
 };
 
 
@@ -263,42 +264,42 @@ public:
 /** Simple type with value, such as integer or boolean.
 */
 class simple_type : public type {
-  const type* phase_this;
-  const type* rand_this;
-  const type* proc_this;
-  const type* set_this;
-protected:
-  const char* short_docs;
-  const char* long_docs;
-public:
-  simple_type(const char* n, const char* sd, const char* ld);
-  virtual ~simple_type();
+        const type* phase_this;
+        const type* rand_this;
+        const type* proc_this;
+        const type* set_this;
+    protected:
+        const char* short_docs;
+        const char* long_docs;
+    public:
+        simple_type(const char* n, const char* sd, const char* ld);
+        virtual ~simple_type();
 
-  // Documentation
-  inline const char* shortDocs() const { return short_docs; }
-  inline const char* longDocs() const { return long_docs; }
+        // Documentation
+        inline const char* shortDocs() const { return short_docs; }
+        inline const char* longDocs() const { return long_docs; }
 
 
-  inline void setPhase(const type* t) {
-    DCASSERT(0==phase_this);
-    phase_this = t;
-  }
-  inline void setRand(const type* t) {
-    DCASSERT(0==rand_this);
-    rand_this = t;
-  }
-  inline void setSet(const type* t) {
-    DCASSERT(0==set_this);
-    set_this = t;
-  }
+        inline void setPhase(const type* t) {
+            DCASSERT(!phase_this);
+            phase_this = t;
+        }
+        inline void setRand(const type* t) {
+            DCASSERT(!rand_this);
+            rand_this = t;
+        }
+        inline void setSet(const type* t) {
+            DCASSERT(!set_this);
+            set_this = t;
+        }
 
-  virtual const type* getSetOfThis() const;
-  virtual const type* modifyType(modifier m) const;
-  virtual const type* addProc() const;
-  virtual void setProc(const type* t);
+        virtual const type* getSetOfThis() const;
+        virtual const type* modifyType(modifier m) const;
+        virtual const type* addProc() const;
+        virtual void setProc(const type* t);
 
-  virtual const simple_type* getBaseType() const;
-  virtual const type* changeBaseType(const type* newbase) const;
+        virtual const simple_type* getBaseType() const;
+        virtual const type* changeBaseType(const type* newbase) const;
 };
 
 
@@ -327,14 +328,14 @@ class void_type : public simple_type {
 /// Handy routine to go from x ph y -> x rand y.
 inline const type* Phase2Rand(const type* lct)
 {
-  if (0==lct) return 0;
-  if (lct->getModifier() != PHASE) return lct;
-  const type* ans = lct->getBaseType();
-  DCASSERT(ans);
-  ans = ans->modifyType(RAND);
-  DCASSERT(ans);
-  if (lct->hasProc()) ans = ans->addProc();
-  return ans;
+    if (!lct) return nullptr;
+    if (lct->getModifier() != PHASE) return lct;
+    const type* ans = lct->getBaseType();
+    DCASSERT(ans);
+    ans = ans->modifyType(RAND);
+    DCASSERT(ans);
+    if (lct->hasProc()) ans = ans->addProc();
+    return ans;
 }
 
 
