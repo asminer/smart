@@ -91,7 +91,7 @@ public:
 
 
 public:
-  inline option_manager* OptMan() { return em->OptMan(); }
+  // inline option_manager* OptMan() { return em->OptMan(); }
   inline const type* FindOWDType(const char* s) const {
     DCASSERT(em);
     return em->findOWDType(s);

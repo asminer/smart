@@ -974,7 +974,7 @@ option* BuildOptionHeader(char* name)
   if (oc) {
     om = oc->readSettings();
   } else {
-    om = pm->OptMan();
+    om = getGlobalOptionManager();
   }
   answer = om ? om->FindOption(name) : 0;
 

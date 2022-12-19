@@ -782,7 +782,10 @@ init_data_init::init_data_init() : initializer("init_data.cc", 1, 1)
 {
     builds_resource(0, "init_data.cc");
     needs_resource(1, "OM");
+}
 
+void init_data_init::execute()
+{
     real_type::index_precision = 1e-5;
 
     option_manager* om = dynamic_cast <option_manager*> (get_object(1, "OM"));

@@ -82,7 +82,7 @@ public:
     class reachset : public shared_object {
         const state_lldsm* parent;
       protected:
-        static exprman* em;
+        // static exprman* em;
       public:
         /**
             Abstract base class for different state orders.
