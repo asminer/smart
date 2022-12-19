@@ -2778,7 +2778,8 @@ void int2phint::converter::Compute(traverse_data &x)
     }
     // must be -infinity
     expr_error E(x.parent, x.answer);
-    E << "integer " << type::getMinusInfinityString();
+    E << "integer ";
+    type::print_abnormal(E.stream(), *x.answer);
     E << " cannot be converted to type phase int";
     return;
   }
@@ -2887,7 +2888,8 @@ void real2phreal::converter::Compute(traverse_data &x)
     }
     // must be -infinity
     expr_error E(x.parent, x.answer);
-    E << "real " << type::getMinusInfinityString();
+    E << "real ";
+    type::print_abnormal(E.stream(), *x.answer);
     E << " cannot be converted to type phase real";
     return;
   }

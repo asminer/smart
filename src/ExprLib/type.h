@@ -63,12 +63,14 @@ public:
         type(const char* n);
         virtual ~type();
 
+        /*
         static const char* getPlusInfinityString() {
             return pos_infinity_string;
         }
         static const char* getMinusInfinityString() {
             return neg_infinity_string;
         }
+        */
 
         inline const char* getName() const { return name; }
   inline bool matches(const char* n) const { return 0 == strcmp(n, name); }

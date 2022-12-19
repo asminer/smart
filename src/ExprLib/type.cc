@@ -99,10 +99,10 @@ bool type::print_abnormal(std::ostream &s, const result& r, int width)
     if (r.isInfinity()) {
         if (r.signInfinity() < 0) {
             DCASSERT(neg_infinity_string);
-            s << formatted_string(getMinusInfinityString(), width);
+            s << formatted_string(neg_infinity_string, width);
         } else {
             DCASSERT(pos_infinity_string);
-            s << formatted_string(getPlusInfinityString(), width);
+            s << formatted_string(pos_infinity_string, width);
         }
         return true;
     }

@@ -440,9 +440,14 @@ inf_or_zero_ph::inf_or_zero_ph(bool d, bool inf) : phase_dist(d)
 
 bool inf_or_zero_ph::Print(std::ostream  &s, int) const
 {
-  if (infty)   s << type::getPlusInfinityString();
-  else         s << 0;
-  return true;
+    if (infty) {
+        result inf;
+        inf.setInfinity(+1);
+        type::print_abnormal(s, inf);
+    } else {
+        s << '0';
+    }
+    return true;
 }
 
 void inf_or_zero_ph::Sample(traverse_data &x)
