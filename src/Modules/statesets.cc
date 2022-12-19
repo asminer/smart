@@ -1,6 +1,7 @@
 
 #include "../Options/optman.h"
-#include "../ExprLib/startup.h"
+#include "../Utils/initializer.h"
+#include "../ExprLib/startup.h" //
 #include "../ExprLib/exprman.h"
 #include "../ExprLib/unary.h"
 #include "../ExprLib/binary.h"
@@ -832,14 +833,14 @@ void empty_si::Compute(traverse_data &x, expr** pass, int np)
 // *                                                                *
 // ******************************************************************
 
-class init_statesets : public startup {
+class old_init_statesets : public startup {
   public:
-    init_statesets();
+    old_init_statesets();
     virtual bool execute();
 };
-init_statesets the_stateset_startup;
+old_init_statesets the_stateset_startup;
 
-init_statesets::init_statesets() : startup("init_statesets")
+old_init_statesets::old_init_statesets() : startup("init_statesets")
 {
   usesResource("em");
   usesResource("st");
@@ -848,14 +849,11 @@ init_statesets::init_statesets() : startup("init_statesets")
   buildsResource("types");
 }
 
-bool init_statesets::execute()
+bool old_init_statesets::execute()
 {
   if (0==em)  return false;
 
   stateset::em = em;
-
-  // Library registry
-  // em->registerLibrary(  &intset_lib_data );
 
   // Type registry
   simple_type* t_stateset = new stateset_type;
@@ -869,14 +867,6 @@ bool init_statesets::execute()
   em->registerOperation(  new stateset_union_op       );
   em->registerOperation(  new stateset_intersect_op   );
 
-  // Options
-  stateset::print_indexes = true;
-  if (em->OptMan())
-      em->OptMan()->addBoolOption("StatesetPrintIndexes",
-        "If true, when a stateset is printed, state indexes are displayed; otherwise, states are displayed.",
-        stateset::print_indexes
-      );
-
   if (0==st) return false;
 
   // Functions
@@ -885,4 +875,32 @@ bool init_statesets::execute()
   return true;
 }
 
+// ******************************************************************
+
+class init_statesets : public initializer {
+    public:
+        init_statesets();
+    protected:
+        virtual void execute();
+};
+static init_statesets the_stateset_initializer;
+
+init_statesets::init_statesets() : initializer("statesets.cc", 1, 1)
+{
+    builds_resource(0, "statesets.cc");
+    needs_resource(1, "OM");
+}
+
+void init_statesets::execute()
+{
+    //
+    // Options
+    //
+    stateset::print_indexes = true;
+    option_manager* om = dynamic_cast <option_manager*> (get_object(1, "OM"));
+    if (om) om->addBoolOption("StatesetPrintIndexes",
+        "If true, when a stateset is printed, state indexes are displayed; otherwise, states are displayed.",
+        stateset::print_indexes
+    );
+}
 

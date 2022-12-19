@@ -4,6 +4,7 @@
 #include "../Options/optman.h"
 #include "exprman.h"
 #include "../Utils/strings.h"
+#include "../Utils/initializer.h"
 #include "casting.h"
 #include "sets.h"
 #include "intervals.h"
@@ -168,11 +169,10 @@ private:
   static double index_precision;
   static unsigned output_format;
   static unsigned report_format;
-  friend void InitTypes(exprman* em);
-  friend void MakeRealFormatOptions(exprman* em);
+  friend class init_data_init;
 };
 
-double real_type::index_precision = 1e-5;
+double real_type::index_precision;
 
 // ******************************************************************
 // *                       real_type  methods                       *
@@ -766,6 +766,39 @@ expr* real2int::convert(const location &W, expr* e, const type* nt) const
 
 // ******************************************************************
 // *                                                                *
+// *                         Initialization                         *
+// *                                                                *
+// ******************************************************************
+
+class init_data_init : public initializer {
+    public:
+        init_data_init();
+    protected:
+        virtual void execute();
+};
+static init_data_init the_init_data_initializer;
+
+init_data_init::init_data_init() : initializer("init_data.cc", 1, 1)
+{
+    builds_resource(0, "init_data.cc");
+    needs_resource(1, "OM");
+
+    real_type::index_precision = 1e-5;
+
+    option_manager* om = dynamic_cast <option_manager*> (get_object(1, "OM"));
+    if (!om) return;
+
+    om->addRealOption(
+        "IndexPrecision",
+        "Epsilon for real set element comparisons.",
+        real_type::index_precision,
+        true, false, 0,
+        false, false, 0
+    );
+}
+
+// ******************************************************************
+// *                                                                *
 // *                                                                *
 // *                           Front  end                           *
 // *                                                                *
@@ -820,15 +853,6 @@ void InitTypes(exprman* em)
   em->registerConversion( new elem2set        );
   em->registerConversion( new int2real        );
   em->registerConversion( new real2int        );
-
-  // options
-  if (em->OptMan()) em->OptMan()->addRealOption(
-      "IndexPrecision",
-      "Epsilon for real set element comparisons.",
-      real_type::index_precision,
-      true, false, 0,
-      false, false, 0
-  );
 
   // Operators
   InitBooleanOps(em);

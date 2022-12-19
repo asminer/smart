@@ -12,7 +12,7 @@ class result;
 // all of this required for infinity string option.
 // class option;
 // class option_manager;
-class exprman;
+// class exprman;
 
 typedef unsigned char  modifier;
 
@@ -106,6 +106,14 @@ public:
   inline bool isPrintable() const { return printable; }
   inline void setPrintable() { printable = true; }
 
+  /** Print an abnormal result.
+      These are the same output regardless of type.
+        @param  s   Stream to write to
+        @param  r   Result to display, must not be Normal().
+        @param  w   Width to use (defaults to 0)
+  */
+  static bool print_abnormal(std::ostream &s, const result& r, int w=0);
+
   /** Print a result of this type.
       We must be "printable" according to isPrintable().
         @param  s  Stream to write to.
@@ -113,7 +121,7 @@ public:
         @param  w  Width to use (defaults to 0).
         @param  p  Precision to use (negative for default).
   */
-  bool print(std::ostream &s, const result& r, int w=0, int p=-1) const;
+   bool print(std::ostream &s, const result& r, int w=0, int p=-1) const;
 
   /** Show a result.
       Just like print(), except for strings:

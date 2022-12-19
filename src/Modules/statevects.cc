@@ -1,7 +1,8 @@
 
 #include "../Options/optman.h"
 #include "../Options/options.h"
-#include "../ExprLib/startup.h"
+#include "../Utils/initializer.h"
+#include "../ExprLib/startup.h" //
 #include "../ExprLib/exprman.h"
 #include "../SymTabs/symtabs.h"
 #include "../ExprLib/functions.h"
@@ -1282,14 +1283,14 @@ void expected_si::Compute(traverse_data &x, expr** pass, int np)
 // *                                                                *
 // ******************************************************************
 
-class init_statevects : public startup {
+class old_init_statevects : public startup {
   public:
-    init_statevects();
+    old_init_statevects();
     virtual bool execute();
 };
-init_statevects the_statevect_startup;
+old_init_statevects the_statevect_startup;
 
-init_statevects::init_statevects() : startup("init_statevects")
+old_init_statevects::old_init_statevects() : startup("init_statevects")
 {
   usesResource("em");
   usesResource("st");
@@ -1298,7 +1299,7 @@ init_statevects::init_statevects() : startup("init_statevects")
   buildsResource("types");
 }
 
-bool init_statevects::execute()
+bool old_init_statevects::execute()
 {
   if (0==em)  return false;
 
@@ -1318,10 +1319,45 @@ bool init_statevects::execute()
   // Operators
   // ------------------------------------------------------------------
 
-  // Options
+  // Functions
   // ------------------------------------------------------------------
-  if (em->OptMan()) {
-        option* o = em->OptMan()->addRadioOption("StatevectDisplayStyle",
+  if (0==st) return false;
+  st->AddSymbol(  new gt_si                     );
+  st->AddSymbol(  new ge_si                     );
+  st->AddSymbol(  new lt_si                     );
+  st->AddSymbol(  new le_si                     );
+
+  st->AddSymbol(  new condition_si              );
+  st->AddSymbol(  new prob_si                   );
+  st->AddSymbol(  new expected_si(t_stateprobs) );
+  st->AddSymbol(  new expected_si(t_statemsrs)  );
+
+  return true;
+}
+
+// ******************************************************************
+
+class init_statevects : public initializer {
+    public:
+        init_statevects();
+    protected:
+        virtual void execute();
+};
+static init_statevects the_statevect_initializer;
+
+init_statevects::init_statevects() : initializer("statevects.cc", 1, 1)
+{
+    builds_resource(0, "statevects.cc");
+    needs_resource(1, "OM");
+}
+
+void init_statevects::execute()
+{
+    // Options
+    // ------------------------------------------------------------------
+    option_manager* om = dynamic_cast <option_manager*> (get_object(1, "OM"));
+    if (om) {
+        option* o = om->addRadioOption("StatevectDisplayStyle",
             "Style to display a statedist, stateprobs, or statemsrs vector.",
             3, statevect::display_style
         );
@@ -1340,23 +1376,8 @@ bool init_statevects::execute()
             "Vectors are displayed in sparse format, with states.",
             statevect::SSTATE
         );
-  }
-  statevect::display_style = statevect::SINDEX;
+    }
+    statevect::display_style = statevect::SINDEX;
 
-
-  // Functions
-  // ------------------------------------------------------------------
-  if (0==st) return false;
-  st->AddSymbol(  new gt_si                     );
-  st->AddSymbol(  new ge_si                     );
-  st->AddSymbol(  new lt_si                     );
-  st->AddSymbol(  new le_si                     );
-
-  st->AddSymbol(  new condition_si              );
-  st->AddSymbol(  new prob_si                   );
-  st->AddSymbol(  new expected_si(t_stateprobs) );
-  st->AddSymbol(  new expected_si(t_statemsrs)  );
-
-  return true;
 }
 

@@ -2887,7 +2887,7 @@ void real2phreal::converter::Compute(traverse_data &x)
     }
     // must be -infinity
     expr_error E(x.parent, x.answer);
-    E << "real -" << type::getMinusInfinityString();
+    E << "real " << type::getMinusInfinityString();
     E << " cannot be converted to type phase real";
     return;
   }

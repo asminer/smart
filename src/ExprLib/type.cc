@@ -1,7 +1,6 @@
 
 #include "type.h"
 #include "result.h"
-#include "exprman.h"
 #include "../Options/optman.h"
 #include "../Options/options.h"
 #include "../Utils/initializer.h"
@@ -90,7 +89,7 @@ const type* type::changeBaseType(const type* newbase) const
   return 0;
 }
 
-bool type::print(std::ostream &s, const result& r, int width, int prec) const
+bool type::print_abnormal(std::ostream &s, const result& r, int width)
 {
     DCASSERT(isPrintable());
     if (r.isUnknown()) {
@@ -111,7 +110,13 @@ bool type::print(std::ostream &s, const result& r, int width, int prec) const
         s << formatted_string("null", width);
         return true;
     }
-    return print_normal(s, r, width, prec);
+    DCASSERT(false);
+    return false;
+}
+
+bool type::print(std::ostream &s, const result& r, int w, int p) const
+{
+    return r.isNormal() ? print_normal(s, r, w, p) : print_abnormal(s, r, w);
 }
 
 void type::show(std::ostream &s, const result& r) const

@@ -187,8 +187,8 @@ public:
   /// Called when we are done registering objects.
   virtual void finalize() = 0;
 
-  inline option_manager* OptMan() { return om; }
-  inline const option_manager* OptMan() const { return om; }
+  // inline option_manager* OptMan() { return om; }
+  // inline const option_manager* OptMan() const { return om; }
 
   option* findOption(const char* name) const;
 
