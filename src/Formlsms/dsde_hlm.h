@@ -8,6 +8,7 @@
 #include "../_IntSets/intset.h"
 
 #include <vector>
+#include <queue>
 // **************************************************************************
 // *                                                                        *
 // *                           model_event  class                           *
@@ -332,87 +333,99 @@ public:
 
 // **************************************************************************
 // *                                                                        *
-// *                            decision_vector                             *
+// *                            decision_set                                *
 // *                                                                        *
 // **************************************************************************
 
-class decision_vector : public model_var {
+class decision_set_value;
+
+class decision_set {
+
+  enum {
+    cost
+  } search_policy;
+
   /// Underlying data structure
-  /// Will be kept sorted based on cost
-  std::vector<decision*> decisions;
+  decision** decisions;
+  int size;
+  int policy;
 
 public:
-  decision_vector(const symbol* w, const model_instance* pn) : model_var(w,pn) {}
+  decision_set(int nd) { 
+    policy = cost; 
+    size = nd;
+    decisions = new decision*[nd];
+  }
 
 protected:
-  ~decision_vector() { }
+  ~decision_set() { }
 
 public:
   inline decision* getDecision(int i){
-    if(i < decisions.size()) {
-      return decisions[i]; 
-    }
-    return NULL; // fix
+    DCASSERT(i >= 0 && i < size);
+    return decisions[i]; 
   }
 
   inline int getNumDecisions() {
-    return decisions.size();
+    return size;
   }
 
   inline bool isEmpty() {
-    return decisions.empty();
+    return size == 0;
   }
 
-  inline void addDecision(decision* d){
-    decisions.push_back(d);
+  /// used to construct this
+  // inline void addDecision(decision* add) {
+  //   decision *d;
+  //   for (int i = 0; i < size; ++i) {
+  //     d = 
+  //   }
+  // }
+
+  std::vector<decision_set_value*>* getNextEvals() {
+    std::vector<decision_set_value*>* evals = new std::vector<decision_set_value*>();
+
+    switch (policy) {
+      case cost:
+        /* code */
+        break;
+      
+      default:
+        break;
+    }
+
+    return evals;
   }
 
-  decision* getMinCostDecision() {
-    if (isEmpty()) return NULL;
-    
-    decision *d = decisions[0];
-    int min = d->getCost();
-    for (auto it = decisions.begin(); it != decisions.end(); ++it) {
-      int c = (*it)->getCost();
-      if (c < min) {
-        d = *it;
-        min = c;
-      }
-    }
-  }
-
-  class cost_iterator: public std::iterator<
-                          std::input_iterator_tag,
-                          decision_vector *,
-                          int,
-                          const decision_vector *,
-                          decision_vector
-                          > {
-    decision_vector *dv;
-
-  public:
-
-    explicit cost_iterator(decision_vector *d) {
-      dv = d;
-    }
-
-    cost_iterator& operator++() {
-      return *this;
-    }
-    
-    cost_iterator operator++(int) {cost_iterator retval = *this; ++(*this); return retval;}
-    
-    bool operator==(cost_iterator other) const { return true; }
-    
-    bool operator!=(cost_iterator other) const {return !(*this == other);}
-    
-    reference operator*() const { return *dv; }
-  };
-
-  cost_iterator cost_begin() { return cost_iterator(this); }
-  cost_iterator cost_end() { return cost_iterator(this); }
+  // void setDecisions(const decision_set_value* eval) {
+  //   DCASSERT(eval);
+  //   DCASSERT(decisions.size() == eval->size());
+  // }
 
 };
+
+/// Evaluation of a decision_set e.g., for a decision_set <d1,d2,d3>, 
+/// an evaluation might be: <U,T,U>
+// class decision_set_value {
+
+//   std::vector<result*> value;
+
+// public:
+//   decision_set_value(decision_set *dv) {
+//     for (int i = 0; i < dv->getNumDecisions(); ++i) {
+//       result *r = new result();
+//       r->setUnknown();
+//       value.push_back(r);
+//     }
+//   }
+
+//   ~decision_set_value() {
+//     for (result* r : value) {
+//       delete r;
+//     }
+//   }
+
+// };
 
 // **************************************************************************
 // *                                                                        *
