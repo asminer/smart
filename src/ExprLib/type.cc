@@ -29,6 +29,25 @@ type::~type()
 {
 }
 
+int type::Compare(const shared_object* s) const
+{
+    const type* st = dynamic_cast <const type*> (s);
+    if (st) {
+        return strcmp(name, st->name);
+    }
+    const shared_string* ss = dynamic_cast <const shared_string*> (s);
+    if (ss) {
+        return strcmp(name, ss->getStr());
+    }
+    return 1;
+}
+
+int type::Compare(const char* x) const
+{
+    if (x) return strcmp(name, x);
+    return 1;
+}
+
 bool type::matches(const char* n) const
 {
     return 0 == strcmp(n, name);

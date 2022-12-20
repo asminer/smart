@@ -36,8 +36,10 @@ class simple_type;
     This is an abstract base class.
     Since we only have a few types, this should make life significantly
     easier without introducing too much overhead.
+
+    It's a shared object, so it can go in splay trees :)
 */
-class type {
+class type : public shared_object {
         const char* name;
         bool is_void;
         bool func_definable;
@@ -63,11 +65,17 @@ class type {
 
     public:
         type(const char* n);
+    protected:
         virtual ~type();
+    public:
 
-        inline std::ostream& showName(std::ostream &s) const {
-            return s << name;
+        // shared object requirements
+        virtual bool Print(std::ostream &s, int width=0) const {
+            s << name;
+            return true;
         }
+        virtual int Compare(const shared_object* s) const;
+        virtual int Compare(const char* x) const;
 
         // TBD: remove this
         inline const char* getName() const { return name; }
@@ -180,7 +188,8 @@ class type {
 
 inline std::ostream& operator << (std::ostream &s, const type &t)
 {
-    return t.showName(s);
+    t.Print(s);
+    return s;
 }
 
 /// Safe way to get a modifier

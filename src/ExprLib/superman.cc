@@ -155,7 +155,7 @@ superman::~superman()
   Delete(default_expr);
 
   // type stuff
-  for (int i=0; i<last_type; i++)  delete reg_type[i];
+  for (int i=0; i<last_type; i++)  Delete(reg_type[i]);
   free(reg_type);
 
   // operations
