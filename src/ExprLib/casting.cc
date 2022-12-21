@@ -47,8 +47,7 @@ bool typecast::Print(std::ostream &s, int) const
     bool printed = false;
     if (!silent) {
         DCASSERT(Type());
-        s << Type()->getName();
-        s << '(';
+        s << *Type() << '(';
         printed = true;
     }
 

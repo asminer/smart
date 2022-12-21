@@ -145,7 +145,7 @@ public:
 // ******************************************************************
 
 converge_var::converge_var(const location &W, char* n)
- : symbol(W, em->REAL, n)
+ : symbol(W, type::findSimple("real"), n)
 {
   current.setNull();
   update.setNull();
@@ -699,15 +699,16 @@ expr* MakeCvgThing(const exprman* em, const location &W,
         Delete(rhs);
         return nullptr;
     }
+    const type* REAL = type::findSimple("real");
     const type* gt = em->SafeType(rhs);
-    if (!em->isPromotable(gt, em->REAL)) {
+    if (!em->isPromotable(gt, REAL)) {
         typechecking_error E(W);
         E << "Return type for identifier " << var->Name() << " should be ";
         var->PrintType(E.stream());
         Delete(rhs);
         return nullptr;
     }
-    rhs = em->promote(rhs, em->REAL);
+    rhs = em->promote(rhs, REAL);
     DCASSERT(! em->isError(rhs) );
     if (guess) {
         var->setGuessed();
@@ -740,15 +741,16 @@ expr* MakeArrayThing(const exprman* em, const location &W,
         Delete(rhs);
         return nullptr;
     }
+    const type* REAL = type::findSimple("real");
     const type* gt = em->SafeType(rhs);
-    if (!em->isPromotable(gt, em->REAL)) {
+    if (!em->isPromotable(gt, REAL)) {
         typechecking_error E(W);
         E << "Return type for array " << var->Name() << " should be ";
         var->PrintType(E.stream());
         Delete(rhs);
         return nullptr;
     }
-    rhs = em->promote(rhs, em->REAL);
+    rhs = em->promote(rhs, REAL);
     DCASSERT(! em->isError(rhs) );
     if (guess) {
         var->setGuessed();
