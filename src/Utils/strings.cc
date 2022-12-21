@@ -117,18 +117,57 @@ int shared_string::Compare(const shared_object* o) const
 {
     if (o==this) return 0;
     const shared_string *s = dynamic_cast<const shared_string*> (o);
-    if (!s) return 1;
-    if ( (!string) && (!s->string) ) return 0;
+    if (s) {
+        if ( (!string) && (!s->getStr()) ) return 0;
+        if (!string) return -1;
+        if (!s->getStr()) return 1;
+        return strcmp(string, s->getStr());
+    }
+    const const_string *cs = dynamic_cast<const const_string*> (o);
+    if (!cs) return 1;
+    if ( (!string) && (!s->getStr()) ) return 0;
     if (!string) return -1;
-    if (!s->string) return 1;
-    return strcmp(string, s->string);
+    if (!s->getStr()) return 1;
+    return strcmp(string, s->getStr());
 }
 
-int shared_string::Compare(const char* s) const
+// ******************************************************************
+// *                                                                *
+// *                     shared_string  methods                     *
+// *                                                                *
+// ******************************************************************
+
+const_string::const_string(const char* s) : shared_object()
 {
-    if ( (!string) && (!s) ) return 0;
-    if (!string) return -1;
-    if (!s) return 1;
-    return strcmp(string, s);
+    string = s;
 }
+
+bool const_string::Print(std::ostream &s, int indent) const
+{
+    if (indent < 0) {
+        s << std::setw(-indent) << std::left << string;
+    } else {
+        s << std::setw(indent) << std::right << string;
+    }
+    return true;
+}
+
+int const_string::Compare(const shared_object* o) const
+{
+    if (o==this) return 0;
+    const shared_string *s = dynamic_cast<const shared_string*> (o);
+    if (s) {
+        if ( (!string) && (!s->getStr()) ) return 0;
+        if (!string) return -1;
+        if (!s->getStr()) return 1;
+        return strcmp(string, s->getStr());
+    }
+    const const_string *cs = dynamic_cast<const const_string*> (o);
+    if (!cs) return 1;
+    if ( (!string) && (!s->getStr()) ) return 0;
+    if (!string) return -1;
+    if (!s->getStr()) return 1;
+    return strcmp(string, s->getStr());
+}
+
 

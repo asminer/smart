@@ -59,13 +59,6 @@ public:
         return this - o;
     }
 
-    /// Compare with a string.
-    /// TBD: kill this, and use a shared string in the other Compare?
-    virtual int Compare(const char* x) const {
-        DCASSERT(false);
-        return 0;
-    }
-
 protected:
     inline shared_object* ShareMe() {
 #ifdef DEBUG_LINKCOUNTS

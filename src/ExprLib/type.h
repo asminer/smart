@@ -7,6 +7,8 @@
 #include <string.h>
 
 class result;
+class splayOfShared;
+
 // class io_environ;
 
 // all of this required for infinity string option.
@@ -21,8 +23,6 @@ const modifier  PHASE = 1;
 const modifier  RAND  = 2;
 const modifier  ANY_MODIFIER = 254;
 const modifier  NO_SUCH_MODIFIER = 255;
-
-// TBD: how much of this can be hidden?
 
 // ******************************************************************
 // *                                                                *
@@ -39,52 +39,14 @@ class simple_type;
 
     It's a shared object, so it can go in splay trees :)
 */
-class type : public shared_object {
-        const char* name;
-        bool is_void;
-        bool func_definable;
-        bool var_definable;
-        bool printable;
-        bool is_formalism;
-
-    protected:
-        static const unsigned GENERAL    = 0;
-        static const unsigned FIXED      = 1;
-        static const unsigned SCIENTIFIC = 2;
-
-        static unsigned real_format;    // format for reals
-        static const char* int_comma;   // thousands sep for ints
-        static const char* real_comma;  // thousands sep for reals
-        static const char* pos_infinity_string;
-        static const char* neg_infinity_string;
-
-        friend class type_initializer;
-
-        inline void setVoid()       { is_void = true; }
-        inline void setFormalism()  { is_formalism = true; }
+class type : public shared_string {
 
     public:
         type(const char* n);
-    protected:
-        virtual ~type();
+        type(const std::string &s);
     public:
 
-        // shared object requirements
-        virtual bool Print(std::ostream &s, int width=0) const {
-            s << name;
-            return true;
-        }
-        virtual int Compare(const shared_object* s) const;
-        virtual int Compare(const char* x) const;
-
-        // TBD: remove this
-        inline const char* getName() const { return name; }
-
-        /// Return true if the name matches.
-        bool matches(const char* n) const;
-        /// Return true if the name matches, and we're a
-        /// one-word, definable type.
-        virtual bool matchesOWD(const char* n) const;
+        // Inherits Print and Compare from shared_string.
 
         inline void NoFunctions() { func_definable = false; }
         inline void NoVariables() { var_definable = false; }
@@ -113,6 +75,25 @@ class type : public shared_object {
 
         /// Neat trick: change the base type, keep set, proc, modifier status.
         virtual const type* changeBaseType(const type* newbase) const;
+
+        /** Comparison, for purposes of maintaining sets of this type.
+            Default behavior is to throw an error.
+            Works like "strcmp".
+            Any total ordering can be used for elements of the type,
+            even an ordering different from operators "<", ">", etc.
+            But it must be transitive:
+                compare(a,b)>0 and compare(b,c)>0 implies compare(a,c)>0
+            and it must be the case that
+                compare(a,b)==0 iff a==b
+
+            @param  a  First item.
+            @param  b  second item.
+            @return positive,   if a is larger than b,
+                    zero,       if a equals b,
+                    negative,   if a is less than b.
+        */
+        virtual int compare(const result& a, const result& b) const;
+
 
         /// Can we print objects of this type.
         inline bool isPrintable() const { return printable; }
@@ -160,74 +141,87 @@ class type : public shared_object {
         */
         virtual void assignFromString(result& r, const char* s) const;
 
-        /** Comparison, for purposes of maintaining sets of this type.
-            Default behavior is to throw an error.
-            Works like "strcmp".
-            Any total ordering can be used for elements of the type,
-            even an ordering different from operators "<", ">", etc.
-            But it must be transitive:
-                compare(a,b)>0 and compare(b,c)>0 implies compare(a,c)>0
-            and it must be the case that
-                compare(a,b)==0 iff a==b
 
-            @param  a  First item.
-            @param  b  second item.
-            @return positive,   if a is larger than b,
-                    zero,       if a equals b,
-                    negative,   if a is less than b.
+        //
+        // Type system static methods
+        //
+
+        /// Returns the modifier with given name, or NO_SUCH_MODIF.
+        static modifier findModifier(const char* name);
+
+        /**
+            Register a type into the type system.
+                @param  t   New type to add.
+                @return     If there's already a type with the same name as
+                            t, return the existing type; otherwise return t.
+         */
+        static simple_type* registerNew(simple_type* t);
+
+        /**
+            Find a simple type.
+            These are single-word type names with no modifiers.
+                @param  tname   type name
+                @return     A pointer to the matching type, or null.
+         */
+        static simple_type*  findSimple(const char* tname);
+
+        /**
+            Build "proc t" as a valid type.
+                @param  t   Base (simple) type.  For modified types,
+                            use allowProcMod instead.
         */
-        virtual int compare(const result& a, const result& b) const;
+        static void allowProc(simple_type* t);
+
+        /**
+            Build "mod t", and maybe "proc mod t", as valid types.
+                @param  proc    If true, also add proc mod t.
+                @param  mod     Modifier (PH or RAND; all others ignored).
+                @param  t       Base (simple) type.
+        */
+        static void allowProcMod(bool proc, modifier mod, simple_type* t);
+
+        /**
+            Build "{t}" as a valid type (set with elements of type t).
+                @param  t   Base (simple) type.
+        */
+        static void allowSetsOf(simple_type* t);
 
     protected:
+        inline void setVoid()               { is_void = true; }
+        inline void setFormalism()          { is_formalism = true; }
+
         virtual bool print_normal(std::ostream &s, const result& r,
                 int w=0, int p=-1) const;
         virtual void show_normal(std::ostream &s, const result& r) const;
         virtual void assign_normal(result& r, const char* s) const;
         virtual int compare_normal(const result &x, const result &y) const;
+
+    protected:
+        static const unsigned GENERAL    = 0;
+        static const unsigned FIXED      = 1;
+        static const unsigned SCIENTIFIC = 2;
+
+        static unsigned real_format;    // format for reals
+        static const char* int_comma;   // thousands sep for ints
+        static const char* real_comma;  // thousands sep for reals
+        static const char* pos_infinity_string;
+        static const char* neg_infinity_string;
+
+        friend class type_initializer;
+
+    private:
+        void init();
+
+    private:
+        const char* name;
+        bool is_void;
+        bool func_definable;
+        bool var_definable;
+        bool printable;
+        bool is_formalism;
+
+        static splayOfShared* allSimple;
 };
-
-inline std::ostream& operator << (std::ostream &s, const type &t)
-{
-    t.Print(s);
-    return s;
-}
-
-/// Safe way to get a modifier
-inline modifier GetModifier(const type* t)
-{
-    if (t)  return t->getModifier();
-    return NO_SUCH_MODIFIER;
-}
-
-inline bool HasProc(const type* t)
-{
-    if (t)  return t->hasProc();
-    return false;
-}
-
-inline const simple_type* GetBase(const type* t)
-{
-    if (t)  return t->getBaseType();
-    return nullptr;
-}
-
-inline const type* ModifyType(modifier m, const type* t)
-{
-    if (t)  return t->modifyType(m);
-    return nullptr;
-}
-
-inline const type* ProcifyType(const type* t)
-{
-    if (t)  return t->addProc();
-    return nullptr;
-}
-
-inline const type* ApplyPM(const type* pm, const type* bt)
-{
-    if (!pm)  return bt;
-    return pm->changeBaseType(bt);
-}
 
 // ******************************************************************
 // *                                                                *
@@ -334,6 +328,49 @@ class void_type : public simple_type {
 // *                                                                *
 // ******************************************************************
 
+inline std::ostream& operator << (std::ostream &s, const type &t)
+{
+    t.Print(s);
+    return s;
+}
+
+/// Safe way to get a modifier
+inline modifier GetModifier(const type* t)
+{
+    if (t)  return t->getModifier();
+    return NO_SUCH_MODIFIER;
+}
+
+inline bool HasProc(const type* t)
+{
+    if (t)  return t->hasProc();
+    return false;
+}
+
+inline const simple_type* GetBase(const type* t)
+{
+    if (t)  return t->getBaseType();
+    return nullptr;
+}
+
+inline const type* ModifyType(modifier m, const type* t)
+{
+    if (t)  return t->modifyType(m);
+    return nullptr;
+}
+
+inline const type* ProcifyType(const type* t)
+{
+    if (t)  return t->addProc();
+    return nullptr;
+}
+
+inline const type* ApplyPM(const type* pm, const type* bt)
+{
+    if (!pm)  return bt;
+    return pm->changeBaseType(bt);
+}
+
 /// Handy routine to go from x ph y -> x rand y.
 inline const type* Phase2Rand(const type* lct)
 {
@@ -348,10 +385,14 @@ inline const type* Phase2Rand(const type* lct)
 }
 
 
+
+// TBD: remove these
+
+/*
 type* newModifiedType(const char* n, modifier m, simple_type* base);
 type* newProcType(const char* n, type* base);
 type* newSetType(const char* n, simple_type* base);
-
+*/
 
 
 #endif

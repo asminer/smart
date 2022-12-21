@@ -4,9 +4,220 @@
 #include "../Options/optman.h"
 #include "../Options/options.h"
 #include "../Utils/initializer.h"
+#include "../Utils/splay.h"
+
+#include <sstream>
 
 // ******************************************************************
+// *                                                                *
+// *                        modif_type class                        *
+// *                                                                *
+// ******************************************************************
+
+/** Modified type, such as ph int.
+*/
+class modif_type : public type {
+    const type* base;
+    const type* proc_this;
+    modifier mod;
+public:
+    modif_type(const std::string &n, modifier m, simple_type* b);
+
+    virtual modifier getModifier() const;
+    virtual const type* modifyType(modifier m) const;
+    virtual const type* removeModif() const;
+    virtual const type* addProc() const;
+    virtual void setProc(const type* t);
+
+    virtual const simple_type* getBaseType() const;
+    virtual const type* changeBaseType(const type* newbase) const;
+};
+
+// ******************************************************************
+// *                       modif_type methods                       *
+// ******************************************************************
+
+modif_type::modif_type(const std::string &n, modifier m, simple_type* b)
+ : type(n)
+{
+    mod = m;
+    base = b;
+    proc_this = nullptr;
+    switch (m) {
+        case PHASE:
+            b->setPhase(this);
+            break;
+
+        case RAND:
+            b->setRand(this);
+            break;
+    }
+}
+
+modifier modif_type::getModifier() const
+{
+    return mod;
+}
+
+const type* modif_type::modifyType(modifier m) const
+{
+    if (mod == m)  return this;
+    return nullptr;
+}
+
+const type* modif_type::removeModif() const
+{
+    return base;
+}
+
+const type* modif_type::addProc() const
+{
+    return proc_this;
+}
+
+void modif_type::setProc(const type* t)
+{
+    DCASSERT(!proc_this);
+    proc_this = t;
+}
+
+const simple_type* modif_type::getBaseType() const
+{
+    return base->getBaseType();
+}
+
+const type* modif_type::changeBaseType(const type* newbase) const
+{
+    const type* foo = base->changeBaseType(newbase);
+    if (foo) return foo->modifyType(mod);
+    return nullptr;
+}
+
+// ******************************************************************
+// *                                                                *
+// *                        proc_type  class                        *
+// *                                                                *
+// ******************************************************************
+
+/** Procified type, such as proc int, or proc rand int.
+*/
+class proc_type : public type {
+    const type* base;
+public:
+    proc_type(const std::string &n, type* b);
+
+    virtual modifier getModifier() const;
+    virtual const type* modifyType(modifier m) const;
+    virtual const type* removeModif() const;
+    virtual bool hasProc() const;
+    virtual const type* removeProc() const;
+
+    virtual const simple_type* getBaseType() const;
+    virtual const type* changeBaseType(const type* newbase) const;
+};
+
+// ******************************************************************
+// *                       proc_type  methods                       *
+// ******************************************************************
+
+proc_type::proc_type(const std::string &n, type* b) : type(n)
+{
+    base = b;
+    b->setProc(this);
+}
+
+modifier proc_type::getModifier() const
+{
+    return base->getModifier();
+}
+
+const type* proc_type::modifyType(modifier m) const
+{
+    const type* foo = base->modifyType(m);
+    if (foo) return foo->addProc();
+    return nullptr;
+}
+
+const type* proc_type::removeModif() const
+{
+    return base->removeModif();
+}
+
+bool proc_type::hasProc() const
+{
+    return true;
+}
+
+const type* proc_type::removeProc() const
+{
+    return base;
+}
+
+const simple_type* proc_type::getBaseType() const
+{
+    return base->getBaseType();
+}
+
+const type* proc_type::changeBaseType(const type* newbase) const
+{
+    const type* foo = base->changeBaseType(newbase);
+    if (foo) return foo->addProc();
+    return nullptr;
+}
+
+
+// ******************************************************************
+// *                                                                *
+// *                         set_type class                         *
+// *                                                                *
+// ******************************************************************
+
+/** Set types, such as {int} or {place}.
+*/
+class set_type : public type {
+    const type* base;
+public:
+    set_type(const std::string &n, simple_type* b);
+
+    virtual const type* getSetElemType() const;
+
+    virtual const simple_type* getBaseType() const;
+    virtual const type* changeBaseType(const type* newbase) const;
+};
+
+// ******************************************************************
+// *                        set_type methods                        *
+// ******************************************************************
+
+set_type::set_type(const std::string &n, simple_type* b) : type(n)
+{
+    base = b;
+    b->setSet(this);
+}
+
+const type* set_type::getSetElemType() const
+{
+    return base;
+}
+
+const simple_type* set_type::getBaseType() const
+{
+    return base->getBaseType();
+}
+
+const type* set_type::changeBaseType(const type* newbase) const
+{
+    const type* foo = base->changeBaseType(newbase);
+    if (foo) return foo->getSetOfThis();
+    return nullptr;
+}
+
+// ******************************************************************
+// *                                                                *
+// *                                                                *
 // *                          type methods                          *
+// *                                                                *
+// *                                                                *
 // ******************************************************************
 
 unsigned type::real_format;
@@ -14,48 +225,25 @@ const char* type::int_comma;
 const char* type::real_comma;
 const char* type::pos_infinity_string;
 const char* type::neg_infinity_string;
+splayOfShared* type::allSimple;
 
-type::type(const char* n)
+type::type(const char* n) : shared_string(n)
 {
-    name = n;
+    init();
+}
+
+type::type(const std::string &s) : shared_string(s)
+{
+    init();
+}
+
+void type::init()
+{
     is_void = false;
     func_definable = true;
     var_definable = true;
     printable = false;
     is_formalism = false;
-}
-
-type::~type()
-{
-}
-
-int type::Compare(const shared_object* s) const
-{
-    const type* st = dynamic_cast <const type*> (s);
-    if (st) {
-        return strcmp(name, st->name);
-    }
-    const shared_string* ss = dynamic_cast <const shared_string*> (s);
-    if (ss) {
-        return strcmp(name, ss->getStr());
-    }
-    return 1;
-}
-
-int type::Compare(const char* x) const
-{
-    if (x) return strcmp(name, x);
-    return 1;
-}
-
-bool type::matches(const char* n) const
-{
-    return 0 == strcmp(n, name);
-}
-
-bool type::matchesOWD(const char* n) const
-{
-    return 0 == strcmp(n, name);
 }
 
 const type* type::getSetElemType() const
@@ -111,7 +299,7 @@ const type* type::changeBaseType(const type* newbase) const
 
 bool type::print_abnormal(std::ostream &s, const result& r, int width)
 {
-    DCASSERT(isPrintable());
+    // DCASSERT(isPrintable());
     if (r.isUnknown()) {
         s << formatted_string("?", width);
         return true;
@@ -159,22 +347,23 @@ void type::assignFromString(result& r, const char* s) const
 
 int type::compare(const result &x, const result &y) const
 {
-  if (x.isNormal() && y.isNormal())  return compare_normal(x, y);
+    if (x.isNormal() && y.isNormal())  return compare_normal(x, y);
 
-  if (x.isInfinity() && y.isInfinity())
-    return x.signInfinity() - y.signInfinity();
+    if (x.isInfinity() && y.isInfinity()) {
+        return x.signInfinity() - y.signInfinity();
+    }
 
-  if (x.isInfinity()) {
-      return x.signInfinity();
-  }
-  if (y.isInfinity()) {
-      return -y.signInfinity();
-  }
+    if (x.isInfinity()) {
+        return x.signInfinity();
+    }
+    if (y.isInfinity()) {
+        return -y.signInfinity();
+    }
 
-  if (x.isNull() && y.isNull()) return 0;
+    if (x.isNull() && y.isNull()) return 0;
 
-  if (x.isNull()) return -1;
-  return 1;
+    if (x.isNull()) return -1;
+    return 1;
 }
 
 bool type::print_normal(std::ostream &s, const result& r, int w, int p) const
@@ -190,30 +379,94 @@ bool type::print_normal(std::ostream &s, const result& r, int w, int p) const
 
 void type::show_normal(std::ostream &s, const result& r) const
 {
-  shared_object* foo = r.getPtr();
-  if (foo) {
-    foo->Print(s, 0);
-    return;
-  }
-  DCASSERT(0);
+    shared_object* foo = r.getPtr();
+    if (foo) {
+        foo->Print(s);
+        return;
+    }
+    DCASSERT(0);
 }
 
 void type::assign_normal(result& r, const char* s) const
 {
-  DCASSERT(0);
+    DCASSERT(0);
 }
 
 int type::compare_normal(const result &x, const result &y) const
 {
-  shared_object* xo = x.getPtr();
-  shared_object* yo = y.getPtr();
-  DCASSERT(xo);
-  DCASSERT(yo);
-  return xo->Compare(yo);
+    shared_object* xo = x.getPtr();
+    shared_object* yo = y.getPtr();
+    DCASSERT(xo);
+    DCASSERT(yo);
+    return xo->Compare(yo);
 }
 
 // ******************************************************************
+
+modifier type::findModifier(const char* name)
+{
+    if (strcmp(name, "ph") == 0)    return PHASE;
+    if (strcmp(name, "rand") == 0)  return RAND;
+    return NO_SUCH_MODIFIER;
+}
+
+simple_type* type::registerNew(simple_type* t)
+{
+    DCASSERT(allSimple);
+    simple_type* tnew = smart_cast <simple_type*> (allSimple->insert(t));
+    DCASSERT(tnew);
+    if (tnew != t) Delete(t);
+    return tnew;
+}
+
+simple_type* type::findSimple(const char* tname)
+{
+    static const_string S;
+    DCASSERT(allSimple);
+    S.setStr(tname);
+    return smart_cast <simple_type*> (allSimple->find(&S));
+}
+
+void type::allowProc(simple_type* t)
+{
+    if (!t) return;
+
+    std::stringstream ss;
+    ss << "proc " << *t;
+    new proc_type(ss.str(), t);
+}
+
+void type::allowProcMod(bool proc, modifier mod, simple_type* t)
+{
+    if (!t) return;
+    if ((mod != PHASE) && (mod != RAND)) return;
+
+    std::stringstream ss;
+    ss << ((PHASE == mod) ? "ph " : "rand ") << *t;
+
+    type* mt = new modif_type(ss.str(), mod, t);
+
+    if (proc) {
+        std::stringstream ps;
+        ps << "proc " << ss.str();
+        new proc_type(ps.str(), mt);
+    }
+}
+
+void type::allowSetsOf(simple_type* t)
+{
+    if (!t) return;
+
+    std::stringstream ss;
+    ss << '{' << *t << '}';
+    new set_type(ss.str(), t);
+}
+
+
+// ******************************************************************
+// *                                                                *
 // *                        typelist methods                        *
+// *                                                                *
 // ******************************************************************
 
 typelist::typelist(unsigned n) : shared_object()
@@ -256,7 +509,9 @@ int typelist::Compare(const shared_object* o) const
 }
 
 // ******************************************************************
+// *                                                                *
 // *                      simple_type  methods                      *
+// *                                                                *
 // ******************************************************************
 
 simple_type::simple_type(const char* n, const char* sd,
@@ -311,7 +566,9 @@ const type* simple_type::changeBaseType(const type* newbase) const
 }
 
 // ******************************************************************
+// *                                                                *
 // *                       void_type  methods                       *
+// *                                                                *
 // ******************************************************************
 
 void_type::void_type(const char* n, const char* sd, const char* ld)
@@ -323,227 +580,9 @@ void_type::void_type(const char* n, const char* sd, const char* ld)
 int void_type::compare(const result& a, const result &b) const
 {
     DCASSERT(getSetOfThis());
-    return SIGN(long(a.getPtr()) - long(b.getPtr()));
+    return SIGN(a.getPtr() - b.getPtr());
 }
 
-// ******************************************************************
-// *                                                                *
-// *                        modif_type class                        *
-// *                                                                *
-// ******************************************************************
-
-/** Modified type, such as ph int.
-*/
-class modif_type : public type {
-  const type* base;
-  const type* proc_this;
-  modifier mod;
-public:
-  modif_type(const char* n, modifier m, simple_type* b);
-  virtual ~modif_type();
-
-  virtual modifier getModifier() const;
-  virtual const type* modifyType(modifier m) const;
-  virtual const type* removeModif() const;
-  virtual const type* addProc() const;
-  virtual void setProc(const type* t);
-
-  virtual const simple_type* getBaseType() const;
-  virtual const type* changeBaseType(const type* newbase) const;
-};
-
-// ******************************************************************
-// *                       modif_type methods                       *
-// ******************************************************************
-
-modif_type::modif_type(const char* n, modifier m, simple_type* b)
- : type(n)
-{
-  mod = m;
-  base = b;
-  proc_this = 0;
-  switch (m) {
-    case PHASE:
-        b->setPhase(this);
-        break;
-
-    case RAND:
-        b->setRand(this);
-        break;
-  }
-}
-
-modif_type::~modif_type()
-{
-}
-
-modifier modif_type::getModifier() const
-{
-  return mod;
-}
-
-const type* modif_type::modifyType(modifier m) const
-{
-  if (mod == m)  return this;
-  return 0;
-}
-
-const type* modif_type::removeModif() const
-{
-  return base;
-}
-
-const type* modif_type::addProc() const
-{
-  return proc_this;
-}
-
-void modif_type::setProc(const type* t)
-{
-  DCASSERT(0==proc_this);
-  proc_this = t;
-}
-
-const simple_type* modif_type::getBaseType() const
-{
-  return base->getBaseType();
-}
-
-const type* modif_type::changeBaseType(const type* newbase) const
-{
-  const type* foo = base->changeBaseType(newbase);
-  if (foo) return foo->modifyType(mod);
-  return 0;
-}
-
-// ******************************************************************
-// *                                                                *
-// *                        proc_type  class                        *
-// *                                                                *
-// ******************************************************************
-
-/** Procified type, such as proc int, or proc rand int.
-*/
-class proc_type : public type {
-  const type* base;
-public:
-  proc_type(const char* n, type* b);
-  virtual ~proc_type();
-
-  virtual modifier getModifier() const;
-  virtual const type* modifyType(modifier m) const;
-  virtual const type* removeModif() const;
-  virtual bool hasProc() const;
-  virtual const type* removeProc() const;
-
-  virtual const simple_type* getBaseType() const;
-  virtual const type* changeBaseType(const type* newbase) const;
-};
-
-// ******************************************************************
-// *                       proc_type  methods                       *
-// ******************************************************************
-
-proc_type::proc_type(const char* n, type* b) : type(n)
-{
-  base = b;
-  b->setProc(this);
-}
-
-proc_type::~proc_type()
-{
-}
-
-modifier proc_type::getModifier() const
-{
-  return base->getModifier();
-}
-
-const type* proc_type::modifyType(modifier m) const
-{
-  const type* foo = base->modifyType(m);
-  if (foo) return foo->addProc();
-  return 0;
-}
-
-const type* proc_type::removeModif() const
-{
-  return base->removeModif();
-}
-
-bool proc_type::hasProc() const
-{
-  return true;
-}
-
-const type* proc_type::removeProc() const
-{
-  return base;
-}
-
-const simple_type* proc_type::getBaseType() const
-{
-  return base->getBaseType();
-}
-
-const type* proc_type::changeBaseType(const type* newbase) const
-{
-  const type* foo = base->changeBaseType(newbase);
-  if (foo) return foo->addProc();
-  return 0;
-}
-
-
-// ******************************************************************
-// *                                                                *
-// *                         set_type class                         *
-// *                                                                *
-// ******************************************************************
-
-/** Set types, such as {int} or {place}.
-*/
-class set_type : public type {
-  const type* base;
-public:
-  set_type(const char* n, simple_type* b);
-  virtual ~set_type();
-
-  virtual const type* getSetElemType() const;
-
-  virtual const simple_type* getBaseType() const;
-  virtual const type* changeBaseType(const type* newbase) const;
-};
-
-// ******************************************************************
-// *                        set_type methods                        *
-// ******************************************************************
-
-set_type::set_type(const char* n, simple_type* b) : type(n)
-{
-  base = b;
-  b->setSet(this);
-}
-
-set_type::~set_type()
-{
-}
-
-const type* set_type::getSetElemType() const
-{
-  return base;
-}
-
-const simple_type* set_type::getBaseType() const
-{
-  return base->getBaseType();
-}
-
-const type* set_type::changeBaseType(const type* newbase) const
-{
-  const type* foo = base->changeBaseType(newbase);
-  if (foo) return foo->getSetOfThis();
-  return 0;
-}
 
 // ******************************************************************
 // *                                                                *
@@ -573,6 +612,7 @@ void type_initializer::execute()
     type::pos_infinity_string = "infinity";
 //  type::pos_infinity_string = "+infinity";
     type::neg_infinity_string = "-infinity";
+    type::allSimple = new splayOfShared(0, 0);
 
     //
     // Add options
@@ -619,6 +659,7 @@ void type_initializer::execute()
 // *                                                                *
 // ******************************************************************
 
+/*
 type* newModifiedType(const char* n, modifier m, simple_type* base)
 {
   return new modif_type(n, m, base);
@@ -634,3 +675,4 @@ type* newSetType(const char* n, simple_type* base)
   return new set_type(n, base);
 }
 
+*/

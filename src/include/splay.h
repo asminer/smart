@@ -1,6 +1,6 @@
 
-#ifndef SPLAY_H
-#define SPLAY_H
+#ifndef SPLAY_OLD_H
+#define SPLAY_OLD_H
 
 #include "defines.h"
 
