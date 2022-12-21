@@ -72,7 +72,7 @@ void value::Traverse(traverse_data &x)
 
     case traverse_data::FindRange:
         DCASSERT(x.answer);
-        if (em->REAL == Type() || em->INT == Type()) {
+        if (type::matches(Type(), "real") || type::matches(Type(), "int")) {
           interval_object* foo = new interval_object;
           foo->Left().setFrom(val, Type());
           foo->Right().setFrom(val, Type());
@@ -84,12 +84,12 @@ void value::Traverse(traverse_data &x)
 
     case traverse_data::ComputeExpoRate:
         DCASSERT(x.answer);
-        if (em->REAL == Type()) {
+        if (type::matches(Type(), "real")) {
           if (0.0 == val.getReal())     x.answer->setInfinity(1);
           else                          x.answer->setNull();
           return;
         }
-        if (em->INT == Type()) {
+        if (type::matches(Type(), "int")) {
           if (0 == val.getInt())        x.answer->setInfinity(1);
           else                          x.answer->setNull();
           return;
@@ -105,11 +105,11 @@ void value::Traverse(traverse_data &x)
         try {
           const type* bt = Type();
           if (bt) bt = bt->getBaseType();
-          if (em->REAL == bt) {
+          if (type::matches(bt, "real")) {
             x.ddlib->buildSymbolicConst(val.getReal(), dd);
-          } else if (em->INT == bt) {
+          } else if (type::matches(bt, "int")) {
             x.ddlib->buildSymbolicConst(val.getInt(), dd);
-          } else if (em->BOOL == bt) {
+          } else if (type::matches(bt, "bool")) {
             x.ddlib->buildSymbolicConst(val.getBool(), dd);
           } else {
             internal_error E(__FILE__, __LINE__, Where());

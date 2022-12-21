@@ -524,8 +524,7 @@ bool array::checkArrayCall(const location &W, expr** indexes, int dim) const
       PrintHeader(E.stream());
       const type* at = GetIndexType(i);
       DCASSERT(at);
-      E << " expects type " << at->getName();
-      E << " for index " << GetIndexName(i);
+      E << " expects type " << *at << " for index " << GetIndexName(i);
       return false;
     }
     indexes[i] = em->promote(indexes[i], GetIndexType(i));

@@ -225,12 +225,15 @@ void expr::SetType(const expr* t)
 
 void expr::SetModelType(const model_def* mt)
 {
-  if (0==mt) return;
-  DCASSERT(0 == aggtype);
-  if (0 == simple) simple = em->MODEL;
-  DCASSERT(em->MODEL == simple || simple->isAFormalism());
-  DCASSERT(0 == model_type);
-  model_type = mt;
+    if (!mt) return;
+    DCASSERT(!aggtype);
+    if (simple) {
+        DCASSERT(simple->isAFormalism());
+    } else {
+        simple = type::findSimple("model");
+    }
+    DCASSERT(!model_type);
+    model_type = mt;
 }
 
 expr* expr::GetComponent(int i)
@@ -246,7 +249,7 @@ void expr::PrintType(std::ostream &s) const
     return;
   }
   if (simple) {
-    s << simple->getName();
+    s << *simple;
     return;
   }
   DCASSERT(0);

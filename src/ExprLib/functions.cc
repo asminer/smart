@@ -910,7 +910,7 @@ void fplist::check(const exprman* em, expr** pass, int np, int* scores) const
     }
 
     if (0==pass[i]) { // null parameter, may be ok
-      addToScores(em, err, em->NULTYPE, formal[fp]->Type(), scores);
+      addToScores(em, err, type::null, formal[fp]->Type(), scores);
       continue;
     }
 
@@ -1144,7 +1144,7 @@ int simple_internal::Traverse(traverse_data &x, expr** pass, int np)
 
 void simple_internal::PrintHeader(std::ostream &s, bool hide) const
 {
-  if (Type())  s << Type()->getName();
+  if (Type())  s << *Type();
   s << " " << Name();
   formals.PrintHeader(s, hide);
 }
@@ -1189,8 +1189,8 @@ model_instance* simple_internal
 model_internal::model_internal(const type* t, const char* name, int nf)
  : simple_internal(t, name, nf)
 {
-  SetFormal(0, em->MODEL, "-m");  // Impossible name!
-  formals.hide(0);
+    SetFormal(0, type::findSimple("model"), "-m");  // Impossible name!
+    formals.hide(0);
 }
 
 model_internal::~model_internal()
@@ -1309,7 +1309,7 @@ int user_func::Traverse(traverse_data &x, expr** pass, int np)
 
 void user_func::PrintHeader(std::ostream &s, bool hide) const
 {
-  if (Type())  s << Type()->getName();
+  if (Type())  s << *Type();
   s << " " << Name();
   formals.PrintHeader(s, hide);
 }

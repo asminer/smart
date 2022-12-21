@@ -15,14 +15,14 @@
 
 inline const type* Opt2Type(const exprman* em, option::type ot)
 {
-  switch (ot) {
-    case option::Boolean: return em->BOOL;
-    case option::Integer: return em->INT;
-    case option::Real:    return em->REAL;
-    case option::String:  return em->STRING;
-    default:              return 0;
-  }
-  return 0;
+    switch (ot) {
+        case option::Boolean:   return  type::findSimple("bool");
+        case option::Integer:   return  type::findSimple("int");
+        case option::Real:      return  type::findSimple("real");
+        case option::String:    return  type::findSimple("string");
+        default:                return  nullptr;
+    }
+    return nullptr;
 }
 
 // ******************************************************************
@@ -373,7 +373,7 @@ expr* exprman::makeOptionStatement(const location &W,
   DCASSERT(et);
   if (!isPromotable(et, ot)) {
       typechecking_error E(W);
-      E << "Option " << *o << " expects type " << ot->getName();
+      E << "Option " << *o << " expects type " << *ot;
       return makeError();
   }
 

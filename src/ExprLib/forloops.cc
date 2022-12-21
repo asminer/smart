@@ -189,7 +189,7 @@ symbol* exprman::makeIterator(const location &W,
     if (getPromoteDistance(vt, t->getSetOfThis()) < 0) {
         typechecking_error E(W);
         E << "Type mismatch: iterator " << name;
-        E << " expects set of type " << t->getName();
+        E << " expects set of type " << *t;
         Delete(vals);
         free(name);
         return 0;
@@ -210,7 +210,7 @@ expr* exprman::makeForLoop(const location &W,
   if (!isOrdinary(stmt))  {
     return Share(stmt);
   }
-  DCASSERT(stmt->Type() == findType("void"));
+  DCASSERT(type::matches(stmt->Type(), "void"));
 #ifdef DEVELOPMENT_CODE
   for (int i=0; i<dim; i++) {
     iterator* foo = dynamic_cast <iterator*> (iters[i]);

@@ -82,13 +82,6 @@ int symbol::Compare(const shared_object* o) const
     return name->Compare(s->name);
 }
 
-int symbol::Compare(const char* s) const
-{
-    if ( (!name) && (!s) ) return 0;
-    if (!name) return  -1;
-    return name->Compare(s);
-}
-
 void symbol::Traverse(traverse_data &x)
 {
     DCASSERT(0==x.aggregate);
@@ -292,13 +285,13 @@ void constfunc::Compute(traverse_data &x)
   } // if deplist
   SafeCompute(return_expr, x);
   // neat trick!!!
-  if (em->MODEL == Type() && x.answer->getPtr()) {
+  if (type::matches(Type(), "model") && x.answer->getPtr()) {
     symbol* mi = smart_cast <symbol*> (x.answer->getPtr());
     DCASSERT(mi);
     mi->Rename(SharedName());
   }
   cache = *(x.answer);
-  if (Type() != em->VOID) {
+  if (!type::matches(Type(), "void")) {
     SetSubstitution(true);
   }
 }
@@ -354,7 +347,7 @@ symbol* exprman::makeConstant(const location &W, const type* t,
     E << "Return type for identifier ";
     if (name)   E << name;
     else        E << "(no name)";
-    E << " should be " << t->getName();
+    E << " should be " << *t;
     free(name);
     return 0;
   }
@@ -380,7 +373,7 @@ symbol* exprman::makeConstant(const symbol* w,
     E << "Return type for identifier ";
     if (w->Name())  E << w->Name();
     else            E << "(no name)";
-    E << " should be " << t->getName();
+    E << " should be " << *t;
     return 0;
   }
   rhs = promote(rhs, t);
