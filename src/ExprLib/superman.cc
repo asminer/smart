@@ -991,12 +991,12 @@ expr* superman::makeAssocOp(const location &W, assoc_opcode op,
     typechecking_error E(W);
     E << "Undefined associative operation: ";
     if (opnds[0])   opnds[0]->PrintType(E.stream());
-    else            E << *NULTYPE;
+    else            E << *type::null;
     for (int i=1; i<N; i++) {
         bool f = flip ? flip[i] : 0;
         E << " " << getOp(f, op) << " ";
         if (opnds[i]) opnds[i]->PrintType(E.stream());
-        else          E << *NULTYPE;
+        else          E << *type::null;
     }
     for (int i=0; i<N; i++)  Delete(opnds[i]);
     delete[] opnds;
@@ -1018,12 +1018,12 @@ expr* superman::makeAssocOp(const location &W, assoc_opcode op,
   internal_error E(__FILE__, __LINE__, W);
   E << "Cannot decide on associative operation: ";
   if (opnds[0])   opnds[0]->PrintType(E.stream());
-  else            E << *NULTYPE;
+  else            E << *type::null;
   for (int i=1; i<N; i++) {
     bool f = flip ? flip[i] : 0;
     E << " " << getOp(f, op) << " ";
     if (opnds[i])   opnds[i]->PrintType(E.stream());
-    else            E << *NULTYPE;
+    else            E << *type::null;
   }
   return 0;
 }

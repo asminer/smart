@@ -74,6 +74,7 @@ protected:
 public:
 
   // "Fundamental" types, these need to be known lots of places.
+  /*
   simple_type*  VOID;
   simple_type*  NULTYPE;
   simple_type*  BOOL;
@@ -93,6 +94,7 @@ public:
   simple_type*  STATEPROBS;
   simple_type*  TEMPORAL;
   simple_type*  TRACE;
+  */
 
   // Indicates "no engine".  This does NOT necessarily mean "easy to compute"
   engtype* NO_ENGINE;
@@ -290,13 +292,13 @@ public:
   /// Safe way to get expression type
   inline const type* SafeType(const expr *e, int comp) const {
     if (e)  return e->Type(comp);
-    else  return NULTYPE;
+    else  return type::null;
   }
 
   /// Safe way to get (known simple) expression type
   inline const type* SafeType(const expr* e) const {
     if (e)  return e->Type();
-    else  return NULTYPE;
+    else  return type::null;
   }
 
   // +-----------------------------------------------------------------+

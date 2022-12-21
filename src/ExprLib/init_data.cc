@@ -2,9 +2,11 @@
 #include "init_data.h"
 #include "../Options/options.h"
 #include "../Options/optman.h"
-#include "exprman.h"
 #include "../Utils/strings.h"
 #include "../Utils/initializer.h"
+
+#include "exprman.h"
+#include "type.h"
 #include "casting.h"
 #include "sets.h"
 #include "intervals.h"
@@ -20,251 +22,6 @@
 //#define REQUIRES_PRECOMPUTING
 
 // #define DEBUG_REAL_TYPE
-
-// ******************************************************************
-// *                                                                *
-// *                                                                *
-// *                     Information for  types                     *
-// *                                                                *
-// *                                                                *
-// ******************************************************************
-
-// ******************************************************************
-// *                                                                *
-// *                        bool_type  class                        *
-// *                                                                *
-// ******************************************************************
-
-class bool_type : public simple_type {
-public:
-  bool_type();
-protected:
-  virtual bool print_normal(std::ostream &s, const result& r, int w, int p=-1) const;
-  virtual void show_normal(std::ostream &s, const result& r) const;
-  virtual void assign_normal(result& r, const char* s) const;
-  virtual int compare_normal(const result &x, const result &y) const;
-};
-
-// ******************************************************************
-// *                       bool_type  methods                       *
-// ******************************************************************
-
-bool_type::bool_type()
-: simple_type("bool", "Boolean type", "Legal values are constants 'true' and 'false'.")
-{
-  setPrintable();
-}
-
-bool bool_type::print_normal(std::ostream &s, const result& r, int w, int p) const
-{
-  if (r.getBool())  s << formatted_string("true", w);
-  else              s << formatted_string("false", w);
-  return true;
-}
-
-void bool_type::show_normal(std::ostream &s, const result& r) const
-{
-  if (r.getBool())  s << "true";
-  else              s << "false";
-}
-
-void bool_type::assign_normal(result& r, const char* s) const
-{
-  if (0==strcmp(s, "true")) {
-    r.setBool(true);
-    return;
-  }
-  if (0==strcmp(s, "false")) {
-    r.setBool(false);
-    return;
-  }
-  r.setNull();
-}
-
-int bool_type::compare_normal(const result &x, const result &y) const
-{
-  return int(x.getBool()) - int(y.getBool());
-}
-
-// ******************************************************************
-// *                                                                *
-// *                         int_type class                         *
-// *                                                                *
-// ******************************************************************
-
-class int_type : public simple_type {
-public:
-  int_type();
-protected:
-  virtual bool print_normal(std::ostream &s, const result& r, int w, int p=-1) const;
-  virtual void show_normal(std::ostream &s, const result& r) const;
-  virtual void assign_normal(result& r, const char* s) const;
-  virtual int compare_normal(const result &x, const result &y) const;
-};
-
-// ******************************************************************
-// *                        int_type methods                        *
-// ******************************************************************
-
-int_type::int_type()
-: simple_type("int", "Integer type", "Supported range is machine dependent, probably equivalent to a C 'long'.  Can also be infinity.")
-{
-  setPrintable();
-}
-
-bool int_type::print_normal(std::ostream &s, const result& r, int w, int p) const
-{
-    s << formatted_int(r.getInt(), w, int_comma);
-    return true;
-}
-
-void int_type::show_normal(std::ostream &s, const result& r) const
-{
-    s << r.getInt();
-}
-
-void int_type::assign_normal(result& r, const char* s) const
-{
-  if (0==strcmp(s, "infinity")) {
-    r.setInfinity(1);
-    return;
-  }
-  if (0==strcmp(s, "-infinity")) {
-    r.setInfinity(-1);
-    return;
-  }
-  char* foo;
-  errno = 0;
-  r.setInt(strtol(s, &foo, 10)); // must be in base 10.
-  if (foo[0])  r.setNull();   // bad string
-  if (errno == ERANGE) {
-    // we overflowed or underflowed
-    r.setNull();
-  }
-}
-
-int int_type::compare_normal(const result &x, const result &y) const
-{
-    long cmp = x.getInt() - y.getInt();
-    if (cmp<0) return -1;
-    if (cmp>0) return  1;
-    return 0;
-}
-
-// ******************************************************************
-// *                                                                *
-// *                        real_type  class                        *
-// *                                                                *
-// ******************************************************************
-
-class real_type : public simple_type {
-public:
-  real_type();
-protected:
-  virtual bool print_normal(std::ostream &s, const result& r, int w, int p) const;
-  virtual void show_normal(std::ostream &s, const result& r) const;
-  virtual void assign_normal(result& r, const char* s) const;
-  virtual int compare_normal(const result &x, const result &y) const;
-private:
-  static double index_precision;
-  static unsigned output_format;
-  static unsigned report_format;
-  friend class init_data_init;
-};
-
-double real_type::index_precision;
-
-// ******************************************************************
-// *                       real_type  methods                       *
-// ******************************************************************
-
-real_type::real_type()
-: simple_type("real", "Floating-point real type", "Legal range is machine dependent, probably equivalent to a C 'double'.  Can also be infinity.")
-{
-  setPrintable();
-}
-
-bool real_type::print_normal(std::ostream &s, const result& r, int w, int p) const
-{
-#ifdef DEBUG_REAL_TYPE
-    fprintf(stderr, "print_normal %lf:%d\n", r.getReal(), w);
-#endif
-    switch (real_format) {
-        case FIXED:
-                    s << fixed_real(r.getReal(), w, p, real_comma);
-                    break;
-
-        case SCIENTIFIC:
-
-                    s << scientific_real(r.getReal(), w, p, real_comma);
-                    break;
-
-        default:
-                    s << general_real(r.getReal(), w, p, real_comma);
-    }
-    shared_object* o = r.getPtr();
-    if (o) o->Print(s, 0); // confidence interval, or something similar
-    return true;
-}
-
-void real_type::show_normal(std::ostream &s, const result& r) const
-{
-  s << r.getReal();
-  shared_object* o = r.getPtr();
-  if (o) o->Print(s, 0); // confidence interval, or something similar
-}
-
-void real_type::assign_normal(result& r, const char* s) const
-{
-  if (0==strcmp(s, "infinity")) {
-    r.setInfinity(1);
-    return;
-  }
-  if (0==strcmp(s, "-infinity")) {
-    r.setInfinity(-1);
-    return;
-  }
-  char* foo;
-  r.setReal(strtod(s, &foo));
-  if (foo[0])  r.setNull();   // bad string
-}
-
-int real_type::compare_normal(const result &x, const result &y) const
-{
-    double d = x.getReal() - y.getReal();
-    if (d < -index_precision)  return -1;
-    if (d > index_precision)  return 1;
-    return 0;
-}
-
-
-
-// ******************************************************************
-// *                                                                *
-// *                     next_state_type  class                     *
-// *                                                                *
-// ******************************************************************
-
-class next_state_type : public type {
-public:
-  next_state_type();
-  virtual const simple_type* getBaseType() const;
-};
-
-// ******************************************************************
-// *                    next_state_type  methods                    *
-// ******************************************************************
-
-next_state_type::next_state_type() : type("next state")
-{
-  NoFunctions();
-  NoVariables();
-}
-
-const simple_type* next_state_type::getBaseType() const
-{
-  return 0;
-}
 
 // ******************************************************************
 // *                                                                *
@@ -301,7 +58,7 @@ int null2any::getDistance(const type* src, const type* dest) const
 {
   DCASSERT(src != dest);
   DCASSERT(em);
-  if (src != em->NULTYPE) return -1;
+  if (src != type::null) return -1;
   return RANGE_EXPAND;
 }
 
@@ -394,7 +151,7 @@ int formalism2model::getDistance(const type* src, const type* dest) const
 {
   DCASSERT(src != dest);
   DCASSERT(em);
-  if (dest != em->MODEL) return -1;
+  if (!dest->matches("model")) return -1;
   DCASSERT(src);
   return src->isAFormalism() ? 0 : -1;
 }
@@ -619,7 +376,7 @@ public:
   int2real();
   virtual int getDistance(const type* src) const {
     DCASSERT(src);
-    if (src->getBaseType() != em->INT)  return -1;
+    if (!type::matches(src->getBaseType(), "int"))  return -1;
     if (src->getModifier() == PHASE)    return -1;  // different rule.
     return SIMPLE_CONV;
   }
@@ -672,15 +429,12 @@ int2real::int2real() : specific_conv(false)
 const type* int2real::promotesTo(const type* src) const
 {
   DCASSERT(src);
-  DCASSERT(em->INT == src->getBaseType());
+  DCASSERT(type::matches(src->getBaseType(), "int"));
   DCASSERT(src->getModifier() != PHASE);
-  const type* dest = em->REAL;
-  DCASSERT(dest);
-  if (src->getModifier() != DETERM) dest = dest->modifyType(RAND);
-  DCASSERT(dest);
-  if (src->hasProc()) dest = dest->addProc();
-  DCASSERT(dest);
-  if (src->isASet()) dest = dest->getSetOfThis();
+
+  const type* dest = type::findType(src->isASet(),
+          src->hasProc(), src->getModifier(), "real");
+
   DCASSERT(dest);
   return dest;
 }
@@ -716,7 +470,7 @@ public:
   real2int();
   virtual int getDistance(const type* src) const {
     DCASSERT(src);
-    if (src->getBaseType() != em->REAL) return -1;
+    if (!type::matches(src->getBaseType(), "real")) return -1;
     return SIMPLE_CONV;
   }
   virtual const type* promotesTo(const type* src) const;
@@ -746,14 +500,11 @@ real2int::real2int() : specific_conv(true)
 const type* real2int::promotesTo(const type* src) const
 {
   DCASSERT(src);
-  DCASSERT(em->REAL == src->getBaseType());
-  const type* dest = em->INT;
-  DCASSERT(dest);
-  if (src->getModifier() != DETERM) dest = dest->modifyType(RAND);
-  DCASSERT(dest);
-  if (src->hasProc()) dest = dest->addProc();
-  DCASSERT(dest);
-  if (src->isASet()) dest = dest->getSetOfThis();
+  DCASSERT(type::matches(src->getBaseType(), "real"));
+
+  const type* dest = type::findType(src->isASet(),
+          src->hasProc(), src->getModifier(), "int");
+
   DCASSERT(dest);
   return dest;
 }
@@ -770,6 +521,7 @@ expr* real2int::convert(const location &W, expr* e, const type* nt) const
 // *                                                                *
 // ******************************************************************
 
+/*
 class init_data_init : public initializer {
     public:
         init_data_init();
@@ -786,19 +538,16 @@ init_data_init::init_data_init() : initializer("init_data.cc", 1, 1)
 
 void init_data_init::execute()
 {
-    real_type::index_precision = 1e-5;
 
     option_manager* om = dynamic_cast <option_manager*> (get_object(1, "OM"));
     if (!om) return;
 
-    om->addRealOption(
-        "IndexPrecision",
-        "Epsilon for real set element comparisons.",
-        real_type::index_precision,
-        true, false, 0,
-        false, false, 0
-    );
+    //
+    // Initialize types
+    //
+
 }
+*/
 
 // ******************************************************************
 // *                                                                *
@@ -812,6 +561,7 @@ void InitTypes(exprman* em)
 {
   if (0==em)  return;
 
+  /*
   simple_type* t_bool  = new bool_type;
   simple_type* t_int   = new int_type;
   simple_type* t_real  = new real_type;
@@ -821,6 +571,8 @@ void InitTypes(exprman* em)
   t_null->setPrintable();
   type* t_model    = new simple_type("model", "Generic model", "Generic model; can be set from any formalism.");
   t_model->NoFunctions();
+
+
 
   type* t_proc_bool  = newProcType("proc bool", t_bool);
   type* t_proc_int  = newProcType("proc int", t_int);
@@ -847,6 +599,7 @@ void InitTypes(exprman* em)
 
   em->registerType(t_set_int);
   em->registerType(t_set_real);
+  */
 
   // Type changes
   em->registerConversion( new null2any        );

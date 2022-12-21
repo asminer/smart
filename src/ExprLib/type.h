@@ -40,6 +40,8 @@ class simple_type;
     It's a shared object, so it can go in splay trees :)
 */
 class type : public shared_string {
+    public:
+        static const type* null;
 
     public:
         type(const char* n);
@@ -47,6 +49,9 @@ class type : public shared_string {
     public:
         // Inherits Print and Compare from shared_string.
         bool matches(const char* n) const;
+        static inline bool matches(const type* t, const char* n) {
+            return t ? t->matches(n) : false;
+        }
 
         inline void NoFunctions() { func_definable = false; }
         inline void NoVariables() { var_definable = false; }
@@ -166,6 +171,19 @@ class type : public shared_string {
         static simple_type*  findSimple(const char* tname);
 
         /**
+            Find a modified type.
+            For convenience; you could do this by hand.
+                @param  set     If true, build a set
+                @param  proc    If true, add proc to the type
+                @param  mod     Modifier; use DETERM for none
+                @param  tname   Simple type name
+                @return     The desired type, or null if the base type
+                            or any modifications are not possible.
+        */
+        static const type* findType(bool set, bool proc, modifier mod,
+                        const char* tname);
+
+        /**
             Build "proc t" as a valid type.
                 @param  t   Base (simple) type.  For modified types,
                             use allowProcMod instead.
@@ -217,7 +235,6 @@ class type : public shared_string {
         void init();
 
     private:
-        const char* name;
         bool is_void;
         bool func_definable;
         bool var_definable;

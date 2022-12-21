@@ -39,6 +39,7 @@ exprman::exprman(option_manager* o)
   om = o;
 
   // fundamental types
+  /*
   VOID = 0;
   NULTYPE = 0;
   BOOL = 0;
@@ -56,6 +57,7 @@ exprman::exprman(option_manager* o)
   STATEPROBS = 0;
   TEMPORAL = 0;
   TRACE = 0;
+  */
 
   NO_ENGINE = 0;
   BLOCKED_ENGINE = 0;
