@@ -225,6 +225,7 @@ public:
   // |                                                                 |
   // +-----------------------------------------------------------------+
 
+#if 0
   /** Register a data type.
       This gives a much nicer mechanism for dealing with types,
       and for adding new types.
@@ -285,7 +286,7 @@ public:
 
   /// Get the ith registered type.
   virtual const type* getTypeNumber(int i) const = 0;
-
+#endif
   /// Safe way to get expression type
   inline const type* SafeType(const expr *e, int comp) const {
     if (e)  return e->Type(comp);

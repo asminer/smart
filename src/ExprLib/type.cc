@@ -246,6 +246,11 @@ void type::init()
     is_formalism = false;
 }
 
+bool type::matches(const char* n) const
+{
+    return 0==strcmp(getStr(), n);
+}
+
 const type* type::getSetElemType() const
 {
     return nullptr;

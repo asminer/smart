@@ -66,6 +66,7 @@ public:
 
   // Types
 
+  /*
   virtual bool registerType(type* t);
   virtual bool setFundamentalTypes();
   virtual const type* findOWDType(const char* name) const;
@@ -75,6 +76,7 @@ public:
   virtual const char* modifierName(modifier m) const;
   virtual int getNumTypes() const;
   virtual const type* getTypeNumber(int i) const;
+  */
 
   // Promotions and casting
 

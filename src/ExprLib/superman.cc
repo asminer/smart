@@ -20,6 +20,8 @@
 
 // for ordering types
 
+#if 0
+
 int Compare(type *a, type* b)
 {
   if (0==a && 0==b) return 0;
@@ -113,6 +115,7 @@ int Compare(type *a, type* b)
   return ascore - bscore;
 
 }
+#endif
 
 // ******************************************************************
 // *                                                                *
@@ -219,6 +222,7 @@ void superman::finalize()
   if (om) om->DoneAddingOptions();
   is_finalized = true;
 
+  /*
 #ifdef DEBUG_TYPE_SORTING
   fprintf(stderr, "Original type list:\n");
   for (int i=0; i<last_type; i++) {
@@ -235,6 +239,7 @@ void superman::finalize()
     fprintf(stderr, "    %s\n", reg_type[i]->getName());
   }
 #endif
+*/
 }
 
 //
@@ -277,6 +282,7 @@ bool superman::isOrdinary(const expr* e) const
 //
 //
 
+#if 0
 bool superman::registerType(type* t)
 {
   if (0==t)             return false;
@@ -386,6 +392,7 @@ const type* superman::getTypeNumber(int i) const
   CHECK_RANGE(0, i, last_type);
   return reg_type[i];
 }
+#endif
 
 
 //

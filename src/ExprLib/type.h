@@ -45,8 +45,8 @@ class type : public shared_string {
         type(const char* n);
         type(const std::string &s);
     public:
-
         // Inherits Print and Compare from shared_string.
+        bool matches(const char* n) const;
 
         inline void NoFunctions() { func_definable = false; }
         inline void NoVariables() { var_definable = false; }
@@ -185,6 +185,10 @@ class type : public shared_string {
                 @param  t   Base (simple) type.
         */
         static void allowSetsOf(simple_type* t);
+
+        //
+        // TBD: probably need to add methods for documenting all types?
+        //
 
     protected:
         inline void setVoid()               { is_void = true; }

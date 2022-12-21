@@ -380,10 +380,12 @@ exprman* Initialize_Expressions(option_manager* om)
   InitEngines(The_Man);
 
   expr::em = The_Man;
+  /*
   if (The_Man)
     expr::STMT = The_Man->findType("void");
   else
     expr::STMT = 0;
+    */
 
   //
   // Option initialization
