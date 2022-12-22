@@ -498,10 +498,9 @@ stateset_not_op::stateset_not_op() : unary_op(exprman::uop_not)
 const type* stateset_not_op::getExprType(const type* t) const
 {
   DCASSERT(em);
-  DCASSERT(em->STATESET);
   if (0==t)    return 0;
   if (t->isASet())  return 0;
-  if (t != em->STATESET)  return 0;
+  if (!type::matches(t, "stateset")) return 0;
   return t;
 }
 
@@ -540,10 +539,10 @@ stateset_binary::stateset_binary(exprman::binary_opcode opc) : binary_op(opc)
 int stateset_binary::getPromoteDistance(const type* lt, const type* rt) const
 {
   DCASSERT(em);
-  DCASSERT(em->STATESET);
-  int ld = em->getPromoteDistance(lt, em->STATESET);
+  const type* STATESET = type::find("stateset");
+  int ld = em->getPromoteDistance(lt, STATESET);
   if (ld < 0) return ld;
-  int rd = em->getPromoteDistance(rt, em->STATESET);
+  int rd = em->getPromoteDistance(rt, STATESET);
   if (rd < 0) return rd;
   return ld + rd;
 }
@@ -551,10 +550,9 @@ int stateset_binary::getPromoteDistance(const type* lt, const type* rt) const
 const type* stateset_binary::getExprType(const type* l, const type* r) const
 {
   DCASSERT(em);
-  DCASSERT(em->STATESET);
-  if (em->NULTYPE==l) return 0;
-  if (em->NULTYPE==r) return 0;
-  return em->STATESET;
+  if (type::null==l) return 0;
+  if (type::null==r) return 0;
+  return type::find("stateset");
 }
 
 
@@ -646,10 +644,10 @@ stateset_assoc_op::stateset_assoc_op(exprman::assoc_opcode op) : assoc_op(op)
 int stateset_assoc_op::getPromoteDistance(expr** list, bool* flip, int N) const
 {
   DCASSERT(em);
-  DCASSERT(em->STATESET);
   int d = 0;
+  const type* STATESET = type::find("stateset");
   for (int i=0; i<N; i++) {
-    int dx = em->getPromoteDistance(em->SafeType(list[i]), em->STATESET);
+    int dx = em->getPromoteDistance(em->SafeType(list[i]), STATESET);
     if (dx < 0) return dx;
     d += dx;
   }
@@ -660,10 +658,10 @@ int stateset_assoc_op
 ::getPromoteDistance(bool f, const type* lt, const type* rt) const
 {
   DCASSERT(em);
-  DCASSERT(em->STATESET);
-  int ld = em->getPromoteDistance(lt, em->STATESET);
+  const type* STATESET = type::find("stateset");
+  int ld = em->getPromoteDistance(lt, STATESET);
   if (ld < 0) return ld;
-  int rd = em->getPromoteDistance(rt, em->STATESET);
+  int rd = em->getPromoteDistance(rt, STATESET);
   if (rd < 0) return rd;
   return ld + rd;
 }
@@ -672,10 +670,9 @@ const type* stateset_assoc_op
 ::getExprType(bool f, const type* l, const type* r) const
 {
   DCASSERT(em);
-  DCASSERT(em->STATESET);
-  if (em->NULTYPE==l) return 0;
-  if (em->NULTYPE==r) return 0;
-  return em->STATESET;
+  if (type::null==l) return 0;
+  if (type::null==r) return 0;
+  return type::find("stateset");
 }
 
 
@@ -705,14 +702,13 @@ assoc* stateset_union_op::makeExpr(const location &W, expr** list,
         bool* flip, int N) const
 {
   DCASSERT(em);
-  DCASSERT(em->STATESET);
   if (getPromoteDistance(list, flip, N) < 0) {
     delete[] flip;
     for (int i=0; i<N; i++) Delete(list[i]);
     delete[] list;
     return 0;
   }
-  return new stateset_union(W, em->STATESET, list, N);
+  return new stateset_union(W, type::find("stateset"), list, N);
 }
 
 
@@ -742,14 +738,13 @@ assoc* stateset_intersect_op::makeExpr(const location &W, expr** list,
         bool* flip, int N) const
 {
   DCASSERT(em);
-  DCASSERT(em->STATESET);
   if (getPromoteDistance(list, flip, N) < 0) {
     delete[] flip;
     for (int i=0; i<N; i++) Delete(list[i]);
     delete[] list;
     return 0;
   }
-  return new stateset_intersect(W, em->STATESET, list, N);
+  return new stateset_intersect(W, type::find("stateset"), list, N);
 }
 
 
@@ -771,11 +766,9 @@ public:
   virtual void Compute(traverse_data &x, expr** pass, int np);
 };
 
-card_si::card_si() : simple_internal(em->BIGINT, "card", 1)
+card_si::card_si() : simple_internal(type::find("bigint"), "card", 1)
 {
-  DCASSERT(em->BIGINT);
-  DCASSERT(em->STATESET);
-  SetFormal(0, em->STATESET, "P");
+  SetFormal(0, type::find("stateset"), "P");
   SetDocumentation("Return the number of elements in the set P.");
 }
 
@@ -803,10 +796,9 @@ public:
   virtual void Compute(traverse_data &x, expr** pass, int np);
 };
 
-empty_si::empty_si() : simple_internal(em->BOOL, "empty", 1)
+empty_si::empty_si() : simple_internal(type::find("bool"), "empty", 1)
 {
-  DCASSERT(em->STATESET);
-  SetFormal(0, em->STATESET, "P");
+  SetFormal(0, type::find("stateset"), "P");
   SetDocumentation("Returns true if and only if the set P is empty.");
 }
 
@@ -855,11 +847,6 @@ bool old_init_statesets::execute()
 
   stateset::em = em;
 
-  // Type registry
-  simple_type* t_stateset = new stateset_type;
-  em->registerType(t_stateset);
-  em->setFundamentalTypes();
-
   // Operators
   em->registerOperation(  new stateset_not_op         );
   em->registerOperation(  new stateset_diff_op        );
@@ -893,6 +880,11 @@ init_statesets::init_statesets() : initializer("statesets.cc", 1, 1)
 
 void init_statesets::execute()
 {
+    //
+    // Types
+    //
+    type::registerNew(new stateset_type);
+
     //
     // Options
     //

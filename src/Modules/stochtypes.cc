@@ -1,5 +1,8 @@
 
 #include "stochtypes.h"
+
+#include "../Utils/initializer.h"
+
 #include "../SymTabs/symtabs.h"
 #include "../ExprLib/startup.h"
 #include "../ExprLib/exprman.h"
@@ -192,7 +195,7 @@ public:
   bernoulli(const type* rettype, const type* parmtype);
   virtual int Traverse(traverse_data &x, expr** pass, int np);
   inline void BadP(traverse_data &x) const {
-    OutOfRange(x, em->REAL, "bernoulli probability ", "");
+    OutOfRange(x, type::find("real"), "bernoulli probability ", "");
   }
 };
 
@@ -299,7 +302,7 @@ public:
   geometric(const type* rettype, const type* parmtype);
   virtual int Traverse(traverse_data &x, expr** pass, int np);
   void BadP(traverse_data &x) const {
-    OutOfRange(x, em->REAL, "geometric probability ", "");
+    OutOfRange(x, type::find("real"), "geometric probability ", "");
   }
 };
 
@@ -563,7 +566,7 @@ public:
       double p = x.answer->getReal();
       if (p >= 0 && p <= 1) return false;
     }
-    OutOfRange(x, em->REAL, "binomial parameter p=", "");
+    OutOfRange(x, type::find("real"), "binomial parameter p=", "");
     return true;
   }
 };
@@ -674,8 +677,9 @@ public:
   inline void BadLambda(traverse_data &x) const {
     expr_error E(x.parent, x.answer);
     E << "expo with parameter ";
-    DCASSERT(em->REAL);
-    em->REAL->print(E.stream(), *x.answer);
+    const type* REAL = type::find("real");
+    DCASSERT(REAL);
+    REAL->print(E.stream(), *x.answer);
     E << ", must be non-negative";
   }
 };
@@ -828,7 +832,7 @@ public:
     if (x.answer->isNormal()) {
       if (x.answer->getReal() >= 0) return false;
     }
-    OutOfRange(x, em->REAL, "erlang rate parameter r=", "");
+    OutOfRange(x, type::find("real"), "erlang rate parameter r=", "");
     return true;
   }
 };
@@ -1062,15 +1066,11 @@ public:
       if (0==list[i])       return 0;
       const type* t = list[i]->Type();
       if (bogustype(t))     return 0;
-      if (t->getBaseType() != em->INT)  all_ints = false;
+      if (!type::matches(t->getBaseType(), "int"))  all_ints = false;
       if (t->hasProc())                 has_proc = true;
     }
 
-    const type* anstype = all_ints ? em->INT : em->REAL;
-    DCASSERT(anstype);
-    anstype = anstype->modifyType(PHASE);
-    DCASSERT(anstype);
-    if (has_proc) anstype = anstype->addProc();
+    const type* anstype = type::find(false, has_proc, PHASE, all_ints ? "int" : "real");
     DCASSERT(anstype);
     return anstype;
   }
@@ -1186,14 +1186,11 @@ const type* phase_add_op
   if (f) return 0;
   if (bogustype(l) || bogustype(r)) return 0;
   const type* anstype = 0;
-  if (l->getBaseType() == em->INT && r->getBaseType() == em->INT)
-    anstype = em->INT;
-  else
-    anstype = em->REAL;
-  DCASSERT(anstype);
-  anstype = anstype->modifyType(PHASE);
-  DCASSERT(anstype);
-  if (l->hasProc() || r->hasProc()) anstype = anstype->addProc();
+  if (l->getBaseType() == em->INT && r->getBaseType() == em->INT) {
+    anstype = type::find(false, (l->hasProc() || r->hasProc()), PHASE, "int");
+  } else {
+    anstype = type::find(false, (l->hasProc() || r->hasProc()), PHASE, "real");
+  }
   DCASSERT(anstype);
 
   if (em->getPromoteDistance(l, anstype) < 0) return 0;
@@ -1531,7 +1528,7 @@ cph2dph_unif::cph2dph_unif(const type* intype, const type* outtype)
  : simple_internal(outtype, "uniformize", 2)
 {
   SetFormal(0, intype, "x");
-  SetFormal(1, em->REAL, "q");
+  SetFormal(1, type::find("real"), "q");
   SetDocumentation("Uniformize a continuous phase type random variable x, with uniformization constant q>0, to obtain a discrete phase type random variable.  Does not currently work within simulations.");
 }
 
@@ -1818,7 +1815,7 @@ choose_si::choose_si(const type* argt)
 {
   typelist* t = new typelist(2);
   t->SetItem(0, argt);
-  t->SetItem(1, em->REAL);
+  t->SetItem(1, type::find("real"));
   SetFormal(0, t, "x:p");
   SetDocumentation("Choose random variable x with probability p.  Probability arguments (weights) are normalized so that they sum to one.");
   SetRepeat(0);
@@ -2025,7 +2022,7 @@ public:
 };
 
 prob_finite::prob_finite(const type* xtype, engtype* w)
-: simple_internal(em->REAL, "prob_finite", 1)
+: simple_internal(type::find("real"), "prob_finite", 1)
 {
   doAvg = w;
   SetFormal(0, xtype, "x");
@@ -2075,7 +2072,7 @@ public:
 };
 
 avg_ph::avg_ph(const type* xtype, engtype* w)
-: simple_internal(em->REAL, "avg", 1)
+: simple_internal(type::find("real"), "avg", 1)
 {
   doAvg = w;
   SetFormal(0, xtype, "x");
@@ -2130,7 +2127,7 @@ protected:
 };
 
 avg_rand::avg_rand(const type* xtype, engtype* w)
-: func_engine(em->REAL, "avg", 1, w)
+: func_engine(type::find("real"), "avg", 1, w)
 {
   SetFormal(0, xtype, "x");
   SetDocumentation("Determines the expected value of random variable x.  Unless the variance is not needed, var(x) should be computed before avg(x).");
@@ -2155,7 +2152,7 @@ public:
 };
 
 var_ph::var_ph(const type* xtype, engtype* w)
-: simple_internal(em->REAL, "var", 1)
+: simple_internal(type::find("real"), "var", 1)
 {
   doVar = w;
   SetFormal(0, xtype, "x");
@@ -2355,7 +2352,7 @@ print_ddist::print_ddist(const type* DPH)
  : simple_internal(em->VOID, "print_dist", 3)
 {
   SetFormal(0, DPH, "X");
-  SetFormal(1, em->REAL, "epsilon");
+  SetFormal(1, type::find("real"), "epsilon");
   SetFormal(2, em->INT, "max_size", 1000L);
   SetDocumentation("Prints the discrete distribution of X (to precision epsilon>0, limited by max_size), to the current output stream.");
 }
@@ -2370,7 +2367,7 @@ void print_ddist::Compute(traverse_data &x, expr** pass, int np)
   if (!x.answer->isNormal()) return;
   double epsilon = x.answer->getReal();
   if (epsilon <= 0) {
-    OutOfRange(x, em->REAL, "print_dist epsilon value ", "");
+    OutOfRange(x, type::find("real"), "print_dist epsilon value ", "");
     return;
   }
 
@@ -2487,8 +2484,8 @@ print_cdist::print_cdist(const type* CPH)
  : simple_internal(em->VOID, "print_dist", 4)
 {
   SetFormal(0, CPH, "X");
-  SetFormal(1, em->REAL, "dt");
-  SetFormal(2, em->REAL, "epsilon");
+  SetFormal(1, type::find("real"), "dt");
+  SetFormal(2, type::find("real"), "epsilon");
   SetFormal(3, em->INT, "max_size", 1000L);
   SetDocumentation("Prints the continuous distribution of X at time points dt, 2*dt, 3*dt, ..., (up to desired precision epsilon>0, limited by max_size), to the current output stream.");
 }
@@ -2503,7 +2500,7 @@ void print_cdist::Compute(traverse_data &x, expr** pass, int np)
   if (!x.answer->isNormal()) return;
   double dt = x.answer->getReal();
   if (dt <= 0) {
-    OutOfRange(x, em->REAL, "print_dist dt value ", " (should be positive)");
+    OutOfRange(x, type::find("real"), "print_dist dt value ", " (should be positive)");
     return;
   }
 
@@ -2511,7 +2508,7 @@ void print_cdist::Compute(traverse_data &x, expr** pass, int np)
   if (!x.answer->isNormal()) return;
   double epsilon = x.answer->getReal();
   if (epsilon <= 0) {
-    OutOfRange(x, em->REAL, "print dist epsilon value ", "");
+    OutOfRange(x, type::find("real"), "print dist epsilon value ", "");
     return;
   }
 
@@ -2709,7 +2706,7 @@ int expo_promotions::getDistance(const type* src, const type* dest) const
   DCASSERT(src != dest);
   DCASSERT(em);
   if (src->getBaseType() != em->EXPO) return -1;
-  if (dest->getBaseType() != em->REAL) return -1;
+  if (!type::matches(dest->getBaseType(), "real")) return -1;
   if (dest->getModifier() != PHASE && dest->getModifier() != RAND) return -1;
   if (src->hasProc() && !dest->hasProc()) return -1;
   if (src->isASet()) return -1;
@@ -2929,8 +2926,8 @@ int real2phreal::getDistance(const type* src, const type* dest) const
 {
   DCASSERT(src != dest);
   DCASSERT(em);
-  if (src->getBaseType() != em->REAL) return -1;
-  if (dest->getBaseType() != em->REAL) return -1;
+  if (!type::matches(src->getBaseType(), "real")) return -1;
+  if (!type::matches(dest->getBaseType(), "real")) return -1;
   if (src->getModifier() != DETERM) return -1;
   if (dest->getModifier() != PHASE) return -1;
   if (src->hasProc() && !dest->hasProc()) return -1;
@@ -3072,11 +3069,7 @@ public:
   }
   virtual const type* promotesTo(const type* src) const {
     DCASSERT(src);
-    const type* dest = em->REAL;
-    DCASSERT(dest);
-    dest = dest->modifyType(RAND);
-    DCASSERT(dest);
-    if (src->hasProc()) dest = dest->addProc();
+    const type* dest = type::find(false, src->hasProc(), RAND, "real");
     DCASSERT(dest);
     return dest;
   }
@@ -3139,15 +3132,15 @@ phint2randreal::phint2randreal() : specific_conv(false)
 // *                                                                *
 // ******************************************************************
 
-class init_stochtypes : public startup {
+class old_init_stochtypes : public startup {
   public:
-    init_stochtypes();
+    old_init_stochtypes();
     virtual bool execute();
 };
-init_stochtypes the_stochtype_startup;
+old_init_stochtypes the_stochtype_startup;
 
 
-init_stochtypes::init_stochtypes() : startup("init_stochtypes")
+old_init_stochtypes::old_init_stochtypes() : startup("init_stochtypes")
 {
   usesResource("em");
   usesResource("st");
@@ -3155,50 +3148,10 @@ init_stochtypes::init_stochtypes() : startup("init_stochtypes")
   buildsResource("types");
 }
 
-bool init_stochtypes::execute()
+bool old_init_stochtypes::execute()
 {
   if (0==em)        return false;
   if (0==st)        return false;
-  if (0==em->BOOL)  return false;
-  if (0==em->INT)   return false;
-  if (0==em->REAL)  return false;
-
-  simple_type* t_expo  = new simple_type("expo", "Exponential distribution", "Special type for the exponential distribution.");
-  type* t_proc_expo  = newProcType("proc expo", t_expo);
-
-  type* t_ph_int  = newModifiedType("ph int", PHASE, em->INT);
-  type* t_proc_ph_int = newProcType("proc ph int", t_ph_int);
-
-  type* t_ph_real  = newModifiedType("ph real", PHASE, em->REAL);
-  type* t_proc_ph_real= newProcType("proc ph real", t_ph_real);
-
-  type* t_rand_bool  = newModifiedType("rand bool", RAND, em->BOOL);
-  type* t_proc_rand_bool= newProcType("proc rand bool", t_rand_bool);
-
-  type* t_rand_int  = newModifiedType("rand int", RAND, em->INT);
-  type* t_proc_rand_int = newProcType("proc rand int", t_rand_int);
-
-  type* t_rand_real  = newModifiedType("rand real", RAND, em->REAL);
-  type* t_proc_rand_real= newProcType("proc rand real", t_rand_real);
-
-
-  // register types
-  em->registerType( t_expo            );
-  em->registerType( t_proc_expo       );
-
-  em->registerType( t_ph_int          );
-  em->registerType( t_proc_ph_int     );
-  em->registerType( t_ph_real         );
-  em->registerType( t_proc_ph_real    );
-
-  em->registerType( t_rand_bool       );
-  em->registerType( t_proc_rand_bool  );
-  em->registerType( t_rand_int        );
-  em->registerType( t_proc_rand_int   );
-  em->registerType( t_rand_real       );
-  em->registerType( t_proc_rand_real  );
-
-  em->setFundamentalTypes();
 
   // Operations
   em->registerOperation( new phase_add_op   );
@@ -3283,5 +3236,45 @@ bool init_stochtypes::execute()
   st->AddSymbol( new print_cdist(t_ph_real)                   );
 
   return true;
+}
+
+// ******************************************************************
+
+class init_stochtypes : public initializer {
+    public:
+        init_stochtypes();
+    protected:
+        virtual void execute();
+};
+static init_stochtypes the_stochtype_initializer;
+
+init_stochtypes::init_stochtypes() : initializer("stochtypes.cc", 1, 1)
+{
+    builds_resource(0, "stochtypes");
+    needs_resource(1, "types");
+}
+
+void init_stochtypes::execute()
+{
+    simple_type* t_expo  = type::registerNew(new simple_type("expo",
+        "Exponential distribution",
+        "Special type for the exponential distribution.")
+    );
+    type::allowProc(t_expo);
+
+    simple_type* BOOL = type::find("bool");
+    DCASSERT(BOOL);
+    // type::allowProcMod(true, PHASE, BOOL);
+    type::allowProcMod(true, RAND,  BOOL);
+
+    simple_type* INT = type::find("int");
+    DCASSERT(INT);
+    type::allowProcMod(true, PHASE, INT);
+    type::allowProcMod(true, RAND,  INT);
+
+    simple_type* REAL = type::find("real");
+    DCASSERT(REAL);
+    type::allowProcMod(true, PHASE, REAL);
+    type::allowProcMod(true, RAND,  REAL);
 }
 

@@ -836,12 +836,10 @@ public:
   virtual void Compute(traverse_data &x, expr** pass, int np);
 };
 
-gt_si::gt_si() : simple_internal(em->STATESET, "gt", 2)
+gt_si::gt_si() : simple_internal(type::find("stateset"), "gt", 2)
 {
-  DCASSERT(em->STATESET);
-  DCASSERT(em->STATEPROBS);
-  SetFormal(0, em->STATEPROBS, "x");
-  SetFormal(1, em->REAL, "v");
+  SetFormal(0, type::find("stateprobs"), "x");
+  SetFormal(1, type::find("real"), "v");
   SetDocumentation("Determine, the set of states whose x value is larger than v.");
 }
 
@@ -889,12 +887,10 @@ public:
   virtual void Compute(traverse_data &x, expr** pass, int np);
 };
 
-ge_si::ge_si() : simple_internal(em->STATESET, "ge", 2)
+ge_si::ge_si() : simple_internal(type::find("stateset"), "ge", 2)
 {
-  DCASSERT(em->STATESET);
-  DCASSERT(em->STATEPROBS);
-  SetFormal(0, em->STATEPROBS, "x");
-  SetFormal(1, em->REAL, "v");
+  SetFormal(0, type::find("stateprobs"), "x");
+  SetFormal(1, type::find("real"), "v");
   SetDocumentation("Determine, the set of states whose x value is at least v.");
 }
 
@@ -943,12 +939,10 @@ public:
   virtual void Compute(traverse_data &x, expr** pass, int np);
 };
 
-lt_si::lt_si() : simple_internal(em->STATESET, "lt", 2)
+lt_si::lt_si() : simple_internal(type::find("stateset"), "lt", 2)
 {
-  DCASSERT(em->STATESET);
-  DCASSERT(em->STATEPROBS);
-  SetFormal(0, em->STATEPROBS, "x");
-  SetFormal(1, em->REAL, "v");
+  SetFormal(0, type::find("stateprobs"), "x");
+  SetFormal(1, type::find("real"), "v");
   SetDocumentation("Determine, the set of states whose x value is smaller than v.");
 }
 
@@ -996,12 +990,10 @@ public:
   virtual void Compute(traverse_data &x, expr** pass, int np);
 };
 
-le_si::le_si() : simple_internal(em->STATESET, "le", 2)
+le_si::le_si() : simple_internal(type::find("stateset"), "le", 2)
 {
-  DCASSERT(em->STATESET);
-  DCASSERT(em->STATEPROBS);
-  SetFormal(0, em->STATEPROBS, "x");
-  SetFormal(1, em->REAL, "v");
+  SetFormal(0, type::find("stateprobs"), "x");
+  SetFormal(1, type::find("real"), "v");
   SetDocumentation("Determine, the set of states whose x value is at most v.");
 }
 
@@ -1050,12 +1042,10 @@ public:
   virtual void Compute(traverse_data &x, expr** pass, int np);
 };
 
-condition_si::condition_si() : simple_internal(em->STATEDIST, "condition", 2)
+condition_si::condition_si() : simple_internal(type::find("statedist"), "condition", 2)
 {
-  DCASSERT(em->STATESET);
-  DCASSERT(em->STATEDIST);
-  SetFormal(0, em->STATEDIST, "p");
-  SetFormal(1, em->STATESET, "e");
+  SetFormal(0, type::find("statedist"), "p");
+  SetFormal(1, type::find("stateset"), "e");
   SetDocumentation("Given a state distribution p, build a new distribution conditioned on the fact that a state belongs to the set e.  Will return null if the probability (according to p) of e is 0.");
 }
 
@@ -1139,12 +1129,10 @@ public:
   virtual void Compute(traverse_data &x, expr** pass, int np);
 };
 
-prob_si::prob_si() : simple_internal(em->REAL, "prob", 2)
+prob_si::prob_si() : simple_internal(type::find("real"), "prob", 2)
 {
-  DCASSERT(em->STATESET);
-  DCASSERT(em->STATEDIST);
-  SetFormal(0, em->STATEDIST, "p");
-  SetFormal(1, em->STATESET, "e");
+  SetFormal(0, type::find("statedist"), "p");
+  SetFormal(1, type::find("stateset"), "e");
   SetDocumentation("Determine the probability (according to distribution p) of a state being in set e.");
 }
 
@@ -1214,12 +1202,11 @@ public:
 };
 
 expected_si::expected_si(const type* msrtype)
-: simple_internal(em->REAL, "expected", 2)
+: simple_internal(type::find("real"), "expected", 2)
 {
-  DCASSERT(em->STATEDIST);
   DCASSERT(msrtype);
   SetFormal(0, msrtype, "x");
-  SetFormal(1, em->STATEDIST, "p");
+  SetFormal(1, type::find("statedist"), "p");
   SetDocumentation("Determine the expected value of x, according to distribution p.");
 }
 
@@ -1303,22 +1290,6 @@ bool old_init_statevects::execute()
 {
   if (0==em)  return false;
 
-  // Type registry
-  // ------------------------------------------------------------------
-  simple_type* t_statedist = new statedist_type;
-  em->registerType(t_statedist);
-
-  simple_type* t_stateprobs = new stateprobs_type;
-  em->registerType(t_stateprobs);
-
-  simple_type* t_statemsrs = new statemsrs_type;
-  em->registerType(t_statemsrs);
-
-  em->setFundamentalTypes();
-
-  // Operators
-  // ------------------------------------------------------------------
-
   // Functions
   // ------------------------------------------------------------------
   if (0==st) return false;
@@ -1329,8 +1300,8 @@ bool old_init_statevects::execute()
 
   st->AddSymbol(  new condition_si              );
   st->AddSymbol(  new prob_si                   );
-  st->AddSymbol(  new expected_si(t_stateprobs) );
-  st->AddSymbol(  new expected_si(t_statemsrs)  );
+  st->AddSymbol(  new expected_si(type::find("stateprobs")) );
+  st->AddSymbol(  new expected_si(type::find("statemsrs"))  );
 
   return true;
 }
@@ -1353,6 +1324,14 @@ init_statevects::init_statevects() : initializer("statevects.cc", 1, 1)
 
 void init_statevects::execute()
 {
+    //
+    // Types
+    //
+    type::registerNew(new statedist_type);
+    type::registerNew(new stateprobs_type);
+    type::registerNew(new statemsrs_type);
+
+    //
     // Options
     // ------------------------------------------------------------------
     option_manager* om = dynamic_cast <option_manager*> (get_object(1, "OM"));
