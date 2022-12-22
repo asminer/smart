@@ -4,6 +4,7 @@
 
 #include "defines.h"
 
+#include <stdlib.h>
 
 // ==================================================================
 // ||                                                              ||
@@ -18,7 +19,7 @@
      Also, for cleverness, we can convert back and forth to a doubly-linked
      list when there are few enough items.
 
-     To use, there must be a method so that 
+     To use, there must be a method so that
         a->Compare(DATA *b) works similar to strcmp(a, b)
 
 */
@@ -31,7 +32,7 @@ protected:
   /// Top of stack.
   long stack_top;
   /// Size of stack (max depth).
-  long stack_size; 
+  long stack_size;
   /// Items stored in the tree/list.
   DATA** item;
   /// Left pointers.
@@ -143,7 +144,7 @@ public:
   */
   void Show(OutputStream& s) {
     s << "free list: " << free_list << "\n";
-    if (is_list)    s << "stored as a list\n"; 
+    if (is_list)    s << "stored as a list\n";
     else            s << "stored as a tree\n";
     s << "root: " << root << "\n";
     s << "items:\n";
@@ -220,7 +221,7 @@ protected:
     if (GP >= 0) {
       if (left[GP] == P)
         left[GP] = C;
-      else 
+      else
         right[GP] = C;
     }
   }
@@ -336,7 +337,7 @@ DATA* SplayOfPointers<DATA>::Insert(DATA* key)
   if (root < 0) {
     // same behavior, regardless of tree or list
     root = NewNode();
-    if (root < 0)   
+    if (root < 0)
         return 0;
     item[root] = key;
     left[root] = -1;
@@ -361,7 +362,7 @@ DATA* SplayOfPointers<DATA>::Insert(DATA* key)
     if (cmp > 0) {
       long l = left[root];
       left[newroot] = l;
-      if (l>=0) right[l] = newroot;     
+      if (l>=0) right[l] = newroot;
       right[newroot] = root;
       left[root] = newroot;
     } else {
@@ -440,7 +441,7 @@ void SplayOfPointers<DATA>::CopyToArray(DATA** a)
       slot++;
     }
     return;
-  } 
+  }
   // non-recursive, inorder tree traversal
   StackClear();
   i = root;
@@ -502,7 +503,7 @@ void SplayOfPointers<DATA>::ConvertToList()
     if (right[n] >= 0) {
       Push(n);
       n = right[n];
-      continue; 
+      continue;
     }
     while (n>=0) {
       // Visit...
