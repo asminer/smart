@@ -425,7 +425,7 @@ void transition::ignoreFiringExpr(int i) { ignore_firing[i] = true; }
 expr* makeBoolExpr(const exprman* em, bool v) {
   result* bool_result = new result;
   bool_result->setBool(v);
-  return new value(location::NOWHERE(), em->BOOL, *bool_result);
+  return new value(location::NOWHERE(), type::find("bool"), *bool_result);
 }
 
 void transition::disable()
@@ -800,11 +800,11 @@ model_var* petri_def::MakeModelVar(const symbol* wrap, shared_object* bnds)
 {
   if (error) return 0;
   DCASSERT(wrap);
+  DCASSERT(wrap->Type());
   DCASSERT(0==bnds);
 
   if (pn_debug.start()) {
-    pn_debug << "adding " << wrap->Type()->getName();
-    pn_debug << " " << wrap->Name();
+    pn_debug << "adding " << *wrap->Type() << ' ' << wrap->Name();
     pn_debug.stop();
   }
 
@@ -1712,11 +1712,11 @@ public:
   virtual void Compute(traverse_data &x, expr** pass, int np);
 };
 
-pn_init::pn_init() : model_internal(em->VOID, "init", 2)
+pn_init::pn_init() : model_internal(type::find("void"), "init", 2)
 {
   typelist* t = new typelist(2);
-  t->SetItem(0, em->findType("place"));
-  t->SetItem(1, em->INT);
+  t->SetItem(0, type::find("place"));
+  t->SetItem(1, type::find("int"));
   SetFormal(1, t, "p:n");
   SetRepeat(1);
   SetDocumentation("Sets the number of tokens for place p to n in the initial marking.");
@@ -1749,7 +1749,7 @@ void pn_init::Compute(traverse_data &x, expr** pass, int np)
     if (! second.isNormal() || second.getInt() < 0) {
       model_def::errmsg E(mdl, pass[i]);
       E << "Bad token value: ";
-      em->INT->print(E.stream(), second, 0);
+      type::find("int")->print(E.stream(), second, 0);
       E << " for token initialization, ignoring";
       continue;
     }
@@ -1772,13 +1772,13 @@ public:
   virtual void Compute(traverse_data &x, expr** pass, int np);
 };
 
-pn_bound::pn_bound() : model_internal(em->VOID, "bound", 2)
+pn_bound::pn_bound() : model_internal(type::find("void"), "bound", 2)
 {
   typelist* t = new typelist(2);
-  const type* place = em->findType("place");
+  const type* place = type::find("place");
   DCASSERT(place);
   t->SetItem(0, place->getSetOfThis());
-  t->SetItem(1, em->INT);
+  t->SetItem(1, type::find("int"));
   SetFormal(1, t, "pset:n");
   SetRepeat(1);
   SetDocumentation("For each place p in set pset, fix the largest number of tokens that can appear in p to n.");
@@ -1806,7 +1806,7 @@ void pn_bound::Compute(traverse_data &x, expr** pass, int np)
     if (! second.isNormal() || second.getInt() < 0) {
       model_def::errmsg E(mdl, pass[i]);
       E << "Bad token value: ";
-      em->INT->print(E.stream(), second, 0);
+      type::find("int")->print(E.stream(), second, 0);
       E << " for place bound, ignoring";
       continue;
     }
@@ -1843,8 +1843,8 @@ pn_arcs::pn_arcs()
  : custom_internal("arcs", "void arcs(..., arc, ...)")
 {
   SetDocumentation("Adds arcs to a Petri net.  Input arcs are specified using \"place:trans:card\", where the cardinality <card> has type proc int, or using \"place:trans\" for cardinalty of one.  Output arcs are specified using \"trans:place:card\", or \"trans:place\" for cardinality of one.");
-  PLACE = em->findType("place");
-  TRANS = em->findType("trans");
+  PLACE = type::find("place");
+  TRANS = type::find("trans");
   DCASSERT(PLACE);
   DCASSERT(TRANS);
 }
@@ -1904,7 +1904,7 @@ int pn_arcs::Traverse(traverse_data &x, expr** pass, int np)
 {
   switch (x.which) {
     case traverse_data::GetType:
-        x.the_type = em->VOID;
+        x.the_type = type::find("void");
         return 0;
 
     case traverse_data::Typecheck:
@@ -1923,7 +1923,7 @@ int pn_arcs::Typecheck(expr** pass, int np) const
   if (np<2)    return NotEnoughParams(np);
 
   if ((0==pass[0]) || (pass[0]->NumComponents() > 1)
-       || !em->isPromotable(pass[0]->Type(), em->MODEL))
+       || !em->isPromotable(pass[0]->Type(), type::find("model")))
   return BadParam(0, np);
 
   for (int i=1; i<np; i++) {
@@ -1938,7 +1938,7 @@ int pn_arcs::Typecheck(expr** pass, int np) const
     // check cardinality, if it is there
     if (pass[i]->NumComponents()==2) continue;
 
-    if (!em->isPromotable(pass[i]->Type(2), em->INT->addProc()))
+    if (!em->isPromotable(pass[i]->Type(2), type::find(false, true, DETERM, "int")))
       return BadParam(i, np);
   } // for i
   return 0;
@@ -1951,7 +1951,7 @@ int pn_arcs::Promote(expr** pass, int np) const
     // check cardinality, if it is there
     if (pass[i]->NumComponents()==2) continue;
     expr* card = Share(pass[i]->GetComponent(2));
-    expr* picard = em->promote(card, em->INT->addProc());
+    expr* picard = em->promote(card, type::find(false, true, DETERM, "int"));
     if (card == picard) {
       Delete(picard);
       continue;
@@ -1988,8 +1988,8 @@ pn_inhibit::pn_inhibit()
  : custom_internal("inhibit", "void inhibit(..., arc, ...)")
 {
   SetDocumentation("Adds inhibitor arcs to a Petri net.  Arcs are specified using \"place:trans:card\", where the cardinality <card> has type proc int, or using \"place:trans\" for cardinalty of one.");
-  PLACE = em->findType("place");
-  TRANS = em->findType("trans");
+  PLACE = type::find("place");
+  TRANS = type::find("trans");
   DCASSERT(PLACE);
   DCASSERT(TRANS);
 }
@@ -2038,7 +2038,7 @@ int pn_inhibit::Traverse(traverse_data &x, expr** pass, int np)
 {
   switch (x.which) {
     case traverse_data::GetType:
-        x.the_type = em->VOID;
+        x.the_type = type::find("void");
         return 0;
 
     case traverse_data::Typecheck:
@@ -2057,7 +2057,7 @@ int pn_inhibit::Typecheck(expr** pass, int np) const
   if (np<2)    return NotEnoughParams(np);
 
   if ((0==pass[0]) || (pass[0]->NumComponents() > 1)
-       || !em->isPromotable(pass[0]->Type(), em->MODEL))
+       || !em->isPromotable(pass[0]->Type(), type::find("model")))
           return BadParam(0, np);
 
   for (int i=1; i<np; i++) {
@@ -2071,7 +2071,7 @@ int pn_inhibit::Typecheck(expr** pass, int np) const
     // check cardinality, if it is there
     if (pass[i]->NumComponents()==2) continue;
 
-    if (!em->isPromotable(pass[i]->Type(2), em->INT->addProc()))
+    if (!em->isPromotable(pass[i]->Type(2), type::find(false, true, DETERM, "int")))
       return BadParam(i, np);
   } // for i
   return 0;
@@ -2084,7 +2084,7 @@ int pn_inhibit::Promote(expr** pass, int np) const
     // check cardinality, if it is there
     if (pass[i]->NumComponents()==2) continue;
     expr* card = Share(pass[i]->GetComponent(2));
-    expr* picard = em->promote(card, em->INT->addProc());
+    expr* picard = em->promote(card, type::find(false, true, DETERM, "int"));
     if (card == picard) {
       Delete(picard);
       continue;
@@ -2110,12 +2110,12 @@ public:
   virtual void Compute(traverse_data &x, expr** pass, int np);
 };
 
-pn_guard::pn_guard() : model_internal(em->VOID, "guard", 2)
+pn_guard::pn_guard() : model_internal(type::find("void"), "guard", 2)
 {
   typelist* t = new typelist(2);
-  const type* trans = em->findType("trans");
+  const type* trans = type::find("trans");
   t->SetItem(0, trans->getSetOfThis());
-  t->SetItem(1, em->BOOL->addProc());
+  t->SetItem(1, type::find(false, true, DETERM, "bool"));
   SetFormal(1, t, "tset:b");
   SetRepeat(1);
   SetDocumentation("For each transition t in the set tset, adds guard b on transition t (t cannot fire if b is false).");
@@ -2172,7 +2172,7 @@ pn_firing::pn_firing()
  : custom_internal("firing", "void firing(..., trans:dist t:d, ...)")
 {
   SetDocumentation("Sets the firing distribution of transition t to d.");
-  TRANS = em->findType("trans");
+  TRANS = type::find("trans");
   DCASSERT(TRANS);
 }
 
@@ -2205,7 +2205,7 @@ int pn_firing::Traverse(traverse_data &x, expr** pass, int np)
 {
   switch (x.which) {
     case traverse_data::GetType:
-        x.the_type = em->VOID;
+        x.the_type = type::find("void");
         return 0;
 
     case traverse_data::Typecheck:
@@ -2224,7 +2224,7 @@ int pn_firing::Typecheck(expr** pass, int np) const
   if (np<2)    return NotEnoughParams(np);
 
   if ((0==pass[0]) || (pass[0]->NumComponents() > 1)
-       || !em->isPromotable(pass[0]->Type(), em->MODEL))
+       || !em->isPromotable(pass[0]->Type(), type::find("model")))
           return BadParam(0, np);
 
   for (int i=1; i<np; i++) {
@@ -2238,9 +2238,9 @@ int pn_firing::Typecheck(expr** pass, int np) const
     const simple_type* bt = pass[i]->Type(1)->getBaseType();
     DCASSERT(bt);
 
-    if (bt == em->INT)    continue;
-    if (bt == em->REAL)   continue;
-    if (bt == em->EXPO)   continue;
+    if (type::matches(bt, "int"))   continue;
+    if (type::matches(bt, "real"))  continue;
+    if (type::matches(bt, "expo"))  continue;
 
     return BadParam(i, np);
   } // for i
@@ -2257,11 +2257,11 @@ public:
   virtual void Compute(traverse_data &x, expr** pass, int np);
 };
 
-pn_weight::pn_weight() : model_internal(em->VOID, "weight", 2)
+pn_weight::pn_weight() : model_internal(type::find("void"), "weight", 2)
 {
   typelist* t = new typelist(2);
-  t->SetItem(0, em->findType("trans"));
-  t->SetItem(1, em->REAL->addProc());
+  t->SetItem(0, type::find("trans"));
+  t->SetItem(1, type::find(false, true, DETERM, "real"));
   SetFormal(1, t, "t:w");
   SetRepeat(1);
   SetDocumentation("Sets weight w on transition t, all transitions for a single call to weight will be in the same weight class.  If two or more transitions try to fire at the same time, then their weights are used to probabilistically choose which one fires, but only if the transitions are in the same weight class.  If they are in different weight classes, an error occurs.");
@@ -2303,13 +2303,13 @@ public:
   virtual void Compute(traverse_data &x, expr** pass, int np);
 };
 
-pn_weight2::pn_weight2() : model_internal(em->VOID, "weight", 3)
+pn_weight2::pn_weight2() : model_internal(type::find("void"), "weight", 3)
 {
-  const type* trans = em->findType("trans");  DCASSERT(trans);
+  const type* trans = type::find("trans");  DCASSERT(trans);
   SetFormal(1, trans, "c");
   typelist* t = new typelist(2);
   t->SetItem(0, trans);
-  t->SetItem(1, em->REAL->addProc());
+  t->SetItem(1, type::find(false, true, DETERM, "real"));
   SetFormal(2, t, "t:w");
   SetRepeat(2);
   SetDocumentation("Sets weight w on transition t, and put transition t in the same weight class as transition c (which has already been assigned a weight).  If two or more transitions try to fire at the same time, then their weights are used to probabilistically choose which one fires, but only if the transitions are in the same weight class.  If they are in different weight classes, an error occurs.");
@@ -2366,9 +2366,9 @@ public:
   virtual void Compute(traverse_data &x, expr** pass, int np);
 };
 
-pn_assert::pn_assert() : model_internal(em->VOID, "assert", 2)
+pn_assert::pn_assert() : model_internal(type::find("void"), "assert", 2)
 {
-  SetFormal(1, em->BOOL->addProc(), "b");
+  SetFormal(1, type::find(false, true, DETERM, "bool"), "b");
   SetRepeat(1);
   SetDocumentation("Define a set of assertions that must be true in each marking.  An error message will be displayed if an assertion does not evaluate to true in some marking.");
 }
@@ -2402,9 +2402,9 @@ public:
   virtual void Compute(traverse_data &x, expr** pass, int np);
 };
 
-pn_hide::pn_hide() : model_internal(em->VOID, "hide", 2)
+pn_hide::pn_hide() : model_internal(type::find("void"), "hide", 2)
 {
-  const type* trans = em->findType("trans");
+  const type* trans = type::find("trans");
   DCASSERT(trans);
   SetFormal(1, trans, "t");
   SetRepeat(1);
@@ -2447,9 +2447,9 @@ public:
   virtual int Traverse(traverse_data &x, expr** pass, int np);
 };
 
-pn_tk::pn_tk() : model_internal(em->INT->addProc(), "tk", 2)
+pn_tk::pn_tk() : model_internal(type::find(false, true, DETERM, "int"), "tk", 2)
 {
-  const type* place = em->findType("place");
+  const type* place = type::find("place");
   SetFormal(1, place, "p");
   SetDocumentation("The number of tokens in place p (in the current state of the Petri net).");
 }
@@ -2506,9 +2506,9 @@ public:
   virtual void Compute(traverse_data &x, expr** pass, int np);
 };
 
-pn_rate::pn_rate() : model_internal(em->REAL->addProc(), "rate", 2)
+pn_rate::pn_rate() : model_internal(type::find(false, true, DETERM, "real"), "rate", 2)
 {
-  const type* trans = em->findType("trans");
+  const type* trans = type::find("trans");
   SetFormal(1, trans, "t");
   SetDocumentation("In the current marking, if t is disabled, then 0; if t is enabled, the firing rate of t.  This assumes that the firing distribution of t is expo(), but marking-dependent rates are allowed.  Returns infinity for immediate (time 0) transitions.  Otherwise, if the transition does not have an expo() firing distribution, returns null.");
 }
@@ -2561,9 +2561,9 @@ public:
   virtual void Compute(traverse_data &x, expr** pass, int np);
 };
 
-pn_enabled::pn_enabled() : model_internal(em->BOOL->addProc(), "enabled", 2)
+pn_enabled::pn_enabled() : model_internal(type::find(false, true, DETERM, "bool"), "enabled", 2)
 {
-  const type* trans = em->findType("trans");
+  const type* trans = type::find("trans");
   DCASSERT(trans);
   SetFormal(1, trans->getSetOfThis(), "ts");
   SetDocumentation("Returns true if any transition in the set ts is enabled in the current marking.");
@@ -2743,41 +2743,28 @@ bool old_init_pnform::execute()
     // Misc. static vars
     //
     result one(1L);
-    petri_def::ONE = new value(location::NOWHERE(), em->INT->addProc(), one);
+    petri_def::ONE = new value(location::NOWHERE(), type::find(false, true, DETERM, "int"), one);
 
 
   // Set up and register formalisms
   const char* longdocs = "The Petri net formalism allows high-level description of a model as a Petri net.  The places and transitions are declared, and connections between the two (e.g., input, output, and inhibitor arcs) and other features (e.g., transition guards) are specified via the appropriate function calls.";
 
   formalism* pn = new petri_formalism("pn", "Petri net", longdocs);
-  if (!em->registerType(pn)) {
+  if (type::registerNew(pn) != pn) {
     internal_error E(__FILE__, __LINE__);
-    E << "Couldn't register pn type";
+    E << "pn type already exists?";
     return false;
   }
 
   // set up and register place types
-  simple_type* t_place  = new void_type("place", "Petri net place", "Place of a Petri net, can hold a non-negative number of tokens.");
+  simple_type* t_place  = type::registerNew(new void_type("place", "Petri net place", "Place of a Petri net, can hold a non-negative number of tokens."));
   t_place->setPrintable();
-  type* t_set_place = newSetType("{place}", t_place);
-  em->registerType(t_place);
-  em->registerType(t_set_place);
+  type::allowSetsOf(t_place);
 
   // set up and register trans types
-  simple_type* t_trans  = new void_type("trans", "Petri net transition", "Transition of a Petri net, can move tokens.");
+  simple_type* t_trans  = type::registerNew(new void_type("trans", "Petri net transition", "Transition of a Petri net, can move tokens."));
   t_trans->setPrintable();
-  type* t_set_trans = newSetType("{trans}", t_trans);
-  em->registerType(t_trans);
-  em->registerType(t_set_trans);
-
-  // another formalism may have already registered these types.
-  // all we care is that they are registered.
-  petri_def::place_type = em->findType("place");
-  petri_def::trans_type = em->findType("trans");
-  DCASSERT(petri_def::place_type);
-  DCASSERT(petri_def::trans_type);
-  DCASSERT(em->findType("{place}"));
-  DCASSERT(em->findType("{trans}"));
+  type::allowSetsOf(t_trans);
 
   // fill symbol table
   symbol_table* pnsyms = MakeSymbolTable();
@@ -2794,8 +2781,8 @@ bool old_init_pnform::execute()
   pnsyms->AddSymbol(  new pn_tk       );
   pnsyms->AddSymbol(  new pn_rate     );
   pnsyms->AddSymbol(  new pn_enabled  );
-  pnsyms->AddSymbol(  new pn_places(t_set_place)        );
-  pnsyms->AddSymbol(  new pn_transitions(t_set_trans)   );
+  pnsyms->AddSymbol(  new pn_places(t_place->getSetOfThis())        );
+  pnsyms->AddSymbol(  new pn_transitions(t_trans->getSetOfThis())   );
   Add_DSDE_varfuncs(petri_def::place_type, pnsyms);
   Add_DSDE_eventfuncs(petri_def::trans_type, pnsyms);
   Add_MCC_varfuncs(petri_def::place_type, pnsyms);

@@ -251,7 +251,7 @@ int tam_canput::Traverse(traverse_data &x, expr** pass, int np)
 {
   switch (x.which) {
     case traverse_data::GetType:
-        x.the_type = em->BOOL->addProc();
+        x.the_type = type::find(false, true, DETERM, "bool");
         return 0;
 
     case traverse_data::Typecheck:
@@ -656,12 +656,11 @@ tam_def::~tam_def()
 model_var* tam_def::MakeModelVar(const symbol* wrap, shared_object* bnds)
 {
   DCASSERT(wrap);
+  DCASSERT(wrap->Type());
   DCASSERT(0==bnds);
 
   if (tam_debug.start()) {
-    tam_debug << "adding ";
-    tam_debug << wrap->Type()->getName();
-    tam_debug << " " << wrap->Name();
+    tam_debug << "adding " << *wrap->Type() << ' ' << wrap->Name();
     tam_debug.stop();
   }
 
@@ -692,8 +691,7 @@ void tam_def::setStrength(const expr* cause, tam_glue* g, const result &s)
   if (!s.isNormal() || s.getInt()>2 || s.getInt()<1) {
     errmsg E(this, cause);
     E << "Bad strength ";
-    DCASSERT(em->INT);
-    em->INT->print(E.stream(), s);
+    type::find("int")->print(E.stream(), s);
     E << " for glue " << g->Name() << ", ignoring";
     return;
   }
@@ -1073,12 +1071,12 @@ public:
   virtual void Compute(traverse_data &x, expr** pass, int np);
 };
 
-tam_strength::tam_strength() : model_internal(em->VOID, "strength", 2)
+tam_strength::tam_strength() : model_internal(type::find("void"), "strength", 2)
 {
   typelist* t = new typelist(2);
-  const type* glue = em->findType("glue");
+  const type* glue = type::find("glue");
   t->SetItem(0, glue->getSetOfThis());
-  t->SetItem(1, em->INT);
+  t->SetItem(1, type::find("int"));
   SetFormal(1, t, "gset:s");
   SetRepeat(1);
   SetDocumentation("For each glue type g in the set gset, assign bond strength s to g.");
@@ -1133,11 +1131,11 @@ public:
   virtual void Compute(traverse_data &x, expr** pass, int np);
 };
 
-tam_tiledef::tam_tiledef() : model_internal(em->VOID, "tiledef", 3)
+tam_tiledef::tam_tiledef() : model_internal(type::find("void"), "tiledef", 3)
 {
-  const type* tile = em->findType("tile");
-  const type* border = em->findType("border");
-  const type* glue = em->findType("glue");
+  const type* tile = type::find("tile");
+  const type* border = type::find("border");
+  const type* glue = type::find("glue");
   DCASSERT(tile);
   DCASSERT(border);
   DCASSERT(glue);
@@ -1211,7 +1209,7 @@ protected:
     if (!tmp.isNormal()) {
         model_def::errmsg E(m, p);
         E << "Bad value ";
-        em->INT->print(E.stream(), tmp);
+        type::find("int")->print(E.stream(), tmp);
         E << " for " << who << ", ignoring board specification";
         return false;
     }
@@ -1220,12 +1218,12 @@ protected:
   }
 };
 
-tam_board::tam_board() : model_internal(em->VOID, "board", 5)
+tam_board::tam_board() : model_internal(type::find("void"), "board", 5)
 {
-  SetFormal(1, em->INT, "x_low");
-  SetFormal(2, em->INT, "x_high");
-  SetFormal(3, em->INT, "col_low");
-  SetFormal(4, em->INT, "col_high");
+  SetFormal(1, type::find("int"), "x_low");
+  SetFormal(2, type::find("int"), "x_high");
+  SetFormal(3, type::find("int"), "col_low");
+  SetFormal(4, type::find("int"), "col_high");
   SetDocumentation("Specify a board for placing tiles.  The board allows x values between x_low and x_high (inclusive) and allows y values between y_low and y_high (inclusive).");
 }
 
@@ -1267,19 +1265,19 @@ protected:
 
     model_def::errmsg E(m, p);
     E << "Bad " << who << " value ";
-    em->INT->print(E.stream(), I);
+    type::find("int")->print(E.stream(), I);
     E << ", ignoring initialization";
     return false;
   }
 };
 
-tam_init::tam_init() : model_internal(em->VOID, "init", 2)
+tam_init::tam_init() : model_internal(type::find("void"), "init", 2)
 {
   typelist* t = new typelist(3);
-  const type* tile = em->findType("tile");
+  const type* tile = type::find("tile");
   DCASSERT(tile);
-  t->SetItem(0, em->INT);
-  t->SetItem(1, em->INT);
+  t->SetItem(0, type::find("int"));
+  t->SetItem(1, type::find("int"));
   t->SetItem(2, tile);
   SetFormal(1, t, "x:y:t");
   SetRepeat(1);
@@ -1338,18 +1336,18 @@ protected:
 
     model_def::errmsg E(m, p);
     E << "Bad " << who << " value ";
-    em->INT->print(E.stream(), I);
+    type::find("int")->print(E.stream(), I);
     E << ", ignoring priority assignment";
     return false;
   }
 };
 
-tam_prio::tam_prio() : model_internal(em->VOID, "priority", 2)
+tam_prio::tam_prio() : model_internal(type::find("void"), "priority", 2)
 {
   typelist* t = new typelist(3);
-  t->SetItem(0, em->INT);
-  t->SetItem(1, em->INT);
-  t->SetItem(2, em->INT);
+  t->SetItem(0, type::find("int"));
+  t->SetItem(1, type::find("int"));
+  t->SetItem(2, type::find("int"));
   SetFormal(1, t, "x:y:p");
   SetRepeat(1);
   SetDocumentation("Set the priority of placing a tile at position x,y to p.  If unspecified, the default priority is 0.");
@@ -1398,7 +1396,7 @@ public:
   virtual void Compute(traverse_data &x, expr** pass, int np);
 };
 
-tam_export::tam_export() : model_internal(em->BOOL, "export", 1)
+tam_export::tam_export() : model_internal(type::find("bool"), "export", 1)
 {
   SetDocumentation("Export the model.  Writes the specification to the output stream in a format readable by another tool.  Returns true on success, false otherwise.");
 }
@@ -1447,41 +1445,25 @@ bool old_init_tamform::execute()
   if (0==em) return false;
 
   // types for TAMs
-  simple_type* t_tile = new void_type("tile", "Tile", "Tile type in a tile assembly model.");
+  simple_type* t_tile = type::registerNew(new void_type("tile", "Tile", "Tile type in a tile assembly model."));
   t_tile->setPrintable();
-  type* t_set_tile = newSetType("{tile}", t_tile);
-  em->registerType(t_tile);
-  em->registerType(t_set_tile);
+  type::allowSetsOf(t_tile);
 
-  simple_type* t_glue = new void_type("glue", "Glue", "Glue type in a tile assembly model.");
+  simple_type* t_glue = type::registerNew(new void_type("glue", "Glue", "Glue type in a tile assembly model."));
   t_glue->setPrintable();
-  type* t_set_glue = newSetType("{glue}", t_glue);
-  em->registerType(t_glue);
-  em->registerType(t_set_glue);
+  type::allowSetsOf(t_glue);
 
-  simple_type* t_border = new void_type("border", "Border", "Border type in a tile assembly model.");
+  simple_type* t_border = type::registerNew(new void_type("border", "Border", "Border type in a tile assembly model."));
   t_border->setPrintable();
-  em->registerType(t_border);
-
-  // another formalism may have already registered these types.
-  // all we care is that they are registered.
-  tam_def::tile_type = em->findType("tile");
-  DCASSERT(tam_def::tile_type);
-  DCASSERT(em->findType("{tile}"));
-  tam_def::glue_type = em->findType("glue");
-  DCASSERT(tam_def::glue_type);
-  DCASSERT(em->findType("{glue}"));
-  tam_def::border_type = em->findType("border");
-  DCASSERT(tam_def::border_type);
 
 
   // Set up and register formalism
   const char* longdocs = "The tile assembly model formalism allows definition of tile types that are automatically assembled onto a finite board.  Model definition requires declaration and definition of the tile types and specification of the board size and initial configuration, via the appropriate function calls.";
 
   formalism* tam = new tam_formalism("tam", "Tile assembly Model", longdocs);
-  if (!em->registerType(tam)) {
+  if (type::registerNew(tam) != tam) {
     internal_error E(__FILE__, __LINE__);
-    E << "Couldn't register tam type";
+    E << "tam type already exists?";
     return false;
   }
 

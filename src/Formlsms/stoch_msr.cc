@@ -19,7 +19,7 @@ public:
 };
 
 init_dist_si::init_dist_si()
- : proc_noengine(Stochastic, em->STATEDIST, "init_dist", 1)
+ : proc_noengine(Stochastic, type::find("statedist"), "init_dist", 1)
 {
   SetDocumentation("Returns the distribution over states at time 0, or null if the model is not stochastic.");
 }
@@ -118,7 +118,7 @@ public:
   distss_si();
 };
 
-distss_si::distss_si() : basess_si(em->STATEDIST, "dist_ss", 0)
+distss_si::distss_si() : basess_si(type::find("statedist"), "dist_ss", 0)
 {
   SetDocumentation("Computes and returns the steady state distribution.");
 }
@@ -132,7 +132,7 @@ public:
   avgss_si();
 };
 
-avgss_si::avgss_si() : basess_si(em->REAL, "avg_ss", em->REAL->addProc())
+avgss_si::avgss_si() : basess_si(type::find("real"), "avg_ss", type::find(false, true, DETERM, "real"))
 {
   SetDocumentation("Computes the expected value of expression x at steady-state.");
 }
@@ -146,7 +146,7 @@ public:
   probss_si();
 };
 
-probss_si::probss_si() : basess_si(em->REAL, "prob_ss", em->BOOL->addProc())
+probss_si::probss_si() : basess_si(type::find("real"), "prob_ss", type::find(false, true, DETERM, "bool"))
 {
   SetDocumentation("Computes the probability of expression x at steady-state.");
 }
@@ -213,7 +213,7 @@ void baseat_si::mymsr::classifyNow()
   if (illegal_time) {
     model_instance::errmsg E(owner, attime);
     E << "Bad time: ";
-    em->REAL->print(E.stream(), foo);
+    type::find("real")->print(E.stream(), foo);
     E << " for " << name;
     setClassification(0);
     return;
@@ -234,9 +234,9 @@ baseat_si::baseat_si(const type* rtype, const char* name, const type* arg)
   has_arg = arg;
   if (has_arg) {
     SetFormal(1, arg, "x");
-    SetFormal(2, em->REAL, "t");
+    SetFormal(2, type::find("real"), "t");
   } else {
-    SetFormal(1, em->REAL, "t");
+    SetFormal(1, type::find("real"), "t");
   }
 }
 
@@ -261,7 +261,7 @@ public:
   distat_si();
 };
 
-distat_si::distat_si() : baseat_si(em->STATEDIST, "dist_at", 0)
+distat_si::distat_si() : baseat_si(type::find("statedist"), "dist_at", 0)
 {
   SetDocumentation("Computes and returns the distribution at time t.");
 }
@@ -275,7 +275,7 @@ public:
   avgat_si();
 };
 
-avgat_si::avgat_si() : baseat_si(em->REAL, "avg_at", em->REAL->addProc())
+avgat_si::avgat_si() : baseat_si(type::find("real"), "avg_at", type::find(false, true, DETERM, "real"))
 {
   SetDocumentation("Computes the expected value of expression x at time t.");
 }
@@ -289,7 +289,7 @@ public:
   probat_si();
 };
 
-probat_si::probat_si() : baseat_si(em->REAL, "prob_at", em->BOOL->addProc())
+probat_si::probat_si() : baseat_si(type::find("real"), "prob_at", type::find(false, true, DETERM, "bool"))
 {
   SetDocumentation("Computes the probability of expression x at time t.");
 }
@@ -356,7 +356,7 @@ void baseacc_si::mymsr::classifyNow()
   if (illegal_time) {
     model_instance::errmsg E(owner, acct1);
     E << "Bad time: ";
-    em->REAL->print(E.stream(), t1);
+    type::find("real")->print(E.stream(), t1);
     E << " for parameter t1 in " << name;
     setClassification(0);
     return;
@@ -373,7 +373,7 @@ void baseacc_si::mymsr::classifyNow()
   if (illegal_time) {
     model_instance::errmsg E(owner, acct2);
     E << "Bad time: ";
-    em->REAL->print(E.stream(), t2);
+    type::find("real")->print(E.stream(), t2);
     E << " for parameter t2 in " << name;
     setClassification(0);
     return;
@@ -383,9 +383,9 @@ void baseacc_si::mymsr::classifyNow()
   if (t2.isNormal() && t2.getReal() < t1.getReal()) {
     model_instance::errmsg E(owner, acct2);
     E << "Times not in order: t1=";
-    em->REAL->print(E.stream(), t1);
+    type::find("real")->print(E.stream(), t1);
     E << ", t2=";
-    em->REAL->print(E.stream(), t2);
+    type::find("real")->print(E.stream(), t2);
     E << " in " << name;
     setClassification(0);
     return;
@@ -400,12 +400,12 @@ void baseacc_si::mymsr::classifyNow()
 }
 
 baseacc_si::baseacc_si(const char* name, const type* arg)
- : stoch_msr(em->REAL, name, 4)
+ : stoch_msr(type::find("real"), name, 4)
 {
   DCASSERT(arg);
   SetFormal(1, arg, "x");
-  SetFormal(2, em->REAL, "t1");
-  SetFormal(3, em->REAL, "t2");
+  SetFormal(2, type::find("real"), "t1");
+  SetFormal(3, type::find("real"), "t2");
 }
 
 measure* baseacc_si::buildMeasure(traverse_data &x, expr** pass, int np)
@@ -424,7 +424,7 @@ public:
   avgacc_si();
 };
 
-avgacc_si::avgacc_si() : baseacc_si("avg_acc", em->REAL->addProc())
+avgacc_si::avgacc_si() : baseacc_si("avg_acc", type::find(false, true, DETERM, "real"))
 {
   SetDocumentation("Computes the expected accumulated value of expression x for the time interval [t1, t2].");
 }
@@ -438,7 +438,7 @@ public:
   probacc_si();
 };
 
-probacc_si::probacc_si() : baseacc_si("prob_acc", em->BOOL->addProc())
+probacc_si::probacc_si() : baseacc_si("prob_acc", type::find(false, true, DETERM, "bool"))
 {
   SetDocumentation("Computes the expected amount of time that expression x is true, for the time interval [t1, t2].");
 }
