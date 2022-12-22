@@ -303,9 +303,9 @@ public:
   virtual void Compute(traverse_data &x, expr** pass, int np);
 };
 
-fsm_init::fsm_init() : model_internal(em->VOID, "init", 2)
+fsm_init::fsm_init() : model_internal(type::find("void"), "init", 2)
 {
-  SetFormal(1, em->findType("{state}"), "s");
+  SetFormal(1, type::find(true, false, DETERM, "state"), "s");
   SetRepeat(1);
   SetDocumentation("Sets the initial state(s) for a finite state machine model.");
 }
@@ -354,10 +354,10 @@ public:
   virtual void Compute(traverse_data &x, expr** pass, int np);
 };
 
-fsm_arcs::fsm_arcs() : model_internal(em->VOID, "arcs", 2)
+fsm_arcs::fsm_arcs() : model_internal(type::find("void"), "arcs", 2)
 {
   typelist* tl = new typelist(2);
-  const type* state = em->findType("state");
+  const type* state = type::find("state");
   tl->SetItem(0, state);
   tl->SetItem(1, state);
   SetFormal(1, tl, "from:to");
@@ -413,9 +413,9 @@ public:
   virtual void Compute(traverse_data &x, expr** pass, int np);
 };
 
-fsm_instate::fsm_instate() : model_internal(em->BOOL->addProc(), "in_state", 2)
+fsm_instate::fsm_instate() : model_internal(type::find(false, true, DETERM, "bool"), "in_state", 2)
 {
-  const type* state = em->findType("state");
+  const type* state = type::find("state");
   SetFormal(1, state->getSetOfThis(), "sset");
   SetDocumentation("Returns true iff the finite state machine is in one of the specified states.");
 }
@@ -457,7 +457,7 @@ public:
 };
 
 fsm_absorbing::fsm_absorbing()
- : model_internal(em->BOOL->addProc(), "is_absorbed", 1)
+ : model_internal(type::find(false, true, DETERM, "bool"), "is_absorbed", 1)
 {
   SetDocumentation("Returns true iff the finite state machine is in an absorbing state (this includes deadlocked states).");
 }
@@ -491,7 +491,7 @@ public:
 };
 
 fsm_deadlocked::fsm_deadlocked()
- : model_internal(em->BOOL->addProc(), "is_deadlocked", 1)
+ : model_internal(type::find(false, true, DETERM, "bool"), "is_deadlocked", 1)
 {
   SetDocumentation("Returns true iff the finite state machine is in a deadlocked state (no outgoing edges).");
 }
@@ -565,29 +565,19 @@ bool old_init_fsms::execute()
 {
   if (0==em) return false;
 
-  bool ok;
-
   // Set up and register formalisms
   const char* longdocs = "The finite state machine formalism fsm allows for direct specification of a finite state machine. States of the finite state machine are declared, and transitions between states are specified \"by hand\".";
 
   formalism* fsm = new fsm_formalism("fsm", "Finite state machine", longdocs);
-  ok = em->registerType(fsm);
-  if (!ok) {
+  if (type::registerNew(fsm) != fsm) {
     internal_error E(__FILE__, __LINE__);
-    E << "Couldn't register fsm type";
+    E << "fsm type already exists?";
     return false;
   }
 
-  // set up and register state type, if necessary
-  if (!em->findType("state")) {
-    DCASSERT(!em->findType("{state}"));
-    simple_type* t_state = new void_type("state", "Discrete state", "State of a model (finite state machine or Markov chain)");
-    em->registerType(t_state);
-    type* t_set_state = newSetType("{state}", t_state);
-    em->registerType(t_set_state);
-  }
-  DCASSERT(em->findType("state"));
-  DCASSERT(em->findType("{state}"));
+  // set up and register state type
+  simple_type* t_state = type::registerNew(new void_type("state", "Discrete state", "State of a model (finite state machine or Markov chain)"));
+  type::allowSetsOf(t_state);
 
   // Grab functions into a symbol table
   symbol_table* mcsyms = MakeSymbolTable();

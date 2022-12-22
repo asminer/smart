@@ -460,6 +460,7 @@ const type* type::find(bool set, bool proc, modifier mod, const char* tn)
 void type::allowProc(simple_type* t)
 {
     if (!t) return;
+    if (t->addProc()) return;
 
     std::stringstream ss;
     ss << "proc " << *t;
@@ -470,15 +471,15 @@ void type::allowProcMod(bool proc, modifier mod, simple_type* t)
 {
     if (!t) return;
     if ((mod != PHASE) && (mod != RAND)) return;
+    if (t->modifyType(mod)) return;
 
     std::stringstream ss;
     ss << ((PHASE == mod) ? "ph " : "rand ") << *t;
-
     type* mt = new modif_type(ss.str(), mod, t);
 
     if (proc) {
         std::stringstream ps;
-        ps << "proc " << ss.str();
+        ps << "proc " << ps.str();
         new proc_type(ps.str(), mt);
     }
 }
@@ -486,6 +487,7 @@ void type::allowProcMod(bool proc, modifier mod, simple_type* t)
 void type::allowSetsOf(simple_type* t)
 {
     if (!t) return;
+    if (t->getSetOfThis()) return;
 
     std::stringstream ss;
     ss << '{' << *t << '}';

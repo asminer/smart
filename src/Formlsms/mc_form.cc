@@ -365,11 +365,11 @@ public:
   virtual void Compute(traverse_data &x, expr** pass, int np);
 };
 
-mc_init::mc_init() : model_internal(em->VOID, "init", 2)
+mc_init::mc_init() : model_internal(type::find("void"), "init", 2)
 {
   typelist* t = new typelist(2);
-  t->SetItem(0, em->findType("state"));
-  t->SetItem(1, em->REAL);
+  t->SetItem(0, type::find("state"));
+  t->SetItem(1, type::find("real"));
   SetFormal(1, t, "s:w");
   SetRepeat(1);
   SetDocumentation("Sets the initial state(s) with probabilities for a Markov chain model.");
@@ -434,13 +434,13 @@ public:
   virtual void Compute(traverse_data &x, expr** pass, int np);
 };
 
-mc_arcs::mc_arcs() : model_internal(em->VOID, "arcs", 2)
+mc_arcs::mc_arcs() : model_internal(type::find("void"), "arcs", 2)
 {
   typelist* tl = new typelist(3);
-  const type* state = em->findType("state");
+  const type* state = type::find("state");
   tl->SetItem(0, state);
   tl->SetItem(1, state);
-  tl->SetItem(2, em->REAL);
+  tl->SetItem(2, type::find("real"));
   SetFormal(1, tl, "from:to:w");
   SetRepeat(1);
   SetDocumentation("Adds a set of arcs to the Markov chain.");
@@ -499,9 +499,9 @@ public:
   virtual void Compute(traverse_data &x, expr** pass, int np);
 };
 
-mc_instate::mc_instate() : model_internal(em->BOOL->addProc(), "in_state", 2)
+mc_instate::mc_instate() : model_internal(type::find(false, true, DETERM, "bool"), "in_state", 2)
 {
-  const type* state = em->findType("state");
+  const type* state = type::find("state");
   SetFormal(1, state->getSetOfThis(), "sset");
   SetDocumentation("Returns true iff the Markov chain is in one of the specified states.");
 }
@@ -542,7 +542,7 @@ public:
 };
 
 mc_transient::mc_transient()
- : model_internal(em->BOOL->addProc(), "transient", 1)
+ : model_internal(type::find(false, true, DETERM, "bool"), "transient", 1)
 {
   SetDocumentation("Returns true iff the Markov chain is in a transient state.");
 }
@@ -578,7 +578,7 @@ public:
 };
 
 mc_absorbing::mc_absorbing()
- : model_internal(em->BOOL->addProc(), "is_absorbed", 1)
+ : model_internal(type::find(false, true, DETERM, "bool"), "is_absorbed", 1)
 {
   SetDocumentation("Returns true iff the Markov chain is in an absorbing state (this includes deadlocked states).");
 }
@@ -633,12 +633,12 @@ public:
 
 mc_tta::mc_tta(bool disc)
 : model_internal(
-    disc ? em->INT->modifyType(PHASE) : em->REAL->modifyType(PHASE),
+    type::find(false, false, PHASE, disc ? "int" : "real"),
     "tta", 2
   )
 {
   is_disc = disc;
-  SetFormal(1, em->BOOL->addProc(), "stop");
+  SetFormal(1, type::find(false, true, DETERM, "bool"), "stop");
 
   SetDocumentation("Returns the distribution corresponding to the first time that stop becomes true, when starting from the initial distribution.");
 }
@@ -688,8 +688,6 @@ bool old_init_mcform::execute()
 {
   if (0==em) return false;
 
-  bool ok;
-
   // Set up and register formalisms
   const char* longdocs = "The Markov chain formalisms dtmc and ctmc allow for direct specification of a discrete-time or continuous-time Markov chain. The two formalisms are nearly identical; the primary difference is that self-loops in a ctmc are ignored. States of the Markov chain are declared, and transition rates / probabilities are specified \"by hand\".";
 
@@ -697,29 +695,21 @@ bool old_init_mcform::execute()
       "Discrete-time Markov chain", longdocs, true);
   formalism* ctmc = new markov_formalism("ctmc",
       "Continuous-time Markov chain", longdocs, false);
-  ok = em->registerType(dtmc);
-  if (!ok) {
+
+  if (type::registerNew(dtmc) != dtmc) {
     internal_error E(__FILE__, __LINE__);
-    E << "Couldn't register dtmc type";
+    E << "dtmc type already exists?";
     return false;
   }
-  ok = em->registerType(ctmc);
-  if (!ok) {
+  if (type::registerNew(ctmc) != ctmc) {
     internal_error E(__FILE__, __LINE__);
-    E << "Couldn't register ctmc type";
+    E << "ctmc type already exists?";
     return false;
   }
 
-  // set up and register state type, if necessary
-  if (!em->findType("state")) {
-    DCASSERT(!em->findType("{state}"));
-    simple_type* t_state = new void_type("state", "Discrete state", "State of a model (finite state machine or Markov chain)");
-    em->registerType(t_state);
-    type* t_set_state = newSetType("{state}", t_state);
-    em->registerType(t_set_state);
-  }
-  DCASSERT(em->findType("state"));
-  DCASSERT(em->findType("{state}"));
+  // set up and register state type
+  simple_type* t_state = type::registerNew(new void_type("state", "Discrete state", "State of a model (finite state machine or Markov chain)"));
+  type::allowSetsOf(t_state);
 
   // fill symbol tables
   FillSymbolTable(true,   dtmc);
