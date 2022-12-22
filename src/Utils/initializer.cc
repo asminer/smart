@@ -2,6 +2,8 @@
 #include "initializer.h"
 #include "../include/defines.h"
 
+#include <cstring>
+
 // #define DEBUG
 // #define DEBUG_FIND
 

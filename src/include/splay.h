@@ -3,7 +3,7 @@
 #define SPLAY_OLD_H
 
 #include "defines.h"
-
+#include <stdlib.h>
 
 // ==================================================================
 // ||                                                              ||
