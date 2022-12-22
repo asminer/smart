@@ -44,9 +44,9 @@ public:
 };
 
 dcp_maximize::dcp_maximize(engtype* w)
- : dcp_engine(em->REAL, "maximize", w)
+ : dcp_engine(type::find("real"), "maximize", w)
 {
-  SetFormal(1, em->REAL, "c");
+  SetFormal(1, type::find("real"), "c");
   SetDocumentation("Finds variables that maximize the given expression.");
 }
 
@@ -60,9 +60,9 @@ public:
 };
 
 dcp_minimize::dcp_minimize(engtype* w)
- : dcp_engine(em->REAL, "minimize", w)
+ : dcp_engine(type::find("real"), "minimize", w)
 {
-  SetFormal(1, em->REAL, "c");
+  SetFormal(1, type::find("real"), "c");
   SetDocumentation("Finds variables that minimize the given expression.");
 }
 
@@ -76,9 +76,9 @@ public:
 };
 
 dcp_satisfiable::dcp_satisfiable(engtype *w)
- : dcp_engine(em->BOOL, "satisfiable", w)
+ : dcp_engine(type::find("bool"), "satisfiable", w)
 {
-  SetFormal(1, em->BOOL, "c");
+  SetFormal(1, type::find("bool"), "c");
   SetDocumentation("Finds variables that satisfy the given expression.");
 }
 

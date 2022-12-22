@@ -7,8 +7,6 @@
 #include <cstring>
 #include <fstream>
 
-class exprman;
-
 /*
  * Brilliantly-designed, perfect in every way,
  * self-contained lexer class for splitting the input stream(s)
@@ -116,7 +114,6 @@ class lexer {
     private:
         static debugging_msg debug;
 
-        const exprman* em;
         const char** filenames;
         unsigned numfiles;
         unsigned fileindex;
@@ -135,11 +132,10 @@ class lexer {
     public:
         /**
          * Initialize.
-         *  @param  em      exprman for types vs idents and error streams
          *  @param  fns     Input file names given on command line
          *  @param  nfs     Number of input file names
          */
-        lexer(const exprman *_em, const char** fns, unsigned nfs);
+        lexer(const char** fns, unsigned nfs);
 
         // Cleanup
         ~lexer();

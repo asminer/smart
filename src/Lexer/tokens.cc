@@ -115,7 +115,7 @@ std::ostream& token::show(std::ostream &s) const
                                 if (!type_attrib) {
                                     return s << "(null type)";
                                 } else {
-                                    const char* tn = type_attrib->getName();
+                                    const char* tn = type_attrib->getStr();
                                     if (tn) return s << tn;
                                 }
                                 return s << "(null type name)";

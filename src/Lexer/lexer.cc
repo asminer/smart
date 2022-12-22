@@ -5,8 +5,6 @@
 
 #include "../Utils/init_opts.h"
 
-#include "../ExprLib/exprman.h"
-
 #define BUFSIZE 16384
 #define MAX_LEXEME 1024
 
@@ -90,13 +88,9 @@ lexer::lexwarning::lexwarning(const location &L, const char* text)
 // ======================================================================
 //
 
-lexer::lexer(const exprman* _em, const char** fns, unsigned nfs)
+lexer::lexer(const char** fns, unsigned nfs)
     : text(MAX_LEXEME)
 {
-    em = _em;
-    DCASSERT(em);
-
-
     topfile = 0;
     filenames = fns;
     numfiles = nfs;
@@ -709,12 +703,12 @@ void lexer::consume_ident()
     //
     // Check for type names, modifier names.
     //
-    lookaheads[0].modif_attrib = em->findModifier(text.get());
+    lookaheads[0].modif_attrib = type::findModifier(text.get());
     if (lookaheads[0].modif_attrib != NO_SUCH_MODIFIER) {
         finish_attributed_token(token::MODIF);
         return;
     }
-    const type* t = (lookaheads[0].type_attrib = em->findOWDType(text.get()));
+    const type* t = (lookaheads[0].type_attrib = type::find(text.get()));
     if (t) {
         lookaheads[0].tokenID
             = (t->isAFormalism()) ? token::FORMALISM : token::TYPE;

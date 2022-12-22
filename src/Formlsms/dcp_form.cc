@@ -207,9 +207,9 @@ public:
 };
 
 dcp_constraint::dcp_constraint(const type* t)
- : model_internal(em->VOID, "constraint", 2)
+ : model_internal(type::find("void"), "constraint", 2)
 {
-  SetFormal(1, em->BOOL, "c");
+  SetFormal(1, type::find("bool"), "c");
   SetRepeat(1);
   SetDocumentation("Adds constraints to the model's state variables.");
 }
@@ -241,9 +241,9 @@ public:
 };
 
 dcp_unique::dcp_unique(const type* t)
- : model_internal(em->VOID, "unique", 2)
+ : model_internal(type::find("void"), "unique", 2)
 {
-  SetFormal(1, em->INT, "v");
+  SetFormal(1, type::find("int"), "v");
   SetRepeat(1);
   SetDocumentation("Adds constraints so that the passed values are all unique.");
 }
@@ -302,9 +302,9 @@ bool init_dcps::execute()
 
   // Set up and register formalism
   formalism* dcp = new dcp_form("dcp", "discrete constraint program", "foobar");
-  if (! em->registerType(dcp)) {
+  if (type::registerNew(dcp) != dcp) {
     internal_error E(__FILE__, __LINE__);
-    E << "Couldn't register dcp type";
+    E << "dcp type exists already?";
     return false;
   }
   symbol_table* dcpsyms = MakeSymbolTable();

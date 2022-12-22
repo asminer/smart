@@ -87,7 +87,7 @@ public:
 
   bool SetInputs(const char**, int);
 
-
+/*
   inline const type* FindOWDType(const char* s) const {
     DCASSERT(parent);
     return parent->FindOWDType(s);
@@ -96,6 +96,7 @@ public:
     DCASSERT(parent);
     return parent->FindModif(s);
   }
+  */
 };
 debugging_msg lexer_mod::debug;
 
@@ -425,7 +426,7 @@ int ProcessInt()
 int ProcessID()
 {
   yylval.name = strdup(yytext);
-  const type* t = lexdata.FindOWDType(yytext);
+  const type* t = type::find(yytext);
   if (0==t)  return ProcessToken(IDENT);
   return ProcessToken(TYPE);
 }

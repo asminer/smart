@@ -406,7 +406,7 @@ expr* MakeConstraint(expr *x)
     E << ", ignoring";
     return nullptr;
   }
-  const type* ICP_TYPE = em->findOWDType("dcp");
+  const type* ICP_TYPE = type::find("dcp");
   symbol* best = em->findFunction(ICP_TYPE, "constraint");
   if (0==best)  return 0;
   DCASSERT(best->Next() == 0);
@@ -505,7 +505,7 @@ expr* BuildOptionStatement(option* o, bool check, parser_list* list)
 option* BuildOptionHeader(char* name)
 {
   if (0==name) return 0;
-  option_manager* om = pm ? pm->OptMan() : 0;
+  option_manager* om = getGlobalOptionManager();
   option* answer = om ? om->FindOption(name) : 0;
 
   if (0==answer) {
@@ -550,7 +550,7 @@ expr* BuildIntegers(char* typ, parser_list* namelist, expr* values)
   CopyCircular(namelist, names, N);
   return ShowNewStatement(0,
     em->makeModelVarDecs(Where(),
-      model_under_construction, em->INT, values, names, N)
+      model_under_construction, type::find("int"), values, names, N)
   );
 }
 
@@ -569,7 +569,7 @@ expr* BuildBools(char* typ, parser_list* namelist)
   CopyCircular(namelist, names, N);
   return ShowNewStatement(0,
     em->makeModelVarDecs(Where(),
-      model_under_construction, em->BOOL, 0, names, N)
+      model_under_construction, type::find("bool"), 0, names, N)
   );
 }
 
@@ -597,7 +597,7 @@ bool IllegalModelVarName(char* ident, const char* what_am_i)
 void StartModel()
 {
   if (em) {
-    const type* ICP_TYPE = em->findOWDType("dcp");
+    const type* ICP_TYPE = type::find("dcp");
     DCASSERT(0==ModelType);
     DCASSERT(0==model_under_construction);
     DCASSERT(0==ModelInternal);
@@ -693,25 +693,25 @@ inline expr* BuildMeasure(const type* typ, char* ident, symbol* who, expr* rhs)
 // --------------------------------------------------------------
 expr* BuildMaximize(char* ident, expr* rhs)
 {
-  const type* ICP_TYPE = em->findOWDType("dcp");
+  const type* ICP_TYPE = type::find("dcp");
   symbol* who = em->findFunction(ICP_TYPE, "maximize");
-  return BuildMeasure(em->REAL, ident, who, rhs);
+  return BuildMeasure(type::find("real"), ident, who, rhs);
 }
 
 // --------------------------------------------------------------
 expr* BuildMinimize(char* ident, expr* rhs)
 {
-  const type* ICP_TYPE = em->findOWDType("dcp");
+  const type* ICP_TYPE = type::find("dcp");
   symbol* who = em->findFunction(ICP_TYPE, "minimize");
-  return BuildMeasure(em->REAL, ident, who, rhs);
+  return BuildMeasure(type::find("real"), ident, who, rhs);
 }
 
 // --------------------------------------------------------------
 expr* BuildSatisfiable(char* ident, expr* rhs)
 {
-  const type* ICP_TYPE = em->findOWDType("dcp");
+  const type* ICP_TYPE = type::find("dcp");
   symbol* who = em->findFunction(ICP_TYPE, "satisfiable");
-  return BuildMeasure(em->BOOL, ident, who, rhs);
+  return BuildMeasure(type::find("bool"), ident, who, rhs);
 }
 
 // ******************************************************************
@@ -1052,12 +1052,12 @@ expr* MakeBoolConst(char* s)
 {
   if (0==s) return 0;
   result c;
-  DCASSERT(em->BOOL);
-  em->BOOL->assignFromString(c, s);
+  DCASSERT(type::find("bool"));
+  type::find("bool")->assignFromString(c, s);
 
   if (c.isNormal()) {
     free(s);
-    return new value(Where(), em->BOOL, c);
+    return new value(Where(), type::find("bool"), c);
   }
   internal_error E(__FILE__, __LINE__, Where());
   E << "Bad boolean constant: " << s;
@@ -1070,9 +1070,9 @@ expr* MakeIntConst(char* s)
 {
   if (0==s)  return 0;
   result c;
-  DCASSERT(em->INT);
-  em->INT->assignFromString(c, s);
-  expr* foo = new value(Where(), em->INT, c);
+  DCASSERT(type::find("int"));
+  type::find("int")->assignFromString(c, s);
+  expr* foo = new value(Where(), type::find("int"), c);
   free(s);
   return foo;
 }
@@ -1189,7 +1189,7 @@ void InitCompiler(parse_module* parent)
 
   // init globals here.
   result one(1L);
-  ONE = new value(location::NOWHERE(), em->INT, one);
+  ONE = new value(location::NOWHERE(), type::find("int"), one);
 
   MeasureNames.Clear();
 
