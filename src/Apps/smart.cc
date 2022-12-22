@@ -183,19 +183,19 @@ int CmdLineHelp(exprman* em, symbol_table* st, const char** argv, int argc)
   function* hf = smart_cast<function*>(help);
   DCASSERT(hf);
   result keyword;
-  DCASSERT(em->STRING);
+  DCASSERT(type::find("string"));
 
   traverse_data x(traverse_data::Compute);
 
   if (0==argc) {
-    em->STRING->assignFromString(keyword, "");
-    expr* foo = new value(location::NOWHERE(), em->STRING, keyword);
+    type::find("string")->assignFromString(keyword, "");
+    expr* foo = new value(location::NOWHERE(), type::find("string"), keyword);
     hf->Compute(x, &foo, 1);
     Delete(foo);
   } else {
     for (int i=0; i<argc; i++) {
-      em->STRING->assignFromString(keyword, argv[i]);
-      expr* foo = new value(location::NOWHERE(), em->STRING, keyword);
+      type::find("string")->assignFromString(keyword, argv[i]);
+      expr* foo = new value(location::NOWHERE(), type::find("string"), keyword);
       hf->Compute(x, &foo, 1);
       Delete(foo);
     }

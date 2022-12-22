@@ -187,7 +187,7 @@ const type* MakeType(bool proc, char* modif, const type* t)
 {
   modifier m = 0;
   if (modif) {
-    m = em->findModifier(modif);
+    m = type::findModifier(modif);
     if (NO_SUCH_MODIFIER == m) {
       internal_error E(__FILE__, __LINE__, Where());
       E << "Bad type modifier: " << modif;
@@ -1110,7 +1110,7 @@ expr* BuildVarStmt(const type* typ, char* id, expr* ret)
   DCASSERT(typ);
   if (! typ->canDefineVarOfThis()) {
     parse_error E;
-    E << "Constants of type " << typ->getName() << " are not allowed";
+    E << "Constants of type " << *typ << " are not allowed";
     free(id);
     Delete(ret);
     return 0;
@@ -1375,7 +1375,7 @@ symbol* BuildFunction(const type* typ, char* n, parser_list* list)
   DCASSERT(typ);
   if (! typ->canDefineFuncOfThis()) {
     parse_error E;
-    E << "Functions of type " << typ->getName() << " are not allowed";
+    E << "Functions of type " << *typ << " are not allowed";
     free(n);
     DeleteCircular(list);
     return 0;
@@ -1574,7 +1574,7 @@ symbol* BuildModel(const type* typ, char* n, parser_list* list)
   ModelType = dynamic_cast <const formalism*> (typ);
   if (0==ModelType) {
     internal_error E(__FILE__, __LINE__, Where());
-    E << "Type " << typ->getName() << " is not a formalism!";
+    E << "Type " << *typ << " is not a formalism!";
     return 0;
   }
 
@@ -1654,7 +1654,7 @@ symbol* BuildModel(const type* typ, char* n, parser_list* list)
 
   if (0==model_under_construction) {
     parse_error E;
-    E << "Couldn't make model of type " << typ->getName();
+    E << "Couldn't make model of type " << *typ;
   }
 
   return (symbol*) model_under_construction;
@@ -2249,7 +2249,7 @@ expr* BuildTypecast(const type* newtype, expr* opnd)
   }
 
   DCASSERT(newtype);
-  symbol* find = Funcs->FindSymbol(newtype->getName());
+  symbol* find = Funcs->FindSymbol(newtype->getStr());
   function* best = find ? FindBest(find, 0, &opnd, 1, 0, false) : 0;
 
   if (best) {
@@ -2275,12 +2275,12 @@ expr* MakeBoolConst(char* s)
 {
   if (0==s) return 0;
   result c;
-  DCASSERT(em->BOOL);
-  em->BOOL->assignFromString(c, s);
+  DCASSERT(type::find("bool"));
+  type::find("bool")->assignFromString(c, s);
 
   if (c.isNormal()) {
     free(s);
-    return new value(Where(), em->BOOL, c);
+    return new value(Where(), type::find("bool"), c);
   }
   internal_error E(__FILE__, __LINE__, Where());
   E << "Bad boolean constant: " << s;
@@ -2293,17 +2293,17 @@ expr* MakeIntConst(char* s)
 {
   if (0==s)  return 0;
   result c;
-  DCASSERT(em->INT);
-  em->INT->assignFromString(c, s);
+  DCASSERT(type::find("int"));
+  type::find("int")->assignFromString(c, s);
   expr* answer = 0;
   if (c.isNull()) {
     // did we overflow?  try bigints
-    if (em->BIGINT) {
-      em->BIGINT->assignFromString(c, s);
-      answer = new value(Where(), em->BIGINT, c);
+    if (type::find("bigint")) {
+      type::find("bigint")->assignFromString(c, s);
+      answer = new value(Where(), type::find("bigint"), c);
     }
   } else {
-    answer = new value(Where(), em->INT, c);
+    answer = new value(Where(), type::find("int"), c);
   }
   free(s);
   return answer;
@@ -2314,9 +2314,9 @@ expr* MakeRealConst(char* s)
 {
   if (0==s)  return 0;
   result c;
-  DCASSERT(em->REAL);
-  em->REAL->assignFromString(c, s);
-  expr* foo = new value(Where(), em->REAL, c);
+  DCASSERT(type::find("real"));
+  type::find("real")->assignFromString(c, s);
+  expr* foo = new value(Where(), type::find("real"), c);
   free(s);
   return foo;
 }
@@ -2325,9 +2325,9 @@ expr* MakeRealConst(char* s)
 expr* MakeStringConst(char *s)
 {
   result c;
-  DCASSERT(em->STRING);
-  em->STRING->assignFromString(c, s);
-  expr* foo = new value(Where(), em->STRING, c);
+  DCASSERT(type::find("string"));
+  type::find("string")->assignFromString(c, s);
+  expr* foo = new value(Where(), type::find("string"), c);
   free(s);
   return foo;
 }
@@ -2849,21 +2849,21 @@ void InitCompiler(parse_module* parent)
   // init globals and such here.
   if (em) {
     result one(1L);
-    ONE = new value(location::NOWHERE(), em->INT, one);
+    ONE = new value(location::NOWHERE(), type::find("int"), one);
 
     result dk;
     dk.setUnknown();
     Constants->AddSymbol(
-      em->makeConstant(location::NOWHERE(), em->INT, strdup("DontKnow"),
-          new value(location::NOWHERE(), em->INT, dk), 0
+      em->makeConstant(location::NOWHERE(), type::find("int"), strdup("DontKnow"),
+          new value(location::NOWHERE(), type::find("int"), dk), 0
       )
     );
 
     result inf;
     inf.setInfinity(1);
     Constants->AddSymbol(
-      em->makeConstant(location::NOWHERE(), em->INT, strdup("infinity"),
-        new value(location::NOWHERE(), em->INT, inf), 0
+      em->makeConstant(location::NOWHERE(), type::find("int"), strdup("infinity"),
+        new value(location::NOWHERE(), type::find("int"), inf), 0
       )
     );
   } else {

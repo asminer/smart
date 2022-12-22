@@ -75,15 +75,6 @@ public:
   lexer_mod();
   ~lexer_mod();
 
-  inline const type* FindOWDType(const char* s) const {
-    DCASSERT(parent);
-    return parent->FindOWDType(s);
-  }
-  inline modifier FindModif(const char* s) const {
-    DCASSERT(parent);
-    return parent->FindModif(s);
-  }
-
   inline bool StackFull() const { return (topfile+1 >= max_file_depth); }
 
   const location& Where() const;
@@ -567,7 +558,7 @@ int ProcessTemporalOperator()
 int ProcessID()
 {
   yylval.name = 0;
-  const type* t = lexdata.FindOWDType(yytext);
+  const type* t = type::find(yytext);
   if (t) {
     yylval.Type_ID = t;
     if (t->isAFormalism())  return ProcessToken(FORMALISM);
@@ -575,7 +566,7 @@ int ProcessID()
   }
   if (strcmp(yytext, "proc")==0) return ProcessToken(PROC);
   yylval.name = strdup(yytext);
-  if (lexdata.FindModif(yytext)!=NO_SUCH_MODIFIER) return ProcessToken(MODIF);
+  if (type::findModifier(yytext)!=NO_SUCH_MODIFIER) return ProcessToken(MODIF);
   return ProcessToken(IDENT);
 }
 
