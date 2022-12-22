@@ -50,6 +50,9 @@ class splayOfShared {
         void deleteAndClear();
 
         inline unsigned numElements() const { return num_elements; }
+        inline shared_object* getElement(unsigned i) const {
+            return (i<num_elements) ? item[i] : nullptr;
+        }
 
         /** Traverse the elements, in order.
                 @param  t   How to visit each item.

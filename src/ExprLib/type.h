@@ -205,8 +205,10 @@ class type : public shared_string {
         static void allowSetsOf(simple_type* t);
 
         //
-        // TBD: probably need to add methods for documenting all types?
+        // TBD: might want to redesign these methods used for documentation
         //
+        static unsigned numRegistered();
+        static const simple_type* getRegistered(unsigned i);
 
     protected:
         inline void setVoid()               { is_void = true; }

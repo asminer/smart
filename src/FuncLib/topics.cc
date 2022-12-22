@@ -89,56 +89,56 @@ void topic_types::PrintDocs(doc_formatter &df, const char*) const
   df.Out() << "The Smart language is strictly typed; all objects have a specified type. Basic types can be further modified by *natures*, which specify if the object is deterministic or random. Furthermore, objects may be allowed to depend on the state of a stochastic process, which are again modified by the keyword *proc*. Types are also used for formalisms, formalism variables, and sets of objects.\n\n";
   df.Out() << "Simple types:\n";
   df.begin_indent();
-  for (int i=0; i<em->getNumTypes(); i++) {
-    const type* t = em->getTypeNumber(i);
+  for (unsigned i=0; i<type::numRegistered(); i++) {
+    const type* t = type::getRegistered(i);
     DCASSERT(t);
     if (t->isVoid())                continue;
     if (t->isAFormalism())          continue;
     if (t->isASet())                continue;
     if (t->getModifier() != DETERM) continue;
     if (t->hasProc())               continue;
-    df.Out() << t->getName() << "\n";
+    df.Out() << *t << "\n";
   }
   df.end_indent();
   df.Out() << "\nStochastic types:\n";
   df.begin_indent();
-  for (int i=0; i<em->getNumTypes(); i++) {
-    const type* t = em->getTypeNumber(i);
+  for (unsigned i=0; i<type::numRegistered(); i++) {
+    const type* t = type::getRegistered(i);
     if (t->getModifier() == DETERM) continue;
     if (t->hasProc())               continue;
-    df.Out() << t->getName() << "\n";
+    df.Out() << *t << "\n";
   }
   df.end_indent();
   df.Out() << "\nProcess types:\n";
   df.begin_indent();
-  for (int i=0; i<em->getNumTypes(); i++) {
-    const type* t = em->getTypeNumber(i);
+  for (unsigned i=0; i<type::numRegistered(); i++) {
+    const type* t = type::getRegistered(i);
     if (!t->hasProc())    continue;
-    df.Out() << t->getName() << "\n";
+    df.Out() << *t << "\n";
   }
   df.end_indent();
   df.Out() << "\nFormalism types:\n";
   df.begin_indent();
-  for (int i=0; i<em->getNumTypes(); i++) {
-    const type* t = em->getTypeNumber(i);
+  for (unsigned i=0; i<type::numRegistered(); i++) {
+    const type* t = type::getRegistered(i);
     if (!t->isAFormalism())    continue;
-    df.Out() << t->getName() << "\n";
+    df.Out() << *t << "\n";
   }
   df.end_indent();
   df.Out() << "\nVoid types (usually within formalisms):\n";
   df.begin_indent();
-  for (int i=0; i<em->getNumTypes(); i++) {
-    const type* t = em->getTypeNumber(i);
+  for (unsigned i=0; i<type::numRegistered(); i++) {
+    const type* t = type::getRegistered(i);
     if (!t->isVoid())    continue;
-    df.Out() << t->getName() << "\n";
+    df.Out() << *t << "\n";
   }
   df.end_indent();
   df.Out() << "\nSet types:\n";
   df.begin_indent();
-  for (int i=0; i<em->getNumTypes(); i++) {
-    const type* t = em->getTypeNumber(i);
+  for (unsigned i=0; i<type::numRegistered(); i++) {
+    const type* t = type::getRegistered(i);
     if (!t->isASet())    continue;
-    df.Out() << t->getName() << "\n";
+    df.Out() << *t << "\n";
   }
   df.end_indent();
   df.Out() << "\nSee the help topics \"promotions\" and \"casting\" for details about how Smart changes types, and how you can force a type change.\n";
@@ -191,16 +191,16 @@ void topic_promotions::PrintDocs(doc_formatter &df, const char*) const
 
   df.Out() << "If necessary, Smart will attempt to promote expressions to other types.  Each promotion has an associated \"distance\", and Smart will normally choose the promotion with least distance (or give an error if it is unable to decide).  A type promotion can be forced using an explicit cast, see the help topic on \"casting\" for details.  Smart uses the following promotions:\n";
 
-  one_promotion* parray = new one_promotion [em->getNumTypes()];
+  one_promotion* parray = new one_promotion [type::numRegistered()];
 
-  for (int i=0; i<em->getNumTypes(); i++) {
-    const type* from = em->getTypeNumber(i);
+  for (unsigned i=0; i<type::numRegistered(); i++) {
+    const type* from = type::getRegistered(i);
     DCASSERT(from);
 
     // build sorted list of promotions
     int plength = 0;
-    for (int j=0; j<em->getNumTypes(); j++) {
-      const type* to = em->getTypeNumber(j);
+    for (unsigned j=0; j<type::numRegistered(); j++) {
+      const type* to = type::getRegistered(j);
       int d = em->getPromoteDistance(from, to);
       if (d <= 0) continue;
       parray[plength].set(j, d);
@@ -210,14 +210,14 @@ void topic_promotions::PrintDocs(doc_formatter &df, const char*) const
     if (0==plength) continue;  // no promotions from here
 
     HeapSort(parray, plength);
-    df.Out() << "\n" << from->getName() << ":\n";
+    df.Out() << "\n" << *from << ":\n";
     df.begin_indent();
     df.begin_description(15);
 
     for (int j=0; j<plength; j++) {
-      const type* to = em->getTypeNumber(parray[j].getTypeNo());
+      const type* to = type::getRegistered(parray[j].getTypeNo());
       DCASSERT(to);
-      df.item(to->getName());
+      df.item(to->getStr());
       df.Out() << "(distance " << parray[j].getDistance() << ")\n";
     }
 
@@ -257,17 +257,17 @@ void topic_casting::PrintDocs(doc_formatter &df, const char*) const
   df.Out() << "An expression can be explicitly cast from type A to type B if it can be promoted from type A to type B (see help topic \"promotions\").  In addition, the following conversions are allowed:\n\n";
 
   df.begin_indent();
-  for (int i=0; i<em->getNumTypes(); i++) {
-    const type* from = em->getTypeNumber(i);
+  for (unsigned i=0; i<type::numRegistered(); i++) {
+    const type* from = type::getRegistered(i);
     DCASSERT(from);
-    for (int j=0; j<em->getNumTypes(); j++) {
-      const type* to = em->getTypeNumber(j);
+    for (unsigned j=0; j<type::numRegistered(); j++) {
+      const type* to = type::getRegistered(j);
       DCASSERT(to);
       if (em->isPromotable(from, to))   continue;
       if (!em->isCastable(from, to))    continue;
 
-      df.Out() << "from " << from->getName();
-      df.Out() << " to " << to->getName() << "\n";
+      df.Out() << "from " << *from;
+      df.Out() << " to " << *to << "\n";
     } // for j
   } // for i
   df.end_indent();
@@ -434,15 +434,15 @@ void topic_unaryop::PrintDocs(doc_formatter &df, const char*) const
   df.Out() << ".  It may be used on the following types of expressions:\n";
 
   df.begin_description(18);
-  for (int i=0; i<em->getNumTypes(); i++) {
-    const type* t = em->getTypeNumber(i);
+  for (unsigned i=0; i<type::numRegistered(); i++) {
+    const type* t = type::getRegistered(i);
     DCASSERT(t);
     const type* u = em->getTypeOf(op, t);
     if (0==u)  continue;
     std::stringstream foo;
-    foo << em->getOp(op) << " " << t->getName();
+    foo << em->getOp(op) << " " << *t;
     df.item(foo.str().c_str());
-    df.Out() << "has type " << u->getName() << "\n";
+    df.Out() << "has type " << *u << "\n";
     foo.str("");
   }
   df.end_description();
@@ -482,19 +482,19 @@ void topic_binaryop::PrintDocs(doc_formatter &df, const char*) const
   df.Out() << ".  It may be used on the following types of expressions:\n";
 
   df.begin_description(35);
-  for (int i=0; i<em->getNumTypes(); i++) {
-    const type* t = em->getTypeNumber(i);
+  for (unsigned i=0; i<type::numRegistered(); i++) {
+    const type* t = type::getRegistered(i);
     DCASSERT(t);
-    for (int j=0; j<em->getNumTypes(); j++) {
-      const type* u = em->getTypeNumber(j);
+    for (unsigned j=0; j<type::numRegistered(); j++) {
+      const type* u = type::getRegistered(j);
       DCASSERT(u);
       const type* v = em->getTypeOf(t, op, u);
       if (0==v)  continue;
       std::stringstream foo;
-      foo << t->getName() << " ";
-      foo << em->getOp(op) << " " << u->getName();
+      foo << *t << " ";
+      foo << em->getOp(op) << " " << *u;
       df.item(foo.str().c_str());
-      df.Out() << "has type " << v->getName() << "\n";
+      df.Out() << "has type " << *v << "\n";
       foo.str("");
     }
   }
@@ -536,23 +536,23 @@ void topic_trinaryop::PrintDocs(doc_formatter &df, const char*) const
   df.Out() << ".  It may be used on the following types of expressions:\n";
 
   df.begin_description(35);
-  for (int i=0; i<em->getNumTypes(); i++) {
-    const type* t = em->getTypeNumber(i);
+  for (unsigned i=0; i<type::numRegistered(); i++) {
+    const type* t = type::getRegistered(i);
     DCASSERT(t);
-    for (int j=0; j<em->getNumTypes(); j++) {
-      const type* u = em->getTypeNumber(j);
+    for (unsigned j=0; j<type::numRegistered(); j++) {
+      const type* u = type::getRegistered(j);
       DCASSERT(u);
-      for (int k=0; k<em->getNumTypes(); k++) {
-        const type* v = em->getTypeNumber(k);
+      for (unsigned k=0; k<type::numRegistered(); k++) {
+        const type* v = type::getRegistered(k);
         DCASSERT(v);
         const type* w = em->getTypeOf(op, t, u, v);
         if (0==w)  continue;
         std::stringstream foo;
-        foo << t->getName() << " " << em->getFirst(op) << " ";
-        foo << u->getName() << " " << em->getSecond(op) << " ";
-        foo << v->getName();
+        foo << *t << " " << em->getFirst(op) << " ";
+        foo << *u << " " << em->getSecond(op) << " ";
+        foo << *v;
         df.item(foo.str().c_str());
-        df.Out() << "has type " << w->getName() << "\n";
+        df.Out() << "has type " << *w << "\n";
         foo.str("");
       } // for k
     } // for j
@@ -596,19 +596,19 @@ void topic_assocop::PrintDocs(doc_formatter &df, const char*) const
   df.Out() << ".  It may be used on the following types of expressions:\n";
 
   df.begin_description(35);
-  for (int i=0; i<em->getNumTypes(); i++) {
-    const type* t = em->getTypeNumber(i);
+  for (unsigned i=0; i<type::numRegistered(); i++) {
+    const type* t = type::getRegistered(i);
     DCASSERT(t);
-    for (int j=0; j<em->getNumTypes(); j++) {
-      const type* u = em->getTypeNumber(j);
+    for (unsigned j=0; j<type::numRegistered(); j++) {
+      const type* u = type::getRegistered(j);
       DCASSERT(u);
       const type* v = em->getTypeOf(t, flipped, op, u);
       if (0==v)  continue;
       std::stringstream foo;
-      foo << t->getName() << " ";
-      foo << em->getOp(flipped, op) << " " << u->getName();
+      foo << *t << " ";
+      foo << em->getOp(flipped, op) << " " << *u;
       df.item(foo.str().c_str());
-      df.Out() << "has type " << v->getName() << "\n";
+      df.Out() << "has type " << *v << "\n";
       foo.str("");
     }
   }
@@ -628,7 +628,7 @@ public:
 };
 
 topic_simpletype::topic_simpletype(const simple_type* t)
- : help_topic(t->getName(), t->shortDocs())
+ : help_topic(t->getStr(), t->shortDocs())
 {
   st = t;
 }
@@ -656,7 +656,7 @@ public:
 };
 
 topic_formalism::topic_formalism(const formalism* t)
- : help_topic(t->getName(), t->shortDocs())
+ : help_topic(t->getStr(), t->shortDocs())
 {
   ft = t;
 }
@@ -670,10 +670,10 @@ void topic_formalism::PrintDocs(doc_formatter &df, const char*) const
   df.Out() << ft->longDocs();
   df.Out() << "\n\nLegal variable types:";
   df.begin_indent();
-  for (int i=0; i<em->getNumTypes(); i++) {
-    const type* t = em->getTypeNumber(i);
+  for (unsigned i=0; i<type::numRegistered(); i++) {
+    const type* t = type::getRegistered(i);
     DCASSERT(t);
-    if (ft->canDeclareType(t)) df.Out() << t->getName() << "\n";
+    if (ft->canDeclareType(t)) df.Out() << *t << "\n";
   }
   df.end_indent();
 
@@ -744,11 +744,11 @@ void topic_models::PrintDocs(doc_formatter &df, const char*) const
   df.Out() << "where \"formalism\" is one of the formalism types:\n";
   df.begin_indent();
   bool printed = false;
-  for (int i=0; i<em->getNumTypes(); i++) {
-    const type* t = em->getTypeNumber(i);
+  for (unsigned i=0; i<type::numRegistered(); i++) {
+    const type* t = type::getRegistered(i);
     if (!t->isAFormalism())    continue;
     if (printed) df.Out() << ", ";
-    df.Out() << t->getName();
+    df.Out() << *t;
     printed = true;
   }
   df.Out() << ".\n\n";
@@ -852,8 +852,8 @@ bool init_helpfuncs::execute()
   // Automatically add help topics for formalisms or simple types
   // (neat trick!)
   //
-  for (int i=0; i<em->getNumTypes(); i++) {
-    const type* t = em->getTypeNumber(i);
+  for (unsigned i=0; i<type::numRegistered(); i++) {
+    const type* t = type::getRegistered(i);
     if (t->getBaseType() != t) continue;
     //
     // t is a simple type

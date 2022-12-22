@@ -20,9 +20,9 @@ public:
   virtual void Compute(traverse_data &x, expr** pass, int np);
 };
 
-delete_si::delete_si() : simple_internal(em->VOID, "delete", 1)
+delete_si::delete_si() : simple_internal(type::find("void"), "delete", 1)
 {
-  SetFormal(0, em->MODEL, "x");
+  SetFormal(0, type::find("model"), "x");
   SetDocumentation("Free resources used by a model.  This should be done after the model is no longer needed.");
 }
 
@@ -55,12 +55,12 @@ public:
   virtual void Compute(traverse_data &x, expr** pass, int np);
 };
 
-substr_si::substr_si() : simple_internal(em->STRING, "substr", 3)
+substr_si::substr_si() : simple_internal(type::find("string"), "substr", 3)
 {
   empty_string = new shared_string("");
-  SetFormal(0, em->STRING, "x");
-  SetFormal(1, em->INT, "left");
-  SetFormal(2, em->INT, "right");
+  SetFormal(0, type::find("string"), "x");
+  SetFormal(1, type::find("int"), "left");
+  SetFormal(2, type::find("int"), "right");
   SetDocumentation("Get the substring between (and including) elements left and right of string x.  If left>right, returns the empty string.");
 }
 
@@ -172,7 +172,7 @@ int is_null::Traverse(traverse_data &x, expr** pass, int np)
 {
   switch (x.which) {
     case traverse_data::GetType:
-        x.the_type = em->BOOL;
+        x.the_type = type::find("bool");
         return 0;
 
     case traverse_data::Substitute:
@@ -221,7 +221,7 @@ int compute::Traverse(traverse_data &x, expr** pass, int np)
 {
   switch (x.which) {
     case traverse_data::GetType:
-        x.the_type = em->VOID;
+        x.the_type = type::find("void");
         return 0;
 
     case traverse_data::Typecheck:
@@ -250,7 +250,7 @@ public:
   int PromoteParams(expr** pass, int np) const;
   int Substitute(traverse_data &x, expr** pass, int np) const;
   inline const type* ArgType(expr* arg) const {
-    if (0==arg)  return em->NULTYPE;
+    if (0==arg)  return type::null;
     if (arg->NumComponents()>1)  return 0;
     return arg->Type();
   }
@@ -338,7 +338,7 @@ int cond_ci::Typecheck(expr** pass, int np) const
   if (np<3)   return NotEnoughParams(np);
   if (np>3)   return TooManyParams(np);
   const type* args = ReturnType(pass, np);
-  const type* test = args ? args->changeBaseType(em->BOOL) : 0;
+  const type* test = args ? args->changeBaseType(type::find("bool")) : 0;
   int d0 = em->getPromoteDistance(ArgType(pass[0]), test);
   if (d0 < 0)  return BadParam(0, np);
   int d1 = em->getPromoteDistance(ArgType(pass[1]), args);
@@ -352,7 +352,7 @@ int cond_ci::PromoteParams(expr** pass, int np) const
 {
   const type* args = ReturnType(pass, np);
 
-  // const type* test = args ? args->changeBaseType(em->BOOL) : 0;
+  // const type* test = args ? args->changeBaseType(type::find("bool")) : 0;
   // pass[0] = em->promote(pass[0], test);  // Don't think we need to!
   pass[1] = em->promote(pass[1], args);
   pass[2] = em->promote(pass[2], args);
@@ -441,7 +441,7 @@ void case_ci::Compute(traverse_data &x, expr** pass, int np)
   SafeCompute(pass[0], x);
   x.answer = answer;
 
-  const type* t = em->INT;
+  const type* t = type::find("int");
   DCASSERT(t);
   for (int i=2; i<np; i++) {
     SafeCompute(pass[i], x);
@@ -498,7 +498,7 @@ const type* case_ci::ReturnType(expr** pass, int np) const
     if (0==pass[i])  continue; // we can deal with null.
     DCASSERT(pass[i]->NumComponents() == 2);
     t = em->SafeType(pass[i], 0);
-    DCASSERT((em->NULTYPE==t) || (em->INT == t));
+    DCASSERT(type::matches(t, "null") || type::matches(t, "int"));
     t = em->SafeType(pass[i], 1);
     rettype = em->getLeastCommonType(rettype, t);
   }
@@ -519,10 +519,10 @@ int case_ci::Typecheck(expr** pass, int np) const
   if (pass[0]) {
     if (pass[0]->NumComponents() != 1)  return BadParam(0, np);
     t = pass[0]->Type();
-    if (GetBase(t) != em->INT)  return BadParam(0, np);
+    if (!type::matches(GetBase(t), "int"))  return BadParam(0, np);
   } else {
     // ... or null
-    t = em->NULTYPE;
+    t = type::null;
   }
 
   bool rand = DETERM != GetModifier(t);
@@ -534,7 +534,7 @@ int case_ci::Typecheck(expr** pass, int np) const
     if (pass[1]->NumComponents() != 1)  return BadParam(1, np);
     rettype = pass[1]->Type();
   } else {
-    rettype = em->NULTYPE;
+    rettype = type::null;
   }
 
   // The remaining arguments are INT : ANY,
@@ -544,7 +544,7 @@ int case_ci::Typecheck(expr** pass, int np) const
     if (0==pass[i])  continue; // we can deal with null.
     if (pass[i]->NumComponents() != 2)  return BadParam(i, np);
     t = em->SafeType(pass[i], 0);
-    if ((t != em->NULTYPE) && (t != em->INT))  return BadParam(i, np);
+    if (!type::matches(t, "null") && !type::matches(t, "int")) return BadParam(i, np);
     t = em->SafeType(pass[i], 1);
     rettype = em->getLeastCommonType(rettype, t);
     if (0 == rettype)  return BadParam(i, np);
@@ -557,7 +557,7 @@ int case_ci::Typecheck(expr** pass, int np) const
 
   // Ok, this is a valid function call, let's determine the total score
   t = em->SafeType(pass[0]);
-  int score = em->getPromoteDistance(t, ApplyPM(rettype, em->INT));
+  int score = em->getPromoteDistance(t, ApplyPM(rettype, type::find("int")));
   DCASSERT(score >= 0);
 
   int pd = em->getPromoteDistance(em->SafeType(pass[1]), rettype);
@@ -565,7 +565,7 @@ int case_ci::Typecheck(expr** pass, int np) const
   score += pd;
 
   for (int i=2; i<np; i++) {
-    pd = em->getPromoteDistance(em->SafeType(pass[i], 0), em->INT);
+    pd = em->getPromoteDistance(em->SafeType(pass[i], 0), type::find("int"));
     DCASSERT(pd>=0);
     score += pd;
     pd = em->getPromoteDistance(em->SafeType(pass[i], 1), rettype);
@@ -579,14 +579,14 @@ int case_ci::PromoteParams(expr** pass, int np) const
 {
   const type* rettype = ReturnType(pass, np);
 
-  pass[0] = em->promote(pass[0], ApplyPM(rettype, em->INT));
+  pass[0] = em->promote(pass[0], ApplyPM(rettype, type::find("int")));
   pass[1] = em->promote(pass[1], rettype);
 
   const model_def* mt = pass[1] ? pass[1]->GetModelType() : 0;
 
   // A bit ugly, but by far the easiest way
   typelist* t = new typelist(2);
-  t->SetItem(0, em->INT);
+  t->SetItem(0, type::find("int"));
   t->SetItem(1, rettype);
   symbol* foo = MakeFormalParam(t, 0);
   for (int i=2; i<np; i++) {

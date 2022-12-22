@@ -30,7 +30,7 @@ struct ftnode {
   void Print(std::ostream &s, bool depth) {
     if (0==next && depth) s << " or ";
     else if (depth) s << ", ";
-    s << ftype->getName();
+    s << *ftype;
     if (next)  next->Print(s, true);
   }
 };
@@ -105,7 +105,7 @@ private:
 };
 
 help_base::help_base(const char* name, int np)
-: simple_internal(em->VOID, name, np),
+: simple_internal(type::find("void"), name, np),
     df(80, outputStream::globalOut())
 {
   flist = 0;
@@ -169,8 +169,8 @@ void help_base::HelpFuncs(const symbol_table* st, const char* search)
 {
   // how many functions are there per table?
   long max_num = st->NumNames();
-  for (int i=0; i<em->getNumTypes(); i++) {
-    const type* t = em->getTypeNumber(i);
+  for (unsigned i=0; i<type::numRegistered(); i++) {
+    const type* t = type::getRegistered(i);
     if (!t->isAFormalism())    continue;
     const formalism* ft = smart_cast <const formalism*> (t);
     DCASSERT(ft);
@@ -186,8 +186,8 @@ void help_base::HelpFuncs(const symbol_table* st, const char* search)
   AddFunctions(search, 0, nfn);
 
   // Add "formalism" functions
-  for (int i=0; i<em->getNumTypes(); i++) {
-    const type* t = em->getTypeNumber(i);
+  for (unsigned i=0; i<type::numRegistered(); i++) {
+    const type* t = type::getRegistered(i);
     if (!t->isAFormalism())    continue;
     const formalism* ft = smart_cast <const formalism*> (t);
     DCASSERT(ft);
@@ -257,7 +257,7 @@ public:
 help_si::help_si(const symbol_table* fst) : help_base("help", 1)
 {
   funcs = fst;
-  SetFormal(0, em->STRING, "search");
+  SetFormal(0, type::find("string"), "search");
   SetDocumentation("An on-line help mechanism.  Searches for help topics, functions, options, and option constants containing the substring <search>.  Documentation is displayed for all matches.  Use the search string \"topics\" to view the available help topics.  For function documentation, parameters between elipses (\"...\"s) may repeat.");
 }
 
@@ -287,7 +287,7 @@ public:
 helptop_si::helptop_si(const symbol_table* fst) : help_base("help_topic", 1)
 {
   funcs = fst;
-  SetFormal(0, em->STRING, "search");
+  SetFormal(0, type::find("string"), "search");
   SetDocumentation("An on-line help mechanism.  Searches for help topics containing the substring <search>.  Works like \"help\" but displays help topics only.");
 }
 
@@ -308,7 +308,7 @@ public:
 
 helpopt_si::helpopt_si() : help_base("help_option", 1)
 {
-  SetFormal(0, em->STRING, "search");
+  SetFormal(0, type::find("string"), "search");
   SetDocumentation("An on-line help mechanism.  Searches for options and option constants containing the substring <search>.  Works like \"help\" but displays options only.");
 }
 
@@ -332,7 +332,7 @@ helpfunc_si::helpfunc_si(const symbol_table* fst)
  : help_base("help_function", 1)
 {
   funcs = fst;
-  SetFormal(0, em->STRING, "search");
+  SetFormal(0, type::find("string"), "search");
   SetDocumentation("An on-line help mechanism.  Searches for functions containing the substring <search>.  Works like \"help\" but displays functions only.");
 }
 
@@ -354,7 +354,7 @@ public:
 };
 
 version_si::version_si(const char* str)
- : simple_internal(em->STRING, "version", 0)
+ : simple_internal(type::find("string"), "version", 0)
 {
   version_string = new shared_string(str);
   SetDocumentation("Return a string indicating the current version of this software.");
@@ -384,7 +384,7 @@ public:
 };
 
 filename_si::filename_si()
- : simple_internal(em->STRING, "file_name", 0)
+ : simple_internal(type::find("string"), "file_name", 0)
 {
   SetDocumentation("Return the name of the current source file being read by the interpreter.  The name \"-\" is used when reading from standard input.");
 }
@@ -407,7 +407,7 @@ public:
 };
 
 linenumber_si::linenumber_si()
- : simple_internal(em->INT, "line_number", 0)
+ : simple_internal(type::find("int"), "line_number", 0)
 {
   SetDocumentation("Return the line number of the current source file being read by the interpreter.");
 }
@@ -434,10 +434,10 @@ public:
   virtual void Compute(traverse_data &x, expr** pass, int np);
 };
 
-env_si::env_si(const char** e) : simple_internal(em->STRING, "env", 1)
+env_si::env_si(const char** e) : simple_internal(type::find("string"), "env", 1)
 {
   environment = e;
-  SetFormal(0, em->STRING, "find");
+  SetFormal(0, type::find("string"), "find");
   SetDocumentation("Return the first environment string that matches argument find.");
 }
 
@@ -481,9 +481,9 @@ public:
 };
 
 exit_si::exit_si()
- : simple_internal(em->VOID, "exit", 1)
+ : simple_internal(type::find("void"), "exit", 1)
 {
-  SetFormal(0, em->INT, "code");
+  SetFormal(0, type::find("int"), "code");
   SetDocumentation("Exit with specified return code.");
 }
 
@@ -515,7 +515,7 @@ timer* timer_base::watches = 0;
 timer_base::timer_base(const type* t, const char* name)
  : simple_internal(t, name, 1)
 {
-  SetFormal(0, em->INT, "x");
+  SetFormal(0, type::find("int"), "x");
 }
 
 // ******************************************************************
@@ -529,7 +529,7 @@ public:
 };
 
 start_timer_si::start_timer_si()
- : timer_base(em->VOID, "start_timer")
+ : timer_base(type::find("void"), "start_timer")
 {
   SetDocumentation("Starts a CPU timer.  Timers are numbered from 0 to 255; specify the desired timer as the function parameter.  Does nothing if the parameter is out of range.");
 }
@@ -558,7 +558,7 @@ public:
 };
 
 stop_timer_si::stop_timer_si()
- : timer_base(em->REAL, "stop_timer")
+ : timer_base(type::find("real"), "stop_timer")
 {
   SetDocumentation("Stops a CPU timer, and returns the number of seconds of user time elapsed since it was started.  Timers are numbered from 0 to 255; specify the desired timer as the function parameter.  Returns null if the parameter is out of range, or if the timer was never started, or already stopped.");
 }

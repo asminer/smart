@@ -62,9 +62,9 @@ class input_file : public simple_internal {
 };
 
 
-input_file::input_file() : simple_internal(em->BOOL, "input_file", 1)
+input_file::input_file() : simple_internal(type::find("bool"), "input_file", 1)
 {
-    SetFormal(0, em->STRING, "filename");
+    SetFormal(0, type::find("string"), "filename");
     SetDocumentation("Switch the input stream from the specified filename.  If the filename is null, the input stream is switched to standard input. If the filename does not exist or cannot be opened, return false. Returns true on success.");
 }
 
@@ -97,9 +97,9 @@ class read_bool : public simple_internal {
 };
 
 read_bool::read_bool(input_file &_inf)
-    : simple_internal(em->BOOL, "read_bool", 1), infile(_inf)
+    : simple_internal(type::find("bool"), "read_bool", 1), infile(_inf)
 {
-    SetFormal(0, em->STRING, "prompt");
+    SetFormal(0, type::find("string"), "prompt");
     SetDocumentation("Read a boolean value from the input stream.  If the current input stream is standard input, then the string given by \"prompt\" is displayed first.");
 }
 
@@ -115,8 +115,8 @@ void read_bool::Compute(traverse_data &x, expr** pass, int np)
         if (infile.isClosed()) {
             if (!x.answer->isNull()) {
                 out << "Enter the [y/n] value for ";
-                DCASSERT(em->STRING);
-                em->STRING->print(out.stream(), *x.answer);
+                DCASSERT(type::find("string"));
+                type::find("string")->print(out.stream(), *x.answer);
                 out << " : ";
             }
         }
@@ -138,9 +138,9 @@ class read_int : public simple_internal {
 };
 
 read_int::read_int(input_file &_inf)
-    : simple_internal(em->INT, "read_int", 1), infile(_inf)
+    : simple_internal(type::find("int"), "read_int", 1), infile(_inf)
 {
-    SetFormal(0, em->STRING, "prompt");
+    SetFormal(0, type::find("string"), "prompt");
     SetDocumentation("Read an integer value from the input stream.  If the current input stream is standard input, then the string given by \"prompt\" is displayed first.");
 }
 
@@ -155,8 +155,8 @@ void read_int::Compute(traverse_data &x, expr** pass, int np)
     if (infile.isClosed()) {
         if (!x.answer->isNull()) {
             out << "Enter the (integer) value for ";
-            DCASSERT(em->STRING);
-            em->STRING->print(out.stream(), *x.answer);
+            DCASSERT(type::find("string"));
+            type::find("string")->print(out.stream(), *x.answer);
             out << " : ";
         }
     }
@@ -181,9 +181,9 @@ class read_real : public simple_internal {
 };
 
 read_real::read_real(input_file &_inf)
-    : simple_internal(em->REAL, "read_real", 1), infile(_inf)
+    : simple_internal(type::find("real"), "read_real", 1), infile(_inf)
 {
-    SetFormal(0, em->STRING, "prompt");
+    SetFormal(0, type::find("string"), "prompt");
     SetDocumentation("Read a real value from the input stream.  If the current input stream is standard input, then the string given by \"prompt\" is displayed first.");
 }
 
@@ -198,8 +198,8 @@ void read_real::Compute(traverse_data &x, expr** pass, int np)
     if (infile.isClosed()) {
         if (!x.answer->isNull()) {
             out << "Enter the (real) value for ";
-            DCASSERT(em->STRING);
-            em->STRING->print(out.stream(), *x.answer);
+            DCASSERT(type::find("string"));
+            type::find("string")->print(out.stream(), *x.answer);
             out << " : ";
         }
     }
@@ -224,10 +224,10 @@ class read_string : public simple_internal {
 };
 
 read_string::read_string(input_file &_inf)
-    : simple_internal(em->STRING, "read_string", 2), infile(_inf)
+    : simple_internal(type::find("string"), "read_string", 2), infile(_inf)
 {
-    SetFormal(0, em->STRING, "prompt");
-    SetFormal(1, em->INT, "n");
+    SetFormal(0, type::find("string"), "prompt");
+    SetFormal(1, type::find("int"), "n");
     SetDocumentation("Read at most n characters, or until whitespace is seen, from the input stream.  If the current input stream is standard input, then the string given by \"prompt\" is displayed first.");
 }
 
@@ -248,8 +248,8 @@ void read_string::Compute(traverse_data &x, expr** pass, int np)
     if (infile.isClosed()) {
         if (!x.answer->isNull()) {
             out << "Enter the (string, length " << length << ") value for ";
-            DCASSERT(em->STRING);
-            em->STRING->print(out.stream(), *x.answer);
+            DCASSERT(type::find("string"));
+            type::find("string")->print(out.stream(), *x.answer);
             out << " : ";
         }
     }
@@ -321,7 +321,7 @@ int print_type::Traverse(traverse_data &x, expr** pass, int np)
 {
   switch (x.which) {
     case traverse_data::GetType:
-        x.the_type = em->VOID;
+        x.the_type = type::find("void");
         return 0;
 
     case traverse_data::Typecheck:
@@ -362,8 +362,8 @@ void generic_print::compute(std::ostream &s, traverse_data &x,
     // Compute next item to print
     if (0==pass[i]) {
       item.setNull();
-      DCASSERT(em->INT);
-      em->INT->print(s, item);
+      DCASSERT(type::find("int"));
+      type::find("int")->print(s, item);
       continue;
     }
     x.aggregate = 0;
@@ -409,10 +409,10 @@ int generic_print::Traverse(traverse_data &x, expr** pass, int np)
           const type* t = pass[i]->Type(0);
           if (!t || ! t->isPrintable())     return BadParam(i, np);
           if (pass[i]->NumComponents()==1)  continue;
-          if (pass[i]->Type(1) != em->INT)  return BadParam(i, np);
+          if (!type::matches(pass[i]->Type(1), "int")) return BadParam(i, np);
           if (pass[i]->NumComponents()==2)  continue;
-          if (pass[i]->Type(0) != em->REAL) return BadParam(i, np);
-          if (pass[i]->Type(2) != em->INT)  return BadParam(i, np);
+          if (!type::matches(pass[i]->Type(0), "real")) return BadParam(i, np);
+          if (!type::matches(pass[i]->Type(2), "int")) return BadParam(i, np);
           if (pass[i]->NumComponents()==3)  continue;
           return BadParam(i, np);
         } // for i
@@ -448,7 +448,7 @@ int print_ci::Traverse(traverse_data &x, expr** pass, int np)
 {
   switch (x.which) {
     case traverse_data::GetType:
-        x.the_type = em->VOID;
+        x.the_type = type::find("void");
         return 0;
 
     default:
@@ -513,7 +513,7 @@ int sprint_ci::Traverse(traverse_data &x, expr** pass, int np)
 {
     switch (x.which) {
         case traverse_data::GetType:
-            x.the_type = em->STRING;
+            x.the_type = type::find("string");
             return 0;
 
         default:
@@ -532,9 +532,9 @@ public:
 };
 
 generic_file::generic_file(const char* name)
- : simple_internal(em->BOOL, name, 1)
+ : simple_internal(type::find("bool"), name, 1)
 {
-  SetFormal(0, em->STRING, "filename");
+  SetFormal(0, type::find("string"), "filename");
 }
 
 void generic_file::compute(outputStream &s, traverse_data &x, expr** pass, int np) const
@@ -612,9 +612,9 @@ public:
     virtual void Compute(traverse_data &x, expr** pass, int np);
 };
 
-report_file::report_file() : simple_internal(em->BOOL, "report_file", 1)
+report_file::report_file() : simple_internal(type::find("bool"), "report_file", 1)
 {
-    SetFormal(0, em->STRING, "filename");
+    SetFormal(0, type::find("string"), "filename");
     SetDocumentation("Append the report stream to the specified filename. If the file does not exist, it is created. If the filename is null, the report stream is switched to standard output. Returns true on success.");
 }
 
@@ -657,9 +657,9 @@ public:
     virtual void Compute(traverse_data &x, expr** pass, int np);
 };
 
-warning_file::warning_file() : simple_internal(em->BOOL, "warning_file", 1)
+warning_file::warning_file() : simple_internal(type::find("bool"), "warning_file", 1)
 {
-    SetFormal(0, em->STRING, "filename");
+    SetFormal(0, type::find("string"), "filename");
     SetDocumentation("Append the warning stream to the specified filename. If the file does not exist, it is created. If the filename is null, the warning stream is switched to standard error. Returns true on success.");
 }
 

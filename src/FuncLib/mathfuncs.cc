@@ -21,10 +21,10 @@ public:
   virtual void Compute(traverse_data &x, expr** pass, int np);
 };
 
-intdiv_si::intdiv_si() : simple_internal(em->INT, "div", 2)
+intdiv_si::intdiv_si() : simple_internal(type::find("int"), "div", 2)
 {
-  SetFormal(0, em->INT, "a");
-  SetFormal(1, em->INT, "b");
+  SetFormal(0, type::find("int"), "a");
+  SetFormal(1, type::find("int"), "b");
   SetDocumentation("Integer division: computes int(a/b).");
 }
 
@@ -95,23 +95,23 @@ public:
   virtual void Compute(traverse_data &x, expr** pass, int np);
 
   inline void undefined(traverse_data &x, const result &r) const {
-    DCASSERT(em->REAL);
-    DCASSERT(em->INT);
+    DCASSERT(type::find("real"));
+    DCASSERT(type::find("int"));
     expr_error E(x.parent, x.answer);
     E << "pow(";
-    em->REAL->print(E.stream(), r);
+    type::find("real")->print(E.stream(), r);
     E << ", ";
-    em->INT->print(E.stream(), *(x.answer));
+    type::find("int")->print(E.stream(), *(x.answer));
     E << ") is undefined";
   }
 
   static double pow(double x, long n);
 };
 
-pow_si::pow_si() : simple_internal(em->REAL, "pow", 2)
+pow_si::pow_si() : simple_internal(type::find("real"), "pow", 2)
 {
-  SetFormal(0, em->REAL, "x");
-  SetFormal(1, em->INT, "n");
+  SetFormal(0, type::find("real"), "x");
+  SetFormal(1, type::find("int"), "n");
   SetDocumentation("Computes and returns x to the power of n.");
 }
 
@@ -229,9 +229,9 @@ public:
   virtual void Compute(traverse_data &x, expr** pass, int np);
 };
 
-exp_si::exp_si() : simple_internal(em->REAL, "exp", 1)
+exp_si::exp_si() : simple_internal(type::find("real"), "exp", 1)
 {
-  SetFormal(0, em->REAL, "x");
+  SetFormal(0, type::find("real"), "x");
   SetDocumentation("Computes and returns e to the power of x.");
 }
 
@@ -264,9 +264,9 @@ public:
   virtual void Compute(traverse_data &x, expr** pass, int np);
 };
 
-log_si::log_si() : simple_internal(em->REAL, "ln", 1)
+log_si::log_si() : simple_internal(type::find("real"), "ln", 1)
 {
-  SetFormal(0, em->REAL, "x");
+  SetFormal(0, type::find("real"), "x");
   SetDocumentation("Computes and returns the natural logarithm of x.  If x is 0, -infinity is returned.");
 }
 
@@ -296,8 +296,8 @@ void log_si::Compute(traverse_data &x, expr** pass, int np)
   // negative log, error
   expr_error E(x.parent, x.answer);
   E << "log with negative argument: ";
-  DCASSERT(em->REAL);
-  em->REAL->print(E.stream(), *x.answer);
+  DCASSERT(type::find("real"));
+  type::find("real")->print(E.stream(), *x.answer);
 }
 
 // ******************************************************************
@@ -310,9 +310,9 @@ public:
   virtual void Compute(traverse_data &x, expr** pass, int np);
 };
 
-sqrt_si::sqrt_si() : simple_internal(em->REAL, "sqrt", 1)
+sqrt_si::sqrt_si() : simple_internal(type::find("real"), "sqrt", 1)
 {
-  SetFormal(0, em->REAL, "x");
+  SetFormal(0, type::find("real"), "x");
   SetDocumentation("Computes and returns the positive square root of x.");
 }
 
@@ -338,8 +338,8 @@ void sqrt_si::Compute(traverse_data &x, expr** pass, int np)
   // negative square root, error (we don't have complex)
   expr_error E(x.parent, x.answer);
   E << "Square root with negative argument: ";
-  DCASSERT(em->REAL);
-  em->REAL->print(E.stream(), *x.answer);
+  DCASSERT(type::find("real"));
+  type::find("real")->print(E.stream(), *x.answer);
 }
 
 // ******************************************************************
@@ -396,7 +396,7 @@ public:
   virtual void Compute(traverse_data &x, expr** pass, int np);
 };
 
-imax_si::imax_si() : max_si(em->INT)
+imax_si::imax_si() : max_si(type::find("int"))
 {
   // nothing to do
 }
@@ -473,7 +473,7 @@ public:
   virtual void Compute(traverse_data &x, expr** pass, int np);
 };
 
-rmax_si::rmax_si() : max_si(em->REAL)
+rmax_si::rmax_si() : max_si(type::find("real"))
 {
   // Nothing to do
 }
@@ -593,7 +593,7 @@ public:
   virtual void Compute(traverse_data &x, expr** pass, int np);
 };
 
-imin_si::imin_si() : min_si(em->INT)
+imin_si::imin_si() : min_si(type::find("int"))
 {
   // Nothing to do
 }
@@ -669,7 +669,7 @@ public:
   virtual void Compute(traverse_data &x, expr** pass, int np);
 };
 
-rmin_si::rmin_si() : min_si(em->REAL)
+rmin_si::rmin_si() : min_si(type::find("real"))
 {
   // Nothing to do
 }
@@ -745,7 +745,7 @@ This class is given in the header file!
 
 order_si::order_si(const type* args) : simple_internal(args, "ord", 2)
 {
-  SetFormal(0, em->INT, "k");
+  SetFormal(0, type::find("int"), "k");
   SetFormal(1, args, "x");
   SetRepeat(1);
   SetDocumentation("Returns the kth smallest of the passed arguments, or null if k is out of range (1..last).");
@@ -916,7 +916,7 @@ int irorder_si::scratch_size = 0;
 
 irorder_si::irorder_si(const type* args) : order_si(args)
 {
-  is_for_integers = (args == em->INT);
+  is_for_integers = (args == type::find("int"));
 }
 
 void irorder_si::Compute(traverse_data &x, expr** pass, int np)
@@ -1009,8 +1009,8 @@ bool init_mathfuncs::execute()
   static rmax_si    the_rmax;             st->AddSymbol(  &the_rmax   );
   static imin_si    the_imin;             st->AddSymbol(  &the_imin   );
   static rmin_si    the_rmin;             st->AddSymbol(  &the_rmin   );
-  static irorder_si the_iorder(em->INT);  st->AddSymbol(  &the_iorder );
-  static irorder_si the_rorder(em->REAL); st->AddSymbol(  &the_rorder );
+  static irorder_si the_iorder(type::find("int"));  st->AddSymbol(  &the_iorder );
+  static irorder_si the_rorder(type::find("real")); st->AddSymbol(  &the_rorder );
 
   return true;
 }

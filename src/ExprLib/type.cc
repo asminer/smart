@@ -494,6 +494,17 @@ void type::allowSetsOf(simple_type* t)
     new set_type(ss.str(), t);
 }
 
+unsigned type::numRegistered()
+{
+    DCASSERT(allSimple);
+    return allSimple->numElements();
+}
+
+const simple_type* type::getRegistered(unsigned i)
+{
+    DCASSERT(allSimple);
+    return dynamic_cast<simple_type*> (allSimple->getElement(i));
+}
 
 // ******************************************************************
 // *                                                                *
