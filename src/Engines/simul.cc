@@ -15,6 +15,8 @@
 #include "../ExprLib/exprman.h"
 #include "../ExprLib/engine.h"
 
+#include <climits>
+
 // #define DEBUG
 
 // **************************************************************************
