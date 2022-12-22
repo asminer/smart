@@ -129,7 +129,10 @@ void model_event::display(std::ostream &s) const {
 
 void model_event::setEnabling(expr *e) {
 	DCASSERT(e); // at least should be constant "true"
-	DCASSERT(e->Type(0) == em->BOOL || e->Type(0) == em->BOOL->addProc()); DCASSERT(0==enabling);
+    DCASSERT(e->Type(0));
+    DCASSERT(type::matches(e->Type(0)->getBaseType(), "bool"));
+    DCASSERT(e->Type(0)->getModifier() == DETERM);
+	DCASSERT(0==enabling);
 	enabling = e;
 	if (enabling)
 		enabling->PreCompute();
@@ -162,7 +165,7 @@ void model_event::setTimed(expr *dist) {
 	const type* dt = distro->Type(0);
 	DCASSERT(dt);
 
-	const type* et = em->EXPO;
+	const type* et = type::find("expo");
 	if (et) {
 		if (dt == et || dt == et->addProc()) {
 			FT = Expo;
@@ -170,9 +173,7 @@ void model_event::setTimed(expr *dist) {
 		}
 	}
 
-	const type* pi = em->INT;
-	DCASSERT(pi);
-	pi = pi->modifyType(PHASE);
+	const type* pi = type::find(false, false, PHASE, "int");
 	if (pi) {
 		if (dt == pi || dt == pi->addProc()) {
 			FT = Phase_int;
@@ -180,9 +181,7 @@ void model_event::setTimed(expr *dist) {
 		}
 	}
 
-	const type* pr = em->REAL;
-	DCASSERT(pr);
-	pr = pr->modifyType(PHASE);
+	const type* pr = type::find(false, false, PHASE, "real");
 	if (pr) {
 		if (dt == pr || dt == pr->addProc()) {
 			FT = Phase_real;
@@ -1034,7 +1033,7 @@ public:
 };
 
 dsde_part1::dsde_part1(const type* place) :
-		model_internal(em->VOID, "partition", 2) {
+		model_internal(type::find("void"), "partition", 2) {
 	DCASSERT(place);
 	SetFormal(1, place->getSetOfThis(), "vset");
 	SetRepeat(1);
@@ -1074,11 +1073,11 @@ public:
 };
 
 dsde_part2::dsde_part2(const type* place) :
-		model_internal(em->VOID, "partition", 2) {
+		model_internal(type::find("void"), "partition", 2) {
 	DCASSERT(place);
 	typelist* t = new typelist(2);
 	t->SetItem(0, place->getSetOfThis());
-	t->SetItem(1, em->INT);
+	t->SetItem(1, type::find("int"));
 	SetFormal(1, t, "vset:pnum");
 	SetRepeat(1);
 	SetDocumentation(
@@ -1104,7 +1103,7 @@ void dsde_part2::Compute(traverse_data &x, expr** pass, int np) {
 		if (!pnum.isNormal() || pnum.getInt() <= 0) {
             expr_error E(pass[i]);
             E << "Bad group number: ";
-			em->INT->print(E.stream(), pnum);
+			type::find("int")->print(E.stream(), pnum);
 			E << ", ignoring";
 			continue;
 		}
@@ -1131,7 +1130,7 @@ public:
 };
 
 dsde_part3::dsde_part3(const type* place) :
-		model_internal(em->VOID, "partition", 2) {
+		model_internal(type::find("void"), "partition", 2) {
 	DCASSERT(place);
 	typelist* t = new typelist(2);
 	t->SetItem(0, place->getSetOfThis());
@@ -1191,11 +1190,11 @@ public:
 };
 
 dsde_priolevel::dsde_priolevel(const type* trans) :
-		model_internal(em->VOID, "priority", 2) {
+		model_internal(type::find("void"), "priority", 2) {
 	DCASSERT(trans);
 	typelist* t = new typelist(2);
 	t->SetItem(0, trans->getSetOfThis());
-	t->SetItem(1, em->INT);
+	t->SetItem(1, type::find("int"));
 	SetFormal(1, t, "tset:plev");
 	SetRepeat(1);
 	SetDocumentation(
@@ -1220,7 +1219,7 @@ void dsde_priolevel::Compute(traverse_data &x, expr** pass, int np) {
 		if (!plev.isNormal() || plev.getInt() <= 0) {
             expr_error E(pass[i]);
             E << "Bad priority level: ";
-			em->INT->print(E.stream(), plev);
+			type::find("int")->print(E.stream(), plev);
 			E << ", ignoring";
 			continue;
 		}
@@ -1247,7 +1246,7 @@ public:
 };
 
 dsde_priolist::dsde_priolist(const type* trans) :
-		model_internal(em->VOID, "priority", 2) {
+		model_internal(type::find("void"), "priority", 2) {
 	DCASSERT(trans);
 	typelist* t = new typelist(2);
 	t->SetItem(0, trans->getSetOfThis());

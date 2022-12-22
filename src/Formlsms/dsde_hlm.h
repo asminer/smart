@@ -449,7 +449,8 @@ public:
       return hldsm::Compare(o);
   }
   virtual int Compare(const char* x) const {
-      return hldsm::Compare(x);
+      const_string CS(x);
+      return hldsm::Compare(&CS);
   }
 
   // Used for ordering events.

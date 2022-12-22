@@ -91,6 +91,7 @@ public:
 
 
 public:
+  /*
   // inline option_manager* OptMan() { return em->OptMan(); }
   inline const type* FindOWDType(const char* s) const {
     DCASSERT(em);
@@ -100,7 +101,6 @@ public:
     DCASSERT(em);
     return em->findModifier(s);
   }
-  /*
   inline void newLine(int delta=0) {
     DCASSERT(em);
     DCASSERT(em->hasIO());

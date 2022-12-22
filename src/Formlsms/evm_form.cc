@@ -306,7 +306,7 @@ void evm_event::Finalize(outputStream &ds)
       result always_enabled;
       always_enabled.setBool(true);
       setEnabling(
-        new value(location::NOWHERE(), em->BOOL, always_enabled)
+        new value(location::NOWHERE(), type::find("bool"), always_enabled)
       );
     }
     delete[] guards;
@@ -528,11 +528,11 @@ model_var* evm_def::MakeModelVar(const symbol* wrap, shared_object* bnds)
 {
   if (error) return 0;
   DCASSERT(wrap);
+  DCASSERT(wrap->Type());
   DCASSERT(0==bnds);
 
   if (evm_debug.start()) {
-    evm_debug << "adding " << wrap->Type()->getName();
-    evm_debug << ' ' << wrap->Name();
+    evm_debug << "adding " << *wrap->Type() << ' ' << wrap->Name();
     evm_debug.stop();
   }
 
@@ -841,9 +841,9 @@ public:
   virtual int Traverse(traverse_data &x, expr** pass, int np);
 };
 
-evm_eval::evm_eval() : model_internal(em->INT->addProc(), "eval", 2)
+evm_eval::evm_eval() : model_internal(type::find(false, true, DETERM, "int"), "eval", 2)
 {
-  const type* intvar = em->findType("intvar");
+  const type* intvar = type::find("intvar");
   SetFormal(1, intvar, "v");
   SetDocumentation("The value of variable v in the current state.");
 }
@@ -901,13 +901,13 @@ public:
   virtual void Compute(traverse_data &x, expr** pass, int np);
 };
 
-evm_range::evm_range() : model_internal(em->VOID, "range", 2)
+evm_range::evm_range() : model_internal(type::find("void"), "range", 2)
 {
   typelist* t = new typelist(2);
-  const type* place = em->findType("intvar");
+  const type* place = type::find("intvar");
   DCASSERT(place);
   t->SetItem(0, place->getSetOfThis());
-  t->SetItem(1, em->INT->getSetOfThis());
+  t->SetItem(1, type::find(true, false, DETERM, "int"));
   SetFormal(1, t, "vset:r");
   SetRepeat(1);
   SetDocumentation("For each variable v in set vset, set the range of values of v to r.");
@@ -963,13 +963,13 @@ public:
   virtual void Compute(traverse_data &x, expr** pass, int np);
 };
 
-evm_enabled::evm_enabled() : model_internal(em->VOID, "guard", 2)
+evm_enabled::evm_enabled() : model_internal(type::find("void"), "guard", 2)
 {
   typelist* t = new typelist(2);
-  const type* trans = em->findType("event");
+  const type* trans = type::find("event");
   DCASSERT(trans);
   t->SetItem(0, trans->getSetOfThis());
-  t->SetItem(1, em->BOOL->addProc());
+  t->SetItem(1, type::find(false, true, DETERM, "bool"));
   SetFormal(1, t, "vset:c");
   SetRepeat(1);
   SetDocumentation("For each variable v in set vset, add c as a guard for event v (i.e., v cannot occur if c is false).");
@@ -1021,15 +1021,15 @@ public:
   virtual void Compute(traverse_data &x, expr** pass, int np);
 };
 
-evm_assign::evm_assign() : model_internal(em->VOID, "assign", 2)
+evm_assign::evm_assign() : model_internal(type::find("void"), "assign", 2)
 {
   typelist* t = new typelist(3);
-  const type* place = em->findType("intvar");
-  const type* trans = em->findType("event");
+  const type* place = type::find("intvar");
+  const type* trans = type::find("event");
   DCASSERT(place);
   t->SetItem(0, place);
   t->SetItem(1, trans);
-  t->SetItem(2, em->INT->addProc());
+  t->SetItem(2, type::find(false, true, DETERM, "int"));
   SetFormal(1, t, "v:e:n");
   SetRepeat(1);
   SetDocumentation("When event e occurs, set the value of v to be n.");
@@ -1083,13 +1083,13 @@ public:
   virtual void Compute(traverse_data &x, expr** pass, int np);
 };
 
-evm_init::evm_init() : model_internal(em->VOID, "init", 2)
+evm_init::evm_init() : model_internal(type::find("void"), "init", 2)
 {
   typelist* t = new typelist(2);
-  const type* place = em->findType("intvar");
+  const type* place = type::find("intvar");
   DCASSERT(place);
   t->SetItem(0, place->getSetOfThis());
-  t->SetItem(1, em->INT);
+  t->SetItem(1, type::find("int"));
   SetFormal(1, t, "vset:n");
   SetRepeat(1);
   SetDocumentation("For each variable v in set vset, set the initial value of v to n.  If this is not specified for some variable v, the default is the first value in the range set.");
@@ -1148,9 +1148,9 @@ public:
   virtual void Compute(traverse_data &x, expr** pass, int np);
 };
 
-evm_hide::evm_hide() : model_internal(em->VOID, "hide", 2)
+evm_hide::evm_hide() : model_internal(type::find("void"), "hide", 2)
 {
-  const type* trans = em->findType("event");
+  const type* trans = type::find("event");
   DCASSERT(trans);
   SetFormal(1, trans, "e");
   SetRepeat(1);
@@ -1193,9 +1193,9 @@ public:
   virtual void Compute(traverse_data &x, expr** pass, int np);
 };
 
-evm_assert::evm_assert() : model_internal(em->VOID, "assert", 2)
+evm_assert::evm_assert() : model_internal(type::find("void"), "assert", 2)
 {
-  SetFormal(1, em->BOOL->addProc(), "b");
+  SetFormal(1, type::find(false, true, DETERM, "bool"), "b");
   SetRepeat(1);
   SetDocumentation("Define a set of assertions that must be true in each state.  An error message will be displayed if an assertion does not evaluate to true in some state.");
 }
@@ -1245,39 +1245,32 @@ old_init_evmform::old_init_evmform() : startup("init_evmform")
 
 bool old_init_evmform::execute()
 {
-  if (0==em) return false;
+    if (0==em) return false;
 
-  // set up and register intvar types
-  simple_type* t_intvar  = new void_type("intvar", "Integer variable", "Integer variable for a generic event-variable model.");
-  t_intvar->setPrintable();
-  type* t_set_intvar = newSetType("{intvar}", t_intvar);
-  em->registerType(t_intvar);
-  em->registerType(t_set_intvar);
+    //
+    // Set up types.
+    //
 
-  // set up and register trans types
-  simple_type* t_event  = new void_type("event", "Event", "Event for a generic event-variable model.");
-  t_event->setPrintable();
-  type* t_set_event = newSetType("{event}", t_event);
-  em->registerType(t_event);
-  em->registerType(t_set_event);
+    simple_type* t_intvar  = type::registerNew(new void_type("intvar", "Integer variable", "Integer variable for a generic event-variable model."));
+    t_intvar->setPrintable();
+    type::allowSetsOf(t_intvar);
 
-  // another formalism may have already registered these types.
-  // all we care is that they are registered.
-  evm_def::intvar_type = em->findType("intvar");
-  evm_def::event_type = em->findType("event");
-  DCASSERT(evm_def::intvar_type);
-  DCASSERT(evm_def::event_type);
-  DCASSERT(em->findType("{intvar}"));
-  DCASSERT(em->findType("{event}"));
+
+    simple_type* t_event  = type::registerNew(new void_type("event", "Event", "Event for a generic event-variable model."));
+    t_event->setPrintable();
+    type::allowSetsOf(t_event);
+
+    evm_def::intvar_type = t_intvar;
+    evm_def::event_type = t_event;
 
 
   // Set up and register formalisms
   const char* longdocs = "The event & variable formalism allows manipulation of integer state variables by events.  Event enabling expressions and assignment of state variables by events are specified by hand via the appropriate function calls.";
 
   formalism* evm = new evm_formalism("evm", "Event & Variable Model", longdocs);
-  if (!em->registerType(evm)) {
+  if (type::registerNew(evm) != evm) {
     internal_error E(__FILE__, __LINE__);
-    E << "Couldn't register evm type";
+    E << "evm type already exists";
   }
 
   // fill symbol table

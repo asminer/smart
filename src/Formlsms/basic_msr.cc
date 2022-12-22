@@ -110,13 +110,13 @@ public:
 
 numstates_si::numstates_si()
 #ifdef ALLOW_SHOW_PARAMS
- : proc_noengine(Nothing, em->BIGINT, "num_states", 2)
+ : proc_noengine(Nothing, type::find("bigint"), "num_states", 2)
 #else
- : proc_noengine(Nothing, em->BIGINT, "num_states", 1)
+ : proc_noengine(Nothing, type::find("bigint"), "num_states", 1)
 #endif
 {
 #ifdef ALLOW_SHOW_PARAMS
-  SetFormal(1, em->BOOL, "show");
+  SetFormal(1, type::find("bool"), "show");
   SetDocumentation("Returns the number of reachable states.  If show is true, then as a side effect, the reachability set is displayed to the current output stream (unless there are too many states).");
 #else
   SetDocumentation("Computes if necessary, and returns the number of reachable states.");
@@ -166,13 +166,13 @@ public:
 
 numstatesCOV_si::numstatesCOV_si()
 #ifdef ALLOW_SHOW_PARAMS
- : proc_noengine(Nothing, em->BIGINT, "num_statesCOV", 2)
+ : proc_noengine(Nothing, type::find("bigint"), "num_statesCOV", 2)
 #else
- : proc_noengine(Nothing, em->BIGINT, "num_statesCOV", 1)
+ : proc_noengine(Nothing, type::find("bigint"), "num_statesCOV", 1)
 #endif
 {
 #ifdef ALLOW_SHOW_PARAMS
-  SetFormal(1, em->BOOL, "show");
+  SetFormal(1, type::find("bool"), "show");
   SetDocumentation("Returns the number of Coverability states.  If show is true, then as a side effect, the Coverability set is displayed to the current output stream (unless there are too many states).");
 #else
   SetDocumentation("Computes if necessary, and returns the number of coverable states.");
@@ -224,13 +224,13 @@ public:
 
 numarcs_si::numarcs_si()
 #ifdef ALLOW_SHOW_PARAMS
- : proc_noengine(Nothing, em->BIGINT, "num_arcs", 2)
+ : proc_noengine(Nothing, type::find("bigint"), "num_arcs", 2)
 #else
- : proc_noengine(Nothing, em->BIGINT, "num_arcs", 1)
+ : proc_noengine(Nothing, type::find("bigint"), "num_arcs", 1)
 #endif
 {
 #ifdef ALLOW_SHOW_PARAMS
-  SetFormal(1, em->BOOL, "show");
+  SetFormal(1, type::find("bool"), "show");
   SetDocumentation("Returns the number of arcs in the reachability graph or Markov chain.  If show is true, then as a side effect, the graph is displayed to the current output stream (unless it is too large).");
 #else
   SetDocumentation("Computes if necessary, and returns the number of arcs in the underlying process (reachability graph, Markov chain, etc.).");
@@ -280,13 +280,13 @@ public:
 
 numclasses_si::numclasses_si()
 #ifdef ALLOW_SHOW_PARAMS
- : proc_noengine(Nothing, em->BIGINT, "num_classes", 2)
+ : proc_noengine(Nothing, type::find("bigint"), "num_classes", 2)
 #else
- : proc_noengine(Nothing, em->BIGINT, "num_classes", 1)
+ : proc_noengine(Nothing, type::find("bigint"), "num_classes", 1)
 #endif
 {
 #ifdef ALLOW_SHOW_PARAMS
-  SetFormal(1, em->BOOL, "show");
+  SetFormal(1, type::find("bool"), "show");
   SetDocumentation("Returns the number of terminal strongly-connected components in the reachability graph (equivalently, the number of recurrent classes in the Markov chain).  If show is true, then as a side effect, the states in each TSCC are displayed to the current output stream.");
 #else
   SetDocumentation("Computes if necessary, and returns the number of terminal strongly-connected components in the reachability graph (equivalently, the number of recurrent classes in the Markov chain).  Note that an absorbing state is counted as its own recurrent class.");
@@ -348,13 +348,13 @@ public:
 
 var_order_transform::var_order_transform()
 #ifdef VAR_PARAMS
- : proc_noengine(Nothing, em->BIGINT, "var_order_transform", 2)
+ : proc_noengine(Nothing, type::find("bigint"), "var_order_transform", 2)
 #else
- : proc_noengine(Nothing, em->BIGINT, "var_order_transform", 1)
+ : proc_noengine(Nothing, type::find("bigint"), "var_order_transform", 1)
 #endif
 {
 #ifdef VAR_PARAMS
-  SetFormal(1, em->INT, "heuristic");
+  SetFormal(1, type::find("int"), "heuristic");
   SetDocumentation("Variable Ordering Heuristic. Side effect: computes the reachability set and displays it, and returns the number of states.");
 #else
   SetDocumentation("Variable Ordering Experiment. Side effect: computes the reachability set and returns the number of states.");
@@ -437,13 +437,13 @@ public:
 
 numlevels_si::numlevels_si()
 #ifdef ALLOW_SHOW_PARAMS
- : msr_noengine(Nothing, em->INT, "num_levels", 2)
+ : msr_noengine(Nothing, type::find("int"), "num_levels", 2)
 #else
- : msr_noengine(Nothing, em->INT, "num_levels", 1)
+ : msr_noengine(Nothing, type::find("int"), "num_levels", 1)
 #endif
 {
 #ifdef ALLOW_SHOW_PARAMS
-  SetFormal(1, em->BOOL, "show");
+  SetFormal(1, type::find("bool"), "show");
   SetDocumentation("Returns the number of levels of a model. This is used for hierarchical state representations, including MDDs. Assignment of state variables to levels can be done using the appropriate functions for each formalism.  If parameter show is true, then as a side effect, the state variables in each level are displayed to the current output stream.");
 #else
   SetDocumentation("Returns the number of levels of a model. This is used for hierarchical state representations, including MDDs.");
@@ -539,13 +539,13 @@ public:
 
 numevents_si::numevents_si()
 #ifdef ALLOW_SHOW_PARAMS
- : msr_noengine(Nothing, em->INT, "num_events", 2)
+ : msr_noengine(Nothing, type::find("int"), "num_events", 2)
 #else
- : msr_noengine(Nothing, em->INT, "num_events", 1)
+ : msr_noengine(Nothing, type::find("int"), "num_events", 1)
 #endif
 {
 #ifdef ALLOW_SHOW_PARAMS
-  SetFormal(1, em->BOOL, "show");
+  SetFormal(1, type::find("bool"), "show");
   SetDocumentation("Returns the number of events of a model. This is useful for debugging a model. If parameter show is true, then as a side effect, information for each event is displayed to the current output stream.");
 #else
   SetDocumentation("Returns the number of events of a model.");
@@ -592,13 +592,13 @@ public:
 
 numvars_si::numvars_si()
 #ifdef ALLOW_SHOW_PARAMS
- : msr_noengine(Nothing, em->INT, "num_vars", 2)
+ : msr_noengine(Nothing, type::find("int"), "num_vars", 2)
 #else
- : msr_noengine(Nothing, em->INT, "num_vars", 1)
+ : msr_noengine(Nothing, type::find("int"), "num_vars", 1)
 #endif
 {
 #ifdef ALLOW_SHOW_PARAMS
-  SetFormal(1, em->BOOL, "show");
+  SetFormal(1, type::find("bool"), "show");
   SetDocumentation("Returns the number of state variables in a model. This is useful for debugging a model. If parameter show is true, then as a side effect, information for each state variable is displayed to the current output stream.");
 #else
   SetDocumentation("Returns the number of state variables in a model.");
@@ -658,10 +658,10 @@ public:
 
 
 showstateset_si::showstateset_si()
- : proc_noengine(Nothing, em->VOID, "show_stateset", 2)
+ : proc_noengine(Nothing, type::find("void"), "show_stateset", 2)
 {
   SetDocumentation("Displays the reachability set to the current output stream.  The reachability set will be constructed first, if necessary.  If parameter `internal' is true, then the internal representation of the stateset is displayed; otherwise, a storage-independent list of stateset is displayed (unless there are too many).");
-  SetFormal(1, em->STATESET, "internal"
+  SetFormal(1, type::find("stateset"), "internal"
   );
 }
 
@@ -696,10 +696,10 @@ public:
 
 
 showstatesetCOV_si::showstatesetCOV_si()
- : proc_noengine(Nothing, em->VOID, "show_statesetCOV", 2)
+ : proc_noengine(Nothing, type::find("void"), "show_statesetCOV", 2)
 {
   SetDocumentation("Displays the Coverability set to the current output stream.  If parameter `internal' is true, then the internal representation of the stateset is displayed; otherwise, a storage-independent list of stateset is displayed (unless there are too many).");
-  SetFormal(1, em->STATESET, "internal"
+  SetFormal(1, type::find("stateset"), "internal"
   );
 }
 
@@ -735,13 +735,13 @@ public:
 
 
 showstates_si::showstates_si()
- : proc_noengine(Nothing, em->VOID, "show_states", 2)
+ : proc_noengine(Nothing, type::find("void"), "show_states", 2)
 {
   SetDocumentation("Displays the reachability set to the current output stream.  The reachability set will be constructed first, if necessary.  If parameter `internal' is true, then the internal representation of the states is displayed; otherwise, a storage-independent list of states is displayed (unless there are too many).");
   result def;
   def.setBool(false);
-  SetFormal(1, em->BOOL, "internal",
-    new value(location::NOWHERE(), em->BOOL, def)
+  SetFormal(1, type::find("bool"), "internal",
+    new value(location::NOWHERE(), type::find("bool"), def)
   );
 }
 
@@ -777,13 +777,13 @@ public:
 
 
 showstatesCOV_si::showstatesCOV_si()
- : proc_noengine(Nothing, em->VOID, "show_statesCOV", 2)
+ : proc_noengine(Nothing, type::find("void"), "show_statesCOV", 2)
 {
   SetDocumentation("Displays the reachability set to the current output stream.  The reachability set will be constructed first, if necessary.  If parameter `internal' is true, then the internal representation of the states is displayed; otherwise, a storage-independent list of states is displayed (unless there are too many).");
   result def;
   def.setBool(false);
-  SetFormal(1, em->BOOL, "internal",
-    new value(location::NOWHERE(), em->BOOL, def)
+  SetFormal(1, type::find("bool"), "internal",
+    new value(location::NOWHERE(), type::find("bool"), def)
   );
 }
 
@@ -819,13 +819,13 @@ public:
 };
 
 showarcs_si::showarcs_si()
- : proc_noengine(Nothing, em->VOID, "show_arcs", 2)
+ : proc_noengine(Nothing, type::find("void"), "show_arcs", 2)
 {
   SetDocumentation("Display the underlying reachability graph to the current output stream.  The process will be constructed first, if necessary.  If parameter `internal' is true, then the internal representation of the process is displayed; otherwise, a storage-independent enumeration of the process is displayed (unless it is too large).");
   result def;
   def.setBool(false);
-  SetFormal(1, em->BOOL, "internal",
-    new value(location::NOWHERE(), em->BOOL, def)
+  SetFormal(1, type::find("bool"), "internal",
+    new value(location::NOWHERE(), type::find("bool"), def)
   );
 }
 
@@ -861,13 +861,13 @@ public:
 };
 
 showarcsCOV_si::showarcsCOV_si() :
-		proc_noengine(Nothing, em->VOID, "show_arcsCOV", 2) {
+		proc_noengine(Nothing, type::find("void"), "show_arcsCOV", 2) {
 	SetDocumentation(
 			"Display the underlying reachability graph to the current output stream.  The process will be constructed first, if necessary.  If parameter `internal' is true, then the internal representation of the process is displayed; otherwise, a storage-independent enumeration of the process is displayed (unless it is too large).");
 	result def;
 	def.setBool(false);
-	SetFormal(1, em->BOOL, "internal",
-        new value(location::NOWHERE(), em->BOOL, def)
+	SetFormal(1, type::find("bool"), "internal",
+        new value(location::NOWHERE(), type::find("bool"), def)
     );
 }
 
@@ -902,13 +902,13 @@ public:
 };
 
 showproc_si::showproc_si() :
-		proc_noengine(Nothing, em->VOID, "show_proc", 2) {
+		proc_noengine(Nothing, type::find("void"), "show_proc", 2) {
 	SetDocumentation(
 			"Display the underlying process (reachability graph, Markov chain, etc.) to the current output stream.  The process will be constructed first, if necessary.  If parameter `internal' is true, then the internal representation of the process is displayed; otherwise, a storage-independent enumeration of the process is displayed (unless it is too large).");
 	result def;
 	def.setBool(false);
-	SetFormal(1, em->BOOL, "internal",
-        new value(location::NOWHERE(), em->BOOL, def)
+	SetFormal(1, type::find("bool"), "internal",
+        new value(location::NOWHERE(), type::find("bool"), def)
     );
 }
 
@@ -952,7 +952,7 @@ public:
 };
 
 showclasses_si::showclasses_si()
- : proc_noengine(Nothing, em->VOID, "show_classes", 1)
+ : proc_noengine(Nothing, type::find("void"), "show_classes", 1)
 {
   SetDocumentation("Shows the classification of states into terminal strongly-connected components in the reachability graph (equivalently, the number of recurrent classes in the Markov chain) to the current output stream.");
 }
@@ -992,7 +992,7 @@ public:
 };
 
 showlevels_si::showlevels_si()
- : msr_noengine(Nothing, em->VOID, "show_levels", 1)
+ : msr_noengine(Nothing, type::find("void"), "show_levels", 1)
 {
   SetDocumentation("Display the state variables by level to the current output stream.  This is used for hierarchical state representations, including MDDs.  Assignment of state variables to levels can be done using the appropriate functions for each formalism.");
 }
@@ -1065,7 +1065,7 @@ public:
 };
 
 showevents_si::showevents_si()
- : msr_noengine(Nothing, em->VOID, "show_events", 1)
+ : msr_noengine(Nothing, type::find("void"), "show_events", 1)
 {
   SetDocumentation("Information for each model event is displayed to the current output stream.  This is useful for debugging a model.");
 }
@@ -1096,7 +1096,7 @@ public:
 };
 
 showvars_si::showvars_si()
- : msr_noengine(Nothing, em->VOID, "show_vars", 1)
+ : msr_noengine(Nothing, type::find("void"), "show_vars", 1)
 {
   SetDocumentation("Information for each state variable is displayed to the current output stream.  This is useful for debugging a model.");
 }
@@ -1142,7 +1142,7 @@ public:
 };
 
 run_for_MCC_si::run_for_MCC_si()
- : proc_noengine(Nothing, em->VOID, "run_for_MCC", 1)
+ : proc_noengine(Nothing, type::find("void"), "run_for_MCC", 1)
 {
   SetDocumentation("Specialized function for running experiments for the annual Model Checking Competition.");
 }
@@ -1206,7 +1206,7 @@ public:
 };
 
 run_for_MCC_UPPERBOUNDS_si::run_for_MCC_UPPERBOUNDS_si(const type* place)
-: proc_noengine(Nothing, em->BIGINT, "run_for_MCC_UPPERBOUNDS", 2)
+: proc_noengine(Nothing, type::find("bigint"), "run_for_MCC_UPPERBOUNDS", 2)
 {
    DCASSERT(place);
    SetFormal(1, place->getSetOfThis(), "pset");
@@ -1308,7 +1308,7 @@ public:
 };
 
 initial_si::initial_si()
- : proc_noengine(Nothing, em->STATESET, "initial", 1)
+ : proc_noengine(Nothing, type::find("stateset"), "initial", 1)
 {
   SetDocumentation("Returns the set of initial states within a model.");
 }
@@ -1346,7 +1346,7 @@ public:
 };
 
 reachable_si::reachable_si()
- : proc_noengine(Nothing, em->STATESET, "reachable", 1)
+ : proc_noengine(Nothing, type::find("stateset"), "reachable", 1)
 {
   SetDocumentation("Returns the set of reachable states within a model.");
 }
@@ -1384,9 +1384,9 @@ public:
 };
 
 potential_si::potential_si()
- : proc_noengine(Nothing, em->STATESET, "potential", 2)
+ : proc_noengine(Nothing, type::find("stateset"), "potential", 2)
 {
-  SetFormal(1, em->BOOL->addProc(), "p");
+  SetFormal(1, type::find(false, true, DETERM, "bool"), "p");
   SetDocumentation("Returns the set of model states satisfying p.  Note that this set could contain states that are not reachable from the initial state(s) of the model.");
 }
 
@@ -1423,9 +1423,9 @@ public:
 };
 
 writedot_si::writedot_si()
- : msr_noengine(Nothing, em->VOID, "write_dot", 2)
+ : msr_noengine(Nothing, type::find("void"), "write_dot", 2)
 {
-  SetFormal(1, em->STRING, "filename");
+  SetFormal(1, type::find("string"), "filename");
   SetDocumentation("Writes the graph representation of the model to a file named filename (or not at all if this is null), in the format of the dot graph visualization tool.  This is done upon instantiation of the model.  The file is not overwritten if it already exists.");
 }
 

@@ -119,9 +119,9 @@ public:
 };
 
 EX_base::EX_base(const char* name, bool rt)
- : CTL_engine(em->STATESET, name, rt, 2)
+ : CTL_engine(type::find("stateset"), name, rt, 2)
 {
-  SetFormal(1, em->STATESET, "p");
+  SetFormal(1, type::find("stateset"), "p");
 }
 
 void EX_base::Compute(traverse_data &x, expr** pass, int np)
@@ -180,9 +180,9 @@ public:
 };
 
 EF_base::EF_base(const char* name, bool rt)
- : CTL_engine(em->STATESET, name, rt, 2)
+ : CTL_engine(type::find("stateset"), name, rt, 2)
 {
-  SetFormal(1, em->STATESET, "p");
+  SetFormal(1, type::find("stateset"), "p");
 }
 
 void EF_base::Compute(traverse_data &x, expr** pass, int np)
@@ -241,10 +241,10 @@ public:
 };
 
 EU_base::EU_base(const char* name, bool rt)
- : CTL_engine(em->STATESET, name, rt, 3)
+ : CTL_engine(type::find("stateset"), name, rt, 3)
 {
-  SetFormal(1, em->STATESET, "p");
-  SetFormal(2, em->STATESET, "q");
+  SetFormal(1, type::find("stateset"), "p");
+  SetFormal(2, type::find("stateset"), "q");
 }
 
 void EU_base::Compute(traverse_data &x, expr** pass, int np)
@@ -309,9 +309,9 @@ public:
 };
 
 EG_base::EG_base(const char* name, bool rt)
- : CTL_engine(em->STATESET, name, rt, 2)
+ : CTL_engine(type::find("stateset"), name, rt, 2)
 {
-  SetFormal(1, em->STATESET, "p");
+  SetFormal(1, type::find("stateset"), "p");
 }
 
 void EG_base::Compute(traverse_data &x, expr** pass, int np)
@@ -373,9 +373,9 @@ public:
 };
 
 AX_base::AX_base(const char* name, bool rt)
- : CTL_engine(em->STATESET, name, rt, 2)
+ : CTL_engine(type::find("stateset"), name, rt, 2)
 {
-  SetFormal(1, em->STATESET, "p");
+  SetFormal(1, type::find("stateset"), "p");
 }
 
 void AX_base::Compute(traverse_data &x, expr** pass, int np)
@@ -434,9 +434,9 @@ public:
 };
 
 AF_base::AF_base(const char* name, bool rt)
- : CTL_engine(em->STATESET, name, rt, 2)
+ : CTL_engine(type::find("stateset"), name, rt, 2)
 {
-  SetFormal(1, em->STATESET, "p");
+  SetFormal(1, type::find("stateset"), "p");
 }
 
 void AF_base::Compute(traverse_data &x, expr** pass, int np)
@@ -497,9 +497,9 @@ public:
 };
 
 AG_base::AG_base(const char* name, bool rt)
- : CTL_engine(em->STATESET, name, rt, 2)
+ : CTL_engine(type::find("stateset"), name, rt, 2)
 {
-  SetFormal(1, em->STATESET, "p");
+  SetFormal(1, type::find("stateset"), "p");
 }
 
 void AG_base::Compute(traverse_data &x, expr** pass, int np)
@@ -558,10 +558,10 @@ public:
 };
 
 AU_base::AU_base(const char* name, bool rt)
- : CTL_engine(em->STATESET, name, rt, 3)
+ : CTL_engine(type::find("stateset"), name, rt, 3)
 {
-  SetFormal(1, em->STATESET, "p");
-  SetFormal(2, em->STATESET, "q");
+  SetFormal(1, type::find("stateset"), "p");
+  SetFormal(2, type::find("stateset"), "q");
 }
 
 void AU_base::Compute(traverse_data &x, expr** pass, int np)
@@ -629,10 +629,10 @@ public:
 };
 
 AEF_si::AEF_si()
- : CTL_engine(em->STATESET, "AEF", false, 3)
+ : CTL_engine(type::find("stateset"), "AEF", false, 3)
 {
-  SetFormal(1, em->STATESET, "p");
-  SetFormal(2, em->STATESET, "q");
+  SetFormal(1, type::find("stateset"), "p");
+  SetFormal(2, type::find("stateset"), "q");
   SetDocumentation("AEF operator: build set of source states, from which we can guarantee that we reach a state in q.  For states in p, we can choose the next state; otherwise we cannot.");
 }
 
@@ -662,10 +662,10 @@ public:
 };
 
 num_paths::num_paths()
-: CTL_engine(em->BIGINT, "num_paths", false, 3)
+: CTL_engine(type::find("bigint"), "num_paths", false, 3)
 {
-  SetFormal(1, em->STATESET, "src");
-  SetFormal(2, em->STATESET, "dest");
+  SetFormal(1, type::find("stateset"), "src");
+  SetFormal(2, type::find("stateset"), "dest");
   SetDocumentation("Count the number of distinct paths from src states to dest states.  Will be infinite if any of these paths contains a cycle.");
 }
 
@@ -706,9 +706,9 @@ public:
 };
 
 states::states()
-: CTL_engine(em->STATESET, "states", false, 2)
+: CTL_engine(type::find("stateset"), "states", false, 2)
 {
-  SetFormal(1, em->TEMPORAL, "formula");
+  SetFormal(1, type::find("temporal"), "formula");
   SetDocumentation("Compute the stateset satisfying the given temporal formula.");
 }
 
@@ -745,7 +745,7 @@ protected:
   class CTL_trace_ex : public CTL_engine {
   public:
     CTL_trace_ex(const char* name, bool rt, int np)
-      : CTL_engine(em->TRACE, name, rt, np)
+      : CTL_engine(type::find("trace"), name, rt, np)
     {
     }
 
@@ -792,7 +792,7 @@ public:
 };
 
 CTL_trace::CTL_trace(const char* name, bool rt, int np)
-  : CTL_engine(em->STATESET, name, rt, np)
+  : CTL_engine(type::find("stateset"), name, rt, np)
 {
 }
 
@@ -822,10 +822,10 @@ protected:
     And_trace_ex()
       : CTL_trace_ex("And_trace_ex", false, 5)
     {
-      SetFormal(1, em->STATESET, "the states satisfying the left sub-formula");
-      SetFormal(2, em->TRACE, "the callback function of witness generation for the left sub-formula.");
-      SetFormal(3, em->STATESET, "the states satisfying the right sub-formula");
-      SetFormal(4, em->TRACE, "the callback function of witness generation for the right sub-formula.");
+      SetFormal(1, type::find("stateset"), "the states satisfying the left sub-formula");
+      SetFormal(2, type::find("trace"), "the callback function of witness generation for the left sub-formula.");
+      SetFormal(3, type::find("stateset"), "the states satisfying the right sub-formula");
+      SetFormal(4, type::find("trace"), "the callback function of witness generation for the right sub-formula.");
     }
 
     virtual void Compute(traverse_data &x, expr** pass, int np);
@@ -880,8 +880,8 @@ void And_trace_si::And_trace_ex::Compute(traverse_data &x, expr** pass, int np)
 And_trace_si::And_trace_si()
  : CTL_trace("And_trace", false, 3)
 {
-  SetFormal(1, em->STATESET, "states satisfying the left sub-formula");
-  SetFormal(2, em->STATESET, "states satisfying the right sub-formula");
+  SetFormal(1, type::find("stateset"), "states satisfying the left sub-formula");
+  SetFormal(2, type::find("stateset"), "states satisfying the right sub-formula");
 }
 
 void And_trace_si::Compute(traverse_data &x, expr** pass, int np)
@@ -919,9 +919,9 @@ void And_trace_si::Compute(traverse_data &x, expr** pass, int np)
   const int nps = 5;
   expr** ps = new expr*[nps];
   ps[0] = pass[0];
-  ps[1] = new value(Where(), em->STATESET, result(left));
+  ps[1] = new value(Where(), type::find("stateset"), result(left));
   ps[2] = left_cb;
-  ps[3] = new value(Where(), em->STATESET, result(right));
+  ps[3] = new value(Where(), type::find("stateset"), result(right));
   ps[4] = right_cb;
 
   expr* fc = em->makeFunctionCall(Where(), &the_and_trace_ex, ps, nps);
@@ -942,9 +942,9 @@ protected:
     EX_trace_ex()
       : CTL_trace_ex("EX_trace_ex", false, 4)
     {
-      SetFormal(1, em->STATESET, "the states satisfying the sub-formula");
-      SetFormal(2, em->VOID,     "trace data");
-      SetFormal(3, em->TRACE,    "the callback function of witness generation for the sub-formula");
+      SetFormal(1, type::find("stateset"), "the states satisfying the sub-formula");
+      SetFormal(2, type::find("void"),     "trace data");
+      SetFormal(3, type::find("trace"),    "the callback function of witness generation for the sub-formula");
     }
 
     virtual void Compute(traverse_data &x, expr** pass, int np);
@@ -992,7 +992,7 @@ void EX_trace_si::EX_trace_ex::Compute(traverse_data &x, expr** pass, int np)
 EX_trace_si::EX_trace_si()
  : CTL_trace("EX_trace", false, 2)
 {
-  SetFormal(1, em->STATESET, "states satisfying the sub-formula");
+  SetFormal(1, type::find("stateset"), "states satisfying the sub-formula");
 }
 
 void EX_trace_si::Compute(traverse_data &x, expr** pass, int np)
@@ -1013,8 +1013,8 @@ void EX_trace_si::Compute(traverse_data &x, expr** pass, int np)
   const int nps = 4;
   expr** ps = new expr*[nps];
   ps[0] = pass[0];
-  ps[1] = new value(Where(), em->STATESET, result(p));
-  ps[2] = new value(Where(), em->VOID, result(td));
+  ps[1] = new value(Where(), type::find("stateset"), result(p));
+  ps[2] = new value(Where(), type::find("void"), result(td));
   ps[3] = const_cast<expr*>(x.the_callback);
 
   expr* fc = em->makeFunctionCall(Where(), &the_EX_trace_ex, ps, nps);
@@ -1035,9 +1035,9 @@ protected:
     EF_trace_ex()
       : CTL_trace_ex("EF_trace_ex", false, 4)
     {
-      SetFormal(1, em->STATESET, "the states satisfying the subformula");
-      SetFormal(2, em->VOID,     "trace data");
-      SetFormal(3, em->TRACE,    "the callback function of witness generation for the sub-formula");
+      SetFormal(1, type::find("stateset"), "the states satisfying the subformula");
+      SetFormal(2, type::find("void"),     "trace data");
+      SetFormal(3, type::find("trace"),    "the callback function of witness generation for the sub-formula");
     }
 
     virtual void Compute(traverse_data &x, expr** pass, int np);
@@ -1085,7 +1085,7 @@ void EF_trace_si::EF_trace_ex::Compute(traverse_data &x, expr** pass, int np)
 EF_trace_si::EF_trace_si()
  : CTL_trace("EF_trace", false, 2)
 {
-  SetFormal(1, em->STATESET, "states satisfying the sub-formula");
+  SetFormal(1, type::find("stateset"), "states satisfying the sub-formula");
 }
 
 void EF_trace_si::Compute(traverse_data &x, expr** pass, int np)
@@ -1106,8 +1106,8 @@ void EF_trace_si::Compute(traverse_data &x, expr** pass, int np)
   const int nps = 4;
   expr** ps = new expr*[nps];
   ps[0] = pass[0];
-  ps[1] = new value(Where(), em->STATESET, result(p));
-  ps[2] = new value(Where(), em->VOID, result(td));
+  ps[1] = new value(Where(), type::find("stateset"), result(p));
+  ps[2] = new value(Where(), type::find("void"), result(td));
   ps[3] = const_cast<expr*>(x.the_callback);
 
   expr* fc = em->makeFunctionCall(Where(), &the_EF_trace_ex, ps, nps);
@@ -1128,9 +1128,9 @@ protected:
     EG_trace_ex()
       : CTL_trace_ex("EG_trace_ex", false, 4)
     {
-      SetFormal(1, em->STATESET, "the states satisfying the sub-formula");
-      SetFormal(2, em->VOID,     "trace data");
-      SetFormal(3, em->TRACE,    "the callback function of witness generation for the sub-formula");
+      SetFormal(1, type::find("stateset"), "the states satisfying the sub-formula");
+      SetFormal(2, type::find("void"),     "trace data");
+      SetFormal(3, type::find("trace"),    "the callback function of witness generation for the sub-formula");
     }
 
     virtual void Compute(traverse_data &x, expr** pass, int np);
@@ -1180,7 +1180,7 @@ void EG_trace_si::EG_trace_ex::Compute(traverse_data &x, expr** pass, int np)
 EG_trace_si::EG_trace_si()
  : CTL_trace("EG_trace", false, 2)
 {
-  SetFormal(1, em->STATESET, "states satisfying the sub-formula");
+  SetFormal(1, type::find("stateset"), "states satisfying the sub-formula");
 }
 
 void EG_trace_si::Compute(traverse_data &x, expr** pass, int np)
@@ -1201,8 +1201,8 @@ void EG_trace_si::Compute(traverse_data &x, expr** pass, int np)
   const int nps = 4;
   expr** ps = new expr*[nps];
   ps[0] = pass[0];
-  ps[1] = new value(Where(), em->STATESET, result(p));
-  ps[2] = new value(Where(), em->VOID, result(td));
+  ps[1] = new value(Where(), type::find("stateset"), result(p));
+  ps[2] = new value(Where(), type::find("void"), result(td));
   ps[3] = const_cast<expr*>(x.the_callback);
 
   expr* fc = em->makeFunctionCall(Where(), &the_EG_trace_ex, ps, nps);
@@ -1224,10 +1224,10 @@ protected:
       : CTL_trace_ex("EU_trace_ex", false, 5)
     {
       // E p U q
-      SetFormal(1, em->STATESET, "the states satisfying the subformula");
-      SetFormal(2, em->VOID,     "trace data");
-      SetFormal(3, em->TRACE,    "the callback function of witness generation for p-sub-formula");
-      SetFormal(4, em->TRACE,    "the callback function of witness generation for q-sub-formula");
+      SetFormal(1, type::find("stateset"), "the states satisfying the subformula");
+      SetFormal(2, type::find("void"),     "trace data");
+      SetFormal(3, type::find("trace"),    "the callback function of witness generation for p-sub-formula");
+      SetFormal(4, type::find("trace"),    "the callback function of witness generation for q-sub-formula");
     }
 
     virtual void Compute(traverse_data &x, expr** pass, int np);
@@ -1285,8 +1285,8 @@ EU_trace_si::EU_trace_si()
  : CTL_trace("EU_trace", false, 3)
 {
   // E p U q
-  SetFormal(1, em->STATESET, "states satisfying the p-sub-formula");
-  SetFormal(2, em->STATESET, "states satisfying the q-sub-formula");
+  SetFormal(1, type::find("stateset"), "states satisfying the p-sub-formula");
+  SetFormal(2, type::find("stateset"), "states satisfying the q-sub-formula");
 }
 
 void EU_trace_si::Compute(traverse_data &x, expr** pass, int np)
@@ -1315,8 +1315,8 @@ void EU_trace_si::Compute(traverse_data &x, expr** pass, int np)
   const int nps = 5;
   expr** ps = new expr*[nps];
   ps[0] = pass[0];
-  ps[1] = new value(Where(), em->STATESET, result(p));
-  ps[2] = new value(Where(), em->VOID, result(td));
+  ps[1] = new value(Where(), type::find("stateset"), result(p));
+  ps[2] = new value(Where(), type::find("void"), result(td));
   ps[3] = pcb;
   ps[4] = qcb;
 
@@ -1336,10 +1336,10 @@ protected:
   class traces_ex : public CTL_engine {
   public:
     traces_ex()
-      : CTL_engine(em->TRACE, "traces_ex", false, 3)
+      : CTL_engine(type::find("trace"), "traces_ex", false, 3)
     {
-      SetFormal(1, em->STATESET, "initial_states");
-      SetFormal(2, em->STATESET, "states satisfying the temporal formula");
+      SetFormal(1, type::find("stateset"), "initial_states");
+      SetFormal(2, type::find("stateset"), "states satisfying the temporal formula");
     }
 
     virtual void Compute(traverse_data &x, expr** pass, int np);
@@ -1353,10 +1353,10 @@ public:
 };
 
 traces::traces()
-: CTL_engine(em->TRACE, "traces", false, 3)
+: CTL_engine(type::find("trace"), "traces", false, 3)
 {
-  SetFormal(1, em->STATESET, "initial_states");
-  SetFormal(2, em->TEMPORAL, "formula");
+  SetFormal(1, type::find("stateset"), "initial_states");
+  SetFormal(2, type::find("temporal"), "formula");
   SetDocumentation("Compute a trace verifying the given temporal formula.");
 }
 

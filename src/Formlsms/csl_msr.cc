@@ -185,10 +185,10 @@ public:
 };
 
 PF_func::PF_func()
- : CSL_engine(em->STATEPROBS, "PF", 3)
+ : CSL_engine(type::find("stateprobs"), "PF", 3)
 {
-  SetFormal(1, em->STATESET, "p");
-  SetFormal(2, em->REAL, "t");
+  SetFormal(1, type::find("stateset"), "p");
+  SetFormal(2, type::find("real"), "t");
   SetDocumentation("Determine for each possible state, the probability that a path starting from that state has the form:\n~~~~? ---> ? ---> ... ---> ? ---> p ---> ? ...\nwhere p is satisfied by time t (or with no time limit if t is infinity).");
 }
 
@@ -237,11 +237,11 @@ public:
 };
 
 PU_func::PU_func()
- : CSL_engine(em->STATEPROBS, "PU", 4)
+ : CSL_engine(type::find("stateprobs"), "PU", 4)
 {
-  SetFormal(1, em->STATESET, "p");
-  SetFormal(2, em->STATESET, "q");
-  SetFormal(3, em->REAL, "t");
+  SetFormal(1, type::find("stateset"), "p");
+  SetFormal(2, type::find("stateset"), "q");
+  SetFormal(3, type::find("real"), "t");
   SetDocumentation("Determine for each possible state, the probability that a path starting from that state has the form:\n~~~~p ---> p ---> ... ---> p ---> q ---> ? ...\nwhere q is satisfied by time t (or with no time limit if t is infinity).  There may be zero or more states satisfying p visited before a state satisfying q.");
 }
 
@@ -295,10 +295,10 @@ public:
 TF_func::TF_func(const type* rt, const char* name, bool dist_param)
  : CSL_engine(rt, name, dist_param ? 3 : 2)
 {
-  llm_type = (em->INT == rt->getBaseType()) ? lldsm::DTMC : lldsm::CTMC;
-  SetFormal(1, em->STATESET, "p");
+  llm_type = type::matches(rt->getBaseType(), "int") ? lldsm::DTMC : lldsm::CTMC;
+  SetFormal(1, type::find("stateset"), "p");
   if (dist_param) {
-    SetFormal(2, em->STATEDIST, "pi0");
+    SetFormal(2, type::find("statedist"), "pi0");
     SetDocumentation("Determine the time (as a distribution) until a state in the set p is reached, with a time of infinity if p is never reached, when the model starts according to initial distribution pi0.  (Compare with PF.)  Returns null if the distribution type does not match.");
   } else {
     SetDocumentation("Determine the time (as a distribution) until a state in the set p is reached, with a time of infinity if p is never reached, when the model starts according to its initial distribution.  (Compare with PF.)  Returns null if the distribution type does not match.");
@@ -370,11 +370,11 @@ public:
 TU_func::TU_func(const type* rt, const char* name, bool dist_param)
  : CSL_engine(rt, name, dist_param ? 4 : 3)
 {
-  llm_type = (em->INT == rt->getBaseType()) ? lldsm::DTMC : lldsm::CTMC;
-  SetFormal(1, em->STATESET, "p");
-  SetFormal(2, em->STATESET, "q");
+  llm_type = type::matches(rt->getBaseType(), "int") ? lldsm::DTMC : lldsm::CTMC;
+  SetFormal(1, type::find("stateset"), "p");
+  SetFormal(2, type::find("stateset"), "q");
   if (dist_param) {
-    SetFormal(3, em->STATEDIST, "pi0");
+    SetFormal(3, type::find("statedist"), "pi0");
     SetDocumentation("Determine the time (as a distribution) until a state in the set q is reached, along a path of states in the set p.  (Compare with PU.)  The time is infinity for paths that never reach q, or reach !p first.  The model starts according to the initial distribution pi0.  Returns null if the distribution type does not match.");
   } else {
     SetDocumentation("Determine the time (as a distribution) until a state in the set q is reached, along a path of states in the set p.  (Compare with PU.)  The time is infinity for paths that never reach q, or reach !p first.  The model starts according to its initial distribution.  Returns null if the distribution type does not match.");
@@ -481,8 +481,8 @@ bool init_cslmsrs::execute()
   DCASSERT(CSL_engine::ProcGen);
 
   // Add functions
-  const type* phint  = em->INT  ? em->INT ->modifyType(PHASE) : 0;
-  const type* phreal = em->REAL ? em->REAL->modifyType(PHASE) : 0;
+  const type* phint  = type::find(false, false, PHASE, "int");
+  const type* phreal = type::find(false, false, PHASE, "real");
 
   CML.Append(new PF_func );
   CML.Append(new PU_func );
