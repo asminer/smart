@@ -151,7 +151,7 @@ exact_mcmsr::realmsr_visitor::realmsr_visitor(const hldsm* mdl, double* &_p)
 bool exact_mcmsr::realmsr_visitor::visit()
 {
   DCASSERT(m->RHSType());
-  DCASSERT(m->RHSType()->getBaseType() == em->REAL);
+  DCASSERT(type::matches(m->RHSType()->getBaseType(), "real"));
   m->ComputeRHS(x);
   if (tmp.isNormal()) {
     double term = p[x.current_state_index] * tmp.getReal();
@@ -208,7 +208,7 @@ exact_mcmsr::boolmsr_visitor::boolmsr_visitor(const hldsm* mdl, double* &_p)
 bool exact_mcmsr::boolmsr_visitor::visit()
 {
   DCASSERT(m->RHSType());
-  DCASSERT(m->RHSType()->getBaseType() == em->BOOL);
+  DCASSERT(type::matches(m->RHSType()->getBaseType(), "bool"));
   m->ComputeRHS(x);
   if (tmp.isNormal()) {
     if (false == tmp.getBool()) return false;
@@ -325,7 +325,7 @@ void mcex_steady::SolveMeasures(hldsm* mdl, set_of_measures* list)
       eng_report.stop();
     }
     for (measure* m = list->popMeasure(); m; m=list->popMeasure()) {
-      if (em->STATEDIST == m->Type()) {
+      if (type::matches(m->Type(), "statedist")) {
         //
         // This is a distribution measure, just copy it!
         //
@@ -344,14 +344,14 @@ void mcex_steady::SolveMeasures(hldsm* mdl, set_of_measures* list)
       //
       const type* mt = m->RHSType();
       if (mt) mt = mt->getBaseType();
-      if (mt == em->REAL) {
+      if (type::matches(mt, "real")) {
         rv.newMsr(m);
         proc->visitStates(rv);
         rv.finish();
         count++;
         continue;
       }
-      if (mt == em->BOOL) {
+      if (type::matches(mt, "bool")) {
         bv.newMsr(m);
         proc->visitStates(bv);
         bv.finish();
@@ -458,7 +458,7 @@ void mcex_trans::SolveMeasures(hldsm* mdl, set_of_measures* list)
       last_time = tm->GetTime();
       if (!ok) break;
     } // if dt
-    if (em->STATEDIST == m->Type()) {
+    if (type::matches(m->Type(), "statedist")) {
         //
         // This is a distribution measure, just copy it!
         //
@@ -477,13 +477,13 @@ void mcex_trans::SolveMeasures(hldsm* mdl, set_of_measures* list)
     //
     const type* mt = tm->RHSType();
     if (mt) mt = mt->getBaseType();
-    if (mt == em->REAL) {
+    if (type::matches(mt, "real")) {
       rv.newMsr(m);
       proc->visitStates(rv);
       rv.finish();
       continue;
     }
-    if (mt == em->BOOL) {
+    if (type::matches(mt, "bool")) {
       bv.newMsr(m);
       proc->visitStates(bv);
       bv.finish();
@@ -594,13 +594,13 @@ void mcex_acc::SolveMeasures(hldsm* mdl, set_of_measures* list)
     } // if dt
     const type* mt = tm->RHSType();
     if (mt) mt = mt->getBaseType();
-    if (mt == em->REAL) {
+    if (type::matches(mt, "real")) {
       rv.newMsr(m);
       proc->visitStates(rv);
       rv.finish();
       continue;
     }
-    if (mt == em->BOOL) {
+    if (type::matches(mt, "bool")) {
       bv.newMsr(m);
       proc->visitStates(bv);
       bv.finish();
@@ -714,13 +714,13 @@ void mcex_infacc::SolveMeasures(hldsm* mdl, set_of_measures* list)
     // evaluate measure
     const type* mt = tm->RHSType();
     if (mt) mt = mt->getBaseType();
-    if (mt == em->REAL) {
+    if (type::matches(mt, "real")) {
       rv.newMsr(m);
       proc->visitStates(rv);
       rv.finish();
       continue;
     }
-    if (mt == em->BOOL) {
+    if (type::matches(mt, "bool")) {
       bv.newMsr(m);
       proc->visitStates(bv);
       bv.finish();

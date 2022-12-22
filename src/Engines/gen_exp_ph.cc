@@ -455,10 +455,11 @@ void phase_procgen
 ::badWeightError(hldsm* m, const char* what, const result& x) const
 {
     DCASSERT(m);
+    const type* REAL = type::find("real");
     hldsm::errmsg E(m);
     E << "Bad " << what << ": ";
-    DCASSERT(em->REAL);
-    em->REAL->print(E.stream(), x);
+    DCASSERT(REAL);
+    REAL->print(E.stream(), x);
     E << " during process generation";
     throw Engine_Failed;
 }
