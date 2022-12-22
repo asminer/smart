@@ -410,7 +410,7 @@ public:
   inline bool isBadParam(const char* which, traverse_data &x) const {
     DCASSERT(x.answer);
     if (x.answer->isNormal()) if (x.answer->getInt() >= 0) return false;
-    OutOfRange(x, em->INT, which, " for phase int");
+    OutOfRange(x, type::find("int"), which, " for phase int");
     return true;
   }
 
@@ -556,7 +556,7 @@ public:
   inline bool isBadN(traverse_data &x) const {
     DCASSERT(x.answer);
     if (x.answer->isNormal()) if (x.answer->getInt() >= 0) return false;
-    OutOfRange(x, em->INT, "binomial parameter n=", "");
+    OutOfRange(x, type::find("int"), "binomial parameter n=", "");
     return true;
   }
 
@@ -823,7 +823,7 @@ public:
   inline bool isBadN(traverse_data &x) const {
     DCASSERT(x.answer);
     if (x.answer->isNormal()) if (x.answer->getInt() >= 0) return false;
-    OutOfRange(x, em->INT, "erlang parameter n=", "");
+    OutOfRange(x, type::find("int"), "erlang parameter n=", "");
     return true;
   }
 
@@ -1025,6 +1025,15 @@ int uniform::Traverse(traverse_data &x, expr** pass, int np)
 // *                                                                *
 // ******************************************************************
 
+inline bool bogustype(const type* t)
+{
+    if (!t)                         return true;
+    if (type::matches(t, "void"))   return true;
+    if (t==type::null)              return true;
+    return false;
+}
+
+
 // ******************************************************************
 // *                                                                *
 // *                       phase_add_op class                       *
@@ -1051,13 +1060,6 @@ public:
   virtual const type* getExprType(bool f, const type* l, const type* r) const;
   virtual assoc* makeExpr(const location &W, expr** list,
         bool* flip, int N) const;
-
-  inline bool bogustype(const type* t) const {
-    if (0==t)             return true;
-    if (em->VOID==t)      return true;
-    if (em->NULTYPE==t)   return true;
-    return false;
-  }
 
   inline const type* getType(expr** list, int N) const {
     bool all_ints = true;
@@ -1186,7 +1188,8 @@ const type* phase_add_op
   if (f) return 0;
   if (bogustype(l) || bogustype(r)) return 0;
   const type* anstype = 0;
-  if (l->getBaseType() == em->INT && r->getBaseType() == em->INT) {
+  const type* INT = type::find("int");
+  if (l->getBaseType() == INT && r->getBaseType() == INT) {
     anstype = type::find(false, (l->hasProc() || r->hasProc()), PHASE, "int");
   } else {
     anstype = type::find(false, (l->hasProc() || r->hasProc()), PHASE, "real");
@@ -1265,13 +1268,6 @@ public:
   virtual assoc* makeExpr(const location &W, expr** list,
         bool* flip, int N) const;
 
-  inline bool bogustype(const type* t) const {
-    if (0==t)             return true;
-    if (em->VOID==t)      return true;
-    if (em->NULTYPE==t)   return true;
-    return false;
-  }
-
   inline bool checkArgs(expr** list, int N, int &phi, bool &hasproc) const {
     hasproc = false;
     int num_phase = 0;
@@ -1344,7 +1340,7 @@ void phase_mult_op::myexpr::Compute(traverse_data &x)
   phase_hlm* X = smart_cast <phase_hlm*>(Share(x.answer->getPtr()));
 
   // Grab constant operand
-  bool discrete = (operands[0]->Type()->getBaseType() == em->INT);
+  bool discrete = type::matches(operands[0]->Type()->getBaseType(), "int");
   SafeCompute(const_part, x);
 
   phase_hlm* newph = 0;
@@ -2206,9 +2202,9 @@ public:
 };
 
 print_range::print_range(const type* RANDREAL)
- : simple_internal(em->VOID, "print_range", 1)
+ : simple_internal(type::find("void"), "print_range", 1)
 {
-  SetFormal(0, RANDREAL, "X");
+  SetFormal(0, type::find(false, false, RAND, "real"), "X");
   SetDocumentation("Prints the range of possible values for random variable X.");
   Hide();  // This is not supposed to be an end-user function
 }
@@ -2249,7 +2245,7 @@ public:
 };
 
 print_ph::print_ph(const type* PHTYPE)
- : simple_internal(em->VOID, "print_ph", 1)
+ : simple_internal(type::find("void"), "print_ph", 1)
 {
   SetFormal(0, PHTYPE, "X");
   SetDocumentation("Prints information about phase-type distribution X, primarily for debugging purposes.");
@@ -2349,11 +2345,11 @@ public:
 };
 
 print_ddist::print_ddist(const type* DPH)
- : simple_internal(em->VOID, "print_dist", 3)
+ : simple_internal(type::find("void"), "print_dist", 3)
 {
   SetFormal(0, DPH, "X");
   SetFormal(1, type::find("real"), "epsilon");
-  SetFormal(2, em->INT, "max_size", 1000L);
+  SetFormal(2, type::find("int"), "max_size", 1000L);
   SetDocumentation("Prints the discrete distribution of X (to precision epsilon>0, limited by max_size), to the current output stream.");
 }
 
@@ -2376,7 +2372,7 @@ void print_ddist::Compute(traverse_data &x, expr** pass, int np)
   if (x.answer->isNormal()) {
     maxsize = x.answer->getInt();
     if (maxsize <= 0) {
-      OutOfRange(x, em->INT, "print_dist max_size value ", "");
+      OutOfRange(x, type::find("int"), "print_dist max_size value ", "");
       return;
     }
   }
@@ -2481,12 +2477,12 @@ public:
 };
 
 print_cdist::print_cdist(const type* CPH)
- : simple_internal(em->VOID, "print_dist", 4)
+ : simple_internal(type::find("void"), "print_dist", 4)
 {
   SetFormal(0, CPH, "X");
   SetFormal(1, type::find("real"), "dt");
   SetFormal(2, type::find("real"), "epsilon");
-  SetFormal(3, em->INT, "max_size", 1000L);
+  SetFormal(3, type::find("int"), "max_size", 1000L);
   SetDocumentation("Prints the continuous distribution of X at time points dt, 2*dt, 3*dt, ..., (up to desired precision epsilon>0, limited by max_size), to the current output stream.");
 }
 
@@ -2517,7 +2513,7 @@ void print_cdist::Compute(traverse_data &x, expr** pass, int np)
   if (x.answer->isNormal()) {
     maxsize = x.answer->getInt();
     if (maxsize <= 0) {
-      OutOfRange(x, em->INT, "print_dist max_size value ", "");
+      OutOfRange(x, type::find("int"), "print_dist max_size value ", "");
       return;
     }
   }
@@ -2623,7 +2619,7 @@ public:
 };
 
 print_deps::print_deps(const type* PHTYPE)
- : simple_internal(em->VOID, "print_deps", 1)
+ : simple_internal(type::find("void"), "print_deps", 1)
 {
   SetFormal(0, PHTYPE, "X");
   SetDocumentation("Prints dependency information about phase-type distribution X, primarily for debugging purposes.");
@@ -2705,7 +2701,7 @@ int expo_promotions::getDistance(const type* src, const type* dest) const
 {
   DCASSERT(src != dest);
   DCASSERT(em);
-  if (src->getBaseType() != em->EXPO) return -1;
+  if (!type::matches(src->getBaseType(), "expo")) return -1;
   if (!type::matches(dest->getBaseType(), "real")) return -1;
   if (dest->getModifier() != PHASE && dest->getModifier() != RAND) return -1;
   if (src->hasProc() && !dest->hasProc()) return -1;
@@ -2816,8 +2812,8 @@ int int2phint::getDistance(const type* src, const type* dest) const
 {
   DCASSERT(src != dest);
   DCASSERT(em);
-  if (src->getBaseType() != em->INT) return -1;
-  if (dest->getBaseType() != em->INT) return -1;
+  if (!type::matches(src->getBaseType(), "int")) return -1;
+  if (!type::matches(dest->getBaseType(), "int")) return -1;
   if (src->getModifier() != DETERM) return -1;
   if (dest->getModifier() != PHASE) return -1;
   if (src->hasProc() && !dest->hasProc()) return -1;
@@ -3062,8 +3058,7 @@ public:
   phint2randreal();
   virtual int getDistance(const type* src) const {
     DCASSERT(src);
-    DCASSERT(em->INT);
-    if (src->getBaseType() != em->INT)  return -1;
+    if (!type::matches(src->getBaseType(), "int")) return -1;
     if (src->getModifier() != PHASE)    return -1;
     return SIMPLE_CONV + MAKE_RAND;
   }
@@ -3183,6 +3178,17 @@ bool old_init_stochtypes::execute()
       engtype::FunctionCall
   );
 
+  //
+  const type* t_int = type::find("int");
+  const type* t_real = type::find("real");
+  const type* t_expo = type::find("expo");
+
+  const type* t_ph_int =  type::find(false, false, PHASE, "int");
+  const type* t_ph_real = type::find(false, false, PHASE, "real");
+
+  const type* t_rand_int =  type::find(false, false, RAND, "int");
+  const type* t_rand_real = type::find(false, false, RAND, "real");
+
   // Functions
   st->AddSymbol( new prob_finite(t_ph_int, AvgPh)             );
   st->AddSymbol( new prob_finite(t_ph_real, AvgPh)            );
@@ -3194,20 +3200,20 @@ bool old_init_stochtypes::execute()
   st->AddSymbol( new var_ph(t_ph_int, VarPh)                  );
   st->AddSymbol( new var_ph(t_ph_real, VarPh)                 );
 
-  st->AddSymbol( new bernoulli_ph(t_ph_int, em->REAL)         );
+  st->AddSymbol( new bernoulli_ph(t_ph_int, t_real)           );
   st->AddSymbol( new bernoulli_rand(t_rand_int, t_rand_real)  );
 
-  st->AddSymbol( new geometric_ph(t_ph_int, em->REAL)         );
+  st->AddSymbol( new geometric_ph(t_ph_int, t_real)           );
   st->AddSymbol( new geometric_rand(t_rand_int, t_rand_real)  );
 
-  st->AddSymbol( new equilikely_ph(t_ph_int, em->INT)         );
+  st->AddSymbol( new equilikely_ph(t_ph_int, t_int)           );
   st->AddSymbol( new equilikely_rand(t_rand_int, t_rand_int)  );
 
-  st->AddSymbol( new binomial_ph(t_ph_int, em->INT, em->REAL) );
+  st->AddSymbol( new binomial_ph(t_ph_int, t_int, t_real) );
   st->AddSymbol( new binomial_rand(t_rand_int, t_rand_int, t_rand_real) );
 
-  st->AddSymbol( new expo_ph(t_expo, em->REAL)                );
-  st->AddSymbol( new erlang_ph(t_ph_real, em->INT, em->REAL)  );
+  st->AddSymbol( new expo_ph(t_expo, t_real)                );
+  st->AddSymbol( new erlang_ph(t_ph_real, t_int, t_real)  );
 
   st->AddSymbol( new expo_rand(t_rand_real, t_rand_real)      );
   st->AddSymbol( new erlang_rand(t_rand_real, t_rand_int, t_rand_real)  );

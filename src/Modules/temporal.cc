@@ -16,7 +16,7 @@ inline bool isAtomicType(const exprman* em, const type* t)
   if (0==t) {
     return false;
   }
-  if (t->getBaseType() == em->BOOL) {
+  if (type::matches(t->getBaseType(), "bool")) {
     // can be PROC BOOL or BOOL
     return t->getModifier() == DETERM;
   }
@@ -1405,14 +1405,14 @@ bool init_temporal::execute()
 
   // ------------------------------------------------------------
 
-  em->registerType(t_temporal);
-  em->registerType(t_single_pathop);
-  em->registerType(t_ctl_pathform);
-  em->registerType(t_ctl_stateform);
-  em->registerType(t_ltl_pathform);
-  em->registerType(t_ltl_topform);
-  em->registerType(t_ctlstar_pathform);
-  em->registerType(t_ctlstar_stateform);
+  type::registerNew(t_temporal);
+  type::registerNew(t_single_pathop);
+  type::registerNew(t_ctl_pathform);
+  type::registerNew(t_ctl_stateform);
+  type::registerNew(t_ltl_pathform);
+  type::registerNew(t_ltl_topform);
+  type::registerNew(t_ctlstar_pathform);
+  type::registerNew(t_ctlstar_stateform);
 
   // ******************************************************************
   // Operations

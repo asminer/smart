@@ -8,12 +8,13 @@
 class doc_formatter;   // defined in streams.h
 class option;
 class shared_string;
+class splayOfShared;
 
 // **************************************************************************
 // *                        option_manager interface                        *
 // **************************************************************************
 
-/** Option manager (abstract) class.
+/** Option manager class.
     A centralized collection of options, with operations for
     addition of options (during initialization) and
     retrieval of optiions (during computation).
@@ -30,34 +31,33 @@ class option_manager : public shared_object {
         /** Called when initialization is complete.
             After this is called, no new options may be added.
         */
-        virtual void DoneAddingOptions() = 0;
+        void DoneAddingOptions();
 
         /** Find an option with matching name.
             @param  name  Name of the desired option.
             @return The matching option, or NULL if none present with \a name.
         */
-        virtual option* FindOption(const char* name) const = 0;
+        option* FindOption(const char* name) const;
 
         /// Total number of options.
-        virtual unsigned NumOptions() const = 0;
+        unsigned NumOptions() const;
 
         /** Retrieve an option by index.
             This is useful for enumerating all options.
             @param  i  Index of option to retrieve.
             @return The ith option.
         */
-        virtual option* GetOptionNumber(unsigned i) const = 0;
+        option* GetOptionNumber(unsigned i) const;
 
         /** For online help and documentation.
             Show documentation of all options matching the given keyword.
         */
-        virtual void DocumentOptions(doc_formatter &df, const char* keyword)
-            const = 0;
+        void DocumentOptions(doc_formatter &df, const char* keyword) const;
 
         /** For online help and documentation.
             List all options, with their current settings.
         */
-        virtual void ListOptions(doc_formatter &df) const = 0;
+        void ListOptions(doc_formatter &df) const;
 
 
         /** Make, add, and return a new option of type boolean.
@@ -144,8 +144,13 @@ class option_manager : public shared_object {
         */
         option* addChecklistOption(const char* name, const char* doc);
 
-    protected:
-        virtual option* addOption(option*) = 0;
+    private:
+        option* addOption(option*);
+
+    private:
+        splayOfShared *optlist;
+        option** sortedOptions;
+        unsigned numOptions;
 };
 
 // **************************************************************************

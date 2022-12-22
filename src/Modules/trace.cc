@@ -176,8 +176,7 @@ bool init_trace::execute()
 
   // Type registry
   simple_type* t_trace = new trace_type;
-  em->registerType(t_trace);
-  em->setFundamentalTypes();
+  type::registerNew(t_trace);
 
   if (0==st) return false;
 

@@ -1,7 +1,7 @@
 
 #include "../include/defines.h"
 #include "../Utils/textfmt.h"
-// #include "../Utils/messages.h"
+#include "../Utils/strings.h"
 
 #include "checklist.h"
 
@@ -27,19 +27,19 @@ checklist_item::checklist_item(const char* n, const char* d, bool &l)
 
 bool checklist_item::CheckMe()
 {
-  is_set = true;
-  return true;
+    is_set = true;
+    return true;
 }
 
 bool checklist_item::UncheckMe()
 {
-  is_set = false;
-  return true;
+    is_set = false;
+    return true;
 }
 
 bool checklist_item::IsChecked() const
 {
-  return is_set;
+    return is_set;
 }
 
 // **************************************************************************
@@ -50,38 +50,38 @@ checklist_group
 ::checklist_group(const char* n, const char* d, unsigned mi)
  : checklist_enum(n, d)
 {
-  max_items = mi;
-  num_items = 0;
-  items = new checklist_enum* [max_items];
-  for (unsigned i=0; i<max_items; i++) {
-      items[i] = 0;
-  }
+    max_items = mi;
+    num_items = 0;
+    items = new checklist_enum* [max_items];
+    for (unsigned i=0; i<max_items; i++) {
+        items[i] = 0;
+    }
 }
 
 checklist_group::~checklist_group()
 {
-  delete[] items;
+    delete[] items;
 }
 
 bool checklist_group::CheckMe()
 {
-  for (unsigned i=0; i<num_items; i++) {
-    if (!items[i]->CheckMe())  return false;
-  }
-  return true;
+    for (unsigned i=0; i<num_items; i++) {
+        if (!items[i]->CheckMe())  return false;
+    }
+    return true;
 }
 
 bool checklist_group::UncheckMe()
 {
-  for (unsigned i=0; i<num_items; i++) {
-    if (!items[i]->UncheckMe())  return false;
-  }
-  return true;
+    for (unsigned i=0; i<num_items; i++) {
+        if (!items[i]->UncheckMe())  return false;
+    }
+    return true;
 }
 
 bool checklist_group::IsChecked() const
 {
-  return false;
+    return false;
 }
 
 // **************************************************************************
@@ -91,40 +91,38 @@ bool checklist_group::IsChecked() const
 checkall::checkall(const char* n, const char* d, option* p)
  : checklist_enum(n,d)
 {
-  parent = p;
+    parent = p;
 }
 
 bool checkall::CheckMe()
 {
-  const unsigned numconsts = parent->NumConstants();
-  for (unsigned i=0; i<numconsts; i++) {
-    checklist_enum* item
-        = smart_cast <checklist_enum*> (parent->GetConstant(i));
-    DCASSERT(item);
-    if (item != this) {
-      if (!item->CheckMe())  return false;
+    const unsigned numconsts = parent->NumConstants();
+    for (unsigned i=0; i<numconsts; i++) {
+        checklist_enum* item
+            = smart_cast <checklist_enum*> (parent->GetConstant(i));
+        if (item != this) {
+            if (!item->CheckMe())  return false;
+        }
     }
-  }
-  return true;
+    return true;
 }
 
 bool checkall::UncheckMe()
 {
-  const unsigned numconsts = parent->NumConstants();
-  for (unsigned i=0; i<numconsts; i++) {
-    checklist_enum* item
-        = smart_cast <checklist_enum*> (parent->GetConstant(i));
-    DCASSERT(item);
-    if (item != this) {
-      if (!item->UncheckMe())  return false;
+    const unsigned numconsts = parent->NumConstants();
+    for (unsigned i=0; i<numconsts; i++) {
+        checklist_enum* item
+            = smart_cast <checklist_enum*> (parent->GetConstant(i));
+        if (item != this) {
+            if (!item->UncheckMe())  return false;
+        }
     }
-  }
-  return true;
+    return true;
 }
 
 bool checkall::IsChecked() const
 {
-  return false;
+    return false;
 }
 
 
@@ -136,19 +134,19 @@ bool checkall::IsChecked() const
 checklist_opt::checklist_opt(const char* n, const char* d)
 : option(Checklist, n, d)
 {
-  possible = 0;
-  numpossible = 0;
-  itemlist = new SplayOfPointers <checklist_enum> (10, 0);
+    possible = nullptr;
+    numpossible = 0;
+    itemlist = new splayOfShared (10, 0);
 
-  itemlist->Insert(
-    new checkall("ALL", "Alias for all possible items", this)
-  );
+    itemlist->insert(
+        new checkall("ALL", "Alias for all possible items", this)
+    );
 }
 
 checklist_opt::~checklist_opt()
 {
-  delete itemlist;
-  delete[] possible;
+    delete itemlist;
+    delete[] possible;
 }
 
 unsigned checklist_opt:: NumConstants() const
@@ -158,7 +156,7 @@ unsigned checklist_opt:: NumConstants() const
 
 option_enum* checklist_opt::GetConstant(unsigned i) const
 {
-    if (i>=numpossible) return 0;
+    if (i>=numpossible) return nullptr;
     return possible[i];
 }
 
@@ -169,14 +167,14 @@ void checklist_opt::ShowHeader(std::ostream &s) const
 
 void checklist_opt::ShowCurrent(std::ostream &s) const
 {
-  s << *this << " {";
-  bool printed = false;
-  for (unsigned i=0; i<numpossible; i++) if (possible[i]->IsChecked()) {
-    if (printed) s << ", ";
-    s << possible[i]->Name();
-    printed = true;
-  }
-  s << "}";
+    s << *this << " {";
+    bool printed = false;
+    for (unsigned i=0; i<numpossible; i++) if (possible[i]->IsChecked()) {
+        if (printed) s << ", ";
+        s << possible[i]->Name();
+        printed = true;
+    }
+    s << "}";
 }
 
 /** Find the appropriate value for this name.
@@ -184,85 +182,89 @@ void checklist_opt::ShowCurrent(std::ostream &s) const
 */
 option_enum* checklist_opt::FindConstant(const char* name) const
 {
-  if (itemlist) {
-    option_enum* find = itemlist->Find(name);
-    return find;
-  }
-  // binary search
-  unsigned low = 0;
-  unsigned high = numpossible;
-  while (low < high) {
-    unsigned mid = (low+high)/2;
-    int cmp = strcmp(possible[mid]->Name(), name);
-    if (0==cmp) return possible[mid];
-    if (cmp>0) {
-      high = mid;
-    } else {
-      low = mid+1;
+    const_string CS(name);
+    if (itemlist) {
+        option_enum* find = smart_cast <option_enum*> (itemlist->find(&CS));
+        return find;
     }
-  }
-  // not found
-  return 0;
+
+    // binary search
+    unsigned low = 0;
+    unsigned high = numpossible;
+    while (low < high) {
+        unsigned mid = (low+high)/2;
+        int cmp = possible[mid]->Compare(&CS);
+        if (0==cmp) return possible[mid];
+        if (cmp>0) {
+            high = mid;
+        } else {
+            low = mid+1;
+        }
+    }
+    // not found
+    return nullptr;
 }
 
 void checklist_opt::ShowRange(doc_formatter &df) const
 {
-  df.Out() << "Legal values to be set or unset:";
-  unsigned i;
-  unsigned maxenum = 0;
-  for (i=0; i<numpossible; i++)  {
-    unsigned l = strlen(possible[i]->Name());
-    maxenum = MAX(maxenum, l);
-  }
-  df.begin_description(maxenum);
-  for (i=0; i<numpossible; i++) {
-    df.item(possible[i]->Name());
-    df.Out() << possible[i]->Documentation();
-  }
-  df.end_description();
+    df.Out() << "Legal values to be set or unset:";
+    unsigned i;
+    unsigned maxenum = 0;
+    for (i=0; i<numpossible; i++)  {
+        unsigned l = strlen(possible[i]->Name());
+        maxenum = MAX(maxenum, l);
+    }
+    df.begin_description(maxenum);
+    for (i=0; i<numpossible; i++) {
+        df.item(possible[i]->Name());
+        df.Out() << possible[i]->Documentation();
+    }
+    df.end_description();
 }
 
 void checklist_opt::Finish()
 {
-  if (0==itemlist) return;
-  numpossible = itemlist->NumElements();
-  possible = new checklist_enum* [numpossible];
-  itemlist->CopyToArray(possible);
-  delete itemlist;
-  itemlist = 0;
+    if (!itemlist) return;
+    numpossible = itemlist->numElements();
+    possible = new checklist_enum* [numpossible];
+    copy_traversal<checklist_enum> T(possible, numpossible);
+    itemlist->traverse(T);
+    delete itemlist;
+    itemlist = nullptr;
 }
 
 bool checklist_opt::isApropos(const doc_formatter &df, const char* keyword) const
 {
-  if (df.Matches(Name(), keyword))   return true;
-  for (unsigned i=0; i<numpossible; i++) {
-    if (df.Matches(possible[i]->Name(), keyword))  return true;
-  }
-  return false;
+    if (df.Matches(Name(), keyword))   return true;
+    for (unsigned i=0; i<numpossible; i++) {
+        if (df.Matches(possible[i]->Name(), keyword))  return true;
+    }
+    return false;
 }
 
 
 checklist_enum* checklist_opt::addChecklistItem(checklist_enum* grp,
                 const char* name, const char* doc, bool &link)
 {
-    if (0==itemlist) return 0;
-    if (itemlist->Find(name)) return 0; // duplicate
+    const_string CS(name);
+    if (!itemlist) return nullptr;
+    if (itemlist->find(&CS)) return nullptr; // duplicate
 
     checklist_enum* item = new checklist_item(name, doc, link);
 
     checklist_group* clg = smart_cast <checklist_group*>(grp);
     if (clg) clg->addItem(item);
-    return itemlist->Insert(item);
+    return smart_cast <checklist_enum*> (itemlist->insert(item));
 }
 
 checklist_enum* checklist_opt::addChecklistGroup(const char* name,
                 const char* doc, unsigned ni)
 {
-    if (0==itemlist) return 0;
-    if (itemlist->Find(name)) return 0; // duplicate
+    const_string CS(name);
+    if (!itemlist) return nullptr;
+    if (itemlist->find(&CS)) return nullptr; // duplicate
 
-    return itemlist->Insert(
-            new checklist_group(name, doc, ni)
-    );
+    checklist_enum* grp = new checklist_group(name, doc, ni);
+    return smart_cast <checklist_enum*> (itemlist->insert(grp));
 }
 

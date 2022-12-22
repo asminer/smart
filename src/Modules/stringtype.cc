@@ -1,9 +1,11 @@
 
 #include "stringtype.h"
 
+#include "../Utils/strings.h"
+#include "../Utils/initializer.h"
+
 #include "../ExprLib/startup.h"
 #include "../ExprLib/exprman.h"
-#include "../Utils/strings.h"
 #include "../ExprLib/binary.h"
 #include "../ExprLib/assoc.h"
 
@@ -73,7 +75,7 @@ protected:
 // ******************************************************************
 
 string_add::string_add(const location &W, expr **x, int n)
- : summation(W, exprman::aop_plus, em->STRING, x, 0, n)
+ : summation(W, exprman::aop_plus, type::find("string"), x, 0, n)
 {
 }
 
@@ -86,7 +88,7 @@ void string_add::Compute(traverse_data &x)
   // Compute strings for each operand
   for (int i=0; i<opnd_count; i++) {
     DCASSERT(operands[i]);
-    DCASSERT(operands[i]->Type() == em->STRING);
+    DCASSERT(type::matches(operands[i]->Type(), "string"));
     operands[i]->Compute(x);
     if (x.answer->isNull()) return;
     shared_string *xss = smart_cast <shared_string*> (x.answer->getPtr());
@@ -123,7 +125,7 @@ protected:
 // ******************************************************************
 
 string_equal::string_equal(const location &W, expr *l, expr *r)
- : eqop(W, em->BOOL, l, r)
+ : eqop(W, type::find("bool"), l, r)
 {
 }
 
@@ -168,7 +170,7 @@ protected:
 // ******************************************************************
 
 string_neq::string_neq(const location &W, expr *l, expr *r)
- : neqop(W, em->BOOL, l, r)
+ : neqop(W, type::find("bool"), l, r)
 {
 }
 
@@ -213,7 +215,7 @@ protected:
 // ******************************************************************
 
 string_gt::string_gt(const location &W, expr *l, expr *r)
- : gtop(W, em->BOOL, l, r)
+ : gtop(W, type::find("bool"), l, r)
 {
 }
 
@@ -258,7 +260,7 @@ protected:
 // ******************************************************************
 
 string_ge::string_ge(const location &W, expr *l, expr *r)
- : geop(W, em->BOOL, l, r)
+ : geop(W, type::find("bool"), l, r)
 {
 }
 
@@ -303,7 +305,7 @@ protected:
 // ******************************************************************
 
 string_lt::string_lt(const location &W, expr *l, expr *r)
- : ltop(W, em->BOOL, l, r)
+ : ltop(W, type::find("bool"), l, r)
 {
 }
 
@@ -348,7 +350,7 @@ protected:
 // ******************************************************************
 
 string_le::string_le(const location &W, expr *l, expr *r)
- : leop(W, em->BOOL, l, r)
+ : leop(W, type::find("bool"), l, r)
 {
 }
 
@@ -385,12 +387,11 @@ inline const type*
 StringResultType(const exprman* em, const type* lt, const type* rt)
 {
   DCASSERT(em);
-  DCASSERT(em->STRING);
-  if (em->NULTYPE == lt || em->NULTYPE == rt)  return 0;
+  if (type::null == lt || type::null == rt)  return nullptr;
   const type* lct = em->getLeastCommonType(lt, rt);
-  if (0==lct)        return 0;
-  if (lct->getBaseType() != em->STRING)  return 0;
-  if (lct->isASet())      return 0;
+  if (0==lct)        return nullptr;
+  if (!type::matches(lct->getBaseType(), "string")) return nullptr;
+  if (lct->isASet())      return nullptr;
   return lct;
 }
 
@@ -398,7 +399,6 @@ inline
 int StringAlignDistance(const exprman* em, const type* lt, const type* rt)
 {
   DCASSERT(em);
-  DCASSERT(em->STRING);
   const type* lct = StringResultType(em, lt, rt);
   if (0==lct)        return -1;
 
@@ -411,7 +411,6 @@ int StringAlignDistance(const exprman* em, const type* lt, const type* rt)
 inline const type* AlignStrings(const exprman* em, expr* &l, expr* &r)
 {
   DCASSERT(em);
-  DCASSERT(em->STRING);
   DCASSERT(l);
   DCASSERT(r);
   const type* lct = StringResultType(em, l->Type(), r->Type());
@@ -428,7 +427,6 @@ inline const type* AlignStrings(const exprman* em, expr* &l, expr* &r)
 inline int StringAlignDistance(const exprman* em, expr** x, int N)
 {
   DCASSERT(em);
-  DCASSERT(em->STRING);
   DCASSERT(x);
 
   const type* lct = em->SafeType(x[0]);
@@ -436,7 +434,7 @@ inline int StringAlignDistance(const exprman* em, expr** x, int N)
     lct = em->getLeastCommonType(lct, em->SafeType(x[i]));
   }
   if (0==lct)        return -1;
-  if (lct->getBaseType() != em->STRING)  return -1;
+  if (!type::matches(lct->getBaseType(), "string"))  return -1;
   if (lct->isASet())      return -1;
 
   int d = 0;
@@ -451,14 +449,13 @@ inline int StringAlignDistance(const exprman* em, expr** x, int N)
 inline const type* AlignStrings(const exprman* em, expr** x, int N)
 {
   DCASSERT(em);
-  DCASSERT(em->STRING);
   DCASSERT(x);
 
   const type* lct = em->SafeType(x[0]);
   for (int i=1; i<N; i++) {
     lct = em->getLeastCommonType(lct, em->SafeType(x[i]));
   }
-  if (  (0==lct) || (lct->getBaseType() != em->STRING) || lct->isASet() ) {
+  if (  (0==lct) || !type::matches(lct->getBaseType(), "string") || lct->isASet() ) {
     for (int i=0; i<N; i++)  Delete(x[i]);
     return 0;
   }
@@ -741,26 +738,23 @@ binary* string_le_op::makeValid(const location &W, expr* l, expr* r) const
 // *                                                                *
 // ******************************************************************
 
-class init_strings : public startup {
+class old_init_strings : public startup {
   public:
-    init_strings();
+    old_init_strings();
     virtual bool execute();
 };
-init_strings the_string_startup;
+old_init_strings the_string_startup;
 
-init_strings::init_strings() : startup("init_strings")
+old_init_strings::old_init_strings() : startup("init_strings")
 {
   usesResource("em");
   buildsResource("stringtype");
   buildsResource("types");
 }
 
-bool init_strings::execute()
+bool old_init_strings::execute()
 {
   if (0==em)  return false;
-
-  em->registerType(  new string_type  );
-  em->setFundamentalTypes();
 
   em->registerOperation(  new string_add_op   );
   em->registerOperation(  new string_equal_op );
@@ -773,3 +767,25 @@ bool init_strings::execute()
   return true;
 }
 
+// ******************************************************************
+
+class init_strings : public initializer {
+    public:
+        init_strings();
+    protected:
+        virtual void execute();
+};
+static init_strings the_string_initializer;
+
+init_strings::init_strings() : initializer("stringtype.cc", 1, 0)
+{
+    builds_resource(0, "stringtype");
+}
+
+void init_strings::execute()
+{
+    //
+    // Types.
+    //
+    type::registerNew(  new string_type );
+}

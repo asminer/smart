@@ -148,7 +148,6 @@ class option : public shared_object {
         virtual void Finish();
 
         virtual int Compare(const shared_object* b) const;
-        virtual int Compare(const char* name) const;
 
         /// Determine if this option matches the given keyword.
         virtual bool isApropos(const doc_formatter &df, const char* keyword) const;

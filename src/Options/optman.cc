@@ -1,6 +1,8 @@
 
 #include "../include/defines.h"
-#include "../include/splay.h"
+#include "../Utils/splay.h"
+#include "../Utils/strings.h"
+#include "../Utils/textfmt.h"
 
 #include "options.h"
 #include "optman.h"
@@ -11,7 +13,6 @@
 #include "radio_opt.h"
 #include "checklist.h"
 
-#include "../Utils/textfmt.h"
 
 //#define DEBUG_SORT
 
@@ -22,10 +23,18 @@
 
 option_manager::option_manager()
 {
+    optlist = new splayOfShared(16, 0);
+    sortedOptions = nullptr;
+    numOptions = 0;
 }
 
 option_manager::~option_manager()
 {
+    delete optlist;
+    for (unsigned i=0; i<numOptions; i++) {
+        Delete(sortedOptions[i]);
+    }
+    delete[] sortedOptions;
 }
 
 bool option_manager::Print(std::ostream &s, int width) const
@@ -34,12 +43,87 @@ bool option_manager::Print(std::ostream &s, int width) const
     return true;
 }
 
+void option_manager::DoneAddingOptions()
+{
+    DCASSERT(!sortedOptions);
+    numOptions = optlist->numElements();
+    sortedOptions = new option*[numOptions];
+    copy_traversal <option> T(sortedOptions, numOptions);
+    optlist->traverse(T);
+    delete optlist;
+    optlist = nullptr;
+    for (unsigned i=0; i<numOptions; i++) sortedOptions[i]->Finish();
+}
+
+option* option_manager::FindOption(const char* name) const
+{
+    const_string CS(name);
+
+    if (optlist) {
+        option* find = smart_cast <option*> (optlist->find(&CS));
+        return find;
+    }
+
+    DCASSERT(sortedOptions);
+    // binary search
+    unsigned low = 0;
+    unsigned high = numOptions;
+    while (low < high) {
+        unsigned mid = (low+high)/2;
+        int cmp = sortedOptions[mid]->Compare(&CS);
+        if (0==cmp) return sortedOptions[mid];
+        if (cmp>0) {
+            high = mid;
+        } else {
+            low = mid+1;
+        }
+    }
+    // not found
+    return nullptr;
+}
+
+unsigned option_manager::NumOptions() const
+{
+    return numOptions;
+}
+
+option* option_manager::GetOptionNumber(unsigned i) const
+{
+    if (i>=numOptions) return nullptr;
+    if (!sortedOptions) return nullptr;
+    return sortedOptions[i];
+}
+
+void option_manager::DocumentOptions(doc_formatter &df,
+        const char* keyword) const
+{
+    DCASSERT(sortedOptions);
+    for (unsigned i=0; i<numOptions; i++) {
+        if (sortedOptions[i]->isApropos(df, keyword)) {
+            df.Out() << "\n";
+            sortedOptions[i]->PrintDocs(df, keyword);
+        }
+    }
+}
+
+void option_manager::ListOptions(doc_formatter &df) const
+{
+    DCASSERT(sortedOptions);
+    for (unsigned i=0; i<numOptions; i++) {
+#ifndef DEVELOPMENT_CODE
+        if (sortedOptions[i]->IsUndocumented())  continue;
+#endif
+        sortedOptions[i]->ShowCurrent(df.Out());
+        df.Out() << "\n";
+    }
+}
+
+
 option* option_manager::addBoolOption(const char* name, const char* doc,
         bool &link)
 {
     return addOption( new bool_opt(name, doc, link) );
 }
-
 
 option* option_manager::addIntOption(const char* name, const char* doc,
       long& v, long min, long max)
@@ -78,104 +162,12 @@ option* option_manager::addChecklistOption(const char* name, const char* doc)
 }
 
 
-// **************************************************************************
-// *                                                                        *
-// *                         Option list management                         *
-// *                                                                        *
-// **************************************************************************
-
-class option_heap : public option_manager {
-  SplayOfPointers <option> *optlist;
-  option** SortedOptions;
-  unsigned NumSortedOptions;
-public:
-  option_heap();
-  virtual void DoneAddingOptions();
-  virtual option* FindOption(const char* name) const;
-  virtual unsigned NumOptions() const {
-    return NumSortedOptions;
-  }
-  virtual option* GetOptionNumber(unsigned i) const {
-    if (i>=NumSortedOptions) return 0;
-    if (0==SortedOptions) return 0;
-    return SortedOptions[i];
-  }
-  virtual void DocumentOptions(doc_formatter &df, const char* keyword) const;
-  virtual void ListOptions(doc_formatter &df) const;
-protected:
-  virtual option* addOption(option *);
-};
-
-
-option_heap::option_heap() : option_manager()
+option* option_manager::addOption(option *o)
 {
-  optlist = new SplayOfPointers <option> (16, 0);
-  SortedOptions = 0;
-  NumSortedOptions = 0;
-}
-
-option* option_heap::addOption(option *o)
-{
-  DCASSERT(0==SortedOptions);
-  optlist->Insert(o);
-  return o;
-}
-
-void option_heap::DoneAddingOptions()
-{
-  DCASSERT(0==SortedOptions);
-  NumSortedOptions = optlist->NumElements();
-  SortedOptions = new option*[NumSortedOptions];
-  optlist->CopyToArray(SortedOptions);
-  delete optlist;
-  optlist = 0;
-  for (unsigned i=0; i<NumSortedOptions; i++) SortedOptions[i]->Finish();
-}
-
-option* option_heap::FindOption(const char* name) const
-{
-  if (optlist) {
-    option* find = optlist->Find(name);
-    return find;
-  }
-  DCASSERT(SortedOptions);
-  // binary search
-  unsigned low = 0;
-  unsigned high = NumSortedOptions;
-  while (low < high) {
-    unsigned mid = (low+high)/2;
-    int cmp = SortedOptions[mid]->Compare(name);
-    if (0==cmp) return SortedOptions[mid];
-    if (cmp>0) {
-      high = mid;
-    } else {
-      low = mid+1;
-    }
-  }
-  // not found
-  return 0;
-}
-
-void option_heap::DocumentOptions(doc_formatter &df, const char* keyword) const
-{
-  DCASSERT(SortedOptions);
-  for (unsigned i=0; i<NumSortedOptions; i++)
-    if (SortedOptions[i]->isApropos(df, keyword)) {
-      df.Out() << "\n";
-      SortedOptions[i]->PrintDocs(df, keyword);
-    }
-}
-
-void option_heap::ListOptions(doc_formatter &df) const
-{
-  DCASSERT(SortedOptions);
-  for (unsigned i=0; i<NumSortedOptions; i++) {
-#ifndef DEVELOPMENT_CODE
-    if (SortedOptions[i]->IsUndocumented())  continue;
-#endif
-    SortedOptions[i]->ShowCurrent(df.Out());
-    df.Out() << "\n";
-  }
+    DCASSERT(!sortedOptions);
+    DCASSERT(optlist);
+    optlist->insert(o);
+    return o;
 }
 
 
@@ -187,14 +179,14 @@ void option_heap::ListOptions(doc_formatter &df) const
 
 option_manager* MakeOptionManager()
 {
-  return new option_heap;
+  return new option_manager;
 }
 
 option_manager* getGlobalOptionManager()
 {
     static option_manager* om = nullptr;
     if (!om) {
-        om = new option_heap;
+        om = new option_manager;
     }
     return om;
 }

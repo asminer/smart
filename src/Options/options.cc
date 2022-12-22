@@ -4,8 +4,6 @@
 #include "../Utils/textfmt.h"
 #include "options.h"
 #include "opt_enum.h"
-#include <stdlib.h>
-#include "../include/splay.h"
 
 #include <cstring>
 
@@ -106,17 +104,16 @@ int option::Compare(const shared_object* b) const
     if (ss) {
         return strcmp(Name(), ss->getStr());
     }
+    const const_string* cs = dynamic_cast <const const_string*> (b);
+    if (cs) {
+        return strcmp(Name(), cs->getStr());
+    }
     const option* o = dynamic_cast <const option*> (b);
     if (o)  {
         return strcmp(Name(), o->Name());
     } else {
         return 1;
     }
-}
-
-int option::Compare(const char* n) const
-{
-    return strcmp(Name(), n);
 }
 
 bool option::isApropos(const doc_formatter &df, const char* keyword) const

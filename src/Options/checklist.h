@@ -4,7 +4,7 @@
 
 #include "opt_enum.h"
 #include "options.h"
-#include "../include/splay.h"
+#include "../Utils/splay.h"
 
 #include <iostream>
 #include <fstream>
@@ -92,7 +92,7 @@ public:
 // **************************************************************************
 
 class checklist_opt : public option {
-    SplayOfPointers <checklist_enum>* itemlist;
+    splayOfShared* itemlist;
     checklist_enum** possible;
     unsigned numpossible;
 public:
