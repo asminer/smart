@@ -17,11 +17,10 @@ inline const type*
 RealResultType(const exprman* em, const type* lt, const type* rt)
 {
   DCASSERT(em);
-  DCASSERT(em->REAL);
-  if (em->NULTYPE == lt || em->NULTYPE == rt)  return 0;
+  if (type::null == lt || type::null == rt)  return 0;
   const type* lct = Phase2Rand(em->getLeastCommonType(lt, rt));
   if (0==lct)                         return 0;
-  if (lct->getBaseType() != em->REAL) return 0;
+  if (!type::matches(lct->getBaseType(), "real")) return 0;
   if (lct->isASet())                  return 0;
   return lct;
 }
@@ -29,7 +28,6 @@ RealResultType(const exprman* em, const type* lt, const type* rt)
 inline int RealAlignDistance(const exprman* em, const type* lt, const type* rt)
 {
   DCASSERT(em);
-  DCASSERT(em->REAL);
   const type* lct = RealResultType(em, lt, rt);
   if (0==lct)        return -1;
 
@@ -44,7 +42,6 @@ inline int RealAlignDistance(const exprman* em, const type* lt, const type* rt)
 inline const type* AlignReals(const exprman* em, expr* &l, expr* &r)
 {
   DCASSERT(em);
-  DCASSERT(em->REAL);
   DCASSERT(l);
   DCASSERT(r);
   const type* lct = RealResultType(em, l->Type(), r->Type());
@@ -61,7 +58,6 @@ inline const type* AlignReals(const exprman* em, expr* &l, expr* &r)
 inline int RealAlignDistance(const exprman* em, expr** x, int N)
 {
   DCASSERT(em);
-  DCASSERT(em->REAL);
   DCASSERT(x);
 
   const type* lct = em->SafeType(x[0]);
@@ -70,7 +66,7 @@ inline int RealAlignDistance(const exprman* em, expr** x, int N)
   }
   lct = Phase2Rand(lct);
   if (0==lct)                         return -1;
-  if (lct->getBaseType() != em->REAL) return -1;
+  if (!type::matches(lct->getBaseType(), "real")) return -1;
   if (lct->isASet())                  return -1;
 
   int d = 0;
@@ -85,7 +81,6 @@ inline int RealAlignDistance(const exprman* em, expr** x, int N)
 inline const type* AlignReals(const exprman* em, expr** x, int N)
 {
   DCASSERT(em);
-  DCASSERT(em->REAL);
   DCASSERT(x);
 
   const type* lct = em->SafeType(x[0]);
@@ -93,7 +88,7 @@ inline const type* AlignReals(const exprman* em, expr** x, int N)
     lct = em->getLeastCommonType(lct, em->SafeType(x[i]));
   }
   lct = Phase2Rand(lct);
-  if (  (0==lct) || (lct->getBaseType() != em->REAL) || lct->isASet() ) {
+  if (  (0==lct) || (!type::matches(lct->getBaseType(), "real")) || lct->isASet() ) {
     for (int i=0; i<N; i++)  Delete(x[i]);
     return 0;
   }
@@ -174,7 +169,7 @@ const type* real_neg_op::getExprType(const type* t) const
   if (0==t)    return 0;
   if (t->isASet())  return 0;
   const type* bt = t->getBaseType();
-  if (bt != em->REAL)  return 0;
+  if (!type::matches(bt, "real"))  return 0;
   return Phase2Rand(t);
 }
 
@@ -717,7 +712,7 @@ real_comp_op
 const type* real_comp_op::getExprType(const type* l, const type* r) const
 {
   const type* t = RealResultType(em, l, r);
-  if (t)  t = t->changeBaseType(em->BOOL);
+  if (t)  t = t->changeBaseType(type::find("bool"));
   return t;
 }
 
@@ -745,7 +740,7 @@ binary* real_equal_op::makeExpr(const location &W, expr* l, expr* r) const
 {
   const type* lct = AlignReals(em, l, r);
   if (0==lct)  return 0;
-  lct = lct->changeBaseType(em->BOOL);
+  lct = lct->changeBaseType(type::find("bool"));
   DCASSERT(lct);
   return new real_equal(W, lct, l, r);
 }
@@ -816,7 +811,7 @@ binary* real_neq_op::makeExpr(const location &W, expr* l, expr* r) const
 {
   const type* lct = AlignReals(em, l, r);
   if (0==lct)  return 0;
-  lct = lct->changeBaseType(em->BOOL);
+  lct = lct->changeBaseType(type::find("bool"));
   DCASSERT(lct);
   return new real_neq(W, lct, l, r);
 }
@@ -887,7 +882,7 @@ binary* real_gt_op::makeExpr(const location &W, expr* l, expr* r) const
 {
   const type* lct = AlignReals(em, l, r);
   if (0==lct)  return 0;
-  lct = lct->changeBaseType(em->BOOL);
+  lct = lct->changeBaseType(type::find("bool"));
   DCASSERT(lct);
   return new real_gt(W, lct, l, r);
 }
@@ -958,7 +953,7 @@ binary* real_ge_op::makeExpr(const location &W, expr* l, expr* r) const
 {
   const type* lct = AlignReals(em, l, r);
   if (0==lct)  return 0;
-  lct = lct->changeBaseType(em->BOOL);
+  lct = lct->changeBaseType(type::find("bool"));
   DCASSERT(lct);
   return new real_ge(W, lct, l, r);
 }
@@ -1029,7 +1024,7 @@ binary* real_lt_op::makeExpr(const location &W, expr* l, expr* r) const
 {
   const type* lct = AlignReals(em, l, r);
   if (0==lct)  return 0;
-  lct = lct->changeBaseType(em->BOOL);
+  lct = lct->changeBaseType(type::find("bool"));
   DCASSERT(lct);
   return new real_lt(W, lct, l, r);
 }
@@ -1100,7 +1095,7 @@ binary* real_le_op::makeExpr(const location &W, expr* l, expr* r) const
 {
   const type* lct = AlignReals(em, l, r);
   if (0==lct)  return 0;
-  lct = lct->changeBaseType(em->BOOL);
+  lct = lct->changeBaseType(type::find("bool"));
   DCASSERT(lct);
   return new real_le(W, lct, l, r);
 }

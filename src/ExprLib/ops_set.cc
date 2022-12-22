@@ -15,7 +15,7 @@ inline const type*
 SetResultType(const exprman* em, const type* lt, const type* rt)
 {
   DCASSERT(em);
-  if (em->NULTYPE == lt || em->NULTYPE ==rt)  return 0;
+  if (type::null == lt || type::null ==rt)  return 0;
   const type* lct = em->getLeastCommonType(lt, rt);
   if (0==lct)             return 0;
   if (!lct->isASet())     return 0;
@@ -98,7 +98,7 @@ protected:
 // ******************************************************************
 
 int_ivlexpr::int_ivlexpr(const location &W, expr* s, expr* e, expr* i)
- : trinary(W, em->INT->getSetOfThis(), s, e, i)
+ : trinary(W, type::find(true, false, DETERM, "int"), s, e, i)
 {
   DCASSERT(s);
   DCASSERT(e);
@@ -190,11 +190,11 @@ int int_ivlop::
 getPromoteDistance(const type* lt, const type* mt, const type* rt) const
 {
   DCASSERT(em);
-  DCASSERT(em->INT);
-  if (em->NULTYPE == lt || em->NULTYPE == mt || em->NULTYPE == rt) return -1;
-  int dl = em->getPromoteDistance(lt, em->INT);
-  int dm = em->getPromoteDistance(mt, em->INT);
-  int dr = em->getPromoteDistance(rt, em->INT);
+  if (type::null == lt || type::null == mt || type::null == rt) return -1;
+  const type* INT = type::find("int");
+  int dl = em->getPromoteDistance(lt, INT);
+  int dm = em->getPromoteDistance(mt, INT);
+  int dr = em->getPromoteDistance(rt, INT);
   if ( (dl<0) || (dm<0) || (dr<0) )  return -1;
   return dl + dm + dr;
 }
@@ -202,19 +202,21 @@ getPromoteDistance(const type* lt, const type* mt, const type* rt) const
 const type* int_ivlop::getExprType(const type* lt, const type* mt,
         const type* rt) const
 {
-  if (em->NULTYPE == lt || em->NULTYPE == mt || em->NULTYPE == rt) return 0;
-  if (!em->isPromotable(lt, em->INT))  return 0;
-  if (!em->isPromotable(mt, em->INT))  return 0;
-  if (!em->isPromotable(rt, em->INT))  return 0;
-  return em->INT->getSetOfThis();
+  if (type::null == lt || type::null == mt || type::null == rt) return 0;
+  const type* INT = type::find("int");
+  if (!em->isPromotable(lt, INT))  return 0;
+  if (!em->isPromotable(mt, INT))  return 0;
+  if (!em->isPromotable(rt, INT))  return 0;
+  return INT->getSetOfThis();
 }
 
 trinary* int_ivlop::makeExpr(const location &W, expr* left,
         expr* middle, expr* right) const
 {
-  left = em->promote(left, em->INT);
-  middle = em->promote(middle, em->INT);
-  right = em->promote(right, em->INT);
+  const type* INT = type::find("int");
+  left = em->promote(left, INT);
+  middle = em->promote(middle, INT);
+  right = em->promote(right, INT);
 
   if ( (!em->isOrdinary(left)) || (!em->isOrdinary(middle)) || (!em->isOrdinary(right)) ) {
     Delete(left);
@@ -249,7 +251,7 @@ protected:
 // ******************************************************************
 
 real_ivlexpr::real_ivlexpr(const location &W, expr* s, expr* e, expr* i)
- : trinary(W, em->REAL->getSetOfThis(), s, e, i)
+ : trinary(W, type::find(true, false, DETERM, "real"), s, e, i)
 {
   DCASSERT(s);
   DCASSERT(e);
@@ -341,11 +343,11 @@ int real_ivlop::
 getPromoteDistance(const type* lt, const type* mt, const type* rt) const
 {
   DCASSERT(em);
-  DCASSERT(em->REAL);
-  if (em->NULTYPE == lt || em->NULTYPE == mt || em->NULTYPE == rt) return -1;
-  int dl = em->getPromoteDistance(lt, em->REAL);
-  int dm = em->getPromoteDistance(mt, em->REAL);
-  int dr = em->getPromoteDistance(rt, em->REAL);
+  if (type::null == lt || type::null == mt || type::null == rt) return -1;
+  const type* REAL = type::find("real");
+  int dl = em->getPromoteDistance(lt, REAL);
+  int dm = em->getPromoteDistance(mt, REAL);
+  int dr = em->getPromoteDistance(rt, REAL);
   if ( (dl<0) || (dm<0) || (dr<0) )  return -1;
   return dl + dm + dr;
 }
@@ -353,19 +355,21 @@ getPromoteDistance(const type* lt, const type* mt, const type* rt) const
 const type* real_ivlop::getExprType(const type* lt, const type* mt,
         const type* rt) const
 {
-  if (em->NULTYPE == lt || em->NULTYPE == mt || em->NULTYPE == rt) return 0;
-  if (!em->isPromotable(lt, em->REAL))  return 0;
-  if (!em->isPromotable(mt, em->REAL))  return 0;
-  if (!em->isPromotable(rt, em->REAL))  return 0;
-  return em->REAL->getSetOfThis();
+  if (type::null == lt || type::null == mt || type::null == rt) return 0;
+  const type* REAL = type::find("real");
+  if (!em->isPromotable(lt, REAL))  return 0;
+  if (!em->isPromotable(mt, REAL))  return 0;
+  if (!em->isPromotable(rt, REAL))  return 0;
+  return REAL->getSetOfThis();
 }
 
 trinary* real_ivlop::makeExpr(const location &W, expr* left,
         expr* middle, expr* right) const
 {
-  left = em->promote(left, em->REAL);
-  middle = em->promote(middle, em->REAL);
-  right = em->promote(right, em->REAL);
+  const type* REAL = type::find("real");
+  left = em->promote(left, REAL);
+  middle = em->promote(middle, REAL);
+  right = em->promote(right, REAL);
 
   if ( (!em->isOrdinary(left)) || (!em->isOrdinary(middle)) || (!em->isOrdinary(right)) ) {
     Delete(left);

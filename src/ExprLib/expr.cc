@@ -230,7 +230,7 @@ void expr::SetModelType(const model_def* mt)
     if (simple) {
         DCASSERT(simple->isAFormalism());
     } else {
-        simple = type::findSimple("model");
+        simple = type::find("model");
     }
     DCASSERT(!model_type);
     model_type = mt;

@@ -96,7 +96,7 @@ void measure::Traverse(traverse_data &x)
   DCASSERT(0==x.aggregate);
   switch (x.which) {
     case traverse_data::GetMeasures:
-        if (Type() != em->VOID) {
+        if (!type::matches(Type(), "void")) {
           if (x.elist)  x.elist->Append(this);
           if (x.slist)  x.slist->Append(this);
           DCASSERT(x.answer);
@@ -114,7 +114,7 @@ void measure::SetRHS(expr* r)
   rhs = r;
   setDefined();
 
-  if (0==r || Type() == em->VOID) return;
+  if (0==r || type::matches(Type(), "void")) return;
 
   solve_deps = new List <symbol>;
   r->BuildSymbolList(traverse_data::GetMeasures, 0, solve_deps);
@@ -123,7 +123,7 @@ void measure::SetRHS(expr* r)
 
 void measure::Affix()
 {
-  if (Type() == em->VOID) return;
+  if (type::matches(Type(), "void")) return;
   if (!isComputed()) setComputed();
   SetSubstitution(true);
   if (model_debug.start()) {

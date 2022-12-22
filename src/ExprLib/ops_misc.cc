@@ -86,7 +86,7 @@ protected:
 // ******************************************************************
 
 void_seq::void_seq(const location &W, expr** x, int n)
- : assoc(W, exprman::aop_semi, em->VOID, x, n)
+ : assoc(W, exprman::aop_semi, type::find("void"), x, n)
 {
 }
 
@@ -174,7 +174,7 @@ protected:
 // ******************************************************************
 
 next_state_seq::next_state_seq(const location &W, expr** x, int n)
- : assoc(W, exprman::aop_semi, em->NEXT_STATE, x, n)
+ : assoc(W, exprman::aop_semi, type::find("next state"), x, n)
 {
 }
 
@@ -396,9 +396,9 @@ assoc* aggreg_op::makeExpr(const location &W, expr** list,
 void InitMiscOps(exprman* em)
 {
   if (0==em)  return;
-  em->registerOperation( new void_seq_op(em->VOID)              );
-  em->registerOperation( new next_state_seq_op(em->NEXT_STATE)  );
-  em->registerOperation( new aggreg_op                          );
+  em->registerOperation(new void_seq_op(type::find("void")));
+  em->registerOperation(new next_state_seq_op(type::find("next state")));
+  em->registerOperation(new aggreg_op);
 }
 
 

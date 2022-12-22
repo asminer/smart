@@ -432,7 +432,7 @@ const type* int2real::promotesTo(const type* src) const
   DCASSERT(type::matches(src->getBaseType(), "int"));
   DCASSERT(src->getModifier() != PHASE);
 
-  const type* dest = type::findType(src->isASet(),
+  const type* dest = type::find(src->isASet(),
           src->hasProc(), src->getModifier(), "real");
 
   DCASSERT(dest);
@@ -502,7 +502,7 @@ const type* real2int::promotesTo(const type* src) const
   DCASSERT(src);
   DCASSERT(type::matches(src->getBaseType(), "real"));
 
-  const type* dest = type::findType(src->isASet(),
+  const type* dest = type::find(src->isASet(),
           src->hasProc(), src->getModifier(), "int");
 
   DCASSERT(dest);

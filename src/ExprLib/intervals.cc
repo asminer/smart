@@ -262,7 +262,7 @@ int interval_object::Compare(const shared_object *o) const
 void InitIntervals(const exprman* em)
 {
   if (0==em) return;
-  interval_point::reals = interval_object::reals = type::findSimple("real");
+  interval_point::reals = interval_object::reals = type::find("real");
 }
 
 

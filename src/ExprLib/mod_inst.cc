@@ -25,7 +25,7 @@ const exprman* lldsm::em = 0;
 lldsm::lldsm(model_type t)
  : shared_object()
 {
-  type = t;
+  mtype = t;
   parent = 0;
   next_phase = 0;
 }
@@ -87,7 +87,7 @@ const exprman* hldsm::em = 0;
 
 hldsm::hldsm(model_type t) : shared_object()
 {
-  type = t;
+  mtype = t;
   parent = 0;
   process = 0;
   part = 0;
@@ -184,10 +184,8 @@ void hldsm::errmsg::outOfBoundsError(const result &x) const
 
 void hldsm::errmsg::sendReal(const result &x) const
 {
-    DCASSERT(model);
-    DCASSERT(model->em);
-    DCASSERT(model->em->REAL);
-    model->em->REAL->print(stream(), x);
+    const type* REAL = type::find("real");
+    REAL->print(stream(), x);
 }
 
 
@@ -297,7 +295,7 @@ void hldsm::partinfo::sort(model_statevar** vars)
 // ******************************************************************
 
 model_instance::model_instance(const location &W, const model_def* dfn)
- : symbol(W, em->MODEL, 0)
+ : symbol(W, type::find("model"), 0)
 {
   Rename(dfn->SharedName());
   SetModelType(dfn);

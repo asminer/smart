@@ -168,7 +168,7 @@ class type : public shared_string {
                 @param  tname   type name
                 @return     A pointer to the matching type, or null.
          */
-        static simple_type*  findSimple(const char* tname);
+        static simple_type*  find(const char* tname);
 
         /**
             Find a modified type.
@@ -180,7 +180,7 @@ class type : public shared_string {
                 @return     The desired type, or null if the base type
                             or any modifications are not possible.
         */
-        static const type* findType(bool set, bool proc, modifier mod,
+        static const type* find(bool set, bool proc, modifier mod,
                         const char* tname);
 
         /**

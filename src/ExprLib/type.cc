@@ -437,7 +437,7 @@ simple_type* type::registerNew(simple_type* t)
     return tnew;
 }
 
-simple_type* type::findSimple(const char* tname)
+simple_type* type::find(const char* tname)
 {
     static const_string S;
     DCASSERT(allSimple);
@@ -445,11 +445,11 @@ simple_type* type::findSimple(const char* tname)
     return smart_cast <simple_type*> (allSimple->find(&S));
 }
 
-const type* type::findType(bool set, bool proc, modifier mod, const char* tn)
+const type* type::find(bool set, bool proc, modifier mod, const char* tn)
 {
-    const simple_type* find = findSimple(tn);
-    if (!find) return nullptr;
-    const type* build = find->modifyType(mod);
+    const simple_type* base = find(tn);
+    if (!base) return nullptr;
+    const type* build = base->modifyType(mod);
     if (!build) return nullptr;
     if (proc) build = build->addProc();
     if (!build) return nullptr;

@@ -268,9 +268,6 @@ public:
     virtual int Compare(const shared_object* o) const {
         return model_statevar::Compare(o);
     }
-    virtual int Compare(const char* x) const {
-        return model_statevar::Compare(x);
-    }
 	// Required for sorting...
 	inline int Compare(long i, long j) const {
 		DCASSERT(indexes);CHECK_RANGE(0, i, num_values);CHECK_RANGE(0, j, num_values);

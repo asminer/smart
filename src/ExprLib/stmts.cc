@@ -16,10 +16,10 @@
 inline const type* Opt2Type(const exprman* em, option::type ot)
 {
     switch (ot) {
-        case option::Boolean:   return  type::findSimple("bool");
-        case option::Integer:   return  type::findSimple("int");
-        case option::Real:      return  type::findSimple("real");
-        case option::String:    return  type::findSimple("string");
+        case option::Boolean:   return  type::find("bool");
+        case option::Integer:   return  type::find("int");
+        case option::Real:      return  type::find("real");
+        case option::String:    return  type::find("string");
         default:                return  nullptr;
     }
     return nullptr;

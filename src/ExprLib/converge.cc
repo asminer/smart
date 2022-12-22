@@ -145,7 +145,7 @@ public:
 // ******************************************************************
 
 converge_var::converge_var(const location &W, char* n)
- : symbol(W, type::findSimple("real"), n)
+ : symbol(W, type::find("real"), n)
 {
   current.setNull();
   update.setNull();
@@ -699,7 +699,7 @@ expr* MakeCvgThing(const exprman* em, const location &W,
         Delete(rhs);
         return nullptr;
     }
-    const type* REAL = type::findSimple("real");
+    const type* REAL = type::find("real");
     const type* gt = em->SafeType(rhs);
     if (!em->isPromotable(gt, REAL)) {
         typechecking_error E(W);
@@ -741,7 +741,7 @@ expr* MakeArrayThing(const exprman* em, const location &W,
         Delete(rhs);
         return nullptr;
     }
-    const type* REAL = type::findSimple("real");
+    const type* REAL = type::find("real");
     const type* gt = em->SafeType(rhs);
     if (!em->isPromotable(gt, REAL)) {
         typechecking_error E(W);

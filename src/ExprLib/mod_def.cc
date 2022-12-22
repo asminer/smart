@@ -168,7 +168,7 @@ bool model_def::isVariableOurs(const model_var* mv,
   if (StartWarning(not_our_var, cause)) {
     const type* mvt = mv->Type();
     DCASSERT(mvt);
-    not_our_var << mvt->getName() << " " << mv->Name();
+    not_our_var << *mvt << " " << mv->Name();
     not_our_var << " is from another model";
     if (what) not_our_var << ", " << what;
     DoneWarning(not_our_var);
@@ -188,7 +188,7 @@ void model_def::Compute(traverse_data &x, expr** pass, int np)
 
 void model_def::PrintHeader(std::ostream &s, bool hide) const
 {
-  if (Type())  s << Type()->getName();
+  if (Type())  s << *Type();
   s << " " << Name();
   formals.PrintHeader(s, hide);
 }

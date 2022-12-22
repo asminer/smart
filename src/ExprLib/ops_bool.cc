@@ -17,13 +17,12 @@
 inline const type*
 BoolResultType(const exprman* em, const type* lt, const type* rt)
 {
-  DCASSERT(em);
-  DCASSERT(em->BOOL);
-  if (em->NULTYPE == lt || em->NULTYPE ==rt)  return 0;
+    DCASSERT(em);
+  if (type::null == lt || type::null ==rt)          return nullptr;
   const type* lct = em->getLeastCommonType(lt, rt);
-  if (0==lct)                         return 0;
-  if (lct->getBaseType() != em->BOOL) return 0;
-  if (lct->isASet())                  return 0;
+  if (!lct)                                         return nullptr;
+  if (!type::matches(lct->getBaseType(), "bool"))   return nullptr;
+  if (lct->isASet())                                return nullptr;
   return lct;
 }
 
@@ -58,7 +57,6 @@ inline const type* AlignBooleans(const exprman* em, expr* &l, expr* &r)
 inline int BoolAlignDistance(const exprman* em, expr** x, bool* f, int N)
 {
   DCASSERT(em);
-  DCASSERT(em->BOOL);
   DCASSERT(x);
 
   // check flips, if any
@@ -69,7 +67,7 @@ inline int BoolAlignDistance(const exprman* em, expr** x, bool* f, int N)
     lct = em->getLeastCommonType(lct, em->SafeType(x[i]));
   }
   if (0==lct)                         return -1;
-  if (lct->getBaseType() != em->BOOL) return -1;
+  if (!type::matches(lct->getBaseType(), "bool")) return -1;
   if (lct->isASet())                  return -1;
 
   int d = 0;
@@ -84,7 +82,6 @@ inline int BoolAlignDistance(const exprman* em, expr** x, bool* f, int N)
 inline const type* AlignBooleans(const exprman* em, expr** x, bool* f, int N)
 {
   DCASSERT(em);
-  DCASSERT(em->BOOL);
   DCASSERT(x);
 
   // check flips, if any
@@ -94,7 +91,7 @@ inline const type* AlignBooleans(const exprman* em, expr** x, bool* f, int N)
   for (int i=1; i<N; i++) {
     lct = em->getLeastCommonType(lct, em->SafeType(x[i]));
   }
-  if (  (0==lct) || (lct->getBaseType() != em->BOOL) || lct->isASet() ) {
+  if (  (0==lct) || (!type::matches(lct->getBaseType(), "bool")) || lct->isASet() ) {
     for (int i=0; i<N; i++)  Delete(x[i]);
     return 0;
   }
@@ -174,8 +171,7 @@ const type* bool_not_op::getExprType(const type* t) const
   if (t->isASet())  return 0;
   const type* bt = t->getBaseType();
   DCASSERT(em);
-  DCASSERT(em->BOOL);
-  if (bt != em->BOOL)  return 0;
+  if (!type::matches(bt, "bool"))  return 0;
   return t;
 }
 

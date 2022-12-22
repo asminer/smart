@@ -19,11 +19,10 @@ inline const type*
 IntResultType(const exprman* em, const type* lt, const type* rt)
 {
   DCASSERT(em);
-  DCASSERT(em->INT);
-  if (em->NULTYPE == lt || em->NULTYPE ==rt)  return 0;
+  if (type::null == lt || type::null ==rt)  return 0;
   const type* lct = Phase2Rand(em->getLeastCommonType(lt, rt));
   if (0==lct)                         return 0;
-  if (lct->getBaseType() != em->INT)  return 0;
+  if (!type::matches(lct->getBaseType(), "int"))  return 0;
   if (lct->isASet())                  return 0;
   return lct;
 }
@@ -31,7 +30,6 @@ IntResultType(const exprman* em, const type* lt, const type* rt)
 inline int IntAlignDistance(const exprman* em, const type* lt, const type* rt)
 {
   DCASSERT(em);
-  DCASSERT(em->INT);
   const type* lct = IntResultType(em, lt, rt);
   if (0==lct)        return -1;
 
@@ -46,7 +44,6 @@ inline int IntAlignDistance(const exprman* em, const type* lt, const type* rt)
 inline const type* AlignIntegers(const exprman* em, expr* &l, expr* &r)
 {
   DCASSERT(em);
-  DCASSERT(em->INT);
   DCASSERT(l);
   DCASSERT(r);
   const type* lct = IntResultType(em, l->Type(), r->Type());
@@ -63,7 +60,6 @@ inline const type* AlignIntegers(const exprman* em, expr* &l, expr* &r)
 inline int IntAlignDistance(const exprman* em, expr** x, int N)
 {
   DCASSERT(em);
-  DCASSERT(em->INT);
   DCASSERT(x);
 
   const type* lct = em->SafeType(x[0]);
@@ -72,7 +68,7 @@ inline int IntAlignDistance(const exprman* em, expr** x, int N)
   }
   lct = Phase2Rand(lct);
   if (0==lct)                         return -1;
-  if (lct->getBaseType() != em->INT)  return -1;
+  if (!type::matches(lct->getBaseType(), "int"))  return -1;
   if (lct->isASet())                  return -1;
 
   int d = 0;
@@ -87,7 +83,6 @@ inline int IntAlignDistance(const exprman* em, expr** x, int N)
 inline const type* AlignIntegers(const exprman* em, expr** x, int N)
 {
   DCASSERT(em);
-  DCASSERT(em->INT);
   DCASSERT(x);
 
   const type* lct = em->SafeType(x[0]);
@@ -95,7 +90,7 @@ inline const type* AlignIntegers(const exprman* em, expr** x, int N)
     lct = em->getLeastCommonType(lct, em->SafeType(x[i]));
   }
   lct = Phase2Rand(lct);
-  if (  (0==lct) || (lct->getBaseType() != em->INT) || lct->isASet() ) {
+  if (  (0==lct) || (!type::matches(lct->getBaseType(), "int")) || lct->isASet() ) {
     for (int i=0; i<N; i++)  Delete(x[i]);
     return 0;
   }
@@ -169,11 +164,10 @@ int_neg_op::int_neg_op() : unary_op(exprman::uop_neg)
 const type* int_neg_op::getExprType(const type* t) const
 {
   DCASSERT(em);
-  DCASSERT(em->INT);
   if (0==t)    return 0;
   if (t->isASet())  return 0;
   const type* bt = t->getBaseType();
-  if (bt != em->INT)  return 0;
+  if (!type::matches(bt, "int"))  return 0;
   return Phase2Rand(t);
 }
 
@@ -770,7 +764,7 @@ const type* int_multdiv_op
 {
   if (!f)  return 0;
   const type* lct = IntResultType(em, l, r);
-  if (lct)  lct = lct->changeBaseType(em->REAL);
+  if (lct)  lct = lct->changeBaseType(type::find("real"));
   return lct;
 }
 
@@ -788,7 +782,7 @@ assoc* int_multdiv_op::makeExpr(const location &W, expr** list,
     }
     if (unflipped)  lct = 0;
   }
-  if (lct)  lct = lct->changeBaseType(em->REAL);
+  if (lct)  lct = lct->changeBaseType(type::find("real"));
   if (lct)  return new int_multdiv(W, lct, list, flip, N);
   // there was an error
   delete[] list;
@@ -924,7 +918,7 @@ int_comp_op::int_comp_op(exprman::binary_opcode op) : int_binary_op(op)
 const type* int_comp_op::getExprType(const type* l, const type* r) const
 {
   const type* t = IntResultType(em, l, r);
-  if (t)  t = t->changeBaseType(em->BOOL);
+  if (t)  t = t->changeBaseType(type::find("bool"));
   return t;
 }
 
@@ -1021,7 +1015,7 @@ binary* int_equal_op::makeExpr(const location &W, expr* l, expr* r) const
 {
   const type* lct = AlignIntegers(em, l, r);
   if (0==lct)  return 0;
-  lct = lct->changeBaseType(em->BOOL);
+  lct = lct->changeBaseType(type::find("bool"));
   DCASSERT(lct);
   return new int_equal(W, lct, l, r);
 }
@@ -1093,7 +1087,7 @@ binary* int_neq_op::makeExpr(const location &W, expr* l, expr* r) const
 {
   const type* lct = AlignIntegers(em, l, r);
   if (0==lct)  return 0;
-  lct = lct->changeBaseType(em->BOOL);
+  lct = lct->changeBaseType(type::find("bool"));
   DCASSERT(lct);
   return new int_neq(W, lct, l, r);
 }
@@ -1164,7 +1158,7 @@ binary* int_gt_op::makeExpr(const location &W, expr* l, expr* r) const
 {
   const type* lct = AlignIntegers(em, l, r);
   if (0==lct)  return 0;
-  lct = lct->changeBaseType(em->BOOL);
+  lct = lct->changeBaseType(type::find("bool"));
   DCASSERT(lct);
   return new int_gt(W, lct, l, r);
 }
@@ -1235,7 +1229,7 @@ binary* int_ge_op::makeExpr(const location &W, expr* l, expr* r) const
 {
   const type* lct = AlignIntegers(em, l, r);
   if (0==lct)  return 0;
-  lct = lct->changeBaseType(em->BOOL);
+  lct = lct->changeBaseType(type::find("bool"));
   DCASSERT(lct);
   return new int_ge(W, lct, l, r);
 }
@@ -1306,7 +1300,7 @@ binary* int_lt_op::makeExpr(const location &W, expr* l, expr* r) const
 {
   const type* lct = AlignIntegers(em, l, r);
   if (0==lct)  return 0;
-  lct = lct->changeBaseType(em->BOOL);
+  lct = lct->changeBaseType(type::find("bool"));
   DCASSERT(lct);
   return new int_lt(W, lct, l, r);
 }
@@ -1377,7 +1371,7 @@ binary* int_le_op::makeExpr(const location &W, expr* l, expr* r) const
 {
   const type* lct = AlignIntegers(em, l, r);
   if (0==lct)  return 0;
-  lct = lct->changeBaseType(em->BOOL);
+  lct = lct->changeBaseType(type::find("bool"));
   DCASSERT(lct);
   return new int_le(W, lct, l, r);
 }

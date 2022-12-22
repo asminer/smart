@@ -1189,7 +1189,7 @@ model_instance* simple_internal
 model_internal::model_internal(const type* t, const char* name, int nf)
  : simple_internal(t, name, nf)
 {
-    SetFormal(0, type::findSimple("model"), "-m");  // Impossible name!
+    SetFormal(0, type::find("model"), "-m");  // Impossible name!
     formals.hide(0);
 }
 

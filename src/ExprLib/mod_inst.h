@@ -64,7 +64,7 @@ public:
     // TBD: other types here?
   };
 private:
-  model_type type;
+  model_type mtype;
 protected:
   const hldsm* parent;
 public:
@@ -75,7 +75,7 @@ protected:
 public:
   static void initOptions(exprman* om);
 
-  inline model_type Type() const { return type; }
+  inline model_type Type() const { return mtype; }
   inline void SetParent(const hldsm* p) {
     DCASSERT(0==parent || p==parent);
     parent = p;
@@ -195,7 +195,7 @@ public:
 
 
 private:
-  model_type type;
+  model_type mtype;
   const symbol* parent;
   /// Saved partition information.
   partinfo* part;
@@ -207,10 +207,10 @@ protected:
   virtual ~hldsm();
 public:
   static void initOptions(exprman* om);
-  inline model_type Type() const { return type; }
+  inline model_type Type() const { return mtype; }
   inline void setType(model_type t) {
-    DCASSERT(Unknown == type);
-    type = t;
+    DCASSERT(Unknown == mtype);
+    mtype = t;
   }
 
   /// Number of state variables.

@@ -291,8 +291,10 @@ void model_enum::MakeSortedMap(long* I) const {
 
 int_statevar::int_statevar(const symbol* wrapper, const model_instance* p,
 		shared_object* b) :
-		model_statevar(wrapper, p, b) {
-	DCASSERT(wrapper);DCASSERT(wrapper->Type() == em->INT);
+		model_statevar(wrapper, p, b)
+{
+	DCASSERT(wrapper);
+    DCASSERT(type::matches(wrapper->Type(), "int"));
 }
 
 void int_statevar::Compute(traverse_data &x) {
@@ -315,8 +317,10 @@ void int_statevar::SetToValueNumber(long i) {
 // ******************************************************************
 
 bool_statevar::bool_statevar(const symbol* wrapper, const model_instance* p) :
-		model_statevar(wrapper, p, 0) {
-	DCASSERT(wrapper);DCASSERT(wrapper->Type() == em->BOOL);
+		model_statevar(wrapper, p, 0)
+{
+	DCASSERT(wrapper);
+    DCASSERT(type::matches(wrapper->Type(), "bool"));
 }
 
 void bool_statevar::Compute(traverse_data &x) {
@@ -562,7 +566,8 @@ public:
 
 model_var_stmt::model_var_stmt(const location &W, model_def *p,
 		const type* t, expr* bnds, model_symbol** n, int nv) :
-		expr(W, em->VOID) {
+		expr(W, type::find("void"))
+{
 	parent = p;
 	numvars = nv;
 	names = n;
@@ -585,7 +590,7 @@ bool model_var_stmt::Print(std::ostream &s, int w) const {
 	DCASSERT(names[0]);
 	const type* t = names[0]->Type();
 	DCASSERT(t);
-	s << t->getName() << " ";
+	s << *t << " ";
 	for (int i = 0; i < numvars; i++) {
 		if (i)
 			s << ", ";
@@ -709,7 +714,7 @@ public:
 
 model_varray_stmt::model_varray_stmt(const location &W, model_def *p,
 		const type* t, model_array** a, int nv) :
-		expr(W, em->VOID) {
+		expr(W, type::find("void")) {
 	parent = p;
 	numvars = nv;
 	DCASSERT(numvars);
@@ -731,7 +736,7 @@ bool model_varray_stmt::Print(std::ostream &s, int w) const {
 	DCASSERT(vars[0]);
 	const type* t = vars[0]->Type();
 	DCASSERT(t);
-	s << t->getName() << " ";
+	s << *t << " ";
 	for (int i = 0; i < numvars; i++) {
 		if (i)
 			s << ", ";
@@ -793,7 +798,7 @@ public:
 
 measure_assign::measure_assign(const location &W, model_def *p,
 		model_symbol* w, expr* rhs) :
-		expr(W, em->VOID) {
+		expr(W, type::find("void")) {
 	parent = p;
 	wrapper = w;
 	msr_slot = -1; // can't get the slot yet, model still being constructed
@@ -888,7 +893,7 @@ public:
 
 measure_array_assign::measure_array_assign(const location &W, model_def *p,
 		model_array* w, expr *e) :
-		expr(W, em->VOID) {
+		expr(W, type::find("void")) {
 	parent = p;
 	wrapper = w;
 	msr_slot = -1;
@@ -961,7 +966,7 @@ void measure_array_assign::Traverse(traverse_data &x) {
 // ******************************************************************
 
 clev_op::clev_op(const location &W, expr* b, model_var* v) :
-		unary(W, em->BOOL->addProc(), v) {
+		unary(W, type::find(false, true, DETERM, "bool"), v) {
 	DCASSERT(b);DCASSERT(0==b->BuildExprList(traverse_data::GetSymbols, 0, 0));
 	traverse_data x(traverse_data::Compute);
 	result foo;
@@ -974,7 +979,7 @@ clev_op::clev_op(const location &W, expr* b, model_var* v) :
 }
 
 clev_op::clev_op(const location &W, long b, model_var* v) :
-		unary(W, em->BOOL->addProc(), v) {
+		unary(W, type::find(false, true, DETERM, "bool"), v) {
 	lower = b;
 }
 
@@ -1060,7 +1065,7 @@ protected:
 // ******************************************************************
 
 blev_op::blev_op(const location &W, expr* b, model_var* v) :
-		binary(W, exprman::bop_le, em->BOOL->addProc(), b, v) {
+		binary(W, exprman::bop_le, type::find(false, true, DETERM, "bool"), b, v) {
 }
 
 void blev_op::Compute(traverse_data &x) {
@@ -1166,7 +1171,7 @@ protected:
 // ******************************************************************
 
 vltc_op::vltc_op(const location &W, model_var* v, expr* b) :
-		unary(W, em->BOOL->addProc(), v) {
+		unary(W, type::find(false, true, DETERM, "bool"), v) {
 	DCASSERT(b);DCASSERT(0==b->BuildExprList(traverse_data::GetSymbols, 0, 0));
 	traverse_data x(traverse_data::Compute);
 	result foo;
@@ -1179,7 +1184,7 @@ vltc_op::vltc_op(const location &W, model_var* v, expr* b) :
 }
 
 vltc_op::vltc_op(const location &W, model_var* v, long b) :
-		unary(W, em->BOOL->addProc(), v) {
+		unary(W, type::find(false, true, DETERM, "bool"), v) {
 	upper = b;
 }
 
@@ -1262,7 +1267,7 @@ protected:
 // ******************************************************************
 
 vltb_op::vltb_op(const location &W, model_var* v, expr* b) :
-		binary(W, exprman::bop_lt, em->BOOL->addProc(), v, b) {
+		binary(W, exprman::bop_lt, type::find(false, true, DETERM, "bool"), v, b) {
 }
 
 void vltb_op::Compute(traverse_data &x) {
@@ -1357,7 +1362,7 @@ protected:
 
 clevltc_op::clevltc_op(const location &W, expr* lb, model_var* v,
 		expr* ub) :
-		unary(W, em->BOOL->addProc(), v) {
+		unary(W, type::find(false, true, DETERM, "bool"), v) {
 	DCASSERT(lb);DCASSERT(ub);DCASSERT(0==lb->BuildExprList(traverse_data::GetSymbols, 0, 0));DCASSERT(0==ub->BuildExprList(traverse_data::GetSymbols, 0, 0));
 	traverse_data x(traverse_data::Compute);
 	result foo;
@@ -1375,7 +1380,7 @@ clevltc_op::clevltc_op(const location &W, expr* lb, model_var* v,
 }
 
 clevltc_op::clevltc_op(const location &W, long lb, model_var* v, long ub) :
-		unary(W, em->BOOL->addProc(), v) {
+		unary(W, type::find(false, true, DETERM, "bool"), v) {
 	lower = lb;
 	upper = ub;
 }
@@ -1473,7 +1478,7 @@ protected:
 
 blevltb_op::blevltb_op(const location &W, expr* lb, model_var* v,
 		expr* ub) :
-		trinary(W, em->BOOL->addProc(), lb, v, ub) {
+		trinary(W, type::find(false, true, DETERM, "bool"), lb, v, ub) {
 }
 
 void blevltb_op::Compute(traverse_data &x) {
@@ -1614,7 +1619,7 @@ expr* blevltb_op::buildAnother(expr *l, expr* m, expr *r) const {
 // ******************************************************************
 
 cupdate_op::cupdate_op(const location &W, model_var* v, long d) :
-		expr(W, em->NEXT_STATE) {
+		expr(W, type::find("next state")) {
 	var = v;
 	DCASSERT(var);
 	delta = d;
@@ -1721,7 +1726,7 @@ public:
 
 vupdate_op::vupdate_op(const location &W, model_var* v, expr* dec,
 		expr* inc) :
-		expr(W, em->NEXT_STATE) {
+		expr(W, type::find("next state")) {
 	var = v;
 	dec_amount = dec;
 	inc_amount = inc;
@@ -1857,7 +1862,7 @@ public:
 // ******************************************************************
 
 cassign_op::cassign_op(const location &W, model_var* v, long d) :
-		expr(W, em->NEXT_STATE) {
+		expr(W, type::find("next state")) {
 	var = v;
 	DCASSERT(var);
 	rhs = d;
@@ -1930,7 +1935,7 @@ public:
 // ******************************************************************
 
 vassign_op::vassign_op(const location &W, model_var* v, expr* d) :
-		expr(W, em->NEXT_STATE) {
+		expr(W, type::find("next state")) {
 	var = v;
 	DCASSERT(var);
 	rhs = d;
@@ -2039,8 +2044,8 @@ expr* exprman::makeModelVarDecs(const location &W, model_def* p,
 		DCASSERT(ft);
 		if (!ft->canDeclareType(t)) {
             typechecking_error E(W);
-            E << "Cannot declare a variable of type " << t->getName();
-			E << " in formalism " << ft->getName();
+            E << "Cannot declare a variable of type " << *t;
+			E << " in formalism " << *ft;
 			bailout = 1;
 		}
 	}
@@ -2084,8 +2089,8 @@ expr* exprman::makeModelArrayDecs(const location &W, model_def* p,
 		DCASSERT(ft);
 		if (!ft->canDeclareType(t)) {
             typechecking_error E(W);
-			E << "Cannot declare a variable of type " << t->getName();
-			E << " in formalism " << ft->getName();
+			E << "Cannot declare a variable of type " << *t;
+			E << " in formalism " << *ft;
 			bailout = 1;
 		}
 	}
@@ -2125,15 +2130,15 @@ expr* exprman::makeModelMeasureAssign(const location &W, model_def* p,
 
 	if (!ft->isLegalMeasureType(t)) {
         typechecking_error E(W);
-        E << "Cannot declare a measure of type " << t->getName();
-		E << " in formalism " << ft->getName();
+        E << "Cannot declare a measure of type " << *t;
+		E << " in formalism " << *ft;
 		return nullptr;
 	}
 
 	if (!isPromotable(rhstype, t)) {
         typechecking_error E(W);
         E << "Return type for measure " << w->Name();
-		E << " should be " << t->getName();
+		E << " should be " << *t;
 		return nullptr;
 	}
 	rhs = promote(rhs, t);
@@ -2156,15 +2161,15 @@ expr* exprman::makeModelMeasureArray(const location &W, model_def* p,
 
 	if (!ft->isLegalMeasureType(t)) {
         typechecking_error E(W);
-        E << "Cannot declare a measure of type " << t->getName();
-		E << " in formalism " << ft->getName();
+        E << "Cannot declare a measure of type " << *t;
+		E << " in formalism " << *ft;
 		return nullptr;
 	}
 
 	if (!isPromotable(rhstype, t)) {
         typechecking_error E(W);
         E << "Return type for measure " << w->Name();
-		E << " should be " << t->getName();
+		E << " should be " << *t;
 		return nullptr;
 	}
 	rhs = promote(rhs, t);
