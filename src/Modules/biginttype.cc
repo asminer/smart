@@ -245,8 +245,7 @@ public:
   int2bigint();
   virtual int getDistance(const type* src) const {
     DCASSERT(src);
-    DCASSERT(em->INT);
-    if (src != em->INT) return -1;
+    if (type::matches(src, "int")) return -1;
     return RANGE_EXPAND;
   }
   virtual const type* promotesTo(const type* src) const;
@@ -277,8 +276,8 @@ int2bigint::int2bigint() : specific_conv(false)
 const type* int2bigint::promotesTo(const type* src) const
 {
   DCASSERT(src);
-  DCASSERT(em->INT == src);
-  return em->BIGINT;
+  DCASSERT(type::matches(src, "int"));
+  return type::find("bigint");
 }
 
 expr* int2bigint::convert(const location &W, expr* e, const type* nt) const
@@ -309,8 +308,7 @@ public:
   bigint2int();
   virtual int getDistance(const type* src) const {
     DCASSERT(src);
-    DCASSERT(em->BIGINT);
-    return (src == em->BIGINT) ? RANGE_EXPAND : -1;
+    return type::matches(src, "bigint") ? RANGE_EXPAND : -1;
   }
   virtual const type* promotesTo(const type* src) const;
   virtual expr* convert(const location &, expr*, const type*) const;
@@ -351,8 +349,8 @@ bigint2int::bigint2int() : specific_conv(true)
 const type* bigint2int::promotesTo(const type* src) const
 {
   DCASSERT(src);
-  DCASSERT(em->BIGINT == src);
-  return em->INT;
+  DCASSERT(type::matches(src, "bigint"));
+  return type::find("int");
 }
 
 expr* bigint2int::convert(const location &W, expr* e, const type* nt) const
@@ -383,8 +381,7 @@ public:
   bigint2real();
   virtual int getDistance(const type* src) const {
     DCASSERT(src);
-    DCASSERT(em->BIGINT);
-    return (src == em->BIGINT) ? SIMPLE_CONV : -1;
+    return type::matches(src, "bigint") ? SIMPLE_CONV : -1;
   }
   virtual const type* promotesTo(const type* src) const;
   virtual expr* convert(const location &, expr*, const type*) const;
@@ -425,8 +422,8 @@ bigint2real::bigint2real() : specific_conv(true)
 const type* bigint2real::promotesTo(const type* src) const
 {
   DCASSERT(src);
-  DCASSERT(em->BIGINT == src);
-  return em->REAL;
+  DCASSERT(type::matches(src, "bigint"));
+  return type::find("real");
 }
 
 expr* bigint2real
@@ -1372,11 +1369,10 @@ inline const type*
 BigintResultType(const exprman* em, const type* lt, const type* rt)
 {
   DCASSERT(em);
-  DCASSERT(em->BIGINT);
-  if (em->NULTYPE == lt || em->NULTYPE ==rt)  return 0;
+  if (type::null == lt || type::null ==rt)  return 0;
   const type* lct = em->getLeastCommonType(lt, rt);
   if (0==lct)        return 0;
-  if (lct->getBaseType() != em->BIGINT)  return 0;
+  if (!type::matches(lct->getBaseType(), "bigint")) return 0;
   if (lct->isASet())      return 0;
   return lct;
 }
@@ -1385,7 +1381,6 @@ inline int
 BigintAlignDistance(const exprman* em, const type* lt, const type* rt)
 {
   DCASSERT(em);
-  DCASSERT(em->BIGINT);
   const type* lct = BigintResultType(em, lt, rt);
   if (0==lct)        return -1;
 
@@ -1398,7 +1393,6 @@ BigintAlignDistance(const exprman* em, const type* lt, const type* rt)
 inline const type* AlignBigints(const exprman* em, expr* &l, expr* &r)
 {
   DCASSERT(em);
-  DCASSERT(em->BIGINT);
   DCASSERT(l);
   DCASSERT(r);
   const type* lct = BigintResultType(em, l->Type(), r->Type());
@@ -1415,7 +1409,6 @@ inline const type* AlignBigints(const exprman* em, expr* &l, expr* &r)
 inline int BigintAlignDistance(const exprman* em, expr** x, int N)
 {
   DCASSERT(em);
-  DCASSERT(em->BIGINT);
   DCASSERT(x);
 
   const type* lct = em->SafeType(x[0]);
@@ -1423,7 +1416,7 @@ inline int BigintAlignDistance(const exprman* em, expr** x, int N)
     lct = em->getLeastCommonType(lct, em->SafeType(x[i]));
   }
   if (0==lct)        return -1;
-  if (lct->getBaseType() != em->BIGINT)  return -1;
+  if (type::matches(lct->getBaseType(), "bigint")) return -1;
   if (lct->isASet())      return -1;
 
   int d = 0;
@@ -1438,14 +1431,13 @@ inline int BigintAlignDistance(const exprman* em, expr** x, int N)
 inline const type* AlignBigints(const exprman* em, expr** x, int N)
 {
   DCASSERT(em);
-  DCASSERT(em->BIGINT);
   DCASSERT(x);
 
   const type* lct = em->SafeType(x[0]);
   for (int i=1; i<N; i++) {
     lct = em->getLeastCommonType(lct, em->SafeType(x[i]));
   }
-  if (  (0==lct) || (lct->getBaseType() != em->BIGINT) || lct->isASet() ) {
+  if (  (0==lct) || type::matches(lct->getBaseType(), "bigint") || lct->isASet() ) {
     for (int i=0; i<N; i++)  Delete(x[i]);
     return 0;
   }
@@ -1551,7 +1543,7 @@ bigint_comp_op::bigint_comp_op(exprman::binary_opcode op) : bigint_binary_op(op)
 const type* bigint_comp_op::getExprType(const type* l, const type* r) const
 {
   const type* t = BigintResultType(em, l, r);
-  if (t)  t = t->changeBaseType(em->BOOL);
+  if (t)  t = t->changeBaseType(type::find("bool"));
   return t;
 }
 
@@ -1579,11 +1571,10 @@ bigint_neg_op::bigint_neg_op() : unary_op(exprman::uop_neg)
 const type* bigint_neg_op::getExprType(const type* t) const
 {
   DCASSERT(em);
-  DCASSERT(em->BIGINT);
   if (0==t)    return 0;
   if (t->isASet())  return 0;
   const type* bt = t->getBaseType();
-  if (bt != em->BIGINT)  return 0;
+  if (!type::matches(bt, "bigint")) return 0;
   return t;
 }
 
@@ -1750,7 +1741,7 @@ const type* bigint_multdiv_op
 {
   if (!f)  return 0;
   const type* lct = BigintResultType(em, l, r);
-  if (lct)  lct = lct->changeBaseType(em->REAL);
+  if (lct)  lct = lct->changeBaseType(type::find("real"));
   return lct;
 }
 
@@ -1768,7 +1759,7 @@ assoc* bigint_multdiv_op::makeExpr(const location &W, expr** list,
     }
     if (unflipped)  lct = 0;
   }
-  if (lct)  lct = lct->changeBaseType(em->REAL);
+  if (lct)  lct = lct->changeBaseType(type::find("real"));
   if (lct)  return new bigint_multdiv(W, lct, list, flip, N);
   // there was an error
   delete[] list;
@@ -1829,7 +1820,7 @@ binary* bigint_equal_op
 {
   const type* lct = AlignBigints(em, l, r);
   if (0==lct)  return 0;
-  lct = lct->changeBaseType(em->BOOL);
+  lct = lct->changeBaseType(type::find("bool"));
   DCASSERT(lct);
   return new bigint_equal(W, lct, l, r);
 }
@@ -1858,7 +1849,7 @@ binary* bigint_neq_op::makeExpr(const location &W, expr* l, expr* r) const
 {
   const type* lct = AlignBigints(em, l, r);
   if (0==lct)  return 0;
-  lct = lct->changeBaseType(em->BOOL);
+  lct = lct->changeBaseType(type::find("bool"));
   DCASSERT(lct);
   return new bigint_neq(W, lct, l, r);
 }
@@ -1887,7 +1878,7 @@ binary* bigint_gt_op::makeExpr(const location &W, expr* l, expr* r) const
 {
   const type* lct = AlignBigints(em, l, r);
   if (0==lct)  return 0;
-  lct = lct->changeBaseType(em->BOOL);
+  lct = lct->changeBaseType(type::find("bool"));
   DCASSERT(lct);
   return new bigint_gt(W, lct, l, r);
 }
@@ -1916,7 +1907,7 @@ binary* bigint_ge_op::makeExpr(const location &W, expr* l, expr* r) const
 {
   const type* lct = AlignBigints(em, l, r);
   if (0==lct)  return 0;
-  lct = lct->changeBaseType(em->BOOL);
+  lct = lct->changeBaseType(type::find("bool"));
   DCASSERT(lct);
   return new bigint_ge(W, lct, l, r);
 }
@@ -1945,7 +1936,7 @@ binary* bigint_lt_op::makeExpr(const location &W, expr* l, expr* r) const
 {
   const type* lct = AlignBigints(em, l, r);
   if (0==lct)  return 0;
-  lct = lct->changeBaseType(em->BOOL);
+  lct = lct->changeBaseType(type::find("bool"));
   DCASSERT(lct);
   return new bigint_lt(W, lct, l, r);
 }
@@ -1974,7 +1965,7 @@ binary* bigint_le_op::makeExpr(const location &W, expr* l, expr* r) const
 {
   const type* lct = AlignBigints(em, l, r);
   if (0==lct)  return 0;
-  lct = lct->changeBaseType(em->BOOL);
+  lct = lct->changeBaseType(type::find("bool"));
   DCASSERT(lct);
   return new bigint_le(W, lct, l, r);
 }
@@ -1997,10 +1988,10 @@ public:
   virtual void Compute(traverse_data &x, expr** pass, int np);
 };
 
-bigintdiv_si::bigintdiv_si() : simple_internal(em->BIGINT, "div", 2)
+bigintdiv_si::bigintdiv_si() : simple_internal(type::find("bigint"), "div", 2)
 {
-  SetFormal(0, em->BIGINT, "a");
-  SetFormal(1, em->BIGINT, "b");
+  SetFormal(0, type::find("bigint"), "a");
+  SetFormal(1, type::find("bigint"), "b");
   SetDocumentation("Integer division: computes bigint(a/b).");
 }
 
@@ -2098,10 +2089,7 @@ bool init_bigints::execute()
   if (0==em)  return false;
 
   // Type registry
-  simple_type* t_bigint = new bigint_type;
-  em->registerType(t_bigint);
-
-  em->setFundamentalTypes();
+  type::registerNew(new bigint_type);
 
   // Type changes
   em->registerConversion(  new int2bigint  );
