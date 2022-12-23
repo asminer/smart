@@ -7,16 +7,14 @@
 #include "../Options/options.h"
 
 #include "../Utils/init_opts.h"
+#include "../Utils/splay.h"
 
 #include "../ExprLib/startup.h" // soon...
 #include "../ExprLib/exprman.h"
 #include "../ExprLib/formalism.h"
-
 #include "../ExprLib/sets.h"
 #include "../ExprLib/mod_def.h"
 #include "../ExprLib/mod_vars.h"
-
-#include "../include/splay.h"
 
 #include "../Formlsms/phase_hlm.h"
 
@@ -31,21 +29,39 @@
 // *                                                                        *
 // **************************************************************************
 
-struct state_weight {
-  const model_enum_value* state;
-  double weight;
+class state_weight : public shared_object {
+    public:
+        const model_enum_value* state;
+        double weight;
 
-  state_weight(const model_enum_value* s, double w) {
-    state = s;
-    weight = w;
-  }
+        state_weight(const model_enum_value* s, double w) {
+            state = s;
+            weight = w;
+        }
 
+        virtual bool Print(std::ostream &s, int w) const {
+            return false;
+        }
+        virtual int Compare(const shared_object* o) const {
+            const model_enum_value* s = dynamic_cast <const model_enum_value*> (o);
+            if (s) {
+                return state->GetIndex() - s->GetIndex();
+            }
+            const state_weight* sw = dynamic_cast <const state_weight*> (o);
+            if (sw) {
+                return state->GetIndex() - sw->state->GetIndex();
+            }
+            DCASSERT(0);
+        }
+
+        /*
   inline int Compare(const model_enum_value* s) {
     return state->GetIndex() - s->GetIndex();
   }
   inline int Compare(const state_weight* sw) {
     return sw ? Compare(sw->state) : Compare((const model_enum_value*)0);
   }
+  */
 };
 
 // **************************************************************************
@@ -61,7 +77,7 @@ class markov_def : public model_def {
   symbol* statelist;
   int state_count;
 
-  SplayOfPointers <state_weight> *initial;
+  splayOfShared *initial;
 
   GraphLib::dynamic_summable<double>* mymc;
   // Old_MCLib::Markov_chain* mymc;
@@ -157,7 +173,7 @@ void markov_def::AddInitial(const expr* cause,
   DCASSERT(initial);
   if (!isVariableOurs(foo, cause, "ignoring initial weight")) return;
 
-  state_weight* find = initial->Find(foo);
+  shared_object* find = initial->find(foo);
   if (find) {
     if (StartWarning(dup_init, cause)) {
       dup_init << "Ignoring duplicate initial probability for state ";
@@ -167,7 +183,7 @@ void markov_def::AddInitial(const expr* cause,
     return;
   }
   state_weight* sw = new state_weight(foo, weight);
-  initial->Insert(sw);
+  initial->insert(sw);
 
   if (mc_debug.start()) {
     mc_debug << "adding state " << foo->Name();
@@ -208,7 +224,7 @@ void markov_def::InitModel()
   mymc = new GraphLib::dynamic_summable<double> (isDiscrete(), true);
   DCASSERT(mymc);
   DCASSERT(0==initial);
-  initial = new SplayOfPointers <state_weight> (16, 0);
+  initial = new splayOfShared (16, 0);
   error = false;
 }
 
@@ -232,10 +248,11 @@ void markov_def::FinalizeModel(outputStream &ds)
   // build initial distribution
   //
   state_weight** init_data;
-  long size = initial->NumElements();
+  unsigned size = initial->numElements();
   if (size) {
     init_data = new state_weight*[size];
-    initial->CopyToArray(init_data);
+    copy_traversal <state_weight> T(init_data, size);
+    initial->traverse(T);
   } else {
     init_data = 0;
     if (StartWarning(no_init)) {
@@ -736,19 +753,19 @@ void old_init_mcform::FillSymbolTable(bool disc, formalism* mc)
   if (!absorbing) absorbing = new mc_absorbing;
 
   // Grab functions into a symbol table
-  symbol_table* mcsyms = MakeSymbolTable();
-  mcsyms->AddSymbol(  init      );
-  mcsyms->AddSymbol(  arcs      );
-  mcsyms->AddSymbol(  instate   );
-  mcsyms->AddSymbol(  transient );
-  mcsyms->AddSymbol(  absorbing );
+  symbol_table* mcsyms = new symbol_table();
+  mcsyms->addSymbol(  init      );
+  mcsyms->addSymbol(  arcs      );
+  mcsyms->addSymbol(  instate   );
+  mcsyms->addSymbol(  transient );
+  mcsyms->addSymbol(  absorbing );
 
   if (disc) {
     if (!dTTA)  dTTA = new mc_tta(true);
-    mcsyms->AddSymbol(  dTTA    );
+    mcsyms->addSymbol(  dTTA    );
   } else {
     if (!cTTA)  cTTA = new mc_tta(false);
-    mcsyms->AddSymbol(  cTTA    );
+    mcsyms->addSymbol(  cTTA    );
   }
 
   // Set the symbol table

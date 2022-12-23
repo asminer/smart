@@ -27,7 +27,7 @@
 // **************************************************************************
 
 /// Each transition maintains a collection of these.
-class assign_entry {
+class assign_entry : public shared_object {
   model_var* lhs;
   expr* rhs;
   // Built during "compilation"
@@ -49,6 +49,11 @@ public:
     return firing;
   }
 
+  virtual bool Print(std::ostream &s, int width=0) const;
+
+  virtual int Compare(const shared_object* o) const;
+
+  /*
   inline int Compare(const model_var* p) const {
     return SIGN(SafeID(lhs) - SafeID(p));
   }
@@ -56,6 +61,7 @@ public:
     DCASSERT(x);
     return Compare(x->lhs);
   }
+  */
 
   void Compile(const exprman* em);
 };
@@ -75,6 +81,24 @@ assign_entry::~assign_entry()
 {
   Delete(lhs);
   Delete(rhs);
+}
+
+bool assign_entry::Print(std::ostream &s, int width) const
+{
+    return false;
+}
+
+int assign_entry::Compare(const shared_object* o) const
+{
+    /*
+    const model_var* p = dynamic_cast <const model_var*> (o);
+    if (p) {
+        return SIGN(SafeID(lhs) - SafeID(p));
+    }
+    */
+    const assign_entry* a = dynamic_cast <const assign_entry*> (o);
+    DCASSERT(a);
+    return SIGN(SafeID(lhs) - SafeID(a->lhs));
 }
 
 void assign_entry::Compile(const exprman* em)
@@ -212,7 +236,7 @@ class evm_event : public model_event {
   /// Data used during model construction
   struct extra_info {
     /// variables set by this transition
-    SplayOfPointers <assign_entry> *modlist;
+    splayOfShared *modlist;
     /// guard expressions
     List <expr>* guards;
 
@@ -245,7 +269,7 @@ evm_event::extra_info::extra_info()
 
 evm_event::extra_info::~extra_info()
 {
-  if (modlist) modlist->DeleteAndClear();
+  if (modlist) modlist->deleteAndClear();
   delete modlist;
   delete guards;
 }
@@ -273,8 +297,8 @@ bool evm_event::setAssignment(assign_entry* &tmp, expr* rhs)
   DCASSERT(tmp);
   DCASSERT(build_data);
   if (0==build_data->modlist)
-    build_data->modlist = new SplayOfPointers <assign_entry> (16, 0);
-  assign_entry* find = build_data->modlist->Insert(tmp);
+    build_data->modlist = new splayOfShared (16, 0);
+  assign_entry* find = smart_cast <assign_entry*> (build_data->modlist->insert(tmp));
   if (find != tmp) {
     tmp->setLHS(0);
     return true;
@@ -313,10 +337,10 @@ void evm_event::Finalize(outputStream &ds)
   }
 
   // Traverse assignment list to build overall next-state
-  int na = (build_data->modlist) ? build_data->modlist->NumElements() : 0;
+  unsigned na = (build_data->modlist) ? build_data->modlist->numElements() : 0;
   expr** nextlist = na ? new expr*[na] : 0;
-  for (int i=0; i<na; i++) {
-    assign_entry* a = build_data->modlist->GetItem(i);
+  for (unsigned i=0; i<na; i++) {
+    assign_entry* a = smart_cast <assign_entry*> (build_data->modlist->getElement(i));
     DCASSERT(a);
     a->Compile(em);
     nextlist[i] = a->getFiring();

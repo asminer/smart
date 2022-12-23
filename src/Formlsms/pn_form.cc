@@ -6,6 +6,7 @@
 #include "../Options/optman.h"
 
 #include "../Utils/init_opts.h"
+#include "../Utils/splay.h"
 
 #include "../ExprLib/startup.h"
 #include "../ExprLib/exprman.h"
@@ -23,8 +24,6 @@
 
 #include "basic_msr.h"
 
-
-#include "../include/splay.h"
 
 #include <map>
 #include <vector>

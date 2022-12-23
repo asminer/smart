@@ -8,16 +8,14 @@
 
 #include "../Utils/library.h"
 #include "../Utils/init_opts.h"
+#include "../Utils/splay.h"
 
 #include "../ExprLib/startup.h"
 #include "../ExprLib/exprman.h"
 #include "../ExprLib/formalism.h"
-
 #include "../ExprLib/sets.h"
 #include "../ExprLib/mod_def.h"
 #include "../ExprLib/mod_vars.h"
-
-#include "../include/splay.h"
 
 // Explicit libraries
 #include "../_GraphLib/graphlib.h"
@@ -36,7 +34,7 @@ class fsm_def : public model_def {
   symbol* statelist;
   int state_count;
 
-  SplayOfPointers <model_enum_value> *initial;
+  splayOfShared *initial;   // model_enum_value
 
   GraphLib::dynamic_digraph* mygr;
 
@@ -131,7 +129,7 @@ void fsm_def::AddInitial(const expr* cause, model_enum_value* foo)
   DCASSERT(initial);
   if (!isVariableOurs(foo, cause, "ignoring as initial state")) return;
 
-  model_enum_value* find = initial->Insert(foo);
+  model_enum_value* find = dynamic_cast <model_enum_value*> (initial->insert(foo));
   if (find != foo) {
     if (StartWarning(dup_init, cause)) {
       dup_init << "Ignoring duplicate initialization of state ";
@@ -184,7 +182,7 @@ void fsm_def::InitModel()
   mygr = new GraphLib::dynamic_digraph(true);
   DCASSERT(mygr);
   DCASSERT(0==initial);
-  initial = new SplayOfPointers <model_enum_value> (16, 0);
+  initial = new splayOfShared(16, 0);
   error = false;
 }
 
@@ -205,12 +203,13 @@ void fsm_def::FinalizeModel(outputStream &ds)
   LS_Vector init;
   init.f_value = 0;
   init.d_value = 0;
-  init.size = initial->NumElements();
+  init.size = initial->numElements();
   if (init.size) {
     model_enum_value** init_data = new model_enum_value*[init.size];
-    initial->CopyToArray(init_data);
+    copy_traversal <model_enum_value> T(init_data, init.size);
+    initial->traverse(T);
     long* foo = new long[init.size];
-    for (long i=0; i<init.size; i++) {
+    for (unsigned i=0; i<init.size; i++) {
       DCASSERT(init_data[i]);
       foo[i] = init_data[i]->GetIndex();
     }
@@ -580,12 +579,12 @@ bool old_init_fsms::execute()
   type::allowSetsOf(t_state);
 
   // Grab functions into a symbol table
-  symbol_table* mcsyms = MakeSymbolTable();
-  mcsyms->AddSymbol( new fsm_init       );
-  mcsyms->AddSymbol( new fsm_arcs       );
-  mcsyms->AddSymbol( new fsm_instate    );
-  mcsyms->AddSymbol( new fsm_absorbing  );
-  mcsyms->AddSymbol( new fsm_deadlocked );
+  symbol_table* mcsyms = new symbol_table();
+  mcsyms->addSymbol( new fsm_init       );
+  mcsyms->addSymbol( new fsm_arcs       );
+  mcsyms->addSymbol( new fsm_instate    );
+  mcsyms->addSymbol( new fsm_absorbing  );
+  mcsyms->addSymbol( new fsm_deadlocked );
 
   // Set the symbol table
   fsm->setFunctions(mcsyms);
