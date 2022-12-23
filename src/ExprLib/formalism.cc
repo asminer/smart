@@ -42,16 +42,9 @@ void formalism::addCommonFuncs(List <msr_func> &cfl)
         break;
     }; // end switch
     DCASSERT(funcs);
-    funcs->AddSymbol(mf);
+    funcs->addSymbol(mf);
   }
 }
-
-/*
-bool formalism::isAFormalism() const
-{
-  return true;
-}
-*/
 
 bool formalism::isLegalMeasureType(const type* mtype) const
 {

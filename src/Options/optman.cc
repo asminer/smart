@@ -16,6 +16,7 @@
 
 //#define DEBUG_SORT
 
+option_manager* option_manager::_global = nullptr;
 
 // **************************************************************************
 // *                         option_manager methods                         *
@@ -168,26 +169,5 @@ option* option_manager::addOption(option *o)
     DCASSERT(optlist);
     optlist->insert(o);
     return o;
-}
-
-
-// **************************************************************************
-// *                                                                        *
-// *                            Global interface                            *
-// *                                                                        *
-// **************************************************************************
-
-option_manager* MakeOptionManager()
-{
-  return new option_manager;
-}
-
-option_manager* getGlobalOptionManager()
-{
-    static option_manager* om = nullptr;
-    if (!om) {
-        om = new option_manager;
-    }
-    return om;
 }
 

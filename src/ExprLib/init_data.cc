@@ -515,39 +515,6 @@ expr* real2int::convert(const location &W, expr* e, const type* nt) const
   return new converter(W, nt, e);
 }
 
-// ******************************************************************
-// *                                                                *
-// *                         Initialization                         *
-// *                                                                *
-// ******************************************************************
-
-/*
-class init_data_init : public initializer {
-    public:
-        init_data_init();
-    protected:
-        virtual void execute();
-};
-static init_data_init the_init_data_initializer;
-
-init_data_init::init_data_init() : initializer("init_data.cc", 1, 1)
-{
-    builds_resource(0, "init_data.cc");
-    needs_resource(1, "OM");
-}
-
-void init_data_init::execute()
-{
-
-    option_manager* om = dynamic_cast <option_manager*> (get_object(1, "OM"));
-    if (!om) return;
-
-    //
-    // Initialize types
-    //
-
-}
-*/
 
 // ******************************************************************
 // *                                                                *
@@ -560,46 +527,6 @@ void init_data_init::execute()
 void InitTypes(exprman* em)
 {
   if (0==em)  return;
-
-  /*
-  simple_type* t_bool  = new bool_type;
-  simple_type* t_int   = new int_type;
-  simple_type* t_real  = new real_type;
-
-  type* t_void    = new void_type("void", "Void type", "Type to indicate 'no value'.");
-  type* t_null    = new void_type("null", "Null type", "Type of the special 'null' value.");
-  t_null->setPrintable();
-  type* t_model    = new simple_type("model", "Generic model", "Generic model; can be set from any formalism.");
-  t_model->NoFunctions();
-
-
-
-  type* t_proc_bool  = newProcType("proc bool", t_bool);
-  type* t_proc_int  = newProcType("proc int", t_int);
-  type* t_proc_real  = newProcType("proc real", t_real);
-
-  type* t_set_int  = newSetType("{int}", t_int);
-  type* t_set_real  = newSetType("{real}", t_real);
-
-  // register everything
-  em->registerType(t_null);
-  em->registerType(t_void);
-  em->registerType(t_bool);
-  em->registerType(t_int);
-  em->registerType(t_real);
-  em->registerType(t_model);
-
-  em->registerType(new next_state_type);
-
-  em->setFundamentalTypes();
-
-  em->registerType(t_proc_bool);
-  em->registerType(t_proc_int);
-  em->registerType(t_proc_real);
-
-  em->registerType(t_set_int);
-  em->registerType(t_set_real);
-  */
 
   // Type changes
   em->registerConversion( new null2any        );

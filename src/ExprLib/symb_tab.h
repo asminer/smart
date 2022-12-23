@@ -3,7 +3,7 @@
 #define SYMTABS_H
 
 #include "symbols.h"
-#include "../include/splay.h"
+#include "../Utils/splay.h"
 
 /**
     Symbol table interface.
@@ -33,14 +33,14 @@ class symbol_table {
             symbol names are unique;
             if this might not be the case, we return a null pointer.
         */
-        symbol* pop();
+//        symbol* pop();
 
         /** Return the ith symbol added.
             Like pop(), this works only if there is no chaining.
                 @param  i  The symbol number to return.
                 @return 0, if i is out of range; a valid symbol, otherwise.
         */
-        symbol* getItem(unsigned i) const;
+        // symbol* getItem(unsigned i) const;
 
         /** Grab a copy of all symbols, in order.
             Used primarily for documentation.
@@ -49,29 +49,41 @@ class symbol_table {
 
         void documentSymbols(doc_formatter &df, const char* keyword);
 
+        /// The "global" symbol table.
+        static inline symbol_table& global() {
+            if (!_global) _global = new symbol_table;
+            DCASSERT(_global);
+            return *_global;
+        }
+
+        /// Add a symbol to the global symbol table.
+        static inline void addGlobal(symbol* s) {
+            global().addSymbol(s);
+        }
+
+        /// Find symbols in the global symbol table.
+        static symbol* findGlobal(const char* name) {
+            return global().findSymbol(name);
+        }
+
+
     private:
         /// The head of a list of symbols, with this name.
-        struct symbol_list {
+        struct symbol_list : public shared_object {
                 /// Name of all symbols in this list.
                 const char* name;
                 /// Front of the list.
                 symbol* front;
             public:
                 symbol_list();
+
+                // Required for shared_object
+                virtual bool Print(std::ostream &s, int width=0) const;
+                virtual int Compare(const shared_object* s) const;
+
                 void Fill(symbol* f);
                 void Fill(const char* n);
-                int Compare(const char* x) const;
-                inline int Compare(const symbol_list* x) const {
-                    return Compare(x ? x->name : 0);
-                }
-                void Show(std::ostream &s) const;
         };
-
-    private:
-        unsigned num_syms;
-        unsigned num_names;
-        SplayOfPointers <symbol_list> table;
-        symbol_list* FreeList;
 
     private:    // helpers
         inline symbol_list* PopFree() {
@@ -89,6 +101,13 @@ class symbol_table {
             f->front = (symbol*) FreeList;
             FreeList = f;
         }
+
+    private:
+        unsigned num_syms;
+        unsigned num_names;
+        splayOfShared table;
+        symbol_list* FreeList;
+        static symbol_table* _global;
 };
 
 //

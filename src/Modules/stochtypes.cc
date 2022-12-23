@@ -3,7 +3,7 @@
 
 #include "../Utils/initializer.h"
 
-#include "../SymTabs/symtabs.h"
+#include "../ExprLib/symb_tab.h"
 #include "../ExprLib/startup.h"
 #include "../ExprLib/exprman.h"
 #include "../ExprLib/functions.h"
@@ -3190,56 +3190,56 @@ bool old_init_stochtypes::execute()
   const type* t_rand_real = type::find(false, false, RAND, "real");
 
   // Functions
-  st->AddSymbol( new prob_finite(t_ph_int, AvgPh)             );
-  st->AddSymbol( new prob_finite(t_ph_real, AvgPh)            );
+  st->addSymbol( new prob_finite(t_ph_int, AvgPh)             );
+  st->addSymbol( new prob_finite(t_ph_real, AvgPh)            );
 
-  st->AddSymbol( new avg_ph(t_ph_int, AvgPh)                  );
-  st->AddSymbol( new avg_ph(t_ph_real, AvgPh)                 );
-  st->AddSymbol( new avg_rand(t_rand_real, AvgRandReal)       );
+  st->addSymbol( new avg_ph(t_ph_int, AvgPh)                  );
+  st->addSymbol( new avg_ph(t_ph_real, AvgPh)                 );
+  st->addSymbol( new avg_rand(t_rand_real, AvgRandReal)       );
 
-  st->AddSymbol( new var_ph(t_ph_int, VarPh)                  );
-  st->AddSymbol( new var_ph(t_ph_real, VarPh)                 );
+  st->addSymbol( new var_ph(t_ph_int, VarPh)                  );
+  st->addSymbol( new var_ph(t_ph_real, VarPh)                 );
 
-  st->AddSymbol( new bernoulli_ph(t_ph_int, t_real)           );
-  st->AddSymbol( new bernoulli_rand(t_rand_int, t_rand_real)  );
+  st->addSymbol( new bernoulli_ph(t_ph_int, t_real)           );
+  st->addSymbol( new bernoulli_rand(t_rand_int, t_rand_real)  );
 
-  st->AddSymbol( new geometric_ph(t_ph_int, t_real)           );
-  st->AddSymbol( new geometric_rand(t_rand_int, t_rand_real)  );
+  st->addSymbol( new geometric_ph(t_ph_int, t_real)           );
+  st->addSymbol( new geometric_rand(t_rand_int, t_rand_real)  );
 
-  st->AddSymbol( new equilikely_ph(t_ph_int, t_int)           );
-  st->AddSymbol( new equilikely_rand(t_rand_int, t_rand_int)  );
+  st->addSymbol( new equilikely_ph(t_ph_int, t_int)           );
+  st->addSymbol( new equilikely_rand(t_rand_int, t_rand_int)  );
 
-  st->AddSymbol( new binomial_ph(t_ph_int, t_int, t_real) );
-  st->AddSymbol( new binomial_rand(t_rand_int, t_rand_int, t_rand_real) );
+  st->addSymbol( new binomial_ph(t_ph_int, t_int, t_real) );
+  st->addSymbol( new binomial_rand(t_rand_int, t_rand_int, t_rand_real) );
 
-  st->AddSymbol( new expo_ph(t_expo, t_real)                );
-  st->AddSymbol( new erlang_ph(t_ph_real, t_int, t_real)  );
+  st->addSymbol( new expo_ph(t_expo, t_real)                );
+  st->addSymbol( new erlang_ph(t_ph_real, t_int, t_real)  );
 
-  st->AddSymbol( new expo_rand(t_rand_real, t_rand_real)      );
-  st->AddSymbol( new erlang_rand(t_rand_real, t_rand_int, t_rand_real)  );
-  st->AddSymbol( new uniform(t_rand_real)                     );
+  st->addSymbol( new expo_rand(t_rand_real, t_rand_real)      );
+  st->addSymbol( new erlang_rand(t_rand_real, t_rand_int, t_rand_real)  );
+  st->addSymbol( new uniform(t_rand_real)                     );
 
-  st->AddSymbol( new choose_ph(t_ph_int)                      );
-  st->AddSymbol( new choose_ph(t_ph_real)                     );
-  st->AddSymbol( new choose_rand(t_rand_int)                  );
-  st->AddSymbol( new choose_rand(t_rand_real)                 );
+  st->addSymbol( new choose_ph(t_ph_int)                      );
+  st->addSymbol( new choose_ph(t_ph_real)                     );
+  st->addSymbol( new choose_rand(t_rand_int)                  );
+  st->addSymbol( new choose_rand(t_rand_real)                 );
 
-  st->AddSymbol( new cph2dph_unif(t_ph_real, t_ph_int)        );
-  st->AddSymbol( new cph2dph_embed(t_ph_real, t_ph_int)       );
-  st->AddSymbol( new max_ph(t_ph_int)                         );
-  st->AddSymbol( new max_ph(t_ph_real)                        );
-  st->AddSymbol( new min_ph(t_ph_int)                         );
-  st->AddSymbol( new min_ph(t_ph_real)                        );
-  st->AddSymbol( new order_ph(t_ph_int)                       );
-  st->AddSymbol( new order_ph(t_ph_real)                      );
+  st->addSymbol( new cph2dph_unif(t_ph_real, t_ph_int)        );
+  st->addSymbol( new cph2dph_embed(t_ph_real, t_ph_int)       );
+  st->addSymbol( new max_ph(t_ph_int)                         );
+  st->addSymbol( new max_ph(t_ph_real)                        );
+  st->addSymbol( new min_ph(t_ph_int)                         );
+  st->addSymbol( new min_ph(t_ph_real)                        );
+  st->addSymbol( new order_ph(t_ph_int)                       );
+  st->addSymbol( new order_ph(t_ph_real)                      );
 
-  st->AddSymbol( new print_range(t_rand_real)                 );
-  st->AddSymbol( new print_ph(t_ph_int)                       );
-  st->AddSymbol( new print_ph(t_ph_real)                      );
-  st->AddSymbol( new print_deps(t_ph_int)                     );
-  st->AddSymbol( new print_deps(t_ph_real)                    );
-  st->AddSymbol( new print_ddist(t_ph_int)                    );
-  st->AddSymbol( new print_cdist(t_ph_real)                   );
+  st->addSymbol( new print_range(t_rand_real)                 );
+  st->addSymbol( new print_ph(t_ph_int)                       );
+  st->addSymbol( new print_ph(t_ph_real)                      );
+  st->addSymbol( new print_deps(t_ph_int)                     );
+  st->addSymbol( new print_deps(t_ph_real)                    );
+  st->addSymbol( new print_ddist(t_ph_int)                    );
+  st->addSymbol( new print_cdist(t_ph_real)                   );
 
   return true;
 }

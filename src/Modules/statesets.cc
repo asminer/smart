@@ -6,7 +6,7 @@
 #include "../ExprLib/unary.h"
 #include "../ExprLib/binary.h"
 #include "../ExprLib/assoc.h"
-#include "../SymTabs/symtabs.h"
+#include "../ExprLib/symb_tab.h"
 #include "../ExprLib/functions.h"
 
 #include "../Formlsms/graph_llm.h"
@@ -857,8 +857,8 @@ bool old_init_statesets::execute()
   if (0==st) return false;
 
   // Functions
-  st->AddSymbol(  new card_si   );
-  st->AddSymbol(  new empty_si  );
+  st->addSymbol(  new card_si   );
+  st->addSymbol(  new empty_si  );
   return true;
 }
 
@@ -872,10 +872,9 @@ class init_statesets : public initializer {
 };
 static init_statesets the_stateset_initializer;
 
-init_statesets::init_statesets() : initializer("statesets.cc", 1, 1)
+init_statesets::init_statesets() : initializer("statesets.cc", 1, 0)
 {
     builds_resource(0, "statesets.cc");
-    needs_resource(1, "OM");
 }
 
 void init_statesets::execute()
@@ -889,8 +888,8 @@ void init_statesets::execute()
     // Options
     //
     stateset::print_indexes = true;
-    option_manager* om = dynamic_cast <option_manager*> (get_object(1, "OM"));
-    if (om) om->addBoolOption("StatesetPrintIndexes",
+    option_manager &om = option_manager::global();
+    om.addBoolOption("StatesetPrintIndexes",
         "If true, when a stateset is printed, state indexes are displayed; otherwise, states are displayed.",
         stateset::print_indexes
     );

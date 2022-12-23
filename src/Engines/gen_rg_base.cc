@@ -157,12 +157,11 @@ class init_procgen : public initializer {
 };
 static init_procgen the_procgen_initializer;
 
-init_procgen::init_procgen() : initializer("gen_rg_base.cc", 1, 3)
+init_procgen::init_procgen() : initializer("gen_rg_base.cc", 1, 2)
 {
     builds_resource(0, "gen_rg_base.cc");
-    needs_resource(1, "OM");
-    needs_resource(2, "Debug");
-    needs_resource(3, "Report");
+    needs_resource(1, "Debug");
+    needs_resource(2, "Report");
 }
 
 void init_procgen::execute()
@@ -170,23 +169,21 @@ void init_procgen::execute()
     initialize_msg(process_generator::report,
         "procgen",
         "When set, process generation performance is reported.",
-        get_object(3, "Report")
+        get_object(2, "Report")
     );
 
     initialize_msg(process_generator::debug,
         "procgen",
         "When set, process generation details are displayed.",
-        get_object(2, "Debug")
+        get_object(1, "Debug")
     );
 
     /*
         Vanishing elimiation styles - as an option
     */
     process_generator::remove_vanishing = process_generator::BY_SUBGRAPH;
-    option_manager* om = dynamic_cast <option_manager*> (get_object(1, "OM"));
-    if (!om) return;
 
-    option* rmvan = om->addRadioOption(
+    option* rmvan = option_manager::global().addRadioOption(
         "RemoveVanishing",
         "Method to remove vanishing states",
         2, process_generator::remove_vanishing

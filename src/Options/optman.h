@@ -144,6 +144,16 @@ class option_manager : public shared_object {
         */
         option* addChecklistOption(const char* name, const char* doc);
 
+
+        /** Get the global option manager.
+                @return The global option manager
+        */
+        static inline option_manager& global() {
+            if (!_global) _global = new option_manager;
+            DCASSERT(_global);
+            return *_global;
+        }
+
     private:
         option* addOption(option*);
 
@@ -151,21 +161,10 @@ class option_manager : public shared_object {
         splayOfShared *optlist;
         option** sortedOptions;
         unsigned numOptions;
+
+        static option_manager* _global;
 };
 
-// **************************************************************************
-// *                            Global interface                            *
-// **************************************************************************
-
-/** Make a new option manager.
-        @return A new manager, or NULL on error.
-*/
-option_manager* MakeOptionManager();
-
-/** Get the global optionn manager.
-        @return A pointer to the global ooption manager, or null on error.
-*/
-option_manager* getGlobalOptionManager();
 
 #endif
 

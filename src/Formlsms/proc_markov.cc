@@ -265,11 +265,10 @@ class init_markovproc : public initializer {
 };
 static init_markovproc the_markovproc_startup;
 
-init_markovproc::init_markovproc() : initializer("proc_markov.cc", 1, 2)
+init_markovproc::init_markovproc() : initializer("proc_markov.cc", 1, 1)
 {
     builds_resource(0, "proc_markov.cc");
-    needs_resource(1, "OM");
-    needs_resource(2, "Report");
+    needs_resource(1, "Report");
 }
 
 void init_markovproc::execute()
@@ -298,55 +297,53 @@ void init_markovproc::execute()
     //
     // Set up the radio buttons for the solvers
     //
-    option_manager* om = dynamic_cast <option_manager*> (get_object(1, "OM"));
-    if (om) {
-        option* solvers = om->addRadioOption(
-            "MCSolver",
-            "Numerical method to use for solving linear systems during Markov chain analysis.",
-            3, markov_process::solver
-        );
+    option_manager &om = option_manager::global();
+    option* solvers = om.addRadioOption(
+        "MCSolver",
+        "Numerical method to use for solving linear systems during Markov chain analysis.",
+        3, markov_process::solver
+    );
 
-        option_enum* currsolv = solvers->addRadioButton(
-            "GAUSS_SEIDEL", "Gauss-Seidel",
-            markov_process::GAUSS_SEIDEL
-        );
-        currsolv->makeSettings(
-            makeSubsettings(markov_process::GAUSS_SEIDEL, false)
-        );
+    option_enum* currsolv = solvers->addRadioButton(
+        "GAUSS_SEIDEL", "Gauss-Seidel",
+        markov_process::GAUSS_SEIDEL
+    );
+    currsolv->makeSettings(
+        makeSubsettings(markov_process::GAUSS_SEIDEL, false)
+    );
 
-        currsolv = solvers->addRadioButton(
-            "JACOBI", "Jacobi, using matrix-vector multiply",
-            markov_process::JACOBI
-        );
-        currsolv->makeSettings(
-            makeSubsettings(markov_process::JACOBI, true)
-        );
+    currsolv = solvers->addRadioButton(
+        "JACOBI", "Jacobi, using matrix-vector multiply",
+        markov_process::JACOBI
+    );
+    currsolv->makeSettings(
+        makeSubsettings(markov_process::JACOBI, true)
+    );
 
-        currsolv = solvers->addRadioButton(
-            "ROW_JACOBI", "Jacobi, visiting one matrix row at a time",
-            markov_process::ROW_JACOBI
-        );
-        currsolv->makeSettings(
-            makeSubsettings(markov_process::ROW_JACOBI, true)
-        );
+    currsolv = solvers->addRadioButton(
+        "ROW_JACOBI", "Jacobi, visiting one matrix row at a time",
+        markov_process::ROW_JACOBI
+    );
+    currsolv->makeSettings(
+        makeSubsettings(markov_process::ROW_JACOBI, true)
+    );
 
 
-        option* mcby = om->addRadioOption("MCAccessBy",
-            "Specifiy initial storage method for Markov chains: by rows (required for simulations) or by columns (required for certain linear solvers).",
-            2, markov_process::access
-        );
+    option* mcby = om.addRadioOption("MCAccessBy",
+        "Specifiy initial storage method for Markov chains: by rows (required for simulations) or by columns (required for certain linear solvers).",
+        2, markov_process::access
+    );
 
-        mcby->addRadioButton(
-            "COLUMNS",
-            "Access to columns",
-            markov_process::BY_COLUMNS
-        );
-        mcby->addRadioButton(
-            "ROWS",
-            "Access to rows",
-            markov_process::BY_ROWS
-        );
-    } // if om
+    mcby->addRadioButton(
+        "COLUMNS",
+        "Access to columns",
+        markov_process::BY_COLUMNS
+    );
+    mcby->addRadioButton(
+        "ROWS",
+        "Access to rows",
+        markov_process::BY_ROWS
+    );
 
     markov_process::solver = markov_process::GAUSS_SEIDEL;
     markov_process::access = markov_process::BY_COLUMNS;

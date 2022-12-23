@@ -17,7 +17,7 @@
 #include "../ExprLib/dd_front.h"
 #include "dsde_hlm.h"
 
-#include "../include/splay.h"
+#include "../Utils/splay.h"
 
 
 // **************************************************************************
@@ -1274,14 +1274,14 @@ bool old_init_evmform::execute()
   }
 
   // fill symbol table
-  symbol_table* evmsyms = MakeSymbolTable();
-  evmsyms->AddSymbol(  new evm_eval     );
-  evmsyms->AddSymbol(  new evm_range    );
-  evmsyms->AddSymbol(  new evm_enabled  );
-  evmsyms->AddSymbol(  new evm_assign   );
-  evmsyms->AddSymbol(  new evm_init     );
-  evmsyms->AddSymbol(  new evm_hide     );
-  evmsyms->AddSymbol(  new evm_assert   );
+  symbol_table* evmsyms = new symbol_table;
+  evmsyms->addSymbol(  new evm_eval     );
+  evmsyms->addSymbol(  new evm_range    );
+  evmsyms->addSymbol(  new evm_enabled  );
+  evmsyms->addSymbol(  new evm_assign   );
+  evmsyms->addSymbol(  new evm_init     );
+  evmsyms->addSymbol(  new evm_hide     );
+  evmsyms->addSymbol(  new evm_assert   );
   Add_DSDE_varfuncs(evm_def::intvar_type, evmsyms);
   Add_DSDE_eventfuncs(evm_def::event_type, evmsyms);
   evm->setFunctions(evmsyms);
@@ -1299,15 +1299,11 @@ class init_evmform : public initializer {
 };
 static init_evmform the_evmform_initializer;
 
-init_evmform::init_evmform() : initializer("evm_form.cc", 1, 3)
+init_evmform::init_evmform() : initializer("evm_form.cc", 1, 2)
 {
     builds_resource(0, "evm_form.cc");
-    needs_resource(1, "OM");
-    needs_resource(2, "Warning");
-    needs_resource(3, "Debug");
-    // Not sure about these
-    // needs_resource(4, "em");     // for types
-    // needs_resource(5, "CML");    // common measures
+    needs_resource(1, "Warning");
+    needs_resource(2, "Debug");
 }
 
 void init_evmform::execute()
@@ -1323,56 +1319,55 @@ void init_evmform::execute()
     initialize_msg(evm_def::evm_debug,
         "evms",
         "When set, diagnostic messages are displayed regarding evm (event & variable model) construction.",
-        get_object(3, "Debug")
+        get_object(2, "Debug")
     );
     shared_object* evmwarnings = initialize_group(
-        get_object(2, "Warning"), 8,
+        get_object(1, "Warning"), 8,
         "evm_ALL", "Group of all evm warnings"
     );
     initialize_msg(evm_def::no_event,
         "evm_no_event",
         "For absence of events in event & variable models",
-        get_object(2, "Warning"), evmwarnings
+        get_object(1, "Warning"), evmwarnings
     );
     initialize_msg(evm_def::no_vars,
         "evm_no_vars",
         "For absence of variables in event & variable models",
-        get_object(2, "Warning"), evmwarnings
+        get_object(1, "Warning"), evmwarnings
     );
     initialize_msg(evm_def::no_part,
         "evm_no_part",
         "If some, but not all, variables are assiged to groups using partition",
-        get_object(2, "Warning"), evmwarnings
+        get_object(1, "Warning"), evmwarnings
     );
     initialize_msg(evm_def::dup_part,
         "evm_dup_part",
         "For multiple partition definitions for a variable",
-        get_object(2, "Warning"), evmwarnings
+        get_object(1, "Warning"), evmwarnings
     );
     initialize_msg(evm_def::dup_range,
         "evm_dup_range",
         "For duplicate variable ranges in event & variable models",
-        get_object(2, "Warning"), evmwarnings
+        get_object(1, "Warning"), evmwarnings
     );
     initialize_msg(evm_def::dup_assign,
         "evm_dup_assign",
         "For multiple assignments on the same variable and event in event & variable models",
-        get_object(2, "Warning"), evmwarnings
+        get_object(1, "Warning"), evmwarnings
     );
     initialize_msg(evm_def::dup_init,
         "evm_dup_init",
         "For multiple calls to init for the same variable in event & variable models",
-        get_object(2, "Warning"), evmwarnings
+        get_object(1, "Warning"), evmwarnings
     );
     initialize_msg(evm_def::dup_hide,
         "evm_dup_hide",
         "For multiple calls to hide for the same variable in event & variable models",
-        get_object(2, "Warning"), evmwarnings
+        get_object(1, "Warning"), evmwarnings
     );
 
-    option_manager* om = dynamic_cast<option_manager*> (get_object(1, "OM"));
-    if (!om) return;
-    option* sty = om->addRadioOption("EVMStateStyle",
+    option_manager &om = option_manager::global();
+    option* sty = om.addRadioOption("EVMStateStyle",
         "How to display a state in an event & variable model",
         4, evm_hlm::StateStyle
     );

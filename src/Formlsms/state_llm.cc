@@ -222,58 +222,46 @@ class init_statellm : public initializer {
 };
 static init_statellm the_statellm_initializer;
 
-/*
-init_statellm::init_statellm() : startup("init_statellm")
-{
-  usesResource("em");
-}
-*/
-
-init_statellm::init_statellm() : initializer("state_llm.cc", 1, 1)
+init_statellm::init_statellm() : initializer("state_llm.cc", 1, 0)
 {
     builds_resource(0, "state_llm.cc");
-    needs_resource(1, "OM");
 }
 
 void init_statellm::execute()
 {
-  //    state_lldsm::reachset::em = em;
-
     state_lldsm::max_state_display = 100000000;
     state_lldsm::int_display_order = state_lldsm::NATURAL;
 
     // set up options
     // ------------------------------------------------------------------
 
-    option_manager* om = dynamic_cast <option_manager*> (get_object(1, "OM"));
-    if (om) {
-        om->addIntOption(
-            state_lldsm::max_state_display_option,
-            "The maximum number of states to display for a model.  If 0, the states will be displayed whenever possible, regardless of number.",
-            state_lldsm::max_state_display,
-            0, 1000000000
-        );
+    option_manager &om = option_manager::global();
+    om.addIntOption(
+        state_lldsm::max_state_display_option,
+        "The maximum number of states to display for a model.  If 0, the states will be displayed whenever possible, regardless of number.",
+        state_lldsm::max_state_display,
+        0, 1000000000
+    );
 
-        // ------------------------------------------------------------------
-        option* sdo = om->addRadioOption("StateDisplayOrder",
-            "The order to use for displaying states in functions show_states and show_arcs. This does not affect the internal storage of the states, so the reordering is done as necessary only for display.",
-            state_lldsm::num_display_orders, state_lldsm::int_display_order
-        );
+    // ------------------------------------------------------------------
+    option* sdo = om.addRadioOption("StateDisplayOrder",
+        "The order to use for displaying states in functions show_states and show_arcs. This does not affect the internal storage of the states, so the reordering is done as necessary only for display.",
+        state_lldsm::num_display_orders, state_lldsm::int_display_order
+    );
 
-        sdo->addRadioButton(
-            "DISCOVERY",
-            "States are displayed in the order in which they are discovered (or defined), if possible.",
-            state_lldsm::DISCOVERY
-            );
-        sdo->addRadioButton(
-            "LEXICAL",
-            "States are sorted by lexical order.",
-            state_lldsm::LEXICAL
-        );
-        sdo->addRadioButton(
-            "NATURAL",
-            "States are displayed in the most natural order for the selected state space data structure.",
-            state_lldsm::NATURAL
-        );
-    } // if om
+    sdo->addRadioButton(
+        "DISCOVERY",
+        "States are displayed in the order in which they are discovered (or defined), if possible.",
+        state_lldsm::DISCOVERY
+    );
+    sdo->addRadioButton(
+        "LEXICAL",
+        "States are sorted by lexical order.",
+        state_lldsm::LEXICAL
+    );
+    sdo->addRadioButton(
+        "NATURAL",
+        "States are displayed in the most natural order for the selected state space data structure.",
+        state_lldsm::NATURAL
+    );
 }

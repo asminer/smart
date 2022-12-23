@@ -5,7 +5,7 @@
 #include "../ExprLib/casting.h"
 #include "../ExprLib/binary.h"
 #include "../ExprLib/assoc.h"
-#include "../SymTabs/symtabs.h"
+#include "../ExprLib/symb_tab.h"
 #include "../ExprLib/functions.h"
 #include "../Utils/textfmt.h"
 #include "../Utils/library.h"
@@ -2112,7 +2112,7 @@ bool init_bigints::execute()
   if (0==st) return true;
 
   // Functions
-  st->AddSymbol(  new bigintdiv_si  );
+  st->addSymbol(  new bigintdiv_si  );
 
   return true;
 }

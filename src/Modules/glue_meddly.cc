@@ -1080,10 +1080,9 @@ class init_meddly : public initializer {
 };
 static init_meddly the_meddly_initializer;
 
-init_meddly::init_meddly() : initializer("glue_meddly.cc", 1, 1)
+init_meddly::init_meddly() : initializer("glue_meddly.cc", 1, 0)
 {
     builds_resource(0, "MEDDLY");
-    needs_resource(1, "OM");
 }
 
 void init_meddly::execute()
@@ -1096,8 +1095,7 @@ void init_meddly::execute()
     //
     // TBD - this one belongs under rgr_meddly or somewhere else
     //
-    option_manager* om = dynamic_cast <option_manager*> (get_object(1, "OM"));
-    if (om) om->addBoolOption("MeddlyImageStarUsesSaturation",
+    option_manager::global().addBoolOption("MeddlyImageStarUsesSaturation",
         "If true, MEDDLY uses saturation for forward and backward reachability during CTL model checking; otherwise, the traditional iteration is used.",
         meddly_encoder::image_star_uses_saturation
     );

@@ -791,34 +791,32 @@ converge_initializer::converge_initializer()
     : initializer("converge.cc", 1, 2)
 {
     builds_resource(0, "converge.cc");
-    needs_resource(1, "OM");
-    needs_resource(2, fixpoint_stmt::converge_debug.optName());
+    needs_resource(1, "Debug");
 }
 
 void converge_initializer::execute()
 {
-    option_manager* OM = dynamic_cast <option_manager*> (get_object(1, "OM"));
-    if (!OM) return;
+    option_manager& OM = option_manager::global();
 
     fixpoint_stmt::init(
-        get_object(2),
+        get_object(1, "Debug"),
         "converges",
         "Use to view the sequence of assignments during the execution of a converge statement."
     );
 
     converge_stmt::max_iters = 1000;
-    OM->addIntOption("MaxConvergeIters",
+    OM.addIntOption("MaxConvergeIters",
         "Maximum number of iterations of a converge statement.",
         converge_stmt::max_iters, 1, 2000000000
     );
 
     fixpoint_stmt::precision = 1e-5;
-    OM->addRealOption("ConvergePrecision",
+    OM.addRealOption("ConvergePrecision",
         "Desired precision for values within a converge statement.",
         fixpoint_stmt::precision, true, false, 0, true, false, 1
     );
 
-    option* prec_test = OM->addRadioOption("ConvergePrecisionTest",
+    option* prec_test = OM.addRadioOption("ConvergePrecisionTest",
         "Comparison to use for convergence test of values within a converge statement.",
         2, fixpoint_stmt::relative
     );
@@ -828,7 +826,7 @@ void converge_initializer::execute()
     fixpoint_stmt::relative = 1;
 
     fixpoint_stmt::use_current = true;
-    OM->addBoolOption("UseCurrent",
+    OM.addBoolOption("UseCurrent",
         "Should variables within a converge statement be updated immediately.",
         fixpoint_stmt::use_current
     );

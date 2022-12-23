@@ -1894,10 +1894,9 @@ class function_initializer : public initializer {
 static function_initializer the_function_initializer;
 
 function_initializer::function_initializer()
-    : initializer("functions.cc", 1, 1)
+    : initializer("functions.cc", 1, 0)
 {
     builds_resource(0, "functions.cc");
-    needs_resource(1, "OM");
 }
 
 void function_initializer::execute()
@@ -1907,11 +1906,10 @@ void function_initializer::execute()
     top_user_func::stack_size = init_stack_size;
     top_user_func::stack_top = 0;
 
-    option_manager* OM = dynamic_cast <option_manager*> (get_object(1, "OM"));
-    if (!OM) return;
+    option_manager &OM = option_manager::global();
 
     stack_size_watcher* sw = new stack_size_watcher();
-    option* o = OM->addIntOption("StackSize",
+    option* o = OM.addIntOption("StackSize",
           "Size of run-time stack to use for function calls.",
           sw->Link(),
           0,

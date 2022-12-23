@@ -11,7 +11,7 @@
 #define FORMALISM_H
 
 #include "../include/list.h"
-#include "../SymTabs/symtabs.h"
+#include "symb_tab.h"
 #include "type.h"
 
 class model_def;
@@ -34,15 +34,15 @@ public:
     funcs = st;
   }
   inline symbol* findFunction(const char* n) const {
-    if (funcs)  return funcs->FindSymbol(n);
+    if (funcs)  return funcs->findSymbol(n);
     else        return 0;
   }
   inline long numFuncNames() const {
-    if (funcs)  return funcs->NumNames();
+    if (funcs)  return funcs->numNames();
     else        return 0;
   }
   inline void copyFuncsToArray(const symbol** list) const {
-    if (funcs)  funcs->CopyToArray(list);
+    if (funcs)  funcs->copyToArray(list);
   }
   void addCommonFuncs(List <msr_func> &cfl);
 
@@ -53,15 +53,15 @@ public:
     idents = st;
   }
   inline symbol* findIdentifier(const char* n) const {
-    if (idents) return idents->FindSymbol(n);
+    if (idents) return idents->findSymbol(n);
     else        return 0;
   }
   inline long numIdentNames() const {
-    if (idents) return idents->NumNames();
+    if (idents) return idents->numNames();
     else        return 0;
   }
   inline void copyIdentsToArray(const symbol** list) const {
-    if (idents) idents->CopyToArray(list);
+    if (idents) idents->copyToArray(list);
   }
 
   // Required in derived classes:

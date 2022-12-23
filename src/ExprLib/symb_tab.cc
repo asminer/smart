@@ -5,8 +5,8 @@
 // #define DEBUG_ADD
 // #define DEBUG_REMOVE
 
-#include "../include/splay.h"
 
+symbol_table* symbol_table::_global = nullptr;
 
 // ******************************************************************
 // *                                                                *
@@ -17,7 +17,6 @@
 symbol_table::symbol_table(int l2t, int t2l) : table(l2t, t2l)
 {
     num_syms = 0;
-    num_names = 0;
     FreeList = nullptr;
 }
 
@@ -33,18 +32,14 @@ void symbol_table::addSymbol(symbol* s)
     if (!s) return;
     symbol_list* tmp = NewList();
     tmp->Fill(s);
-    symbol_list* root = table.Insert(tmp);
-    if (root == tmp) {
-        // new node in tree
-        num_names++;
-    } else {
+    symbol_list* root = smart_cast <symbol_list*> (table.insert(tmp));
+    if (root != tmp) {
         // existing node, add to list
         s->LinkTo(root->front);
         root->front = s;
         RecycleList(tmp);
     }
     num_syms++;
-    DCASSERT(table->NumElements() == num_names);
 
 #ifdef DEBUG_ADD
     std::cerr << "Just added symbol: ";
@@ -57,13 +52,15 @@ void symbol_table::addSymbol(symbol* s)
 
 symbol* symbol_table::findSymbol(const char* name)
 {
-    symbol_list* root = table.Find(name);
+    const_string CS(name);
+    symbol_list* root = smart_cast <symbol_list*> (table.find(&CS));
     return root ? root->front : nullptr;
 }
 
 bool symbol_table::removeSymbol(symbol* s)
 {
-    symbol_list* list = table.Find(s->Name());
+    const_string CS(s->Name());
+    symbol_list* list = smart_cast <symbol_list*> (table.find(&CS));
     if (!list)  return false;
 
     // traverse the list until we find s
@@ -84,11 +81,10 @@ bool symbol_table::removeSymbol(symbol* s)
     }
     num_syms--;
     if (!list->front) {
-        list = table.Remove(list);
+        list = smart_cast <symbol_list*> (table.remove(list));
         delete list;
         num_names--;
     }
-    DCASSERT(table->NumElements() == num_names);
 #ifdef DEBUG_REMOVE
     std::cerr << "Just removed symbol: ";
     s->Print(std::cerr);
@@ -99,20 +95,20 @@ bool symbol_table::removeSymbol(symbol* s)
     return true;
 }
 
+/*
 symbol* symbol_table::pop()
 {
-    if (num_syms != num_names)  return nullptr;  // definitely chaining.
+    if (num_syms != table.numElements()) return nullptr;  // definitely chaining.
     if (num_syms < 1)           return nullptr;  // empty table
-    symbol_list* foo = table.GetItem(num_syms-1);
+    symbol_list* foo = smart_cast <symbol_list*> (table.getElement(num_syms-1));
     if (!foo)  return nullptr;  // hmmm, stack underflow?
     symbol* find = foo->front;
     if (find->Next())   return nullptr;  // definitely chaining!
 
     // ok, we can remove this safely.
     num_syms--;
-    num_names--;
     foo->front = nullptr;
-    foo = table.Remove(foo);
+    foo = smart_cast <symbol_list*> (table.remove(foo));
     RecycleList(foo);
 
 #ifdef DEBUG_REMOVE
@@ -129,18 +125,21 @@ symbol* symbol_table::getItem(unsigned i) const
 {
     if (num_syms != num_names)  return nullptr;   // definitely chaining.
     if (num_syms < 1)           return nullptr;   // empty table
-    symbol_list* foo = table.GetItem(i);
+    symbol_list* foo = smart_cast <symbol_list*> (table.getElement(i));
     if (!foo)  return nullptr;  // hmmm, stack underflow?
     symbol* find = foo->front;
     if (find->Next())   return nullptr;  // definitely chaining!
     return find;
 }
+*/
 
 void symbol_table::copyToArray(const symbol** list)
 {
     if (!list)  return;
+    const unsigned num_names = table.numElements();
     symbol_list** allsyms = new symbol_list*[num_names];
-    table.CopyToArray(allsyms);
+    copy_traversal <symbol_list> T(allsyms, num_names);
+    table.traverse(T);
     for (unsigned i=0; i<num_names; i++) {
         list[i] = allsyms[i]->front;
         DCASSERT(list[i]);
@@ -179,6 +178,39 @@ symbol_table::symbol_list::symbol_list()
     front = nullptr;
 }
 
+bool symbol_table::symbol_list::Print(std::ostream &s, int width) const
+{
+    if (name)   s << name;
+    else        s << "no name";
+    s << " : ";
+    for (symbol* ptr=front; ptr; ptr=ptr->Next()) {
+        ptr->Print(s);
+        s << ", ";
+    }
+    return true;
+}
+
+int symbol_table::symbol_list::Compare(const shared_object* s) const
+{
+    const const_string* cs = dynamic_cast <const const_string*> (s);
+    if (cs) {
+        if (name && cs->getStr()) return strcmp(name, cs->getStr());
+        if (name) return 1;
+        if (cs->getStr()) return -1;
+        return 0;
+    }
+    const symbol_list* sl = dynamic_cast <const symbol_list*> (s);
+    if (sl) {
+        if (name && sl->name) return strcmp(name, sl->name);
+        if (name) return 1;
+        if (sl->name) return -1;
+        return 0;
+    }
+    const shared_object* t = this;
+    return t - s;
+}
+
+
 void symbol_table::symbol_list::Fill(symbol* f)
 {
     name = f->Name();
@@ -189,24 +221,5 @@ void symbol_table::symbol_list::Fill(const char* n)
 {
     name = n;
     front = nullptr;
-}
-
-int symbol_table::symbol_list::Compare(const char* name2) const
-{
-    if ( (0==name) && (0==name2) )  return 0;
-    if (0==name)                    return -1;
-    if (0==name2)                   return 1;
-    return strcmp(name, name2);
-}
-
-void symbol_table::symbol_list::Show(std::ostream &s) const
-{
-    if (name)   s << name;
-    else        s << "no name";
-    s << " : ";
-    for (symbol* ptr=front; ptr; ptr=ptr->Next()) {
-        ptr->Print(s);
-        s << ", ";
-    }
 }
 

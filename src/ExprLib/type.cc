@@ -875,10 +875,9 @@ class type_initializer : public initializer {
 };
 static type_initializer the_type_initializer;
 
-type_initializer::type_initializer() : initializer("type.cc", 1, 1)
+type_initializer::type_initializer() : initializer("type.cc", 1, 0)
 {
     builds_resource(0, "types");
-    needs_resource(1, "OM");
 }
 
 void type_initializer::execute()
@@ -926,10 +925,9 @@ void type_initializer::execute()
     //
     // Add options
     //
-    option_manager* om = dynamic_cast <option_manager*> (get_object(1, "OM"));
-    if (!om) return;
+    option_manager &om = option_manager::global();
 
-    option* rfopt = om->addRadioOption("RealFormat",
+    option* rfopt = om.addRadioOption("RealFormat",
             "hu",
             3, type::real_format
     );
@@ -938,30 +936,30 @@ void type_initializer::execute()
     rfopt->addRadioButton("SCIENTIFIC", "Same as printf(%e)", type::SCIENTIFIC);
     rfopt->Finish();
 
-    om->addStringOption(
+    om.addStringOption(
         "IntThousandSeparator",
         "Thousands separator to use when displaying integers (including bigint)",
         type::int_comma
     );
-    om->addStringOption(
+    om.addStringOption(
         "RealThousandSeparator",
         "Thousands separator to use when displaying reals",
         type::real_comma
     );
 
-    om->addStringOption(
+    om.addStringOption(
         "PlusInfinityString",
         "Output string for positive infinity.",
         type::pos_infinity_string
     );
 
-    om->addStringOption(
+    om.addStringOption(
         "MinusInfinityString",
         "Output string for negative infinity.",
         type::neg_infinity_string
     );
 
-    om->addRealOption(
+    om.addRealOption(
         "IndexPrecision",
         "Epsilon for real set element comparisons.",
         real_type::index_precision,
@@ -971,26 +969,3 @@ void type_initializer::execute()
 
 }
 
-// ******************************************************************
-// *                                                                *
-// *                           Front  end                           *
-// *                                                                *
-// ******************************************************************
-
-/*
-type* newModifiedType(const char* n, modifier m, simple_type* base)
-{
-  return new modif_type(n, m, base);
-}
-
-type* newProcType(const char* n, type* base)
-{
-  return new proc_type(n, base);
-}
-
-type* newSetType(const char* n, simple_type* base)
-{
-  return new set_type(n, base);
-}
-
-*/

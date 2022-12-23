@@ -76,6 +76,7 @@ smart_SOURCES = \
   ExprLib/bogus.cc \
   ExprLib/values.cc \
   ExprLib/symbols.cc \
+  ExprLib/symb_tab.cc \
   ExprLib/help.cc \
   ExprLib/iterators.cc \
   ExprLib/arrays.cc \
@@ -100,8 +101,6 @@ smart_SOURCES = \
   ExprLib/mod_vars.cc \
   ExprLib/mod_inst.cc \
   ExprLib/measures.cc \
-  \
-  SymTabs/symtabs.cc \
   \
   Modules/biginttype.cc \
   Modules/expl_ssets.cc \
@@ -218,6 +217,7 @@ icp_SOURCES = \
   ExprLib/bogus.cc \
   ExprLib/values.cc \
   ExprLib/symbols.cc \
+  ExprLib/symb_tab.cc \
   ExprLib/help.cc \
   ExprLib/iterators.cc \
   ExprLib/arrays.cc \
@@ -242,8 +242,6 @@ icp_SOURCES = \
   ExprLib/mod_vars.cc \
   ExprLib/mod_inst.cc \
   ExprLib/measures.cc \
-  \
-  SymTabs/symtabs.cc \
   \
   Modules/biginttype.cc \
   Modules/glue_meddly.cc \
@@ -293,43 +291,6 @@ lextest_SOURCES = \
   Options/stropt.cc \
   Options/checklist.cc \
   Options/radio_opt.cc \
-  \
-  ExprLib/startup.cc \
-  ExprLib/exprman.cc \
-  ExprLib/superman.cc \
-  ExprLib/engine.cc \
-  ExprLib/formalism.cc \
-  ExprLib/init_data.cc \
-  ExprLib/type.cc \
-  ExprLib/result.cc \
-  ExprLib/expr.cc \
-  ExprLib/bogus.cc \
-  ExprLib/values.cc \
-  ExprLib/symbols.cc \
-  ExprLib/help.cc \
-  ExprLib/iterators.cc \
-  ExprLib/arrays.cc \
-  ExprLib/stmts.cc \
-  ExprLib/converge.cc \
-  ExprLib/sets.cc \
-  ExprLib/intervals.cc \
-  ExprLib/forloops.cc \
-  ExprLib/functions.cc \
-  ExprLib/unary.cc \
-  ExprLib/casting.cc \
-  ExprLib/binary.cc \
-  ExprLib/trinary.cc \
-  ExprLib/assoc.cc \
-  ExprLib/ops_bool.cc \
-  ExprLib/ops_int.cc \
-  ExprLib/ops_real.cc \
-  ExprLib/ops_set.cc \
-  ExprLib/ops_misc.cc \
-  ExprLib/dd_front.cc \
-  ExprLib/mod_def.cc \
-  ExprLib/mod_vars.cc \
-  ExprLib/mod_inst.cc \
-  ExprLib/measures.cc \
   \
   Lexer/tokens.cc \
   Lexer/lexer.cc \

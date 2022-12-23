@@ -5,6 +5,7 @@
 #include "../ExprLib/measures.h"
 #include "../ExprLib/sets.h"
 #include "../ExprLib/values.h"
+#include "../ExprLib/symb_tab.h"
 
 #include "../Formlsms/stoch_llm.h"
 #include "../Formlsms/dsde_hlm.h"
@@ -13,7 +14,6 @@
 #include "../Modules/biginttype.h"
 #include "../Modules/statesets.h"
 
-#include "../SymTabs/symtabs.h"
 
 #include "../_Timer/timerlib.h"
 
@@ -1524,7 +1524,7 @@ bool init_basicmsrs::execute()
 
 void Add_MCC_varfuncs(const type* svt, symbol_table* syms)
 {
-    syms->AddSymbol(  new run_for_MCC_UPPERBOUNDS_si(svt) );
+    syms->addSymbol(  new run_for_MCC_UPPERBOUNDS_si(svt) );
 }
 
 #if 0

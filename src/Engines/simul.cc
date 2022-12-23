@@ -406,11 +406,10 @@ class init_simul : public initializer {
 };
 static init_simul the_simul_initializer;
 
-init_simul::init_simul() : initializer("simul.cc", 1, 2)
+init_simul::init_simul() : initializer("simul.cc", 1, 1)
 {
     builds_resource(0, "simul.cc");
-    needs_resource(1, "OM");
-    needs_resource(2, "Report");
+    needs_resource(1, "Report");
 }
 
 void init_simul::execute()
@@ -421,7 +420,7 @@ void init_simul::execute()
     initialize_msg(monte_carlo_engine::report,
         "Monte_Carlo",
         "When set, Monte Carlo Simulation performance data is displayed.",
-        get_object(2, "Report")
+        get_object(1, "Report")
     );
 
     //
@@ -446,28 +445,27 @@ void init_simul::execute()
     // Set up options
     //
 
-    option_manager* om = dynamic_cast <option_manager*> (get_object(1, "OM"));
-    if (!om) return;
+    option_manager &om = option_manager::global();
 
-    om->addIntOption(
+    om.addIntOption(
         "SimSamples",
         "Number of samples to collect during simulations, if fixed (see option SimType).",
         sim_engine::Samples, 50, 2000000000
     );
 
-    om->addRealOption(
+    om.addRealOption(
         "SimConfidence",
         "Desired level of confidence for simulations, if fixed (see option SimType).",
         sim_engine::Confidence, true, false, 0.0, true, false, 1.0
     );
 
-    om->addRealOption(
+    om.addRealOption(
         "SimPrecision",
         "Desired level of (relative) precision for simulations, i.e., the desired half-width size as a fraction of the interval midpoint, if fixed (see option SimType).  Note: for a fixed confidence, one more digit of precision requires 100 times more samples.",
         sim_engine::Precision, true, false, 0.0, true, false, 1.0
     );
 
-    option* stype = om->addRadioOption(
+    option* stype = om.addRadioOption(
         "SimType",
         "Simulation parameters can be tuned with options SimSamples, SimConfidence, and SimPrecision.  However, only two of the three values can be fixed, as the third is a function of the other two.  This option essentially determines which of the three is allowed to vary in the simulation.",
         3, sim_engine::Type
@@ -487,7 +485,7 @@ void init_simul::execute()
     // stream separation as an observed option
     //
     jump_watcher* jw = new jump_watcher();
-    om->addIntOption("RngStreamSeparation",
+    om.addIntOption("RngStreamSeparation",
         "Stream separation distance for creating multiple, independent RNG streams.  The exponent d is specified, and streams will be separated by a distance of at least 2^d.",
         jw->Link(),
         sim_engine::rngm->MinimumJumpValue(),
@@ -498,7 +496,7 @@ void init_simul::execute()
     // RNG seed as an observed option
     //
     seed_watcher* sw = new seed_watcher();
-    om->addIntOption("SeedRng",
+    om.addIntOption("SeedRng",
         "Re-set the random number generator state based on the given seed value.",
         sw->Link(), 0, LONG_MAX
     )->registerWatcher(sw);

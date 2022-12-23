@@ -485,10 +485,9 @@ class init_my_exp_state_lib : public initializer {
 // **************************************************************************
 
 init_my_exp_state_lib::init_my_exp_state_lib(my_exp_state_lib &sl)
-    : initializer("init_my_exp_state_lib", 1, 1), SL(sl)
+    : initializer("init_my_exp_state_lib", 1, 0), SL(sl)
 {
     builds_resource(0, "my_exp_state_lib");
-    needs_resource(1, "OM");
 
     try_immediately();  // late initialization
 }
@@ -502,10 +501,9 @@ void init_my_exp_state_lib::execute()
     SL.max_stack_depth = 1L << shift;
 
     // Add options
-    option_manager* om = dynamic_cast<option_manager*> (get_object(1, "OM"));
-    if (!om) return;
+    option_manager &om = option_manager::global();
 
-    option* ess = om->addRadioOption(
+    option* ess = om.addRadioOption(
         "ExplicitStateStorage",
         "Data structure to use for explicitly storing states.",
         3, SL.storage
@@ -527,13 +525,13 @@ void init_my_exp_state_lib::execute()
     );
 
 
-    om->addIntOption("ExplicitStateStackLimit",
+    om.addIntOption("ExplicitStateStackLimit",
       "Maximum stack size to use for search trees for explicit state storage.",
       SL.max_stack_depth, 1, SL.max_stack_depth
     );
 
 
-    option* sss = om->addRadioOption(
+    option* sss = om.addRadioOption(
       "SubstateStorageStyle",
       "For a model composed of submodels, how should the substates be stored.",
       3, SL.substate_style

@@ -6,42 +6,6 @@
 
 // **********************************************************************
 // *                                                                    *
-// *                optman_initializer class and methods                *
-// *                                                                    *
-// **********************************************************************
-
-/**
-    Build the global option manager.
-    Requires nothing.
-    Builds resource OM.
-*/
-class optman_initializer : public initializer {
-    public:
-        optman_initializer();
-    protected:
-        virtual void execute();
-};
-static optman_initializer the_optman_initializer;
-
-optman_initializer::optman_initializer()
-    : initializer("optman_initializer", 1, 0)
-{
-    builds_resource(0, "OM");
-}
-
-void optman_initializer::execute()
-{
-    option_manager* OM = getGlobalOptionManager();
-    if (!OM) {
-        internal_error E(__FILE__, __LINE__);
-        E << "getGlobalOptionManager() returned null pointer";
-    }
-    set_object(0, OM, "OM");
-}
-
-
-// **********************************************************************
-// *                                                                    *
 // *              checklist_initializer  class and methods              *
 // *                                                                    *
 // **********************************************************************
@@ -51,7 +15,6 @@ void optman_initializer::execute()
     These are options like "Report" and "Debug"
     with lots of suboptions.
 
-    Requires resource OM.
     Builds resource with name = optname.
 */
 class checklist_initializer : public initializer {
@@ -64,22 +27,19 @@ class checklist_initializer : public initializer {
 };
 
 checklist_initializer::checklist_initializer(const char* name, const char* doc)
-    : initializer("checklist_initializer", 1, 1)
+    : initializer("checklist_initializer", 1, 0)
 {
     optname = name;
     optdoc = doc;
 
     builds_resource(0, name);
-    needs_resource(1, "OM");
 }
 
 void checklist_initializer::execute()
 {
-    option_manager* OM = dynamic_cast <option_manager*> (get_object(1, "OM"));
-
-    if (0==OM) return;      // Error out here?
-
-    set_object(0, OM->addChecklistOption(optname, optdoc));
+    set_object(0,
+        option_manager::global().addChecklistOption(optname, optdoc)
+    );
 }
 
 static checklist_initializer _report_init(

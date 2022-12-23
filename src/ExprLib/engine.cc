@@ -185,7 +185,7 @@ void engine::addButtonToOption(option* o, unsigned ndx)
 option_manager* engine::internalOpts()
 {
     if (!options) {
-        options = MakeOptionManager();
+        options = new option_manager();
     }
     return options;
 }

@@ -4,7 +4,7 @@
 #include "../Utils/initializer.h"
 #include "../ExprLib/startup.h" //
 #include "../ExprLib/exprman.h"
-#include "../SymTabs/symtabs.h"
+#include "../ExprLib/symb_tab.h"
 #include "../ExprLib/functions.h"
 #include "../ExprLib/mod_vars.h"
 
@@ -1293,15 +1293,15 @@ bool old_init_statevects::execute()
   // Functions
   // ------------------------------------------------------------------
   if (0==st) return false;
-  st->AddSymbol(  new gt_si                     );
-  st->AddSymbol(  new ge_si                     );
-  st->AddSymbol(  new lt_si                     );
-  st->AddSymbol(  new le_si                     );
+  st->addSymbol(  new gt_si                     );
+  st->addSymbol(  new ge_si                     );
+  st->addSymbol(  new lt_si                     );
+  st->addSymbol(  new le_si                     );
 
-  st->AddSymbol(  new condition_si              );
-  st->AddSymbol(  new prob_si                   );
-  st->AddSymbol(  new expected_si(type::find("stateprobs")) );
-  st->AddSymbol(  new expected_si(type::find("statemsrs"))  );
+  st->addSymbol(  new condition_si              );
+  st->addSymbol(  new prob_si                   );
+  st->addSymbol(  new expected_si(type::find("stateprobs")) );
+  st->addSymbol(  new expected_si(type::find("statemsrs"))  );
 
   return true;
 }
@@ -1316,10 +1316,9 @@ class init_statevects : public initializer {
 };
 static init_statevects the_statevect_initializer;
 
-init_statevects::init_statevects() : initializer("statevects.cc", 1, 1)
+init_statevects::init_statevects() : initializer("statevects.cc", 1, 0)
 {
     builds_resource(0, "statevects.cc");
-    needs_resource(1, "OM");
 }
 
 void init_statevects::execute()
@@ -1334,29 +1333,26 @@ void init_statevects::execute()
     //
     // Options
     // ------------------------------------------------------------------
-    option_manager* om = dynamic_cast <option_manager*> (get_object(1, "OM"));
-    if (om) {
-        option* o = om->addRadioOption("StatevectDisplayStyle",
-            "Style to display a statedist, stateprobs, or statemsrs vector.",
-            3, statevect::display_style
-        );
-        o->addRadioButton(
-            "FULL",
-            "Vectors are displayed in (raw) full.",
-            statevect::FULL
-        );
-        o->addRadioButton(
-            "SPARSE_INDEX",
-            "Vectors are displayed in sparse format, with state indexes.",
-            statevect::SINDEX
-        );
-        o->addRadioButton(
-            "SPARSE_STATE",
-            "Vectors are displayed in sparse format, with states.",
-            statevect::SSTATE
-        );
-    }
+    option_manager &om = option_manager::global();
+    option* o = om.addRadioOption("StatevectDisplayStyle",
+        "Style to display a statedist, stateprobs, or statemsrs vector.",
+        3, statevect::display_style
+    );
+    o->addRadioButton(
+        "FULL",
+        "Vectors are displayed in (raw) full.",
+        statevect::FULL
+    );
+    o->addRadioButton(
+        "SPARSE_INDEX",
+        "Vectors are displayed in sparse format, with state indexes.",
+        statevect::SINDEX
+    );
+    o->addRadioButton(
+        "SPARSE_STATE",
+        "Vectors are displayed in sparse format, with states.",
+        statevect::SSTATE
+    );
     statevect::display_style = statevect::SINDEX;
-
 }
 

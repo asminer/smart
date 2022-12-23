@@ -7,12 +7,12 @@
 #include "../ExprLib/mod_vars.h"
 #include "../ExprLib/values.h"
 #include "../ExprLib/help.h"
+#include "../ExprLib/symb_tab.h"
 #include "graph_llm.h"
 
 #include "../Modules/biginttype.h"
 #include "../Modules/statesets.h"
 
-#include "../SymTabs/symtabs.h"
 
 #include "../ParseSM/parse_sm.h"
 extern parse_module* pm;
@@ -1463,7 +1463,7 @@ bool init_ctlmsrs::execute()
     "A CTL formula phi may be checked by constructing the set of states satisfying phi.  This is done by splitting the formula into quantifier, operator pairs and using the appropriate function.  The set of initial states are then compared to the set of states satisfying phi to determine if the model satisfies phi.  Note that both \"forward time\" and \"reverse time\" temporal operators are supported."
   );
 
-  if (st) st->AddSymbol(ctl_help);
+  if (st) st->addSymbol(ctl_help);
 
   CTL_engine::ProcGen = em->findEngineType("ProcessGeneration");
   DCASSERT(CTL_engine::ProcGen);

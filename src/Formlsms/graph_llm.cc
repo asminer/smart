@@ -323,11 +323,10 @@ class init_graphllm : public initializer {
 };
 static init_graphllm the_graphllm_initializer;
 
-init_graphllm::init_graphllm() : initializer("graph_llm.cc", 1, 2)
+init_graphllm::init_graphllm() : initializer("graph_llm.cc", 1, 1)
 {
     builds_resource(0, "graph_llm.cc");
-    needs_resource(1, "OM");
-    needs_resource(2, "Report");
+    needs_resource(1, "Report");
 }
 
 void init_graphllm::execute()
@@ -336,23 +335,22 @@ void init_graphllm::execute()
     initialize_msg(graph_lldsm::reachgraph::numpaths_report,
         "num_paths",
         "When set, performance data for counting number of paths is displayed.",
-        get_object(2, "Report")
+        get_object(1, "Report")
     );
     initialize_msg(graph_lldsm::reachgraph::ctl_report,
         "CTL_engines",
         "When set, CTL engine performance is reported.",
-        get_object(2, "Report")
+        get_object(1, "Report")
     );
 
     // ------------------------------------------------------------------
     graph_lldsm::graph_display_style = graph_lldsm::OUTGOING;
     graph_lldsm::max_arc_display = 100000000;
 
-    option_manager* om = dynamic_cast<option_manager*> (get_object(1, "OM"));
-    if (!om) return;
+    option_manager &om = option_manager::global();
 
     // ------------------------------------------------------------------
-    om->addIntOption(
+    om.addIntOption(
         MAX_ARC_DISPLAY_OPTION,
         "The maximum number of arcs to display for a model.  If 0, the graph will be displayed whenever possible, regardless of the number of arcs.",
         graph_lldsm::max_arc_display,
@@ -360,7 +358,7 @@ void init_graphllm::execute()
     );
 
     // ------------------------------------------------------------------
-    option* gds = om->addRadioOption(
+    option* gds = om.addRadioOption(
         "GraphDisplayStyle",
         "Select the style to use when displaying a graph (e.g., using function show_arcs).  This does not affect the internal storage of the graph.",
         graph_lldsm::num_graph_display_styles,
@@ -388,7 +386,7 @@ void init_graphllm::execute()
     );
 
     // ------------------------------------------------------------------
-    om->addBoolOption(
+    om.addBoolOption(
         "DisplayGraphNodeNames",
         "When displaying a graph (e.g., using function show_arcs), should the nodes be referred to by \"name\" (the label of the node)?  Otherwise they are referred to by an index between 0 and the number of nodes-1.",
         graph_lldsm::display_graph_node_names
