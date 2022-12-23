@@ -312,7 +312,7 @@ dsde_hlm::dsde_hlm(const model_instance* p, model_statevar** sv, int nv,
 	num_assertions = 0;
 	num_priolevels = 0;
 	last_timed = last_immed = 0;
-	decision_data=dv;
+	decision_data= new decision_set(nd,dv);
 	num_decs=ndd;
 	lltype = lldsm::Unknown;
 	determineModelType();
@@ -347,12 +347,7 @@ dsde_hlm::~dsde_hlm() {
 	}
 	delete[] state_data;
 
-	////////
-	// trash the decision variables
-	for (int i = 0; i < num_decs; i++) {
-		Delete(decision_data[i]);
-	}
-	delete[] decision_data;
+	delete decision_data;
 }
 
 lldsm::model_type dsde_hlm::GetProcessType() const {

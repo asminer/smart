@@ -309,6 +309,10 @@ public:
     dec->setBool(true);
   }
 
+  inline void unsetDecision() {
+    dec->setUnknown();
+  }
+
   inline bool isTaken() {
     if ((!dec->isUnknown()) && dec->getBool()) return true;
     else return false;
@@ -346,22 +350,80 @@ class decision_set {
   } search_policy;
 
   /// Underlying data structure
-  decision** decisions;
+  std::vector<decision*> decisions;
   int size;
   int policy;
 
 public:
-  decision_set(int nd) { 
+  decision_set(int nd, decision** decs) { 
     policy = cost; 
     size = nd;
-    decisions = new decision*[nd];
+
+    for (int i = 0; i < nd; ++i) {
+      decisions.push_back(decs[i]);
+    }
+
+    switch (policy) {
+      case cost: 
+        std::sort(decisions.begin(), decisions.end(), costComp);
+        break;
+      default:
+        break; 
+    }
   }
 
-protected:
-  ~decision_set() { }
+  ~decision_set() { 
+    for(decision* d : decisions) Delete(d);
+  }
+
+// private:
+//   class iterator: public std::iterator<
+//                           std::random_access_iterator_tag,   // iterator_category
+//                           decision*,                 // value_type
+//                           long,                      // difference_type
+//                           const decision**,          // pointer
+//                           decision*                  // reference
+//                             >{
+//     decision **decs;
+//     int num_decs;
+//     int idx;
+//   public:
+//     explicit iterator(decision **d, int nd, int i) { 
+//       DCASSERT(i >= 0);
+//       decs = d; 
+//       num_decs = nd;
+//       idx = i; 
+//     }
+    
+//     iterator& operator++() { idx++; return *this; }
+//     iterator& operator--() { idx--; return *this; }
+//     iterator operator++(int) { iterator retval = *this; ++(*this); return retval; }
+//     iterator operator--(int) { iterator retval = *this; --(*this); return retval; }
+//     iterator operator-(iterator other) { iterator retval = *this; idx - other.idx; return retval; }
+//     iterator operator-(long distance) { iterator retval = *this; retval - distance; return retval;  }
+//     iterator& operator-=(long distance) { iterator retval = *this; retval - distance; return retval; }
+//     iterator operator+(long distance) { iterator retval = *this; retval + distance; return retval; }
+//     iterator& operator+=(long distance) { iterator retval = *this; retval + distance; return retval; }
+//     bool operator==(iterator other) const { return idx == other.idx; }
+//     bool operator!=(iterator other) const { return !(*this == other); }
+//     reference operator*() const { return idx < num_decs ? decs[idx] : NULL; }
+//   };
+
+// public:
+//   iterator begin() { return iterator(decisions, size, 0); }
+//   iterator end() { return iterator(decisions, size, size); }
+
+private:
+  struct {
+    bool operator()(decision *a, decision *b) const { 
+      DCASSERT(a);
+      DCASSERT(b);
+      return a->getCost() < b->getCost(); 
+    }
+  } costComp;
 
 public:
-  inline decision* getDecision(int i){
+  inline decision* getDecision(int i) {
     DCASSERT(i >= 0 && i < size);
     return decisions[i]; 
   }
@@ -374,58 +436,17 @@ public:
     return size == 0;
   }
 
-  /// used to construct this
-  // inline void addDecision(decision* add) {
-  //   decision *d;
-  //   for (int i = 0; i < size; ++i) {
-  //     d = 
-  //   }
-  // }
+  inline void setDecisions(result** eval) {
+    for (int i = 0; i < size; ++i) {
+      DCASSERT(decisions[i]);
+      DCASSERT(eval[i]);
 
-  std::vector<decision_set_value*>* getNextEvals() {
-    std::vector<decision_set_value*>* evals = new std::vector<decision_set_value*>();
-
-    switch (policy) {
-      case cost:
-        /* code */
-        break;
-      
-      default:
-        break;
+      if (eval[i]->isUnknown()) decisions[i]->unsetDecision();
+      else decisions[i]->setDecision(); 
     }
-
-    return evals;
   }
 
-  // void setDecisions(const decision_set_value* eval) {
-  //   DCASSERT(eval);
-  //   DCASSERT(decisions.size() == eval->size());
-  // }
-
 };
-
-/// Evaluation of a decision_set e.g., for a decision_set <d1,d2,d3>, 
-/// an evaluation might be: <U,T,U>
-// class decision_set_value {
-
-//   std::vector<result*> value;
-
-// public:
-//   decision_set_value(decision_set *dv) {
-//     for (int i = 0; i < dv->getNumDecisions(); ++i) {
-//       result *r = new result();
-//       r->setUnknown();
-//       value.push_back(r);
-//     }
-//   }
-
-//   ~decision_set_value() {
-//     for (result* r : value) {
-//       delete r;
-//     }
-//   }
-
-// };
 
 // **************************************************************************
 // *                                                                        *
@@ -470,7 +491,7 @@ protected:
   /// Dimension of assertions array.
   int num_assertions;
   /// Array of decision variables.
-  decision** decision_data;
+  decision_set* decision_data;
   /// Total number of decisions.
   int num_decs;
 public:
@@ -512,17 +533,21 @@ public:
     }
   }
   
-  inline const model_var* readDecVar(int i) const {
-    CHECK_RANGE(0, i, num_decs);
-    DCASSERT(decision_data);
-    return decision_data[i];
-  }
+  // inline const model_var* readDecVar(int i) const {
+  //   CHECK_RANGE(0, i, num_decs);
+  //   return decision_data.getDecision(i);
+  // }
 	
   inline model_var* getDecVar(int i) {
     CHECK_RANGE(0, i, num_decs);
     DCASSERT(decision_data);
-    return decision_data[i];
+    return decision_data->getDecision(i);
 	}
+
+  inline decision_set* getDecisionSet() const {
+    DCASSERT(decision_data);
+    return decision_data;
+  }
 	
    inline int getNumDecVars() const { 
    		if (num_decs) return num_decs;

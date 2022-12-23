@@ -1501,8 +1501,27 @@ void CTL_min_decision_cost_base::Compute(traverse_data &x, expr** pass, int np)
   DCASSERT(pass);
   
   const graph_lldsm* llm = getLLM(x, pass[0]);
-  const hldsm* hlm = llm->GetParent();
+  const dsde_hlm* hlm = dynamic_cast<const dsde_hlm*>(llm->GetParent());
+  
+  DCASSERT(hlm);
 
+  decision_set* dec_set = hlm->getDecisionSet();
+
+  std::queue<result**> Q; 
+  
+  int size = dec_set->getNumDecisions();
+  result** eval;
+
+  // populate priority queue depending on current values of decision set
+  while(false /* what condition goes here? */) {
+    eval = new result*[size];
+
+    for (int i = 0; i < size; ++i) {
+      
+    }
+
+    Q.push(eval);
+  }
 
   // stateset* p = grabParam(llm, pass[1], x);
   // setAnswer(x, llm->EX(revTime(), p));

@@ -635,10 +635,10 @@ void petri_hlm::showDec(OutputStream &s, const shared_state* st) const
     //bool un = st->unknown(decision_data[i]->GetIndex());
 
     //int tk = un ? 1 : st->get(state_data[i]->GetIndex());
-    if (decision_data[i])
+    if (decision_data->getDecision(i))
     {
-      s << decision_data[i]->Name();
-      printf("%s\n",decision_data[i]->Name());
+      s << decision_data->getDecision(i)->Name();
+      printf("%s\n",decision_data->getDecision(i)->Name());
     }
   }
   s << ']';
