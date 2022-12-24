@@ -35,6 +35,25 @@ int bogus_expr::Compare(const shared_object* o) const
     return strcmp(which, foo->which);
 }
 
+expr* bogus_expr::getError()
+{
+    static expr* the_error = nullptr;
+    if (!the_error) {
+        the_error = new bogus_expr("error");
+    }
+    return the_error;
+}
+
+expr* bogus_expr::getDefault()
+{
+    static expr* the_default = nullptr;
+    if (!the_default) {
+        the_default = new bogus_expr("default");
+    }
+    return the_default;
+}
+
+
 void bogus_expr::Traverse(traverse_data &x)
 {
     internal_error E(__FILE__, __LINE__);

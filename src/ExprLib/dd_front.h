@@ -227,7 +227,7 @@ public:
                       Can be the same pointer as \a opnd.
         @throws       Appropriate error code.
   */
-  virtual void buildUnary(exprman::unary_opcode op,
+  virtual void buildUnary(unary_op::opcode op,
                             const shared_object* opnd, shared_object* ans) = 0;
 
   /** Build a binary operation on DD nodes.

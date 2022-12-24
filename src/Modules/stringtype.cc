@@ -777,9 +777,9 @@ class init_strings : public initializer {
 };
 static init_strings the_string_initializer;
 
-init_strings::init_strings() : initializer("stringtype.cc", 1, 0)
+init_strings::init_strings() : initializer(__FILE__, 1, 0)
 {
-    builds_resource(0, "stringtype");
+    builds_resource(0, "types");
 }
 
 void init_strings::execute()

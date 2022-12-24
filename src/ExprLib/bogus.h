@@ -12,14 +12,19 @@
     Used for the special, compile-time expressions "error" and "default".
 */
 class bogus_expr : public expr {
-  const char* which;
+    const char* which;
 public:
-  bogus_expr(const char* w);
-  virtual bool Print(std::ostream &s, int width) const;
-  virtual int Compare(const shared_object* o) const;
-  virtual void PrintType(std::ostream &s) const;
+    bogus_expr(const char* w);
+    virtual bool Print(std::ostream &s, int width) const;
+    virtual int Compare(const shared_object* o) const;
+    virtual void PrintType(std::ostream &s) const;
+
+    // Only need one instance of these:
+
+    static expr* getError();
+    static expr* getDefault();
 protected:
-  virtual void Traverse(traverse_data &x);
+    virtual void Traverse(traverse_data &x);
 };
 
 #endif

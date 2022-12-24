@@ -9,8 +9,7 @@
 #include "../ExprLib/help.h"
 #include "../ExprLib/formalism.h"
 #include "../ExprLib/functions.h"
-
-#include "../SymTabs/symtabs.h"
+#include "../ExprLib/symb_tab.h"
 
 #include "../Utils/textfmt.h"
 

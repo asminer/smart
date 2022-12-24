@@ -1,6 +1,6 @@
 
 #include "unary.h"
-#include "exprman.h"
+#include "bogus.h"
 #include "result.h"
 #include "dd_front.h"
 
@@ -10,13 +10,125 @@
 // *                                                                *
 // ******************************************************************
 
-unary_op::unary_op(exprman::unary_opcode o)
+const unary_op** unary_op::registry = nullptr;
+
+unary_op::unary_op(opcode oc)
 {
-  opcode = o;
+    code = oc;
+    registerOp(this);
 }
 
 unary_op::~unary_op()
 {
+}
+
+const char* unary_op::getOp(opcode code)
+{
+    switch (code) {
+        case uop_none:      return "no-op";
+        case uop_not:       return "!";
+        case uop_neg:       return "-";
+        case uop_forall:    return "A";
+        case uop_exists:    return "E";
+        case uop_future:    return "F";
+        case uop_globally:  return "G";
+        case uop_next:      return "X";
+        default:            return "unknown_op";
+    }
+    return "error";  // will never get here, keep compilers happy
+}
+
+const char* unary_op::documentOp(opcode code)
+{
+    switch (code) {
+        case uop_not: return "logical negation";
+        case uop_neg: return "numerical negation";
+        default:      return nullptr;
+    }
+    return nullptr;  // will never get here, keep compilers happy
+}
+
+const type* unary_op::getTypeOf(opcode code, const type* x)
+{
+    const unary_op* match = nullptr;
+    unsigned num_matches = 0;
+    for (const unary_op* ptr = (code<uop_none) ? registry[code] : nullptr;
+            ptr; ptr=ptr->next)
+    {
+        if (! ptr->isDefinedForType(x)) continue;
+        match = ptr;
+        num_matches++;
+    } // for all operations with this code
+
+    if (0==num_matches)  return nullptr;
+    if (1==num_matches)  return match->getExprType(x);
+
+    // too many matches, this should not happen!
+    internal_error E(__FILE__, __LINE__);
+    E << "Cannot decide on unary operation: " << getOp(code) << " ";
+    if (x)  E << *x;
+    else    E << "notype";
+    return nullptr;
+}
+
+expr* unary_op::makeExpr(const location &W, opcode code, expr* opnd)
+{
+    //
+    // Deal with special operands
+    //
+    if (    (nullptr == opnd) ||
+            (bogus_expr::getError() == opnd) ||
+            (bogus_expr::getDefault() == opnd) )
+    {
+        return opnd;
+    }
+
+    //
+    // Traverse registry
+    //
+    expr* build = nullptr;
+    for (const unary_op* ptr = (code<uop_none) ? registry[code] : nullptr;
+            ptr; ptr=ptr->next)
+    {
+        if (! ptr->isDefinedForType(opnd->Type())) continue;
+        if (build) {
+            // More than one match!
+            internal_error E(__FILE__, __LINE__, W);
+            E << "Cannot decide on unary operation: " << getOp(code) << " ";
+            opnd->PrintType(E.stream());
+            Delete(build);
+            return nullptr;
+        }
+        build = ptr->makeExpr(W, opnd);
+        if (!build) {
+            internal_error E(__FILE__, __LINE__, W);
+            E << "Couldn't build unary expression for " << getOp(code);
+        }
+    } // for all operations with this code
+
+    if (!build) {
+        typechecking_error E(W);
+        E << "Undefined unary operation: " << getOp(code) << " ";
+        opnd->PrintType(E.stream());
+        Delete(opnd);
+        return bogus_expr::getError();
+    }
+
+    return build;
+}
+
+void unary_op::registerOp(unary_op* op)
+{
+    if (!registry) {
+        registry = new const unary_op* [uop_none];
+        for (unsigned i=0; i<uop_none; i++) {
+            registry[i] = nullptr;
+        }
+    }
+    if (!op)    return;
+    if (op->getOpcode() >= uop_none) return;
+    op->next = registry[op->getOpcode()];
+    registry[op->getOpcode()] = op;
 }
 
 // ******************************************************************
@@ -25,17 +137,26 @@ unary_op::~unary_op()
 // *                                                                *
 // ******************************************************************
 
-unary::unary(const location& W, const type* t, expr *x)
+unary::unary(const location& W, unary_op::opcode oc, const type* t, expr *x)
  : expr(W, t)
 {
-  DCASSERT(em);
-  DCASSERT(em->isOrdinary(x));
-  opnd = x;
+    DCASSERT(em);
+    DCASSERT(em->isOrdinary(x));
+    code = oc;
+    opnd = x;
 }
 
 unary::~unary()
 {
-  Delete(opnd);
+    Delete(opnd);
+}
+
+bool unary::Print(std::ostream &s, int) const
+{
+    s << unary_op::getOp(code);
+    DCASSERT(opnd);
+    opnd->Print(s);
+    return true;
 }
 
 void unary::Traverse(traverse_data &x)
@@ -73,18 +194,9 @@ void unary::Traverse(traverse_data &x)
 // ******************************************************************
 
 negop
-::negop(const location& W, exprman::unary_opcode oc, const type* t, expr* x)
- : unary(W, t, x)
+::negop(const location& W, unary_op::opcode oc, const type* t, expr* x)
+ : unary(W, oc, t, x)
 {
-  opcode = oc;
-}
-
-bool negop::Print(std::ostream &s, int) const
-{
-  s << em->getOp(opcode);
-  DCASSERT(opnd);
-  opnd->Print(s, 0);
-  return true;
 }
 
 void negop::Traverse(traverse_data &x)
@@ -99,7 +211,7 @@ void negop::Traverse(traverse_data &x)
       shared_object* dd = x.ddlib->makeEdge(0);
       DCASSERT(dd);
       try {
-        x.ddlib->buildUnary(opcode, x.answer->getPtr(), dd);
+        x.ddlib->buildUnary(GetOpCode(), x.answer->getPtr(), dd);
         x.answer->setPtr(dd);
       }
       catch (sv_encoder::error e) {
@@ -123,16 +235,8 @@ void negop::Traverse(traverse_data &x)
 // ******************************************************************
 
 unary_temporal_expr
-::unary_temporal_expr(const location &W, exprman::unary_opcode oc, const type* t, expr* x)
- : unary(W, t, x)
+::unary_temporal_expr(const location &W, unary_op::opcode oc, const type* t, expr* x)
+ : unary(W, oc, t, x)
 {
-  opcode = oc;
 }
 
-bool unary_temporal_expr::Print(std::ostream &s, int) const
-{
-  s << em->getOp(opcode);
-  DCASSERT(opnd);
-  opnd->Print(s, 0);
-  return true;
-}

@@ -872,9 +872,9 @@ class init_statesets : public initializer {
 };
 static init_statesets the_stateset_initializer;
 
-init_statesets::init_statesets() : initializer("statesets.cc", 1, 0)
+init_statesets::init_statesets() : initializer(__FILE__, 1, 0)
 {
-    builds_resource(0, "statesets.cc");
+    builds_resource(0, "types-extra");
 }
 
 void init_statesets::execute()
