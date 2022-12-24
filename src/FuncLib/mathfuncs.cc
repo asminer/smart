@@ -2,10 +2,11 @@
 #define MATHFUNCS_DETAILED
 #include "mathfuncs.h"
 
-#include "../ExprLib/startup.h"
+#include "../Utils/initializer.h"
+
+#include "../ExprLib/symb_tab.h"
 #include "../ExprLib/exprman.h"
 #include "../ExprLib/intervals.h"
-#include "../SymTabs/symtabs.h"
 
 #include <math.h>
 
@@ -982,35 +983,31 @@ void irorder_si::Compute(traverse_data &x, expr** pass, int np)
 // *                                                                *
 // ******************************************************************
 
-class init_mathfuncs : public startup {
-  public:
-    init_mathfuncs();
-    virtual bool execute();
+class init_mathfuncs : public initializer {
+    public:
+        init_mathfuncs();
+    protected:
+        virtual void execute();
 };
-init_mathfuncs the_mathfunc_startup;
+static init_mathfuncs the_mathfunc_initializer;
 
-init_mathfuncs::init_mathfuncs() : startup("init_mathfuncs")
+init_mathfuncs::init_mathfuncs() : initializer(__FILE__, 1, 1)
 {
-  usesResource("em");
-  usesResource("st");
-  usesResource("types");
+    builds_resource(0, "funcs");
+    needs_resource(1, "types");
 }
 
-bool init_mathfuncs::execute()
+void init_mathfuncs::execute()
 {
-  if (0==st || 0==em)  return false;
-
-  static intdiv_si  the_intdiv;           st->AddSymbol(  &the_intdiv );
-  static pow_si     the_pow;              st->AddSymbol(  &the_pow    );
-  static exp_si     the_exp;              st->AddSymbol(  &the_exp    );
-  static log_si     the_log;              st->AddSymbol(  &the_log    );
-  static sqrt_si    the_sqrt;             st->AddSymbol(  &the_sqrt   );
-  static imax_si    the_imax;             st->AddSymbol(  &the_imax   );
-  static rmax_si    the_rmax;             st->AddSymbol(  &the_rmax   );
-  static imin_si    the_imin;             st->AddSymbol(  &the_imin   );
-  static rmin_si    the_rmin;             st->AddSymbol(  &the_rmin   );
-  static irorder_si the_iorder(type::find("int"));  st->AddSymbol(  &the_iorder );
-  static irorder_si the_rorder(type::find("real")); st->AddSymbol(  &the_rorder );
-
-  return true;
+    symbol_table::addGlobal(    new intdiv_si   );
+    symbol_table::addGlobal(    new pow_si      );
+    symbol_table::addGlobal(    new exp_si      );
+    symbol_table::addGlobal(    new log_si      );
+    symbol_table::addGlobal(    new sqrt_si     );
+    symbol_table::addGlobal(    new imax_si     );
+    symbol_table::addGlobal(    new rmax_si     );
+    symbol_table::addGlobal(    new imin_si     );
+    symbol_table::addGlobal(    new rmin_si     );
+    symbol_table::addGlobal(    new irorder_si(type::find("int"))   );
+    symbol_table::addGlobal(    new irorder_si(type::find("real"))  );
 }

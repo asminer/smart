@@ -90,7 +90,7 @@ void place_sv::Affix()
 // **************************************************************************
 
 /// Each transition maintains a collection of these.
-class arc_entry {
+class arc_entry : public shared_object {
   model_var* place;
 
   // for single arcs
@@ -110,7 +110,34 @@ class arc_entry {
   bool is_compiled;
 public:
   arc_entry();
-  ~arc_entry();
+protected:
+  virtual ~arc_entry();
+
+public:
+
+  virtual bool Print(std::ostream &s, int width=0) const {
+      return false;
+  }
+
+  virtual int Compare(const shared_object* o) const {
+      const arc_entry* e = dynamic_cast <const arc_entry*> (o);
+      if (e) {
+          return SIGN(SafeID(place) - SafeID(e->place));
+      }
+      const model_var* p = dynamic_cast <const model_var*> (o);
+      return SIGN(SafeID(place) - SafeID(p));
+  }
+
+  /*
+  inline int Compare(const model_var* p) const {
+    return SIGN(SafeID(place) - SafeID(p));
+  }
+  inline int Compare(const arc_entry* x) const {
+    DCASSERT(x);
+    return Compare(x->place);
+  }
+  */
+
 
   inline void setPlace(model_var* p) {
     DCASSERT(0==input);
@@ -128,14 +155,6 @@ public:
 
   inline expr* getEnabling() const  { return enabling;  }
   inline expr* getFiring() const    { return firing;  }
-
-  inline int Compare(const model_var* p) const {
-    return SIGN(SafeID(place) - SafeID(p));
-  }
-  inline int Compare(const arc_entry* x) const {
-    DCASSERT(x);
-    return Compare(x->place);
-  }
 
   void Compile(const exprman* em);
   void WriteDotArc(outputStream &ds, void* tname) const;
@@ -258,7 +277,7 @@ class transition : public model_event {
   /// Data used during model construction
   struct extra_info {
     /// arcs touching this transition
-    SplayOfPointers <arc_entry> *arclist;
+    splayOfShared *arclist;
     /// guard expressions
     List <expr>* guards;
 
@@ -339,8 +358,8 @@ protected:
     DCASSERT(tmp);
     DCASSERT(build_data);
     if (0==build_data->arclist)
-      build_data->arclist = new SplayOfPointers <arc_entry> (16, 0);
-    arc_entry* find = build_data->arclist->Insert(tmp);
+      build_data->arclist = new splayOfShared (16, 0);
+    arc_entry* find = dynamic_cast <arc_entry*> (build_data->arclist->insert(tmp));
     if (find == tmp) tmp = 0;
     DCASSERT(find);
     return find;
@@ -359,7 +378,7 @@ transition::extra_info::extra_info()
 
 transition::extra_info::~extra_info()
 {
-  if (arclist) arclist->DeleteAndClear();
+  if (arclist) arclist->deleteAndClear();
   delete arclist;
   delete guards;
 }
@@ -442,14 +461,14 @@ void transition::compile(outputStream &ds)
   ds << " [shape=box, label=\"" << Name() << "\"];\n";
   DCASSERT(build_data);
   if (build_data->arclist) {
-    for (int i=0; i<build_data->arclist->NumElements(); i++) {
-      arc_entry* a = build_data->arclist->GetItem(i);
+    for (unsigned i=0; i<build_data->arclist->numElements(); i++) {
+      arc_entry* a = dynamic_cast <arc_entry*> (build_data->arclist->getElement(i));
       DCASSERT(a);
       a->Compile(em);
       a->WriteDotArc(ds, this);
     } // for i
-    for (int i=0; i<build_data->arclist->NumElements(); i++) {
-      arc_entry* a = build_data->arclist->GetItem(i);
+    for (unsigned i=0; i<build_data->arclist->numElements(); i++) {
+      arc_entry* a = dynamic_cast <arc_entry*> (build_data->arclist->getElement(i));
       DCASSERT(a);
       if (a->getEnabling()) {
         enablings.push_back(a->getEnabling());
@@ -2766,22 +2785,22 @@ bool old_init_pnform::execute()
   type::allowSetsOf(t_trans);
 
   // fill symbol table
-  symbol_table* pnsyms = MakeSymbolTable();
-  pnsyms->AddSymbol(  new pn_init     );
-  pnsyms->AddSymbol(  new pn_bound    );
-  pnsyms->AddSymbol(  new pn_arcs     );
-  pnsyms->AddSymbol(  new pn_inhibit  );
-  pnsyms->AddSymbol(  new pn_guard    );
-  pnsyms->AddSymbol(  new pn_firing   );
-  pnsyms->AddSymbol(  new pn_weight   );
-  pnsyms->AddSymbol(  new pn_weight2  );
-  pnsyms->AddSymbol(  new pn_assert   );
-  pnsyms->AddSymbol(  new pn_hide     );
-  pnsyms->AddSymbol(  new pn_tk       );
-  pnsyms->AddSymbol(  new pn_rate     );
-  pnsyms->AddSymbol(  new pn_enabled  );
-  pnsyms->AddSymbol(  new pn_places(t_place->getSetOfThis())        );
-  pnsyms->AddSymbol(  new pn_transitions(t_trans->getSetOfThis())   );
+  symbol_table* pnsyms = new symbol_table;
+  pnsyms->addSymbol(  new pn_init     );
+  pnsyms->addSymbol(  new pn_bound    );
+  pnsyms->addSymbol(  new pn_arcs     );
+  pnsyms->addSymbol(  new pn_inhibit  );
+  pnsyms->addSymbol(  new pn_guard    );
+  pnsyms->addSymbol(  new pn_firing   );
+  pnsyms->addSymbol(  new pn_weight   );
+  pnsyms->addSymbol(  new pn_weight2  );
+  pnsyms->addSymbol(  new pn_assert   );
+  pnsyms->addSymbol(  new pn_hide     );
+  pnsyms->addSymbol(  new pn_tk       );
+  pnsyms->addSymbol(  new pn_rate     );
+  pnsyms->addSymbol(  new pn_enabled  );
+  pnsyms->addSymbol(  new pn_places(t_place->getSetOfThis())        );
+  pnsyms->addSymbol(  new pn_transitions(t_trans->getSetOfThis())   );
   Add_DSDE_varfuncs(petri_def::place_type, pnsyms);
   Add_DSDE_eventfuncs(petri_def::trans_type, pnsyms);
   Add_MCC_varfuncs(petri_def::place_type, pnsyms);

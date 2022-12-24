@@ -53,6 +53,7 @@ smart_SOURCES = \
   Utils/init_opts.cc \
   Utils/library.cc \
   Utils/splay.cc \
+  Utils/env.cc \
   \
   Options/optman.cc \
   Options/options.cc \
@@ -194,6 +195,7 @@ icp_SOURCES = \
   Utils/init_opts.cc \
   Utils/library.cc \
   Utils/splay.cc \
+  Utils/env.cc \
   \
   Options/optman.cc \
   Options/options.cc \

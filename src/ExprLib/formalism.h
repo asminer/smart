@@ -37,6 +37,7 @@ public:
     if (funcs)  return funcs->findSymbol(n);
     else        return 0;
   }
+  /*
   inline long numFuncNames() const {
     if (funcs)  return funcs->numNames();
     else        return 0;
@@ -44,6 +45,11 @@ public:
   inline void copyFuncsToArray(const symbol** list) const {
     if (funcs)  funcs->copyToArray(list);
   }
+  */
+  inline void traverseFuncs(splayOfShared::tree_traversal &t) const {
+      if (funcs) funcs->traverse(t);
+  }
+
   void addCommonFuncs(List <msr_func> &cfl);
 
 
@@ -60,9 +66,11 @@ public:
     if (idents) return idents->numNames();
     else        return 0;
   }
+  /*
   inline void copyIdentsToArray(const symbol** list) const {
     if (idents) idents->copyToArray(list);
   }
+  */
 
   // Required in derived classes:
 

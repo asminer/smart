@@ -5,17 +5,59 @@
 #include <stdlib.h>
 #include "../_Timer/timerlib.h"
 
+#include "../Utils/strings.h"
+#include "../Utils/textfmt.h"
+#include "../Utils/splay.h"
+#include "../Utils/initializer.h"
+#include "../Utils/env.h"
+
 #include "../ExprLib/startup.h"
 #include "../ExprLib/exprman.h"
 #include "../ExprLib/functions.h"
 #include "../ExprLib/help.h"
-#include "../SymTabs/symtabs.h"
-#include "../Utils/strings.h"
-#include "../Utils/textfmt.h"
+#include "../ExprLib/symb_tab.h"
 #include "../ExprLib/formalism.h"
-#include "../include/splay.h"
 
 #include "../Options/optman.h"
+
+// ******************************************************************
+// *                   help_topic_traversal class                   *
+// ******************************************************************
+
+/**
+    Prints documentation for matching help topics.
+*/
+class helpTopicTraversal : public splayOfShared::tree_traversal {
+        doc_formatter &df;
+        const char* keyword;
+    public:
+        helpTopicTraversal(doc_formatter &df, const char* keyw);
+        virtual void visit(shared_object* item);
+};
+
+helpTopicTraversal::helpTopicTraversal(doc_formatter &_d, const char* keyw)
+    : df(_d)
+{
+    keyword = keyw;
+}
+
+void helpTopicTraversal::visit(shared_object* item)
+{
+    const symbol* sitem = dynamic_cast <symbol*> (item);
+    if (0==sitem) return;
+    if (!df.Matches(sitem->Name(), keyword)) return;
+    //
+    // Matching keyword.
+    // Now, traverse the list of symbols with the same name,
+    // and print documentation, but only for help topics
+    //
+    for (; sitem; sitem=sitem->Next()) {
+        const help_topic* ht = dynamic_cast <const help_topic*> (sitem);
+        if (!ht) continue;
+        df.Out() << "\n";
+        ht->PrintDocs(df, keyword);
+    } // for sitem
+}
 
 // ******************************************************************
 // *                        help_base  class                        *
@@ -35,36 +77,43 @@ struct ftnode {
   }
 };
 
-struct help_object {
-  const symbol* item;
-  ftnode* within_models;
+// ******************************************************************
+// *                       help_object  class                       *
+// ******************************************************************
 
-  help_object() { item = 0; within_models = 0; }
-  ~help_object() {
-    while (within_models) {
-      ftnode* foo = within_models;
-      within_models = within_models->next;
-      delete foo;
+/*
+    Help information to be displayed.
+*/
+class help_object : public shared_object {
+public:
+    const symbol* item;
+    ftnode* within_models;
+
+    help_object() { item = 0; within_models = 0; }
+    virtual ~help_object() {
+        while (within_models) {
+            ftnode* foo = within_models;
+            within_models = within_models->next;
+            delete foo;
+        }
     }
-  }
+
+    virtual bool Print(std::ostream &s, int width=0) const {
+        return false;
+    }
+
+    virtual int Compare(const shared_object* o) const {
+        const symbol* x = dynamic_cast <const symbol*> (o);
+        if (!x) {
+            const help_object* h = dynamic_cast <const help_object*> (o);
+            if (h) x = h->item;
+        }
+        DCASSERT(item);
+        return item->Compare(x);
+    }
 
   inline void AddFormalism(const formalism* ft) {
     if (ft) within_models = new ftnode(ft, within_models);
-  }
-
-  inline int Compare(const symbol* xitem) const {
-    DCASSERT(item);
-    DCASSERT(xitem);
-    DCASSERT(item->Name());
-    DCASSERT(xitem->Name());
-    int c = strcmp(item->Name(), xitem->Name());
-    if (c!=0)  return c;
-    return SIGN(SafeID(item) - SafeID(xitem));  // same names, compare IDs.
-  }
-
-  inline int Compare(const help_object* x) const {
-    DCASSERT(x);
-    return Compare(x->item);
   }
 
   void DocumentObject(doc_formatter &df, const char* keyword) const {
@@ -85,10 +134,96 @@ struct help_object {
   }
 };
 
+// ******************************************************************
+// *                      copy_matching  class                      *
+// ******************************************************************
+
+/*
+ * Traversal to copy matching items into another splay tree.
+ */
+class copy_matching : public splayOfShared::tree_traversal {
+        doc_formatter &df;
+        const char* keyword;
+        splayOfShared &doctree;
+        const formalism* ft;
+        help_object* hentry;
+    public:
+        copy_matching(doc_formatter &df, const char* keyw, splayOfShared &dt);
+        inline void changeFormalism(const formalism* _ft) {
+            ft = _ft;
+        }
+        virtual void visit(shared_object* item);
+};
+
+copy_matching::copy_matching(doc_formatter &_d, const char* keyw,
+        splayOfShared &dt) : df(_d), doctree(dt)
+{
+    keyword = keyw;
+    ft = nullptr;
+    hentry = nullptr;
+}
+
+void copy_matching::visit(shared_object* item)
+{
+    const symbol* sitem = dynamic_cast <symbol*> (item);
+    if (0==sitem) return;
+    if (!df.Matches(sitem->Name(), keyword)) return;
+    //
+    // Matching keyword.
+    // Now, traverse the list of symbols with the same name,
+    // and print documentation but only for help topics.
+    //
+    for (; sitem; sitem=sitem->Next()) {
+        const help_topic* ht = dynamic_cast <const help_topic*> (sitem);
+        if (ht) continue;
+        if (!hentry) hentry = new help_object;
+        hentry->item = sitem;
+        help_object* tree_entry =
+            dynamic_cast <help_object*> (doctree.insert(hentry));
+        if (tree_entry == hentry) {
+            // We added hentry to the tree; so clear it for next time
+            hentry = nullptr;
+        }
+        tree_entry->AddFormalism(ft);
+    } // for sitem
+}
+
+// ******************************************************************
+// *                        docuversal class                        *
+// ******************************************************************
+
+/*
+ * Traversal to document all help_objects
+ */
+class docuversal : public splayOfShared::tree_traversal {
+        doc_formatter &df;
+        const char* keyword;
+    public:
+        docuversal(doc_formatter &_df, const char* keyw);
+        virtual void visit(shared_object* item);
+};
+
+docuversal::docuversal(doc_formatter &_df, const char* keyw)
+    : df(_df)
+{
+    keyword = keyw;
+}
+
+void docuversal::visit(shared_object* item)
+{
+    const help_object* hitem = dynamic_cast <help_object*> (item);
+    if (0==hitem) return;
+    hitem->DocumentObject(df, keyword);
+}
+
+// ******************************************************************
+// *                        help_base  class                        *
+// ******************************************************************
+
 class help_base : public simple_internal {
   const symbol** flist;
   long flist_alloc;
-  SplayOfPointers <help_object> *doctree;
+//   splayOfShared *doctree;
   doc_formatter df;
 public:
   help_base(const char* name, int np);
@@ -97,11 +232,8 @@ public:
 protected:
   virtual void Help(const char* search) = 0;
   void HelpOptions(const char* search);
-  void HelpTopics(const symbol_table* st, const char* key);
-  void HelpFuncs(const symbol_table* st, const char* key);
-private:
-  void AddFunctions(const char* search, const formalism* ft, long lsize);
-  void Alloc(long nsz);
+  void HelpTopics(const char* key);
+  void HelpFuncs(const char* key);
 };
 
 help_base::help_base(const char* name, int np)
@@ -110,7 +242,7 @@ help_base::help_base(const char* name, int np)
 {
   flist = 0;
   flist_alloc = 0;
-  doctree = 0;
+  // doctree = 0;
 }
 
 help_base::~help_base()
@@ -144,103 +276,37 @@ void help_base::Compute(traverse_data &x, expr** pass, int np)
 
 void help_base::HelpOptions(const char* search)
 {
-  DCASSERT(em);
-  DCASSERT(em->OptMan());
-  em->OptMan()->DocumentOptions(df, search);
+    option_manager::global().DocumentOptions(df, search);
 }
 
-void help_base::HelpTopics(const symbol_table* st, const char* search)
+void help_base::HelpTopics(const char* search)
 {
-  long max_num = st->NumNames();
-  Alloc(max_num);
-  st->CopyToArray(flist);
-  for (long i=0; i<max_num; i++) {
-    if (!df.Matches(flist[i]->Name(), search))  continue;
-    for (const symbol* chain = flist[i]; chain; chain=chain->Next()) {
-      const help_topic* ht = dynamic_cast <const help_topic*> (chain);
-      if (0==ht) continue;
-      df.Out() << "\n";
-      ht->PrintDocs(df, search);
-    } // for chain
-  } // for i
+    helpTopicTraversal T(df, search);
+    symbol_table::global().traverse(T);
 }
 
-void help_base::HelpFuncs(const symbol_table* st, const char* search)
+void help_base::HelpFuncs(const char* search)
 {
-  // how many functions are there per table?
-  long max_num = st->NumNames();
-  for (unsigned i=0; i<type::numRegistered(); i++) {
-    const type* t = type::getRegistered(i);
-    if (!t->isAFormalism())    continue;
-    const formalism* ft = smart_cast <const formalism*> (t);
-    DCASSERT(ft);
-    max_num = MAX(max_num, ft->numFuncNames());
-  } // for i
+    splayOfShared doctree(32, 0);
+    copy_matching T(df, search, doctree);
 
-  Alloc(max_num);
-  doctree = new SplayOfPointers <help_object> (32, 0);
+    // Add ordinary functions
+    symbol_table::global().traverse(T);
 
-  // Add "ordinary" functions
-  long nfn = st->NumNames();
-  st->CopyToArray(flist);
-  AddFunctions(search, 0, nfn);
+    // Add formalism functions
+    for (unsigned i=0; i<type::numRegistered(); i++) {
+        const type* t = type::getRegistered(i);
+        if (!t->isAFormalism())    continue;
+        const formalism* ft = smart_cast <const formalism*> (t);
+        DCASSERT(ft);
+        T.changeFormalism(ft);
+        ft->traverseFuncs(T);
+    }
 
-  // Add "formalism" functions
-  for (unsigned i=0; i<type::numRegistered(); i++) {
-    const type* t = type::getRegistered(i);
-    if (!t->isAFormalism())    continue;
-    const formalism* ft = smart_cast <const formalism*> (t);
-    DCASSERT(ft);
-    nfn = ft->numFuncNames();
-    ft->copyFuncsToArray(flist);
-    AddFunctions(search, ft, nfn);
-  } // for i
-
-  // dump to array
-  long hlen = doctree->NumElements();
-  help_object** holist = hlen ? new help_object* [hlen] : 0;
-  doctree->CopyToArray(holist);
-  delete doctree;
-  doctree = 0;
-
-  // Print documentation for what we collected
-  for (long i=0; i<hlen; i++) {
-    DCASSERT(holist[i]);
-    holist[i]->DocumentObject(df, search);
-    delete holist[i];
-    holist[i] = 0;
-  } // for i
-  delete[] holist;
-}
-
-void help_base::AddFunctions(const char* key, const formalism* ft, long lsize)
-{
-  help_object* tmp = 0;
-  for (long j=0; j<lsize; j++) {
-    DCASSERT(flist[j]);
-    if (!df.Matches(flist[j]->Name(), key))  continue;
-    for (const symbol* chain = flist[j]; chain; chain = chain->Next()) {
-      // add this function to the tree
-      const help_topic* ht = dynamic_cast <const help_topic*> (chain);
-      if (ht) continue;  // don't add help topics here.
-      if (0==tmp)  tmp = new help_object;
-      tmp->item = chain;
-      help_object* entry = doctree->Insert(tmp);
-      if (entry == tmp)  tmp = 0;
-      DCASSERT(entry);
-      entry->AddFormalism(ft);
-    } // for chain
-  } // for j
-  delete tmp;
-}
-
-void help_base::Alloc(long size)
-{
-  if (0==size) return;
-  if (size < flist_alloc) return;
-  delete[] flist;
-  flist = new const symbol*[size];
-  flist_alloc = size;
+    // Print documentation for what we collected
+    docuversal D(df, search);
+    doctree.traverse(D);
+    doctree.deleteAndClear();
 }
 
 // ******************************************************************
@@ -248,29 +314,27 @@ void help_base::Alloc(long size)
 // ******************************************************************
 
 class help_si : public help_base {
-  const symbol_table* funcs;
 public:
-  help_si(const symbol_table*);
+  help_si();
   virtual void Help(const char* search);
 };
 
-help_si::help_si(const symbol_table* fst) : help_base("help", 1)
+help_si::help_si() : help_base("help", 1)
 {
-  funcs = fst;
   SetFormal(0, type::find("string"), "search");
   SetDocumentation("An on-line help mechanism.  Searches for help topics, functions, options, and option constants containing the substring <search>.  Documentation is displayed for all matches.  Use the search string \"topics\" to view the available help topics.  For function documentation, parameters between elipses (\"...\"s) may repeat.");
 }
 
 void help_si::Help(const char* search)
 {
-  // First: help topics
-  HelpTopics(funcs, search);
+    // First: help topics
+    HelpTopics(search);
 
-  // Next: options
-  HelpOptions(search);
+    // Next: options
+    HelpOptions(search);
 
-  // Finally, functions
-  HelpFuncs(funcs, search);
+    // Finally, functions
+    HelpFuncs(search);
 }
 
 // ******************************************************************
@@ -278,22 +342,20 @@ void help_si::Help(const char* search)
 // ******************************************************************
 
 class helptop_si : public help_base {
-  const symbol_table* funcs;
 public:
-  helptop_si(const symbol_table*);
+  helptop_si();
   virtual void Help(const char* search);
 };
 
-helptop_si::helptop_si(const symbol_table* fst) : help_base("help_topic", 1)
+helptop_si::helptop_si() : help_base("help_topic", 1)
 {
-  funcs = fst;
   SetFormal(0, type::find("string"), "search");
   SetDocumentation("An on-line help mechanism.  Searches for help topics containing the substring <search>.  Works like \"help\" but displays help topics only.");
 }
 
 void helptop_si::Help(const char* search)
 {
-  HelpTopics(funcs, search);
+  HelpTopics(search);
 }
 
 // ******************************************************************
@@ -322,23 +384,21 @@ void helpopt_si::Help(const char* search)
 // ******************************************************************
 
 class helpfunc_si : public help_base {
-  const symbol_table* funcs;
 public:
-  helpfunc_si(const symbol_table*);
+  helpfunc_si();
   virtual void Help(const char* search);
 };
 
-helpfunc_si::helpfunc_si(const symbol_table* fst)
+helpfunc_si::helpfunc_si()
  : help_base("help_function", 1)
 {
-  funcs = fst;
   SetFormal(0, type::find("string"), "search");
   SetDocumentation("An on-line help mechanism.  Searches for functions containing the substring <search>.  Works like \"help\" but displays functions only.");
 }
 
 void helpfunc_si::Help(const char* search)
 {
-  HelpFuncs(funcs, search);
+  HelpFuncs(search);
 }
 
 // ******************************************************************
@@ -586,42 +646,42 @@ void stop_timer_si::Compute(traverse_data &x, expr** pass, int np)
 // *                                                                *
 // ******************************************************************
 
-class init_sysfuncs : public startup {
-  public:
-    init_sysfuncs();
-    virtual bool execute();
+class init_sysfuncs : public initializer {
+    public:
+        init_sysfuncs();
+    protected:
+        virtual void execute();
 };
-init_sysfuncs the_sysfunc_startup;
+static init_sysfuncs the_sysfunc_initializer;
 
-init_sysfuncs::init_sysfuncs() : startup("init_sysfuncs")
+init_sysfuncs::init_sysfuncs() : initializer(__FILE__, 1, 2)
 {
-  usesResource("em");
-  usesResource("st");
-  usesResource("types");
+    builds_resource(0, "funcs");
+    needs_resource(1, "types");
+    needs_resource(2, "env");
 }
 
-bool init_sysfuncs::execute()
+void init_sysfuncs::execute()
 {
-  if (0==st || 0==em)  return false;
+    if (!timer_base::watches) {
+        timer_base::watches = new timer[256];
+    }
 
-  if (0==timer_base::watches) {
-    timer_base::watches = new timer[256];
-  }
+    environ* e = dynamic_cast <environ*> (get_object(2, "env"));
+    if (e) {
+        symbol_table::addGlobal(new version_si(e->version));
+        symbol_table::addGlobal(new env_si(e->env)        );
+    }
 
-  st->AddSymbol(  new help_si(st)     );
-  st->AddSymbol(  new helptop_si(st)  );
-  st->AddSymbol(  new helpopt_si      );
-  st->AddSymbol(  new helpfunc_si(st) );
-  if (version) st->AddSymbol(new version_si(version));
-  st->AddSymbol(  new filename_si     );
-  st->AddSymbol(  new linenumber_si   );
-  st->AddSymbol(  new env_si(env)     );
-  st->AddSymbol(  new exit_si         );
+    symbol_table::addGlobal(  new help_si         );
+    symbol_table::addGlobal(  new helptop_si      );
+    symbol_table::addGlobal(  new helpopt_si      );
+    symbol_table::addGlobal(  new helpfunc_si     );
+    symbol_table::addGlobal(  new filename_si     );
+    symbol_table::addGlobal(  new linenumber_si   );
+    symbol_table::addGlobal(  new exit_si         );
 
-  st->AddSymbol(  new start_timer_si  );
-  st->AddSymbol(  new stop_timer_si   );
-
-  return true;
+    symbol_table::addGlobal(  new start_timer_si  );
+    symbol_table::addGlobal(  new stop_timer_si   );
 }
-
 

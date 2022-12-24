@@ -1,11 +1,12 @@
 
 #include "iofuncs.h"
 
-#include "../ExprLib/startup.h"
-#include "../ExprLib/functions.h"
-#include "../SymTabs/symtabs.h"
 #include "../Utils/strings.h"
 #include "../Utils/textfmt.h"
+#include "../Utils/initializer.h"
+
+#include "../ExprLib/functions.h"
+#include "../ExprLib/symb_tab.h"
 #include "../ExprLib/exprman.h"
 
 #include <iostream>
@@ -700,41 +701,37 @@ void warning_file::Compute(traverse_data &x, expr** pass, int np)
 // *                                                                *
 // ******************************************************************
 
-class init_iofuncs : public startup {
-  public:
-    init_iofuncs();
-    virtual bool execute();
+class init_iofuncs : public initializer {
+    public:
+        init_iofuncs();
+    protected:
+        virtual void execute();
 };
-init_iofuncs the_iofunc_startup;
+static init_iofuncs the_iofunc_initializer;
 
-init_iofuncs::init_iofuncs() : startup("init_iofuncs")
+init_iofuncs::init_iofuncs() : initializer(__FILE__, 1, 1)
 {
-  usesResource("em");
-  usesResource("st");
-  usesResource("types");
+    builds_resource(0, "funcs");
+    needs_resource(1, "types");
 }
 
-bool init_iofuncs::execute()
+void init_iofuncs::execute()
 {
-  if (0==st || 0==em)  return false;
+    input_file* inf = new input_file;
+    symbol_table::addGlobal(    inf                     );
 
-  input_file* inf = new input_file;
-  st->AddSymbol(  inf  );
+    symbol_table::addGlobal(    new read_bool(*inf)     );
+    symbol_table::addGlobal(    new read_int(*inf)      );
+    symbol_table::addGlobal(    new read_real(*inf)     );
+    symbol_table::addGlobal(    new read_string(*inf)   );
 
-  st->AddSymbol(  new read_bool(*inf)   );
-  st->AddSymbol(  new read_int(*inf)    );
-  st->AddSymbol(  new read_real(*inf)   );
-  st->AddSymbol(  new read_string(*inf) );
-
-  st->AddSymbol(  new print_type    );
-  st->AddSymbol(  new sprint_ci     );
-  st->AddSymbol(  new print_ci      );
-  st->AddSymbol(  new output_file   );
-  st->AddSymbol(  new report_file   );
-  st->AddSymbol(  new warning_file  );
-  st->AddSymbol(  new error_file    );
-
-  return true;
+    symbol_table::addGlobal(    new print_type          );
+    symbol_table::addGlobal(    new sprint_ci           );
+    symbol_table::addGlobal(    new print_ci            );
+    symbol_table::addGlobal(    new output_file         );
+    symbol_table::addGlobal(    new report_file         );
+    symbol_table::addGlobal(    new warning_file        );
+    symbol_table::addGlobal(    new error_file          );
 }
 
 

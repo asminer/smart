@@ -28,6 +28,11 @@ class symbol_table {
         /// Remove the given symbol.  Return true if the item was in the table.
         bool removeSymbol(symbol* s);
 
+        /// Traverse the symbol table.
+        inline void traverse(splayOfShared::tree_traversal &t) const {
+            table.traverse(t);
+        }
+
         /** Pop and return the last added symbol.
             This only works if there is no chaining, i.e.,
             symbol names are unique;
@@ -45,9 +50,9 @@ class symbol_table {
         /** Grab a copy of all symbols, in order.
             Used primarily for documentation.
         */
-        void copyToArray(const symbol** list);
+//        void copyToArray(const symbol** list);
 
-        void documentSymbols(doc_formatter &df, const char* keyword);
+ //       void documentSymbols(doc_formatter &df, const char* keyword);
 
         /// The "global" symbol table.
         static inline symbol_table& global() {

@@ -1468,28 +1468,28 @@ bool old_init_tamform::execute()
   }
 
   // fill symbol table
-  symbol_table* tamsyms = MakeSymbolTable();
-  tamsyms->AddSymbol(  new tam_strength );
-  tamsyms->AddSymbol(  new tam_tiledef  );
-  tamsyms->AddSymbol(  new tam_board    );
-  tamsyms->AddSymbol(  new tam_init     );
-  tamsyms->AddSymbol(  new tam_prio     );
-  tamsyms->AddSymbol(  new tam_export   );
+  symbol_table* tamsyms = new symbol_table;
+  tamsyms->addSymbol(  new tam_strength );
+  tamsyms->addSymbol(  new tam_tiledef  );
+  tamsyms->addSymbol(  new tam_board    );
+  tamsyms->addSymbol(  new tam_init     );
+  tamsyms->addSymbol(  new tam_prio     );
+  tamsyms->addSymbol(  new tam_export   );
   tam->setFunctions(tamsyms);
   tam->addCommonFuncs(CML);
 
   // fill identifier table
-  symbol_table* tamids = MakeSymbolTable();
-  tamids->AddSymbol(
+  symbol_table* tamids = new symbol_table;
+  tamids->addSymbol(
     new tam_border(tam_def::border_type, strdup("north"), tam_def::NORTH)
   );
-  tamids->AddSymbol(
+  tamids->addSymbol(
     new tam_border(tam_def::border_type, strdup("south"), tam_def::SOUTH)
   );
-  tamids->AddSymbol(
+  tamids->addSymbol(
     new tam_border(tam_def::border_type, strdup("east"), tam_def::EAST)
   );
-  tamids->AddSymbol(
+  tamids->addSymbol(
     new tam_border(tam_def::border_type, strdup("west"), tam_def::WEST)
   );
   tam->setIdentifiers(tamids);

@@ -1,14 +1,14 @@
 
 #include "basefuncs.h"
 
-#include "../ExprLib/startup.h"
+#include "../Utils/initializer.h"
+#include "../Utils/strings.h"
+
 #include "../ExprLib/intervals.h"
 #include "../ExprLib/functions.h"
-#include "../SymTabs/symtabs.h"
+#include "../ExprLib/symb_tab.h"
 #include "../ExprLib/exprman.h"
-#include "../Utils/strings.h"
 #include "../ExprLib/mod_inst.h"
-// #include <string.h>
 
 // ******************************************************************
 // *                        delete_si  class                        *
@@ -613,30 +613,26 @@ int case_ci::Substitute(traverse_data &x, expr** pass, int np) const
 // *                                                                *
 // ******************************************************************
 
-class init_basefuncs : public startup {
-  public:
-    init_basefuncs();
-    virtual bool execute();
+class init_basefuncs : public initializer {
+    public:
+        init_basefuncs();
+    protected:
+        virtual void execute();
 };
-init_basefuncs the_basefunc_startup;
+static init_basefuncs the_basefunc_initializer;
 
-init_basefuncs::init_basefuncs() : startup("init_basefuncs")
+init_basefuncs::init_basefuncs() : initializer(__FILE__, 1, 1)
 {
-  usesResource("em");
-  usesResource("st");
-  usesResource("types");
+    builds_resource(0, "funcs");
+    needs_resource(1, "types");
 }
 
-bool init_basefuncs::execute()
+void init_basefuncs::execute()
 {
-  if (0==st || 0==em)  return false;
-
-  st->AddSymbol(  new delete_si   );
-  st->AddSymbol(  new substr_si   );
-  st->AddSymbol(  new is_null     );
-  st->AddSymbol(  new compute     );
-  st->AddSymbol(  new cond_ci     );
-  st->AddSymbol(  new case_ci     );
-
-  return true;
+  symbol_table::addGlobal(  new delete_si   );
+  symbol_table::addGlobal(  new substr_si   );
+  symbol_table::addGlobal(  new is_null     );
+  symbol_table::addGlobal(  new compute     );
+  symbol_table::addGlobal(  new cond_ci     );
+  symbol_table::addGlobal(  new case_ci     );
 }

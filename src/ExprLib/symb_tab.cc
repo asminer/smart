@@ -133,6 +133,7 @@ symbol* symbol_table::getItem(unsigned i) const
 }
 */
 
+/*
 void symbol_table::copyToArray(const symbol** list)
 {
     if (!list)  return;
@@ -164,7 +165,7 @@ void symbol_table::documentSymbols(doc_formatter &df, const char* keyword)
     }
     delete[] list;
 }
-
+*/
 
 // ******************************************************************
 // *                                                                *

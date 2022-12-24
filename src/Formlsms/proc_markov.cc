@@ -355,7 +355,7 @@ option_manager* init_markovproc::makeSubsettings(unsigned i, bool auxvectors)
 #ifdef DEBUG_NUMERICAL_ITERATIONS
     markov_process::lsopts[i].debug = true;
 #endif
-    option_manager* settings = MakeOptionManager();
+    option_manager* settings = new option_manager;
     settings->addIntOption(
         "MinIters",
         "Minimum number of iterations.  Guarantees that at least this many iterations will occur.",

@@ -32,6 +32,7 @@
 
 #include "../Utils/library.h"
 #include "../Utils/initializer.h"
+#include "../Utils/env.h"
 
 #include "../ExprLib/exprman.h"
 #include "../ExprLib/startup.h"
@@ -58,47 +59,25 @@ cmdline_error::cmdline_error() : error_msg("ERROR")
 
 // ============================================================
 
-class first_init : public startup {
+class smart_init : public initializer {
+        const char** env;
     public:
-        first_init(exprman* em, symbol_table* st, const char** env);
-        virtual bool execute();
+        smart_init(const char** env);
         static const char* getVersionString();
         static const char* getLongName();
-    private:
-        exprman* hold_em;
-        symbol_table* hold_st;
-        const char** hold_env;
+    protected:
+        virtual void execute();
 };
 
 // ============================================================
 
-first_init::first_init(exprman* _em, symbol_table* _st, const char** _env)
-    : startup("first_init")
+smart_init::smart_init(const char** _env) : initializer(__FILE__, 1, 0)
 {
-    buildsResource("em");
-    buildsResource("st");
-    buildsResource("env");
-    buildsResource("version");
-    hold_em = _em;
-    hold_st = _st;
-    hold_env = _env;
+    env = _env;
+    builds_resource(0, "env");
 }
 
-bool first_init::execute()
-{
-    em = hold_em;
-    st = hold_st;
-    env = hold_env;
-    version = getVersionString();
-
-    DCASSERT(em);
-    DCASSERT(st);
-    DCASSERT(env);
-    DCASSERT(version);
-    return true;
-}
-
-const char* first_init::getVersionString()
+const char* smart_init::getVersionString()
 {
     static char* version = 0;
     if (0==version) {
@@ -117,17 +96,59 @@ const char* first_init::getVersionString()
     return version;
 }
 
-const char* first_init::getLongName()
+const char* smart_init::getLongName()
 {
     return "Stochastic Model-checking Analyzer for Reliability and Timing";
 }
 
+void smart_init::execute()
+{
+    set_object(0, "env", new environ(getVersionString(), env));
+}
+
+
+// ============================================================
+/*
+class first_init : public startup {
+    public:
+        first_init(exprman* em, symbol_table* st, const char** env);
+        virtual bool execute();
+    private:
+        exprman* hold_em;
+        symbol_table* hold_st;
+};
+*/
+// ============================================================
+/*
+first_init::first_init(exprman* _em, symbol_table* _st, const char** _env)
+    : startup("first_init")
+{
+    buildsResource("em");
+    buildsResource("st");
+    buildsResource("env");
+    hold_em = _em;
+    hold_st = _st;
+    hold_env = _env;
+}
+
+bool first_init::execute()
+{
+    em = hold_em;
+    st = hold_st;
+    env = hold_env;
+
+    DCASSERT(em);
+    DCASSERT(st);
+    DCASSERT(env);
+    return true;
+}
+*/
 // ============================================================
 
 int Usage()
 {
     outputStream &out = outputStream::globalOut();
-    out << "\n" << first_init::getVersionString() << "\n";
+    out << "\n" << smart_init::getVersionString() << "\n";
     out << "\nSupporting libraries:\n";
     library::printLibraryVersions(out.stream());
     out << "\n";
@@ -146,13 +167,13 @@ int Copyrights()
     doc_formatter df(80, outputStream::globalOut());
     df.Out() << "\n";
     df.begin_heading();
-    df.Out() << first_init::getVersionString();
+    df.Out() << smart_init::getVersionString();
     if (SMART_DATE) {
         df.Out() << ", released " << SMART_DATE << "\n";
     }
     df.end_heading();
     df.begin_indent();
-    df.Out() << first_init::getLongName() << "\n";
+    df.Out() << smart_init::getLongName() << "\n";
     df.Out() << "Copyright (C) 2017-2018, Gianfranco Ciardo and Andrew Miner\n";
     df.Out() << "Released under the Apache License, version 2\n";
 #ifdef PACKAGE_URL
@@ -242,13 +263,17 @@ int main(int argc, const char** argv, const char** env)
   symbol_table* st = MakeSymbolTable();
 
   // Bootstrap startups, and run them
+  /*
   first_init the_first_init(em, st, env);
   if ( ! startup::executeAll() ) {
     internal_error E(__FILE__, __LINE__);
     E << "Deadlock in startups";
     return -1;
   }
+  */
+
   // Run initializers
+  static smart_init the_smart_init(env);
   initializer::execute_all(false);
 
   // Parser initialization
