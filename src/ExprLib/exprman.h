@@ -95,34 +95,6 @@ public:
   // Indicates a measure whose classification is waiting for dependencies.
   engtype* BLOCKED_ENGINE;
 
-  /// Binary operators.
-  enum binary_opcode {
-    /// Boolean implication
-    bop_implies   = 0,
-    /// Modulo operator
-    bop_mod       = 1,
-    /// Set difference
-    bop_diff      = 2,
-    /// Check for equality
-    bop_equals    = 3,
-    /// Check for inequality
-    bop_nequal    = 4,
-    /// Greater than
-    bop_gt        = 5,
-    /// Greater or equal
-    bop_ge        = 6,
-    /// Less than
-    bop_lt        = 7,
-    /// Less or equal
-    bop_le        = 8,
-    /// Temporal operator "U"
-    bop_until     = 9,
-    /// Temporal operator "AND"
-    bop_and       = 10,
-    /// no operation (placeholder).  MUST BE THE LARGEST INTEGER.
-    bop_none      = 11
-  };
-
   /// Trinary operators.
   enum trinary_opcode {
     /// Set intervals.
@@ -750,7 +722,7 @@ public:
         @return true,   on success.
                 false,  if any error occurred.
   */
-  virtual bool registerOperation(binary_op* op) = 0;
+  // virtual bool registerOperation(binary_op* op) = 0;
 
   /** Register a trinary operation.
         @param  op  Trinary operation to register.
@@ -773,13 +745,13 @@ public:
   // +-----------------------------------------------------------------+
 
   // static const char* getOp(unary_opcode op);
-  static const char* getOp(binary_opcode op);
+  // static const char* getOp(binary_opcode op);
   static const char* getFirst(trinary_opcode op);
   static const char* getSecond(trinary_opcode op);
   static const char* getOp(bool flip, assoc_opcode op);
 
   // static const char* documentOp(unary_opcode op);
-  static const char* documentOp(binary_opcode op);
+  // static const char* documentOp(binary_opcode op);
   static const char* documentOp(trinary_opcode op);
   static const char* documentOp(bool flip, assoc_opcode op);
 
@@ -800,8 +772,8 @@ public:
         @return 0,  on any kind of error;
                 the type of the operation, otherwise.
   */
-  virtual const type* getTypeOf(const type* left, binary_opcode op,
-          const type* right) const = 0;
+//  virtual const type* getTypeOf(const type* left, binary_opcode op,
+//          const type* right) const = 0;
 
   /** Determine the type of a trinary operation expression.
 
@@ -852,8 +824,8 @@ public:
                         (i.e., type mismatch).
                 a new expression, otherwise.
   */
-  virtual expr* makeBinaryOp(const location& W,
-      expr* left, binary_opcode op, expr* rt) const = 0;
+  // virtual expr* makeBinaryOp(const location& W,
+      // expr* left, binary_opcode op, expr* rt) const = 0;
 
 
   /** Make a trinary operation expression.

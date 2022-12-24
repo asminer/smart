@@ -24,58 +24,133 @@ class binary;
      and invoked whenever a binary expression is constructed.
 */
 class binary_op {
-  exprman::binary_opcode opcode;
-protected:
-  const exprman* em;
-public:
-  binary_op(exprman::binary_opcode opcode);
-  virtual ~binary_op();
+    public:
+        enum opcode {
+            /// Boolean implication
+            bop_implies   = 0,
+            /// Modulo operator
+            bop_mod       = 1,
+            /// Set difference
+            bop_diff      = 2,
+            /// Check for equality
+            bop_equals    = 3,
+            /// Check for inequality
+            bop_nequal    = 4,
+            /// Greater than
+            bop_gt        = 5,
+            /// Greater or equal
+            bop_ge        = 6,
+            /// Less than
+            bop_lt        = 7,
+            /// Less or equal
+            bop_le        = 8,
+            /// Temporal operator "U"
+            bop_until     = 9,
+            /// Temporal operator "AND"
+            bop_and       = 10,
+            /// no operation (placeholder).  MUST BE THE LARGEST INTEGER.
+            bop_none      = 11
+        };
 
-  inline exprman::binary_opcode getOpcode() const { return opcode; }
+    public:
+        binary_op(opcode code);
+        virtual ~binary_op();
 
-  // Define these in the derived class
+        inline opcode getOpcode() const { return code; }
 
-  /** Total promotion distance, if any, for operands.
-        @param  lt  Type of left operand.
-        @param  rt  Type of right operand.
-        @return Sum of promotion distances required if we want
-                    to apply "lt opcode rt".
-                -1  if we cannot promote lt or rt to satisfy the operator.
-  */
-  virtual int getPromoteDistance(const type* lt, const type* rt) const = 0;
+        //
+        // Statics, for the entire registry of unary ops
+        //
 
-  /** Are operations for the specified operand type \a t handled by us?
-        @param  lt  Type of left operand.
-        @param  rt  Type of right operand.
-        @return true,   if we can build a legal expression "x opcode y"
-                        where x has type \a lt, y has type \a rt.
-                false,  otherwise.
-  */
-  inline bool isDefinedForTypes(const type* lt, const type* rt) const {
-    return getPromoteDistance(lt, rt) >= 0;
-  }
+        /**
+            Get the lexeme for a given opcode.
+        */
+        static const char* getOp(opcode code);
 
-  /** If we apply this operator, what is the resulting type?
-        @param  lt  Type of left operand.
-        @param  rt  Type of right operand.
-        @return  Type of the expression, will be 0 if undefined.
-  */
-  virtual const type* getExprType(const type* lt, const type* rt) const = 0;
+        /**
+            Get documentation for a given opcode.
+        */
+        static const char* documentOp(opcode code);
 
-  /** Build an expression "left opcode right".
-      The left and right operands are promoted as necessary.
-        @param  W     Location of the expression.
-        @param  left  Left operand.
-        @param  right Right operand.
-        @return A new expression "left opcode right", or
-                0 if an error occurred.
-                Will return 0 if "isDefinedForTypes()" returns false.
-  */
-  virtual binary* makeExpr(const location& W, expr* left, expr* right) const = 0;
+        /** Determine the type of a binary operation expression.
 
-private:
-  const  binary_op* next;
-  friend class superman;
+            @param  left  The left operand type.
+            @param  op    The operation to perform.
+            @param  right The right operand type.
+            @return 0,  on any kind of error;
+                        the type of the operation, otherwise.
+        */
+        static const type* getTypeOf(const type* l, opcode op, const type* r);
+
+        /** Make a binary operation expression.
+
+            @param  W     Where defined.
+            @param  left  The left operand.
+            @param  op    The operation to perform.
+            @param  rt    The right operand.
+            @return NULL,   if either opnd is NULL.
+                    ERROR,  if either opnd is ERROR,
+                            or if the operand cannot be applied
+                            (i.e., type mismatch).
+                    a new expression, otherwise.
+        */
+        static expr* makeExpr(const location& W, expr* left,
+                opcode op, expr* rt);
+
+    protected:
+        /** Are operations for the specified operand type \a t handled by us?
+            @param  lt  Type of left operand.
+            @param  rt  Type of right operand.
+            @return true,   if we can build a legal expression "x opcode y"
+                            where x has type \a lt, y has type \a rt.
+                    false,  otherwise.
+        */
+        inline bool isDefinedForTypes(const type* lt, const type* rt) const {
+            return getPromoteDistance(lt, rt) >= 0;
+        }
+
+    // Define these in the derived class
+
+        /** Total promotion distance, if any, for operands.
+            @param  lt  Type of left operand.
+            @param  rt  Type of right operand.
+            @return Sum of promotion distances required if we want
+                        to apply "lt opcode rt".
+                    -1  if we cannot promote lt or rt to satisfy the operator.
+        */
+        virtual int getPromoteDistance(const type* lt, const type* rt)
+            const = 0;
+
+        /** If we apply this operator, what is the resulting type?
+            @param  lt  Type of left operand.
+            @param  rt  Type of right operand.
+            @return  Type of the expression, will be 0 if undefined.
+        */
+        virtual const type* getExprType(const type* lt, const type* rt)
+            const = 0;
+
+        /** Build an expression "left opcode right".
+            The left and right operands are promoted as necessary.
+            @param  W     Location of the expression.
+            @param  left  Left operand.
+            @param  right Right operand.
+            @return A new expression "left opcode right", or
+                    0 if an error occurred.
+                    Will return 0 if "isDefinedForTypes()" returns false.
+        */
+        virtual expr* makeExpr(const location& W, expr* left, expr* right)
+            const = 0;
+
+    private:
+        static const binary_op* bestMatch(const type* lt, opcode op,
+                const type* rt);
+        void registerOp(binary_op* op);
+
+    private:
+        opcode code;
+        const  binary_op* next;
+
+        static const binary_op** registry;
 };
 
 
@@ -94,9 +169,9 @@ class binary : public expr {
 protected:
   expr* left;
   expr* right;
-  exprman::binary_opcode opcode;
+  binary_op::opcode opcode;
 public:
-  binary(const location &W, exprman::binary_opcode oc,
+  binary(const location &W, binary_op::opcode oc,
    const type* t, expr* l, expr* r);
 protected:
   virtual ~binary();

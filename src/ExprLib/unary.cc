@@ -50,6 +50,32 @@ const char* unary_op::documentOp(opcode code)
 
 const type* unary_op::getTypeOf(opcode code, const type* x)
 {
+    const unary_op* match = bestMatch(code, x);
+    return match ? match->getExprType(x) : nullptr;
+}
+
+expr* unary_op::makeExpr(const location &W, opcode code, expr* opnd)
+{
+    //
+    // Deal with special operands
+    //
+    if (bogus_expr::orNull(opnd)) {
+        return opnd;
+    }
+
+    const unary_op* match = bestMatch(code, opnd->Type());
+    if (match) {
+        return match->makeExpr(W, opnd);
+    }
+    typechecking_error E(W);
+    E << "Undefined unary operation: " << getOp(code) << " ";
+    opnd->PrintType(E.stream());
+    Delete(opnd);
+    return bogus_expr::getError();
+}
+
+const unary_op* unary_op::bestMatch(opcode code, const type* x)
+{
     const unary_op* match = nullptr;
     unsigned num_matches = 0;
     for (const unary_op* ptr = (code<uop_none) ? registry[code] : nullptr;
@@ -60,61 +86,15 @@ const type* unary_op::getTypeOf(opcode code, const type* x)
         num_matches++;
     } // for all operations with this code
 
-    if (0==num_matches)  return nullptr;
-    if (1==num_matches)  return match->getExprType(x);
-
-    // too many matches, this should not happen!
-    internal_error E(__FILE__, __LINE__);
-    E << "Cannot decide on unary operation: " << getOp(code) << " ";
-    if (x)  E << *x;
-    else    E << "notype";
-    return nullptr;
-}
-
-expr* unary_op::makeExpr(const location &W, opcode code, expr* opnd)
-{
-    //
-    // Deal with special operands
-    //
-    if (    (nullptr == opnd) ||
-            (bogus_expr::getError() == opnd) ||
-            (bogus_expr::getDefault() == opnd) )
-    {
-        return opnd;
+    if (num_matches > 1) {
+        // too many matches, this should not happen!
+        internal_error E(__FILE__, __LINE__);
+        E << "Cannot decide on unary operation: " << getOp(code) << " ";
+        if (x)  E << *x;
+        else    E << "notype";
+        return nullptr;
     }
-
-    //
-    // Traverse registry
-    //
-    expr* build = nullptr;
-    for (const unary_op* ptr = (code<uop_none) ? registry[code] : nullptr;
-            ptr; ptr=ptr->next)
-    {
-        if (! ptr->isDefinedForType(opnd->Type())) continue;
-        if (build) {
-            // More than one match!
-            internal_error E(__FILE__, __LINE__, W);
-            E << "Cannot decide on unary operation: " << getOp(code) << " ";
-            opnd->PrintType(E.stream());
-            Delete(build);
-            return nullptr;
-        }
-        build = ptr->makeExpr(W, opnd);
-        if (!build) {
-            internal_error E(__FILE__, __LINE__, W);
-            E << "Couldn't build unary expression for " << getOp(code);
-        }
-    } // for all operations with this code
-
-    if (!build) {
-        typechecking_error E(W);
-        E << "Undefined unary operation: " << getOp(code) << " ";
-        opnd->PrintType(E.stream());
-        Delete(opnd);
-        return bogus_expr::getError();
-    }
-
-    return build;
+    return match;
 }
 
 void unary_op::registerOp(unary_op* op)
@@ -140,10 +120,9 @@ void unary_op::registerOp(unary_op* op)
 unary::unary(const location& W, unary_op::opcode oc, const type* t, expr *x)
  : expr(W, t)
 {
-    DCASSERT(em);
-    DCASSERT(em->isOrdinary(x));
     code = oc;
     opnd = x;
+    DCASSERT(!bogus_expr::orNull(opnd));
 }
 
 unary::~unary()

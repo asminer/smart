@@ -47,9 +47,9 @@ class unary_op {
         virtual ~unary_op();
 
         inline opcode getOpcode() const { return code; }
-        inline const char* getOp() const {
-            return unary_op::getOp(code);
-        }
+        // inline const char* getOp() const {
+            // return unary_op::getOp(code);
+        // }
 
         //
         // Statics, for the entire registry of unary ops
@@ -96,7 +96,6 @@ class unary_op {
             return getExprType(t);
         }
 
-
   // Define these in the derived class
 
         /** If we apply this operator to an expression,
@@ -117,6 +116,7 @@ class unary_op {
         virtual expr* makeExpr(const location& W, expr* x) const = 0;
 
     private:
+        static const unary_op* bestMatch(opcode op, const type* x);
         void registerOp(unary_op* op);
 
     private:

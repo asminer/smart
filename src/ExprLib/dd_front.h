@@ -2,6 +2,8 @@
 #ifndef DD_FRONT_H
 #define DD_FRONT_H
 
+#include "unary.h"
+#include "binary.h"
 #include "exprman.h"
 
 class shared_state;
@@ -240,7 +242,7 @@ public:
         @throws       Appropriate error code.
   */
   virtual void  buildBinary(const shared_object* left,
-                            exprman::binary_opcode op,
+                            binary_op::opcode op,
                             const shared_object* right,
                             shared_object* ans) = 0;
 

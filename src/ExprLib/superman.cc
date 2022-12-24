@@ -549,6 +549,7 @@ expr* superman::makeTypecast(const location& W,
 //
 //
 
+/*
 bool superman::registerOperation(unary_op* op)
 {
   if (0==op)    return false;
@@ -570,6 +571,7 @@ bool superman::registerOperation(binary_op* op)
   reg_binary[b] = op;
   return true;
 }
+*/
 
 bool superman::registerOperation(trinary_op* op)
 {
@@ -599,6 +601,7 @@ bool superman::registerOperation(assoc_op* op)
 //
 //
 
+/*
 const type* superman::getTypeOf(unary_opcode op, const type* x) const
 {
   const unary_op* list;
@@ -662,6 +665,7 @@ const type* superman
   else    E << "notype";
   return 0;
 }
+*/
 
 const type* superman::getTypeOf(trinary_opcode op, const type* lt,
       const type* mt, const type* rt) const
@@ -745,7 +749,7 @@ const type* superman
 }
 
 
-
+/*
 expr* superman::makeUnaryOp(const location& W,
       unary_opcode op, expr* opnd) const
 {
@@ -859,6 +863,7 @@ expr* superman::makeBinaryOp(const location &W,
   rt->PrintType(E.stream());
   return 0;
 }
+*/
 
 expr* superman::makeTrinaryOp(const location &W, trinary_opcode op,
         expr* l, expr* m, expr* r) const

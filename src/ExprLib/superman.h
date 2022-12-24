@@ -90,13 +90,16 @@ public:
 
   // Registering operations
 
+  /*
   virtual bool registerOperation(unary_op* op);
   virtual bool registerOperation(binary_op* op);
   virtual bool registerOperation(trinary_op* op);
   virtual bool registerOperation(assoc_op* op);
+  */
 
   // Building expressions with operators
 
+  /*
   const type* getTypeOf(unary_opcode op, const type* x) const;
   const type* getTypeOf(const type* l, binary_opcode op, const type* r) const;
   const type* getTypeOf(trinary_opcode op, const type* left,
@@ -112,6 +115,7 @@ public:
       expr* l, expr* m, expr* r) const;
   virtual expr* makeAssocOp(const location& W, assoc_opcode op,
       expr** opnds, bool* f, int nops) const;
+      */
 
   // Solution engine types
 

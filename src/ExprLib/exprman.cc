@@ -207,6 +207,7 @@ expr* exprman::promote(expr* e, bool proc, bool rand, const expr* fp) const
 // |                      Building  expressions                      |
 // +-----------------------------------------------------------------+
 
+/*
 const char* exprman::getOp(unary_opcode op)
 {
   switch (op) {
@@ -242,7 +243,7 @@ const char* exprman::getOp(binary_opcode op)
   }
   return "error";  // will never get here, keep compilers happy
 }
-
+*/
 const char* exprman::getFirst(trinary_opcode op)
 {
   switch (op) {
@@ -281,6 +282,7 @@ const char* exprman::getOp(bool flip, assoc_opcode op)
   return "error";  // will never get here, keep compilers happy
 }
 
+/*
 const char* exprman::documentOp(unary_opcode op)
 {
   switch (op) {
@@ -307,6 +309,7 @@ const char* exprman::documentOp(binary_opcode op)
   }
   return 0;  // will never get here, keep compilers happy
 }
+*/
 
 const char* exprman::documentOp(trinary_opcode op)
 {

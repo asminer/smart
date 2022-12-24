@@ -23,6 +23,11 @@ public:
 
     static expr* getError();
     static expr* getDefault();
+
+    static inline bool orNull(expr* x) {
+        if (!x) return true;
+        return dynamic_cast <bogus_expr*> (x);
+    }
 protected:
     virtual void Traverse(traverse_data &x);
 };

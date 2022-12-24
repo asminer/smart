@@ -41,6 +41,7 @@ expr* bogus_expr::getError()
     if (!the_error) {
         the_error = new bogus_expr("error");
     }
+    Share(the_error);
     return the_error;
 }
 
@@ -50,6 +51,7 @@ expr* bogus_expr::getDefault()
     if (!the_default) {
         the_default = new bogus_expr("default");
     }
+    Share(the_default);
     return the_default;
 }
 
