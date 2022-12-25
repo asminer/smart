@@ -95,16 +95,6 @@ public:
   // Indicates a measure whose classification is waiting for dependencies.
   engtype* BLOCKED_ENGINE;
 
-  /// Trinary operators.
-  enum trinary_opcode {
-    /// Set intervals.
-    top_interval  = 0,
-    /// If-then-else
-    top_ite    = 1,
-    /// no operation (placeholder).  MUST BE THE LARGEST INTEGER.
-    top_none  = 2
-  };
-
   /// Associative operators.
   enum assoc_opcode {
     /// Boolean AND
@@ -746,13 +736,13 @@ public:
 
   // static const char* getOp(unary_opcode op);
   // static const char* getOp(binary_opcode op);
-  static const char* getFirst(trinary_opcode op);
-  static const char* getSecond(trinary_opcode op);
+  // static const char* getFirst(trinary_opcode op);
+  // static const char* getSecond(trinary_opcode op);
   static const char* getOp(bool flip, assoc_opcode op);
 
   // static const char* documentOp(unary_opcode op);
   // static const char* documentOp(binary_opcode op);
-  static const char* documentOp(trinary_opcode op);
+  // static const char* documentOp(trinary_opcode op);
   static const char* documentOp(bool flip, assoc_opcode op);
 
   /** Determine the type of a unary operation expression.
@@ -784,8 +774,8 @@ public:
         @return 0,  on any kind of error;
                 the type of the operation, otherwise.
   */
-  virtual const type* getTypeOf(trinary_opcode op, const type* left,
-      const type* middle, const type* right) const = 0;
+  //virtual const type* getTypeOf(trinary_opcode op, const type* left,
+      //const type* middle, const type* right) const = 0;
 
   /** Determine the type of an associative operation (sub)expression.
 
@@ -840,8 +830,8 @@ public:
                         (i.e., type mismatch).
                 a new expression, otherwise.
   */
-  virtual expr* makeTrinaryOp(const location& W, trinary_opcode op,
-        expr* l, expr* m, expr* r) const = 0;
+  // virtual expr* makeTrinaryOp(const location& W, trinary_opcode op,
+        // expr* l, expr* m, expr* r) const = 0;
 
 
   /** Make an associative operation expression.

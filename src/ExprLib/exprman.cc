@@ -243,7 +243,7 @@ const char* exprman::getOp(binary_opcode op)
   }
   return "error";  // will never get here, keep compilers happy
 }
-*/
+
 const char* exprman::getFirst(trinary_opcode op)
 {
   switch (op) {
@@ -265,6 +265,7 @@ const char* exprman::getSecond(trinary_opcode op)
   }
   return "error";
 }
+*/
 
 const char* exprman::getOp(bool flip, assoc_opcode op)
 {
@@ -309,7 +310,6 @@ const char* exprman::documentOp(binary_opcode op)
   }
   return 0;  // will never get here, keep compilers happy
 }
-*/
 
 const char* exprman::documentOp(trinary_opcode op)
 {
@@ -320,6 +320,7 @@ const char* exprman::documentOp(trinary_opcode op)
   }
   return 0;
 }
+*/
 
 const char* exprman::documentOp(bool flip, assoc_opcode op)
 {

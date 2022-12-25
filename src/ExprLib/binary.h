@@ -8,10 +8,8 @@
 
  */
 
-#include "exprman.h"
 #include "result.h"
-
-class binary;
+#include "expr.h"
 
 // ******************************************************************
 // *                                                                *
@@ -59,7 +57,7 @@ class binary_op {
         inline opcode getOpcode() const { return code; }
 
         //
-        // Statics, for the entire registry of unary ops
+        // Statics, for the entire registry of binary ops
         //
 
         /**

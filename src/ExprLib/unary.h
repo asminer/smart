@@ -47,9 +47,6 @@ class unary_op {
         virtual ~unary_op();
 
         inline opcode getOpcode() const { return code; }
-        // inline const char* getOp() const {
-            // return unary_op::getOp(code);
-        // }
 
         //
         // Statics, for the entire registry of unary ops
