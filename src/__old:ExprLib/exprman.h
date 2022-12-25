@@ -135,6 +135,7 @@ public:
   // |                                                                 |
   // +-----------------------------------------------------------------+
 
+#if 0
   /** Build a special "error" expression.
       Should be used for, say, compile-time errors.
   */
@@ -155,6 +156,7 @@ public:
       This is shorthand for: not null, not Error, not Default.
   */
   virtual bool isOrdinary(const expr* e) const = 0;
+#endif
 
   // +-----------------------------------------------------------------+
   // |                                                                 |
@@ -567,10 +569,10 @@ public:
   // +-----------------------------------------------------------------+
 
   /// Register a general type conversion rule.
-  virtual void registerConversion(general_conv *) = 0;
+  // virtual void registerConversion(general_conv *) = 0;
 
   /// Register a specific type conversion rule.
-  virtual void registerConversion(specific_conv *) = 0;
+  // virtual void registerConversion(specific_conv *) = 0;
 
   /** Returns the "promotion distance" from type t1 to t2.
       For example:
@@ -719,14 +721,14 @@ public:
         @return true,   on success.
                 false,  if any error occurred.
   */
-  virtual bool registerOperation(trinary_op* op) = 0;
+  // virtual bool registerOperation(trinary_op* op) = 0;
 
   /** Register an associative operation.
         @param  op  Associative operation to register.
         @return true,   on success.
                 false,  if any error occurred.
   */
-  virtual bool registerOperation(assoc_op* op) = 0;
+  // virtual bool registerOperation(assoc_op* op) = 0;
 
   // +-----------------------------------------------------------------+
   // |                                                                 |
@@ -738,12 +740,12 @@ public:
   // static const char* getOp(binary_opcode op);
   // static const char* getFirst(trinary_opcode op);
   // static const char* getSecond(trinary_opcode op);
-  static const char* getOp(bool flip, assoc_opcode op);
+  // static const char* getOp(bool flip, assoc_opcode op);
 
   // static const char* documentOp(unary_opcode op);
   // static const char* documentOp(binary_opcode op);
   // static const char* documentOp(trinary_opcode op);
-  static const char* documentOp(bool flip, assoc_opcode op);
+  // static const char* documentOp(bool flip, assoc_opcode op);
 
   /** Determine the type of a unary operation expression.
 
@@ -786,8 +788,8 @@ public:
         @return 0,  on any kind of error;
                 the type of the operation, otherwise.
   */
-  virtual const type* getTypeOf(const type* left, bool flip, assoc_opcode op,
-          const type* right) const = 0;
+  // virtual const type* getTypeOf(const type* left, bool flip, assoc_opcode op,
+          // const type* right) const = 0;
 
   /** Make a unary operation expression.
 
@@ -849,8 +851,8 @@ public:
                         (i.e., type mismatch).
                 a new expression, otherwise.
   */
-  virtual expr* makeAssocOp(const location& W, assoc_opcode op,
-        expr** opnds, bool* f, int nops) const = 0;
+  //virtual expr* makeAssocOp(const location& W, assoc_opcode op,
+        //expr** opnds, bool* f, int nops) const = 0;
 
 
   // +-----------------------------------------------------------------+

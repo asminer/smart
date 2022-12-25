@@ -7,9 +7,7 @@
   Base class for all associative operations.
 */
 
-#include "exprman.h"
-
-class assoc;
+#include "expr.h"
 
 // ******************************************************************
 // *                                                                *
@@ -22,51 +20,109 @@ class assoc;
      and invoked whenever an associative expression is constructed.
 */
 class assoc_op {
-  exprman::assoc_opcode opcode;
-protected:
-  const exprman* em;
-public:
-  assoc_op(exprman::assoc_opcode opcode);
-  virtual ~assoc_op();
+    public:
+        enum opcode {
+            /// Boolean AND
+            aop_and    = 0,
+            /// Boolean OR
+            aop_or    = 1,
+            /// Addition
+            aop_plus  = 2,
+            /// Multiplication
+            aop_times  = 3,
+            /// Aggregation
+            aop_colon  = 4,
+            /// Aggregation of void expressions
+            aop_semi  = 5,
+            /// Union of sets
+            aop_union  = 6,
+            /// no operation (placeholder).
+            aop_none  = 7
+        };
 
-  inline exprman::assoc_opcode getOpcode() const { return opcode; }
+    public:
+        assoc_op(opcode code);
+        virtual ~assoc_op();
 
-  // Define these in the derived class
+        inline opcode getOpcode() const { return code; }
 
-  /** Total promotion distance, if any, for operands.
-        @param  flip  Do we flip the operator.
-        @param  lt    Type of left operand.
-        @param  rt    Type of right operand.
-        @return Sum of promotion distances required if we want
-                    to apply "lt opcode rt".
-                -1  if we cannot promote lt or rt to satisfy the operator.
-  */
-  virtual int getPromoteDistance(bool flip, const type* lt,
-          const type* rt) const = 0;
+        //
+        // Statics, for the entire registry of assoc ops
+        //
 
-  /** Total promotion distance, if any, for operands.
-        @param  list  List of operands.
-        @param  flip  For flippable operands, designation of
-                      "flipped or not" for each operand.
-                      Can be 0 to indicate "none flipped".
-        @param  N      Number of operands.
-        @return Sum of promotion distances required, if possible.
-                -1  if we cannot promote to satisfy the operator.
-  */
-  virtual int getPromoteDistance(expr** list, bool* flip, int N) const = 0;
+        /// Get the lexeme for a given opcode
+        static const char* getOp(bool flip, opcode code);
+        /// Get documentation for a given opcode
+        static const char* documentOp(bool flip, opcode code);
 
-  /** Are operations for the specified operand types handled by us?
-        @param  list  List of operands.
-        @param  flip  For flippable operands, designation of
-                      "flipped or not" for each operand.
-                      Can be 0 to indicate "none flipped".
-        @param  N     Number of operands.
-        @return true,  if we can build a legal expression.
-                false,  otherwise.
-  */
-  inline bool isDefinedForTypes(expr** list, bool* flip, int N) const {
-    return getPromoteDistance(list, flip, N) >= 0;
-  }
+        /** Determine the type of an associative operation (sub)expression.
+
+                @param  left  The left operand type.
+                @param  flip  Do we "flip" the operation.
+                @param  op    The operation to perform.
+                @param  right The right operand type.
+                @return 0,  on any kind of error;
+                        the type of the operation, otherwise.
+        */
+        static const type* getTypeOf(const type* left, bool flip, opcode op,
+                const type* right);
+
+        /** Make an associative operation expression.
+
+                @param  W     Where defined.
+                @param  op    The operation to perform.
+                @param  opnds Array of operands.
+                @param  f     For each operand, should it be "flipped"?
+                            If missing (null), we assume that no
+                            operands should be flipped.
+                @param  nops  Number of operands.
+                @return NULL,   if any opnd is NULL.
+                        ERROR,  if any opnd is ERROR,
+                                or if the operand cannot be applied
+                                (i.e., type mismatch).
+                        a new expression, otherwise.
+        */
+        static expr* makeExpr(const location& W, assoc_opcode op,
+                expr** opnds, bool* f, int nops);
+
+    protected:
+        // Define these in the derived class
+
+        /** Total promotion distance, if any, for operands.
+            @param  flip  Do we flip the operator.
+            @param  lt    Type of left operand.
+            @param  rt    Type of right operand.
+            @return Sum of promotion distances required if we want
+                        to apply "lt opcode rt".
+                    -1  if we cannot promote lt or rt to satisfy the operator.
+        */
+        virtual int getPromoteDistance(bool flip, const type* lt,
+            const type* rt) const = 0;
+
+        /** Total promotion distance, if any, for operands.
+            @param  list  List of operands.
+            @param  flip  For flippable operands, designation of
+                        "flipped or not" for each operand.
+                        Can be 0 to indicate "none flipped".
+            @param  N      Number of operands.
+            @return Sum of promotion distances required, if possible.
+                    -1  if we cannot promote to satisfy the operator.
+        */
+        virtual int getPromoteDistance(expr** list, bool* flip, int N)
+            const = 0;
+
+        /** Are operations for the specified operand types handled by us?
+            @param  list  List of operands.
+            @param  flip  For flippable operands, designation of
+                        "flipped or not" for each operand.
+                        Can be 0 to indicate "none flipped".
+            @param  N     Number of operands.
+            @return true,  if we can build a legal expression.
+                    false,  otherwise.
+        */
+        inline bool isDefinedForTypes(expr** list, bool* flip, int N) const {
+            return getPromoteDistance(list, flip, N) >= 0;
+        }
 
   /** If we apply this operator, what is the resulting type?
         @param  flip  Do we flip the operator.
@@ -90,6 +146,12 @@ public:
   */
   virtual assoc* makeExpr(const location& W, expr** list,
         bool* flip, int N) const = 0;
+
+    private:
+        static bool registerOp(assoc_op* op);
+
+    private:
+        opcode code;
 
 private:
   const  assoc_op* next;

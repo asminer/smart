@@ -65,9 +65,6 @@ smart_SOURCES = \
   Options/checklist.cc \
   Options/radio_opt.cc \
   \
-  ExprLib/startup.cc \
-  ExprLib/exprman.cc \
-  ExprLib/superman.cc \
   ExprLib/engine.cc \
   ExprLib/formalism.cc \
   ExprLib/init_data.cc \
@@ -207,9 +204,6 @@ icp_SOURCES = \
   Options/checklist.cc \
   Options/radio_opt.cc \
 	\
-  ExprLib/startup.cc \
-  ExprLib/exprman.cc \
-  ExprLib/superman.cc \
   ExprLib/engine.cc \
   ExprLib/formalism.cc \
   ExprLib/init_data.cc \

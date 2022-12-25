@@ -248,6 +248,7 @@ void superman::finalize()
 //
 //
 
+/*
 expr* superman::makeError() const
 {
   return Share(error_expr);
@@ -274,7 +275,7 @@ bool superman::isOrdinary(const expr* e) const
   if (0==error_expr->Compare(e))    return false;
   return default_expr->Compare(e);
 }
-
+*/
 
 //
 //
@@ -401,6 +402,7 @@ const type* superman::getTypeNumber(int i) const
 //
 //
 
+/*
 void superman::registerConversion(general_conv *c)
 {
   if (0==c) return;
@@ -415,8 +417,9 @@ void superman::registerConversion(specific_conv *c)
   if (c->isPromotion())  promotion_rules.Append(c);
   else                   casting_rules.Append(c);
 }
+*/
 
-
+/*
 inline const general_conv* findRule(const List <general_conv> &G,
       const type* oldt, const type* newt)
 {
@@ -460,7 +463,8 @@ inline bool findRules(const List <general_conv> &G,
   midt = 0;
   return false;
 }
-
+*/
+/*
 int superman::getPromoteDistance(const type* t1, const type* t2) const
 {
   if (0==t1 || 0==t2) return -1;
@@ -482,7 +486,9 @@ int superman::getPromoteDistance(const type* t1, const type* t2) const
   DCASSERT(dg>=0);
   return d+dg;
 }
+*/
 
+/*
 bool superman::isCastable(const type* t1, const type* t2) const
 {
   if (isPromotable(t1, t2)) return true;
@@ -493,6 +499,7 @@ bool superman::isCastable(const type* t1, const type* t2) const
   const type* midt = 0;
   return findRules(general_rules, casting_rules, t1, midt, t2, g, s);
 }
+*/
 
 inline expr* convert(const location& W, expr* e,
       const type* t1mod, const type* newtype,
