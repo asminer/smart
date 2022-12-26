@@ -123,10 +123,11 @@ class typeconv {
 
         static void registerConv(general_conv* c);
         static void registerConv(specific_conv* c);
-        const general_conv* findGeneral(const type* oldt, const type* newt);
+        static const general_conv* findGeneral(const type* oldt,
+                const type* newt);
 
-        void findPair(const specific_conv* &list, const general_conv* &gc,
-            const type* oldt, const type* newt);
+        static void findPair(const specific_conv* &list,
+            const general_conv* &gc, const type* oldt, const type* newt);
 
     private:
         static general_conv* general_list;
