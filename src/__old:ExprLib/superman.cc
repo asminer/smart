@@ -590,7 +590,7 @@ bool superman::registerOperation(trinary_op* op)
   return true;
 }
 */
-
+/*
 bool superman::registerOperation(assoc_op* op)
 {
   if (0==op)    return false;
@@ -601,6 +601,7 @@ bool superman::registerOperation(assoc_op* op)
   reg_assoc[a] = op;
   return true;
 }
+*/
 
 //
 //
@@ -716,6 +717,7 @@ const type* superman::getTypeOf(trinary_opcode op, const type* lt,
 }
 */
 
+/*
 const type* superman
 ::getTypeOf(const type* lt, bool flip, assoc_opcode op, const type* rt) const
 {
@@ -754,7 +756,7 @@ const type* superman
   else    E << "notype";
   return 0;
 }
-
+*/
 
 /*
 expr* superman::makeUnaryOp(const location& W,
@@ -952,6 +954,7 @@ expr* superman::makeTrinaryOp(const location &W, trinary_opcode op,
 
 */
 
+/*
 expr* superman::makeAssocOp(const location &W, assoc_opcode op,
         expr** opnds, bool* flip, int N) const
 {
@@ -1040,6 +1043,7 @@ expr* superman::makeAssocOp(const location &W, assoc_opcode op,
   }
   return 0;
 }
+*/
 
 //
 //

@@ -11,13 +11,192 @@
 // *                                                                *
 // ******************************************************************
 
+const assoc_op** assoc_op::registry = nullptr;
+
 assoc_op::assoc_op(exprman::assoc_opcode o)
 {
-  opcode = o;
+    code = o;
+    registerOp(this);
 }
 
 assoc_op::~assoc_op()
 {
+}
+
+const char* assoc_op::getOp(bool flip, opcode op)
+{
+    switch (op) {
+        case aop_none:  return "no-op";
+        case aop_and:   return flip ?  0  : "&";
+        case aop_or:    return flip ?  0  : "|";
+        case aop_plus:  return flip ? "-" : "+";
+        case aop_times: return flip ? "/" : "*";
+        case aop_colon: return flip ?  0  : ":";
+        case aop_semi:  return flip ?  0  : ";";
+        case aop_union: return flip ?  0  : ",";
+        default:        return "unknown";
+    }
+    return "error";  // will never get here, keep compilers happy
+}
+
+const char* assoc_op::documentOp(bool flip, opcode op)
+{
+    switch (op) {
+        case aop_and:   return flip ?  0  : "logical and";
+        case aop_or:    return flip ?  0  : "logical or";
+        case aop_plus:  return flip ? "difference" : "addition";
+        case aop_times: return flip ? "division" : "multiplication";
+        case aop_colon: return flip ?  0  : "aggregation";
+        case aop_semi:  return flip ?  0  : "statement aggregation";
+        case aop_union: return flip ?  0  : "set union (inside {})";
+        default:        return 0;
+    }
+    return 0;  // will never get here, keep compilers happy
+}
+
+const type* assoc_op::getTypeOf(const type* lt, bool flip, opcode op,
+        const type* rt)
+{
+    const assoc_op* match = nullptr;
+    int best_match = -1;
+    unsigned num_matches = 0;
+    for (const assoc_op* ptr = (code<aop_none) ? registry[code] : nullptr;
+            ptr; ptr=ptr->next)
+    {
+        int d = ptr->getPromoteDistance(flip, lt, rt);
+        if (d<0)  continue;
+        if (best_match >= 0) {
+            if (d > best_match)  continue;
+            if (d == best_match) {
+                num_matches++;
+                continue;
+            }
+        }
+        num_matches = 1;
+        best_match = d;
+        match = ptr;
+    } // for all operations with this code
+
+    if (num_matches > 1) {
+        // too many matches, this should not happen!
+        internal_error E(__FILE__, __LINE__);
+        E << "Cannot decide on associative operation: ";
+        if (lt) E << *lt;
+        else    E << "notype";
+        E << " " << getOp(flip, op) << " ";
+        if (rt) E << *rt;
+        else    E << "notype";
+    }
+
+    return match ? match->getExprType(flip, lt, rt) : nullptr;
+}
+
+
+expr* assoc_op::makeExpr(const location &W, opcode op, expr** opnds,
+        bool* flip, int N)
+{
+    // TBD HERE
+    bool has_null = false;
+    bool has_error = false;
+    for (int i=0; i<N; i++) {
+        if (0==opnds[i]) {
+            has_null = true;
+            continue;
+        }
+        if (isError(opnds[i])) {
+            has_error = true;
+            continue;
+        }
+        DCASSERT(isOrdinary(opnds[i]));
+    }
+    //
+    // If there's a null or an error,
+    // the whole thing becomes error.
+    // The exception is that null is allowed as an aggregate in :
+    //
+    if ( (op != aop_colon && has_null) || has_error ) {
+        for (int i=0; i<N; i++) Delete(opnds[i]);
+        delete[] opnds;
+        delete[] flip;
+        if (op != aop_colon && has_null)  return 0;
+        return makeError();
+    }
+
+    const assoc_op* match = 0;
+    int best_match = -1;
+    unsigned num_matches = 0;
+    for (const assoc_op* ptr = (op<aop_none) ? registry[op] : nullptr;
+            ptr; ptr=ptr->next)
+    {
+        int d = ptr->getPromoteDistance(opnds, flip, N);
+        if (d<0)  continue;
+        if (best_match >= 0) {
+            if (d > best_match)  continue;
+            if (d == best_match) {
+                num_matches++;
+                continue;
+            }
+        }
+        num_matches = 1;
+        best_match = d;
+        match = ptr;
+    } // for all operations with this code
+
+    //
+    // There should be exactly one match;
+    // if not, give some kind of error message
+    //
+    if (num_matches > 1) {
+        // too many matches, this should not happen!
+        internal_error E(__FILE__, __LINE__);
+        E << "Cannot decide on associative operation: ";
+        if (lt) E << *lt;
+        else    E << "notype";
+        E << " " << getOp(flip, op) << " ";
+        if (rt) E << *rt;
+        else    E << "notype";
+        return nullptr; // irrelevant
+    }
+    if (!num_matches) {
+        typechecking_error E(W);
+        E << "Undefined associative operation: ";
+        if (opnds[0])   opnds[0]->PrintType(E.stream());
+        else            E << *type::null;
+        for (int i=1; i<N; i++) {
+            bool f = flip ? flip[i] : 0;
+            E << " " << getOp(f, op) << " ";
+            if (opnds[i]) opnds[i]->PrintType(E.stream());
+            else          E << *type::null;
+        }
+        for (int i=0; i<N; i++)  Delete(opnds[i]);
+        delete[] opnds;
+        delete[] flip;
+        return makeError();
+    }
+
+    DCASSERT(1==num_matches);
+    DCASSERT(match);
+    expr* answer = match->makeExpr(W, opnds, flip, N);
+    if (!answer) {
+        internal_error E(__FILE__, __LINE__, W);
+        E << "Couldn't build associative expression for " << getOp(0, op);
+    }
+    return answer;
+}
+
+
+void assoc_op::registerOp(assoc_op* op)
+{
+    if (!registry) {
+        registry = new const assoc_op* [aop_none];
+        for (unsigned i=0; i<aop_none; i++) {
+            registry[i] = nullptr;
+        }
+    }
+    if (!op)    return;
+    if (op->getOpcode() >= aop_none) return;
+    op->next = registry[op->getOpcode()];
+    registry[op->getOpcode()] = op;
 }
 
 // ******************************************************************

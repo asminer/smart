@@ -124,38 +124,37 @@ class assoc_op {
             return getPromoteDistance(list, flip, N) >= 0;
         }
 
-  /** If we apply this operator, what is the resulting type?
-        @param  flip  Do we flip the operator.
-        @param  lt    Type of left operand.
-        @param  rt    Type of right operand.
-        @return Type of the expression, will be 0 if undefined.
-  */
-  virtual const type* getExprType(bool flip, const type* lt,
-          const type* rt) const = 0;
+        /** If we apply this operator, what is the resulting type?
+                @param  flip  Do we flip the operator.
+                @param  lt    Type of left operand.
+                @param  rt    Type of right operand.
+                @return Type of the expression, will be 0 if undefined.
+        */
+        virtual const type* getExprType(bool flip, const type* lt,
+                const type* rt) const = 0;
 
-  /** Build an expression.
-      The operands are promoted as necessary.
-        @param  W     Location of expression.
-        @param  list  List of operands.
-        @param  flip  For flippable operands, designation of
-                      "flipped or not" for each operand.
-                      Can be 0 to indicate "none flipped".
-        @param  N  Number of operands.
-        @return A new expression, or 0 if an error occurred.
-                Will return 0 if "isDefinedForTypes()" returns false.
-  */
-  virtual assoc* makeExpr(const location& W, expr** list,
-        bool* flip, int N) const = 0;
+        /** Build an expression.
+            The operands are promoted as necessary.
+                @param  W     Location of expression.
+                @param  list  List of operands.
+                @param  flip  For flippable operands, designation of
+                              "flipped or not" for each operand.
+                              Can be 0 to indicate "none flipped".
+                @param  N  Number of operands.
+                @return A new expression, or 0 if an error occurred.
+                        Will return 0 if "isDefinedForTypes()" returns false.
+        */
+        virtual assoc* makeExpr(const location& W, expr** list,
+                bool* flip, int N) const = 0;
 
     private:
         static bool registerOp(assoc_op* op);
 
     private:
         opcode code;
+        const  assoc_op* next;
 
-private:
-  const  assoc_op* next;
-  friend class superman;
+        static const assoc_op** registry;
 };
 
 

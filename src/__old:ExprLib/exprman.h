@@ -96,6 +96,7 @@ public:
   engtype* BLOCKED_ENGINE;
 
   /// Associative operators.
+  /*
   enum assoc_opcode {
     /// Boolean AND
     aop_and    = 0,
@@ -114,6 +115,7 @@ public:
     /// no operation (placeholder).
     aop_none  = 7
   };
+  */
 
 public:
   // exprman(io_environ* io, option_manager* om);
