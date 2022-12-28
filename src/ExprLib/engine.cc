@@ -1,23 +1,13 @@
 
 #include "engine.h"
-#include "../include/splay.h"
+#include "../Utils/splay.h"
+#include "../Utils/initializer.h"
 #include "../Options/options.h"
 #include "../Options/optman.h"
 #include "../Options/radio_opt.h"
 #include "measures.h"
 #include "mod_inst.h"
-#include "exprman.h"
-
-#include <string.h>
-
-// ********************************************************
-// *                  engine_tree class                   *
-// ********************************************************
-
-class engine_tree : public SplayOfPointers <engine> {
-public:
-  engine_tree(int a, int b) : SplayOfPointers <engine> (a, b) { }
-};
+// #include "exprman.h"
 
 // ********************************************************
 // *                engine_watcher  class                 *
@@ -52,8 +42,6 @@ void engine_watcher::notify(const option* opt)
 // *                  subengine methods                   *
 // ********************************************************
 
-exprman* subengine::em = 0;
-
 subengine::subengine()
 {
 }
@@ -64,58 +52,58 @@ subengine::~subengine()
 
 const char* subengine::getNameOfError(error e)
 {
-  switch (e) {
-    case Finalized:
-        return "Engine manager should / should not be finalized";
+    switch (e) {
+        case Finalized:
+            return "Engine manager should / should not be finalized";
 
-    case No_Engine:
-        return "No solution engine available";
+        case No_Engine:
+            return "No solution engine available";
 
-    case Bad_Option:
-        return "Unknown engine selection";
+        case Bad_Option:
+            return "Unknown engine selection";
 
-    case Duplicate:
-        return "Duplicate engine name";
+        case Duplicate:
+            return "Duplicate engine name";
 
-    case Call_Mismatch:
-        return "Incorrect measure signature";
+        case Call_Mismatch:
+            return "Incorrect measure signature";
 
-    case Out_Of_Memory:
-        return "Engine ran out of memory";
+        case Out_Of_Memory:
+            return "Engine ran out of memory";
 
-    case Terminated:
-        return "Engine was terminated";
+        case Terminated:
+            return "Engine was terminated";
 
-    case Assertion_Failure:
-        return "Assertion failure";
+        case Assertion_Failure:
+            return "Assertion failure";
 
-    case Bad_Value:
-        return "Illegal value for engine parameter";
+        case Bad_Value:
+            return "Illegal value for engine parameter";
 
-    case Engine_Failed:
-        return "Engine failed";
-  }
-  return "Unknown error";
+        case Engine_Failed:
+            return "Engine failed";
+    }
+    return "Unknown error";
 }
 
 void subengine::RunEngine(result*, int, traverse_data &)
 {
-  throw Call_Mismatch;
+    throw Call_Mismatch;
 }
 
 void subengine::RunEngine(hldsm*, result &)
 {
-  throw Call_Mismatch;
+    throw Call_Mismatch;
 }
 
 void subengine::SolveMeasure(hldsm* , measure* )
 {
-  throw Call_Mismatch;
+    throw Call_Mismatch;
 }
 
 void subengine::SolveMeasures(hldsm* , set_of_measures* )
 {
-  throw Call_Mismatch;
+    throw Call_Mismatch;
 }
 
 
@@ -123,49 +111,39 @@ void subengine::SolveMeasures(hldsm* , set_of_measures* )
 // *                   engine  methods                    *
 // ********************************************************
 
-exprman* engine::em = 0;
-int engine::num_hlm_types = 0;
+unsigned engine::num_hlm_types = 0;
 
-engine::engine(const char* n, const char* d)
+engine::engine(const char* n, const char* d) : shared_string(n)
 {
-  etype = 0;
-  name = n;
-  doc = d;
-  next = 0;
-  children = new subengine*[num_hlm_types];
-  for (int i=0; i<num_hlm_types; i++) children[i] = 0;
-  options = 0;
+    etype = nullptr;
+    doc = d;
+    next = nullptr;
+    children = new subengine*[num_hlm_types];
+    for (unsigned i=0; i<num_hlm_types; i++) children[i] = 0;
+    options = 0;
 }
 
 engine::~engine()
 {
-  // Is this ever called?
-  delete[] children;
-  Delete(options);
+    // Is this ever called?
+    delete[] children;
+    Delete(options);
 }
 
 void engine::AddSubEngine(subengine* child)
 {
-  if (0==child) return;
-  for (int i=0; i<num_hlm_types; i++) {
-    hldsm::model_type mi = (hldsm::model_type) i;
-    if (child->AppliesToModelType(mi)) {
-      if (children[i]) {
-        internal_error E(__FILE__, __LINE__);
-        E << "Registering subengine for " << name;
-        E << " with existing model type " << i;
-      }
-      children[i] = child;
-    }
-  } // for i
-}
-
-int engine::Compare(const char* name2) const
-{
-  if ( (0==name) && (0==name2) )  return 0;
-  if (0==name)        return -1;
-  if (0==name2)       return 1;
-  return strcmp(name, name2);
+    if (0==child) return;
+    for (unsigned i=0; i<num_hlm_types; i++) {
+        hldsm::model_type mi = (hldsm::model_type) i;
+        if (child->AppliesToModelType(mi)) {
+            if (children[i]) {
+                internal_error E(__FILE__, __LINE__);
+                E << "Registering subengine for " << Name();
+                E << " with existing model type " << i;
+            }
+            children[i] = child;
+        }
+    } // for i
 }
 
 void engine::addButtonToOption(option* o, unsigned ndx)
@@ -194,128 +172,152 @@ option_manager* engine::internalOpts()
 // *                        engtype  methods                        *
 // ******************************************************************
 
+splayOfShared* engtype::registry = nullptr;
+
 engtype::engtype(const char* n, const char* d, calling_form f)
+    : shared_string(n)
 {
-  name = n;
-  doc = d;
-  form = f;
-  index = 0;
+    doc = d;
+    form = f;
+    // index = 0;
 
-  finalized = false;
+    finalized = false;
 
-  EngTree = 0;
-  engineList = 0;
-  numEngines = 0;
+    EngTree = 0;
+    engineList = 0;
+    numEngines = 0;
 
-  selected_engine = 0;
+    selected_engine = 0;
 }
 
 engtype::~engtype()
 {
-  killEngTree();
+    killEngTree();
+    delete[] engineList;
+}
+
+engtype* engtype::registerEngineType(engtype* et)
+{
+    if (!registry) {
+        registry = new splayOfShared(16, 0);
+    }
+    engtype* ret = smart_cast <engtype*> (registry->insert(et));
+    if (ret != et) {
+        Delete(et);
+    }
+    return ret;
+}
+
+engtype* engtype::findEngineType(const char* name)
+{
+    if (!registry) return nullptr;
+    const_string S(name);
+    return smart_cast <engtype*> (registry->find(&S));
 }
 
 void engtype::registerEngine(engine* e)
 {
-  if (0==e)  throw subengine::No_Engine;
-  e->etype = this;
-  if (finalized) throw subengine::Finalized;
-  if (Nothing == form) {
-    if (0==selected_engine) selected_engine = e;
-    return;
-  }
-  if (0==EngTree)  EngTree = new engine_tree(16, 0);
-  engine* f = EngTree->Insert(e);
-  if (f==e)  {
-    if (0==selected_engine) selected_engine = e;
-    return;
-  }
-  // there is an engine with the same name.
-  delete e;
-  throw subengine::Duplicate;
+    if (!e)  throw subengine::No_Engine;
+    e->etype = this;
+    if (finalized) throw subengine::Finalized;
+    if (Nothing == form) {
+        if (!selected_engine) selected_engine = e;
+        return;
+    }
+    if (!EngTree)  EngTree = new splayOfShared(16, 0);
+    engine* f = smart_cast <engine*> (EngTree->insert(e));
+    if (f==e)  {
+        if (!selected_engine) selected_engine = e;
+        return;
+    }
+    // there is an engine with the same name.
+    Delete(e);
+    throw subengine::Duplicate;
 }
 
 void engtype::registerSubengine(const char* name, subengine* se)
 {
-  if (0==se)            return;
-  if (0==name)          throw  subengine::No_Engine;
-  if (finalized)        throw  subengine::Finalized;
-  engine* f = EngTree->Find(name);
-  if (0==f)             throw  subengine::No_Engine;
-  f->AddSubEngine(se);
+    if (!se)            return;
+    if (!name)          throw  subengine::No_Engine;
+    if (finalized)      throw  subengine::Finalized;
+    const_string S(name);
+    engine* f = smart_cast <engine*> (EngTree->find(&S));
+    if (!f)             throw  subengine::No_Engine;
+    f->AddSubEngine(se);
 }
 
 void engtype::finalizeRegistry(option_manager* om)
 {
-  if (finalized)        return;
-  if (0==EngTree)       return;
+    if (finalized)      return;
+    if (!EngTree)       return;
 
-  //
-  // Convert engines into an ordered array
-  //
-  numEngines = EngTree->NumElements();
-  DCASSERT(numEngines > 0);
-  engineList = new engine*[numEngines];
-  EngTree->CopyToArray(engineList);
-  killEngTree();
+    //
+    // Convert engines into an ordered array
+    //
+    numEngines = EngTree->numElements();
+    DCASSERT(numEngines > 0);
+    engineList = new engine*[numEngines];
+    copy_traversal <engine> T(engineList, numEngines);
+    EngTree->traverse(T);
+    killEngTree();
 
-  finalized = true;
+    finalized = true;
 
-  if (0==om) return;    // Can't build an option
-  if (numEngines < 2) {
-      if (!engineList[0]->hasOptions()) return;
-  }
+    if (!om) return;    // Can't build an option
+    if (numEngines < 2) {
+        if (!engineList[0]->hasOptions()) return;
+    }
 
-  //
-  // Build an option, automagically
-  //
+    //
+    // Build an option, automagically
+    //
 
-  engine_watcher* EW = new engine_watcher(this);
-  option* ro = om->addRadioOption(Name(), Documentation(), numEngines, EW->Link());
-  ro->registerWatcher(EW);
-  for (unsigned i=0; i<numEngines; i++) {
-      DCASSERT(engineList[i]);
-      if (engineList[i] == selected_engine) {
-          EW->Link() = i;
-      }
-      engineList[i]->addButtonToOption(ro, i);
-  }
+    engine_watcher* EW = new engine_watcher(this);
+    option* ro = om->addRadioOption(Name(), Documentation(), numEngines, EW->Link());
+    ro->registerWatcher(EW);
+    for (unsigned i=0; i<numEngines; i++) {
+        DCASSERT(engineList[i]);
+        if (engineList[i] == selected_engine) {
+            EW->Link() = i;
+        }
+        engineList[i]->addButtonToOption(ro, i);
+    }
 }
 
 void engtype::runEngine(result* pass, int np, traverse_data &x)
 {
-  if (0==selected_engine)  throw subengine::No_Engine;
-  selected_engine->RunEngine(pass, np, x);
+    if (!selected_engine)  throw subengine::No_Engine;
+    selected_engine->RunEngine(pass, np, x);
 }
 
 void engtype::runEngine(hldsm* m, result &p)
 {
-  if (0==selected_engine)  throw  subengine::No_Engine;
-  selected_engine->RunEngine(m, p);
+    if (!selected_engine)  throw  subengine::No_Engine;
+    selected_engine->RunEngine(m, p);
 }
 
 void engtype::solveMeasure(hldsm* m, measure* what)
 {
-  if (0==selected_engine)  throw  subengine::No_Engine;
-  selected_engine->SolveMeasure(m, what);
+    if (!selected_engine)  throw  subengine::No_Engine;
+    selected_engine->SolveMeasure(m, what);
 }
 
 void engtype::solveMeasures(hldsm* m, set_of_measures* list)
 {
-  if (0==selected_engine)  throw  subengine::No_Engine;
-  selected_engine->SolveMeasures(m, list);
+    if (!selected_engine)  throw  subengine::No_Engine;
+    selected_engine->SolveMeasures(m, list);
 }
 
 set_of_measures* engtype::makeMeasureSet() const
 {
-  DCASSERT(Grouped != form);
-  return 0;
+    DCASSERT(Grouped != form);
+    return nullptr;
 }
 
 void engtype::killEngTree()
 {
-  delete EngTree;
-  EngTree = 0;
+    delete EngTree;
+    EngTree = nullptr;
 }
 
 // ******************************************************************
@@ -329,7 +331,7 @@ unordered_engtype::unordered_engtype(const char* n, const char* d)
 
 set_of_measures* unordered_engtype::makeMeasureSet() const
 {
-  return MakeUnsortedMeasures();
+    return MakeUnsortedMeasures();
 }
 
 // ******************************************************************
@@ -343,7 +345,7 @@ time_engtype::time_engtype(const char* n, const char* d)
 
 set_of_measures* time_engtype::makeMeasureSet() const
 {
-  return MakeTimeSortedMeasures();
+    return MakeTimeSortedMeasures();
 }
 
 
@@ -354,49 +356,48 @@ set_of_measures* time_engtype::makeMeasureSet() const
 func_engine::func_engine(const type* rt, const char* name, int np, engtype* w)
  : simple_internal(rt, name, np)
 {
-  whicheng = w;
-  DCASSERT(em);
-  engpass = new result[np];
-  for (int i=0; i<np; i++) engpass[i].setNull();
+    whicheng = w;
+    engpass = new result[np];
+    for (int i=0; i<np; i++) engpass[i].setNull();
 }
 
 func_engine::~func_engine()
 {
-  delete[] engpass;
+    delete[] engpass;
 }
 
 void func_engine::Compute(traverse_data &x, expr** pass, int np)
 {
-  try {
-    if (whicheng) {
-      BuildParams(x, pass, np);
-      whicheng->runEngine(engpass, np, x);
-      for (int i=0; i<np; i++) engpass[i].setNull();
-    } else {
-      throw subengine::No_Engine;
-    }
-  } // try
-  catch (subengine::error e) {
-    switch (e) {
-      case subengine::No_Engine: {
-        expr_error E(x.parent, x.answer);
-        E << "No solution engine available for " << Name();
-        formals.PrintHeader(E.stream(), false);
-        return;
-      }
+    try {
+        if (whicheng) {
+            BuildParams(x, pass, np);
+            whicheng->runEngine(engpass, np, x);
+            for (int i=0; i<np; i++) engpass[i].setNull();
+        } else {
+            throw subengine::No_Engine;
+        }
+    } // try
+    catch (subengine::error e) {
+        switch (e) {
+            case subengine::No_Engine: {
+                expr_error E(x.parent, x.answer);
+                E << "No solution engine available for " << Name();
+                formals.PrintHeader(E.stream(), false);
+                return;
+            }
 
-      default: {
-        internal_error E(__FILE__, __LINE__,
-                x.parent ? x.parent->Where() : location::NOWHERE());
-        E << "unanticipated error: " << subengine::getNameOfError(e);
-        E.newLine();
-        E << "for " << Name();
-        formals.PrintHeader(E.stream(), false);
-        E << " engine";
-      }
-    }
-    x.answer->setNull();
-  } // catch
+            default: {
+                internal_error E(__FILE__, __LINE__,
+                    x.parent ? x.parent->Where() : location::NOWHERE());
+                E << "unanticipated error: " << subengine::getNameOfError(e);
+                E.newLine();
+                E << "for " << Name();
+                formals.PrintHeader(E.stream(), false);
+                E << " engine";
+            }
+        }
+        x.answer->setNull();
+    } // catch
 }
 
 
@@ -407,15 +408,15 @@ void func_engine::Compute(traverse_data &x, expr** pass, int np)
 // ******************************************************************
 
 class redirect_engine : public subengine {
-  engtype* link;
+    engtype* link;
 public:
-  redirect_engine(engtype* l);
+    redirect_engine(engtype* l);
 
-  virtual bool AppliesToModelType(hldsm::model_type mt) const;
-  virtual void RunEngine(result* pass, int np, traverse_data &x);
-  virtual void RunEngine(hldsm* m, result &p);
-  virtual void SolveMeasure(hldsm* m, measure* what);
-  virtual void SolveMeasures(hldsm* m, set_of_measures* list);
+    virtual bool AppliesToModelType(hldsm::model_type mt) const;
+    virtual void RunEngine(result* pass, int np, traverse_data &x);
+    virtual void RunEngine(hldsm* m, result &p);
+    virtual void SolveMeasure(hldsm* m, measure* what);
+    virtual void SolveMeasures(hldsm* m, set_of_measures* list);
 };
 
 // ******************************************************************
@@ -424,36 +425,36 @@ public:
 
 redirect_engine::redirect_engine(engtype* l)
 {
-  link = l;
+    link = l;
 }
 
 bool redirect_engine::AppliesToModelType(hldsm::model_type mt) const
 {
-  return true;
+    return true;
 }
 
 void redirect_engine::RunEngine(result* p, int np, traverse_data &x)
 {
-  DCASSERT(link);
-  link->runEngine(p, np, x);
+    DCASSERT(link);
+    link->runEngine(p, np, x);
 }
 
 void redirect_engine::RunEngine(hldsm* m, result &p)
 {
-  DCASSERT(link);
-  link->runEngine(m, p);
+    DCASSERT(link);
+    link->runEngine(m, p);
 }
 
 void redirect_engine::SolveMeasure(hldsm* m, measure* what)
 {
-  DCASSERT(link);
-  link->solveMeasure(m, what);
+    DCASSERT(link);
+    link->solveMeasure(m, what);
 }
 
 void redirect_engine::SolveMeasures(hldsm* m, set_of_measures* list)
 {
-  DCASSERT(link);
-  link->solveMeasures(m, list);
+    DCASSERT(link);
+    link->solveMeasures(m, list);
 }
 
 
@@ -465,9 +466,9 @@ void redirect_engine::SolveMeasures(hldsm* m, set_of_measures* list)
 
 class noop_engine : public subengine {
 public:
-  virtual ~noop_engine();
-  virtual void SolveMeasure(hldsm* m, measure* what);
-  virtual bool AppliesToModelType(hldsm::model_type mt) const;
+    virtual ~noop_engine();
+    virtual void SolveMeasure(hldsm* m, measure* what);
+    virtual bool AppliesToModelType(hldsm::model_type mt) const;
 };
 
 // ******************************************************************
@@ -480,20 +481,20 @@ noop_engine::~noop_engine()
 
 void noop_engine::SolveMeasure(hldsm*, measure* what)
 {
-  if (0==what)  return;
-  traverse_data x(traverse_data::Compute);
-  result foo;
-  x.answer = &foo;
-  what->ComputeRHS(x);
-  what->SetValue(foo);
+    if (!what)  return;
+    traverse_data x(traverse_data::Compute);
+    result foo;
+    x.answer = &foo;
+    what->ComputeRHS(x);
+    what->SetValue(foo);
 }
 
 bool noop_engine::AppliesToModelType(hldsm::model_type mt) const
 {
-  return (mt != 0);
+    return (mt != 0);
 }
 
-noop_engine the_noop_engine;
+static noop_engine the_noop_engine;
 
 
 // ******************************************************************
@@ -506,9 +507,9 @@ noop_engine the_noop_engine;
 */
 class bogus_engine : public subengine {
 public:
-  virtual ~bogus_engine();
-  virtual void SolveMeasure(hldsm* m, measure* what);
-  virtual bool AppliesToModelType(hldsm::model_type mt) const;
+    virtual ~bogus_engine();
+    virtual void SolveMeasure(hldsm* m, measure* what);
+    virtual bool AppliesToModelType(hldsm::model_type mt) const;
 };
 
 // ******************************************************************
@@ -521,19 +522,64 @@ bogus_engine::~bogus_engine()
 
 void bogus_engine::SolveMeasure(hldsm*, measure* what)
 {
-  internal_error E(__FILE__, __LINE__,
+    internal_error E(__FILE__, __LINE__,
           what ? what->Where() : location::NOWHERE()
-  );
-  E << "Calling a placeholder engine.";
-  throw No_Engine;  // Probably best, if we manage to get here
+    );
+    E << "Calling a placeholder engine.";
+    throw No_Engine;  // Probably best, if we manage to get here
 }
 
 bool bogus_engine::AppliesToModelType(hldsm::model_type mt) const
 {
-  return (mt != 0);
+    return (mt != 0);
 }
 
-bogus_engine the_bogus_engine;
+static bogus_engine the_bogus_engine;
+
+// ******************************************************************
+// *                                                                *
+// *                         Initialization                         *
+// *                                                                *
+// ******************************************************************
+
+class engine_init : public initializer {
+    public:
+        engine_init();
+    protected:
+        virtual void execute();
+};
+
+static engine_init the_engine_init;
+
+engine_init::engine_init() : initializer(__FILE__, 1, 0)
+{
+    builds_resource(0, "engines");
+}
+
+void engine_init::execute()
+{
+    engine::num_hlm_types = 1+hldsm::Last_Model_Type;
+
+    //
+    // Set up special "no engine".
+    //
+
+    engtype* noengine = engtype::registerEngineType(
+        new engtype("No Engine", "No solution engine", engtype::Single)
+    );
+    RegisterEngine(noengine, "no-op", "Do nothing", &the_noop_engine);
+    noengine->finalizeRegistry();
+
+    //
+    // Set up special "blocked" engine type.
+    //
+
+    engtype* blocked = engtype::registerEngineType(
+        new engtype("Blocked Engine", "Blocked measures", engtype::Single)
+    );
+    RegisterEngine(blocked, "fail", "Fail and bail out", &the_bogus_engine);
+    blocked->finalizeRegistry();
+}
 
 // ******************************************************************
 // *                                                                *
@@ -543,41 +589,9 @@ bogus_engine the_bogus_engine;
 
 engine* MakeRedirectionEngine(const char* n, const char* d, engtype* et)
 {
-  engine* e = new engine(n, d);
-  e->AddSubEngine(new redirect_engine(et));
-  return e;
+    engine* e = new engine(n, d);
+    e->AddSubEngine(new redirect_engine(et));
+    return e;
 }
 
-
-void InitEngines(exprman* em)
-{
-  DCASSERT(em);
-  subengine::em = em;
-  engine::em = em;
-  engine::num_hlm_types = 1+hldsm::Last_Model_Type;
-
-  // Set up special "no engine".
-
-  em->NO_ENGINE = new engtype("No Engine", "No solution engine", engtype::Single);
-  CHECK_RETURN( em->registerEngineType(em->NO_ENGINE), true );
-  RegisterEngine(
-    em->NO_ENGINE,
-    "no-op",
-    "Do nothing",
-    &the_noop_engine
-  );
-  em->NO_ENGINE->finalizeRegistry(0);
-
-  // Set up special "blocked" engine type.
-
-  em->BLOCKED_ENGINE = new engtype("Blocked Engine", "Blocked measures", engtype::Single);
-  CHECK_RETURN( em->registerEngineType(em->BLOCKED_ENGINE), true );
-  RegisterEngine(
-    em->BLOCKED_ENGINE,
-    "fail",
-    "Fail and bail out",
-    &the_bogus_engine
-  );
-  em->BLOCKED_ENGINE->finalizeRegistry(0);
-}
 

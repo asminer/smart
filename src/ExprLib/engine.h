@@ -10,17 +10,16 @@
 #ifndef ENGINE_H
 #define ENGINE_H
 
-#include "exprman.h"
+#include "expr.h"
 #include "mod_inst.h"
 #include "functions.h"
+
+class splayOfShared;
 
 class engtype;
 class measure;
 class set_of_measures;
-class engine_list;
-class engine_tree;
 class option_manager;
-class option_enum;
 
 // ******************************************************************
 // *                                                                *
@@ -40,56 +39,51 @@ class option_enum;
     classes of models, under a similar name; this is the "parent" engine.
 */
 class subengine {
-public:
-  /// Error codes, thrown as exceptions.
-  enum error {
-    /// Operation required finalization but we aren't, or vice-versa.
-    Finalized,
-    /// No solution engine available!
-    No_Engine,
-    /// Bad option selection for an engine type.
-    Bad_Option,
-    /// Duplicate solution engine name.
-    Duplicate,
-    /// Mismatch between engine type and analysis requested.
-    Call_Mismatch,
-    /// The engine ran out of memory before solution was completed.
-    Out_Of_Memory,
-    /// A sigterm signal was caught.
-    Terminated,
-    /// A model assertion failed, and the engine terminated.
-    Assertion_Failure,
-    /// Bad value for an engine parameter
-    Bad_Value,
-    /// Some other fatal run-time error with the engine.
-    Engine_Failed
-  };
-protected:
-// do we need a pointer to the parent?
-  static exprman* em;
-public:
-  subengine();
-  virtual ~subengine();
-public:
-  /** Can this engine be applied to the specified model type.
-      Must be provided in derived classes.
-      A model type of 0 is used for "function calls".
-        @param  mt  Model type.
-  */
-  virtual bool AppliesToModelType(hldsm::model_type mt) const = 0;
+    public:
+        /// Error codes, thrown as exceptions.
+        enum error {
+            /// Operation required finalization but we aren't, or vice-versa.
+            Finalized,
+            /// No solution engine available!
+            No_Engine,
+            /// Bad option selection for an engine type.
+            Bad_Option,
+            /// Duplicate solution engine name.
+            Duplicate,
+            /// Mismatch between engine type and analysis requested.
+            Call_Mismatch,
+            /// The engine ran out of memory before solution was completed.
+            Out_Of_Memory,
+            /// A sigterm signal was caught.
+            Terminated,
+            /// A model assertion failed, and the engine terminated.
+            Assertion_Failure,
+            /// Bad value for an engine parameter
+            Bad_Value,
+            /// Some other fatal run-time error with the engine.
+            Engine_Failed
+        };
+    public:
+        subengine();
+        virtual ~subengine();
+    public:
+        /** Can this engine be applied to the specified model type.
+            Must be provided in derived classes.
+            A model type of 0 is used for "function calls".
+                @param  mt  Model type.
+        */
+        virtual bool AppliesToModelType(hldsm::model_type mt) const = 0;
 
-  virtual void RunEngine(result* pass, int np, traverse_data &x);
-  virtual void RunEngine(hldsm* m, result &parm);
-  virtual void SolveMeasure(hldsm* m, measure* what);
-  virtual void SolveMeasures(hldsm* m, set_of_measures* list);
+        virtual void RunEngine(result* pass, int np, traverse_data &x);
+        virtual void RunEngine(hldsm* m, result &parm);
+        virtual void SolveMeasure(hldsm* m, measure* what);
+        virtual void SolveMeasures(hldsm* m, set_of_measures* list);
 
-  /** Produce a "human-readable" name for an error.
-        @param  e  The engine error.
-        @return  A string constant.
-  */
-  static const char* getNameOfError(error e);
-
-  friend void InitEngines(exprman* em);
+        /** Produce a "human-readable" name for an error.
+                @param  e  The engine error.
+                @return  A string constant.
+        */
+        static const char* getNameOfError(error e);
 };
 
 // ******************************************************************
@@ -109,99 +103,93 @@ public:
 
     Note: there should be no more need of virtual functions!
 */
-class engine {
-  engtype* etype;
-  const char* name;
-  const char* doc;
-  static exprman* em;
-  engine* next;
-  static int num_hlm_types;
-  subengine** children; // dimension is num_hlm_types;
-  option_manager* options; // options local to this engine
-public:
-  engine(const char* n, const char* d);
-  ~engine();
+class engine : public shared_string {
+    public:
+        engine(const char* n, const char* d);
+    protected:
+        virtual ~engine();
 
-  void AddSubEngine(subengine* child);
+    public:
+        void AddSubEngine(subengine* child);
 
-  /// Start internal options for this engine
-  option_manager* internalOpts();
+        /// Start internal options for this engine
+        option_manager* internalOpts();
 
-  inline const engtype* getType() const { return etype; }
-  inline const char* Name() const { return name; }
-  inline const char* Documentation() const { return doc; }
+        inline const engtype* getType() const { return etype; }
+        inline const char* Name() const { return getStr(); }
+        inline const char* Documentation() const { return doc; }
 
-  // Name comparison, so we can put it in a tree
-  int Compare(const char* name2) const;
-  inline int Compare(const engine* x) const {
-    const char* n2 = x ? x->name : 0;
-    return Compare(n2);
-  }
+        inline void RunEngine(result* pass, int np, traverse_data &x) {
+            DCASSERT(children);
+            if (children[0]) {
+                DCASSERT(children[0]->AppliesToModelType(hldsm::Nothing));
+                children[0]->RunEngine(pass, np, x);
+            } else {
+                throw subengine::No_Engine;
+            }
+        }
 
-  inline void RunEngine(result* pass, int np, traverse_data &x) {
-    DCASSERT(children);
-    if (children[0]) {
-      DCASSERT(children[0]->AppliesToModelType(hldsm::Nothing));
-      children[0]->RunEngine(pass, np, x);
-    } else {
-      throw subengine::No_Engine;
-    }
-  }
+        inline void RunEngine(hldsm* m, result &parm) {
+            if (0==m) return;
+            DCASSERT(children);
+            int i = int(m->Type());
+            if (i<0) return;
+            CHECK_RANGE(0, i, num_hlm_types);
+            if (children[i]) {
+                DCASSERT(children[i]->AppliesToModelType(m->Type()));
+                children[i]->RunEngine(m, parm);
+            } else {
+                throw subengine::No_Engine;
+            }
+        }
 
-  inline void RunEngine(hldsm* m, result &parm) {
-    if (0==m) return;
-    DCASSERT(children);
-    int i = int(m->Type());
-    if (i<0) return;
-    CHECK_RANGE(0, i, num_hlm_types);
-    if (children[i]) {
-      DCASSERT(children[i]->AppliesToModelType(m->Type()));
-      children[i]->RunEngine(m, parm);
-    } else {
-      throw subengine::No_Engine;
-    }
-  }
+        inline void SolveMeasure(hldsm* m, measure* what) {
+            if (0==m) return;
+            DCASSERT(children);
+            int i = int(m->Type());
+            if (i<0) return;
+            CHECK_RANGE(0, i, num_hlm_types);
+            if (children[i]) {
+                DCASSERT(children[i]->AppliesToModelType(m->Type()));
+                children[i]->SolveMeasure(m, what);
+            } else {
+                throw subengine::No_Engine;
+            }
+        }
 
-  inline void SolveMeasure(hldsm* m, measure* what) {
-    if (0==m) return;
-    DCASSERT(children);
-    int i = int(m->Type());
-    if (i<0) return;
-    CHECK_RANGE(0, i, num_hlm_types);
-    if (children[i]) {
-      DCASSERT(children[i]->AppliesToModelType(m->Type()));
-      children[i]->SolveMeasure(m, what);
-    } else {
-      throw subengine::No_Engine;
-    }
-  }
+        inline void SolveMeasures(hldsm* m, set_of_measures* list) {
+            if (0==m) return;
+            DCASSERT(children);
+            int i = int(m->Type());
+            if (i<0) return;
+            CHECK_RANGE(0, i, num_hlm_types);
+            if (children[i]) {
+                DCASSERT(children[i]->AppliesToModelType(m->Type()));
+                children[i]->SolveMeasures(m, list);
+            } else {
+                throw subengine::No_Engine;
+            }
+        }
 
-  inline void SolveMeasures(hldsm* m, set_of_measures* list) {
-    if (0==m) return;
-    DCASSERT(children);
-    int i = int(m->Type());
-    if (i<0) return;
-    CHECK_RANGE(0, i, num_hlm_types);
-    if (children[i]) {
-      DCASSERT(children[i]->AppliesToModelType(m->Type()));
-      children[i]->SolveMeasures(m, list);
-    } else {
-      throw subengine::No_Engine;
-    }
-  }
+    private:
+        /**
+            Build a radio button for this engine
+            Called by engtype methods, probably should not be called otherwise.
+        */
+        void addButtonToOption(option* o, unsigned ndx);
 
-  friend class engtype;
-  friend void InitEngines(exprman* em);
+        /// Are there internal options for this engine
+        inline bool hasOptions() const { return options; }
+    private:
+        engtype* etype;
+        const char* doc;
+        engine* next;
+        static unsigned num_hlm_types;
+        subengine** children; // dimension is num_hlm_types;
+        option_manager* options; // options local to this engine
 
-private:
-  /**
-      Build a radio button for this engine
-      Called by engtype methods, probably should not be called otherwise.
-  */
-  void addButtonToOption(option* o, unsigned ndx);
-
-  /// Are there internal options for this engine
-  inline bool hasOptions() const { return options; }
+        friend class engtype;
+        friend class engine_init;
 };
 
 
@@ -232,141 +220,154 @@ private:
     solution engines registered for a given type, we will use the
     current option setting to decide which solution engine to launch.
 */
-class engtype {
-public:
-  /// Different forms for invoking an engine.
-  enum calling_form {
-    /// None, used for "no engine".
-    Nothing,
-    /// The engine is a function call.
-    FunctionCall,
-    /// The engine is run on a model.
-    Model,
-    /// The engine is run on a single measure (with a model).
-    Single,
-    /// The engine is run on a group of measures (with a model).
-    Grouped
-  };
+class engtype : public shared_string {
+    public:
+        /// Different forms for invoking an engine.
+        enum calling_form {
+            /// None, used for "no engine".
+            Nothing,
+            /// The engine is a function call.
+            FunctionCall,
+            /// The engine is run on a model.
+            Model,
+            /// The engine is run on a single measure (with a model).
+            Single,
+            /// The engine is run on a group of measures (with a model).
+            Grouped
+        };
 
-private:
-  const char* name;
-  const char* doc;
-  calling_form form;
-  int index;
+    public:
+        engtype(const char* n, const char* d, calling_form f);
+    protected:
+        virtual ~engtype();
+    public:
+        inline const char* Name() const { return getStr(); }
+        inline const char* Documentation() const { return doc; }
+        inline calling_form getForm() const { return form; }
 
-  bool finalized;
-
-  // pre-finalization
-  engine_tree* EngTree;
-  // post-finalize
-  engine** engineList;
-  unsigned numEngines;
-  //
-  engine* selected_engine;
-
-  friend class engine_watcher;
-public:
-  engtype(const char* n, const char* d, calling_form f);
-  virtual ~engtype();
-
-  inline const char* Name() const { return name; }
-  inline const char* Documentation() const { return doc; }
-  inline calling_form getForm() const { return form; }
-
-  inline int Compare(const char* x) const {
-    DCASSERT(x);
-    return strcmp(name, x);
-  }
-  inline int Compare(const engtype* x) const {
-    DCASSERT(x);
-    DCASSERT(x->name);
-    return strcmp(name, x->name);
-  }
-
+  /*
   inline void setIndex(int ndx) {
     DCASSERT(0==index);
     index = ndx;
   }
 
   inline int getIndex() const { return index; }
-
-  /**
-        Register a solution engine.
-        The first solution engine to be registered will also
-        be set as the default.
   */
-  void registerEngine(engine* e);
+        /**
+            Register a new type of solution engine.
+                @param  et  New engine type to register.
+                            If it duplicates an existing one,
+                            it will be deleted and the duplicate returned.
+                @return     The registered engine type.
+        */
+        static engtype* registerEngineType(engtype* et);
 
-  /**
-        Register a solution engine, as the default.
-        Overwrites any previous default solution engine.
-  */
-  inline void registerEngineAsDefault(engine* e) {
-    if (!finalized && e) {
-        selected_engine = 0;
-        registerEngine(e);
-    }
-  }
+        /** Find the engine type with the given name, if there is one.
+                @param  name  Name of engine type to look for.
+                @return The desired engine type, or null if not found.
+        */
+        static engtype* findEngineType(const char* name);
 
 
-  /** Register a solution sub-engine.
-      Registry must not be finalized.
-        @param  engname   Name of the engine that \a se should belong to.
-                          An error occurs if no such engine can be found.
-        @param  se        Subengine.
-        @throws An appropriate error code.
-  */
-  void registerSubengine(const char* engname, subengine* se);
 
-  /// Call when we are done registering engines.
-  void finalizeRegistry(option_manager* om);
+        /**
+            Register a solution engine.
+            The first solution engine to be registered will also
+            be set as the default.
+        */
+        void registerEngine(engine* e);
 
-  /** Run an engine on parameters.
-      Call this for engines of form "FunctionCall".
-      Finds the currently-selected solution engine, and launches it.
-        @param  pass  The parameters to pass to the engine.
-        @param  np    Number of passed parameters.
-        @param  x     Where to place the solution and such.
-        @throws An appopriate error code
-  */
-  void runEngine(result* pass, int np, traverse_data &x);
+        /**
+            Register a solution engine, as the default.
+            Overwrites any previous default solution engine.
+        */
+        inline void registerEngineAsDefault(engine* e) {
+            if (!finalized && e) {
+                selected_engine = 0;
+                registerEngine(e);
+            }
+        }
 
-  /** Run an engine on a model.
-      Call this for engines of form "Model".
-      Finds the currently-selected solution engine, and launches it.
-        @param  m   The model to analyze.
-                    (The solution, if any, is stored in the
-                    model itself.)
-        @throws An appopriate error code
-  */
-  void runEngine(hldsm* m, result &p);
 
-  /** Solve a single measure.
-      Call this for engines of form "Single".
-      Finds the currently-selected solution engine, and launches it.
-        @param  m     The model to analyze.
-        @param  what  The measure to compute.
-        @throws An appopriate error code
-  */
-  void solveMeasure(hldsm* m, measure* what);
+        /** Register a solution sub-engine.
+            Registry must not be finalized.
+            @param  engname   Name of the engine that \a se should belong to.
+                              An error occurs if no such engine can be found.
+            @param  se        Subengine.
+            @throws An appropriate error code.
+        */
+        void registerSubengine(const char* engname, subengine* se);
 
-  /** Solve a group of measures with the same engine type.
-      Call this for engines of form "Grouped".
-      Finds the currently-selected solution engine, and launches it.
-        @param  m     The model to analyze.
-        @param  list  Set of measures to compute.
-        @throws An appopriate error code
-  */
-  void solveMeasures(hldsm* m, set_of_measures* list);
+        /// Call when we are done registering engines.
+        void finalizeRegistry(option_manager* om=nullptr);
 
-  /** Build a measure set for this engine type.
-      Default behavior is to return 0.
-  */
-  virtual set_of_measures* makeMeasureSet() const;
+        /** Run an engine on parameters.
+            Call this for engines of form "FunctionCall".
+            Finds the currently-selected solution engine, and launches it.
+                @param  pass  The parameters to pass to the engine.
+                @param  np    Number of passed parameters.
+                @param  x     Where to place the solution and such.
+                @throws An appopriate error code
+        */
+        void runEngine(result* pass, int np, traverse_data &x);
 
-private:
-  void killEngTree();
-  engine* getSelectedForModelType(int mt) const;
+        /** Run an engine on a model.
+            Call this for engines of form "Model".
+            Finds the currently-selected solution engine, and launches it.
+                @param  m   The model to analyze.
+                            (The solution, if any, is stored in the
+                            model itself.)
+                @throws An appopriate error code
+        */
+        void runEngine(hldsm* m, result &p);
+
+        /** Solve a single measure.
+            Call this for engines of form "Single".
+            Finds the currently-selected solution engine, and launches it.
+                @param  m     The model to analyze.
+                @param  what  The measure to compute.
+                @throws An appopriate error code
+        */
+        void solveMeasure(hldsm* m, measure* what);
+
+        /** Solve a group of measures with the same engine type.
+            Call this for engines of form "Grouped".
+            Finds the currently-selected solution engine, and launches it.
+                @param  m     The model to analyze.
+                @param  list  Set of measures to compute.
+                @throws An appopriate error code
+        */
+        void solveMeasures(hldsm* m, set_of_measures* list);
+
+        /** Build a measure set for this engine type.
+            Default behavior is to return 0.
+        */
+        virtual set_of_measures* makeMeasureSet() const;
+
+    private:
+        void killEngTree();
+        engine* getSelectedForModelType(int mt) const;
+
+    private:
+        const char* doc;
+        calling_form form;
+    //  int index;
+
+        bool finalized;
+
+        // pre-finalization
+        splayOfShared* EngTree;
+        // post-finalize
+        engine** engineList;
+        unsigned numEngines;
+        //
+        engine* selected_engine;
+
+        friend class engine_watcher;
+
+    private:
+        /// Registry of all engine types
+        static splayOfShared* registry;
 };
 
 // ******************************************************************
@@ -377,8 +378,8 @@ private:
 
 class unordered_engtype : public engtype {
 public:
-  unordered_engtype(const char* n, const char* d);
-  virtual set_of_measures* makeMeasureSet() const;
+    unordered_engtype(const char* n, const char* d);
+    virtual set_of_measures* makeMeasureSet() const;
 };
 
 // ******************************************************************
@@ -389,8 +390,8 @@ public:
 
 class time_engtype : public engtype {
 public:
-  time_engtype(const char* n, const char* d);
-  virtual set_of_measures* makeMeasureSet() const;
+    time_engtype(const char* n, const char* d);
+    virtual set_of_measures* makeMeasureSet() const;
 };
 
 // ******************************************************************
@@ -400,19 +401,19 @@ public:
 // ******************************************************************
 
 class func_engine : public simple_internal {
-  engtype* whicheng;
-  result* engpass;
+    engtype* whicheng;
+    result* engpass;
 public:
-  func_engine(const type* rettype, const char* name, int np, engtype* w);
-  virtual ~func_engine();
-  virtual void Compute(traverse_data &x, expr** pass, int np);
+    func_engine(const type* rettype, const char* name, int np, engtype* w);
+    virtual ~func_engine();
+    virtual void Compute(traverse_data &x, expr** pass, int np);
 protected:
-  virtual void BuildParams(traverse_data &x, expr** pass, int np) = 0;
+    virtual void BuildParams(traverse_data &x, expr** pass, int np) = 0;
 
-  inline result& setParam(int i) {
-    CHECK_RANGE(0, i, formals.getLength());
-    return engpass[i];
-  }
+    inline result& setParam(int i) {
+        CHECK_RANGE(0, i, formals.getLength());
+        return engpass[i];
+    }
 };
 
 // ******************************************************************
@@ -444,6 +445,7 @@ engine* MakeRedirectionEngine(const char* n, const char* d, engtype* e);
 
 /** Safe and proper registration of engine types.
 */
+/*
 inline engtype* MakeEngineType(exprman* em, const char* n,
                             const char* d, engtype::calling_form f)
 {
@@ -457,23 +459,23 @@ inline engtype* MakeEngineType(exprman* em, const char* n,
   CHECK_RETURN(em->registerEngineType(et), true);
   return et;
 }
-
+*/
 
 /** Safe and proper registration of engines.
 */
 inline void RegisterEngine(engtype* et, engine* e)
 {
-  if (0==e) return;
-  if (0==et) {
-    delete e;
-    return;
-  }
-  et->registerEngine(e);
+    if (0==e) return;
+    if (0==et) {
+        Delete(e);
+        return;
+    }
+    et->registerEngine(e);
 }
 
-inline void RegisterEngine(exprman* em, const char* etname, engine* e)
+inline void RegisterEngine(const char* etname, engine* e)
 {
-  RegisterEngine(em ? em->findEngineType(etname) : 0, e);
+    RegisterEngine(engtype::findEngineType(etname), e);
 }
 
 /** Handy: registration of engines that consist of a single subengine.
@@ -482,18 +484,18 @@ inline void RegisterEngine(exprman* em, const char* etname, engine* e)
 inline engine*
 RegisterEngine(engtype* et, const char* name, const char* doc, subengine* se)
 {
-  if (0==se || 0==et) return 0;
-  engine* e = new engine(name, doc);
-  et->registerEngine(e);
-  e->AddSubEngine(se);
-  return e;
+    if (0==se || 0==et) return 0;
+    engine* e = new engine(name, doc);
+    et->registerEngine(e);
+    e->AddSubEngine(se);
+    return e;
 }
 
 inline engine*
-RegisterEngine(exprman* em, const char* etname,
+RegisterEngine(const char* etname,
                 const char* name, const char* doc, subengine* se)
 {
-  return RegisterEngine(em ? em->findEngineType(etname) : 0, name, doc, se);
+    return RegisterEngine(engtype::findEngineType(etname), name, doc, se);
 }
 
 /** Also handy: registration of subengines with an existing engine.
@@ -503,20 +505,16 @@ RegisterEngine(exprman* em, const char* etname,
 inline void
 RegisterSubengine(engtype* et, const char* engname, subengine* se)
 {
-  if (0==se || 0==et) return;
-  et->registerSubengine(engname, se);
+    if (0==se || 0==et) return;
+    et->registerSubengine(engname, se);
 }
 
 inline void
-RegisterSubengine(exprman* em, const char* etname,
+RegisterSubengine(const char* etname,
                   const char* engname, subengine* se)
 {
-  RegisterSubengine(em ? em->findEngineType(etname) : 0, engname, se);
+    RegisterSubengine(engtype::findEngineType(etname), engname, se);
 }
-
-/** Initialize fundamental engines.
-*/
-void InitEngines(exprman* em);
 
 #endif
 
