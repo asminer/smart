@@ -1,11 +1,53 @@
 
 #include "symbols.h"
+#include "bogus.h"
+#include "casting.h"
 #include "values.h"
 #include "dd_front.h"
 // #include "exprman.h"
 
 #include "../Utils/strings.h"
 #include "../Utils/textfmt.h"
+
+// ******************************************************************
+// *                                                                *
+// *                        constfunc  class                        *
+// *                                                                *
+// ******************************************************************
+
+
+/** Constant functions (with no parameters).
+    These are used often as building blocks for more complex items.
+    So, some functionality here is provided for derived classes.
+ */
+class constfunc : public symbol {
+protected:
+    /// The return expression for the function.
+    expr* return_expr;
+    /// The cached value
+    result cache;
+    /// Dependency list.
+    List <symbol> *deplist;
+public:
+    constfunc(const location &W, const type* t, char *n, expr* rhs,
+            List <symbol> *dl);
+    constfunc(const symbol* wrap, expr* rhs, List <symbol> *dl);
+    virtual ~constfunc();
+    virtual void Compute(traverse_data &x);
+    virtual void Traverse(traverse_data &x);
+protected:
+    inline void Initialize(expr* rhs, List <symbol> *dl) {
+        return_expr = rhs;
+        SetSubstitution(false);
+        cache.setNull();
+        setDefined();
+        deplist = dl;
+        if (deplist) for (int i=0; i<deplist->Length(); i++) {
+            deplist->Item(i)->addToWaitList(this);
+        }
+    }
+};
+
 
 // ******************************************************************
 // *                                                                *
@@ -203,42 +245,60 @@ void symbol::notifyList()
 }
 
 // ******************************************************************
-// *                                                                *
-// *                        constfunc  class                        *
-// *                                                                *
-// ******************************************************************
 
+symbol* symbol::makeConstant(const location &W, const type* t,
+      char* name, expr* rhs, List <symbol> *deps)
+{
+    if (!t || bogus_expr::orNull(rhs)) {
+        free(name);
+        return nullptr;
+    }
+    DCASSERT(rhs);
 
-/** Constant functions (with no parameters).
-    These are used often as building blocks for more complex items.
-    So, some functionality here is provided for derived classes.
- */
-class constfunc : public symbol {
-protected:
-  /// The return expression for the function.
-  expr* return_expr;
-  /// The cached value
-  result cache;
-  /// Dependency list.
-  List <symbol> *deplist;
-public:
-  constfunc(const location &W, const type* t, char *n, expr* rhs, List <symbol> *dl);
-  constfunc(const symbol* wrap, expr* rhs, List <symbol> *dl);
-  virtual ~constfunc();
-  virtual void Compute(traverse_data &x);
-  virtual void Traverse(traverse_data &x);
-protected:
-  inline void Initialize(expr* rhs, List <symbol> *dl) {
-      return_expr = rhs;
-      SetSubstitution(false);
-      cache.setNull();
-      setDefined();
-      deplist = dl;
-      if (deplist) for (int i=0; i<deplist->Length(); i++) {
-        deplist->Item(i)->addToWaitList(this);
-      }
-  }
-};
+    const type* rhstype = rhs->Type();
+
+    if (!typeconv::isPromotable(rhstype, t)) {
+        typechecking_error E(W);
+        E << "Return type for identifier ";
+        if (name)   E << name;
+        else        E << "(no name)";
+        E << " should be " << *t;
+        free(name);
+        return nullptr;
+    }
+    rhs = typeconv::castExpr(true, W, t, rhs);
+
+    symbol* s = new constfunc(W, t, name, rhs, deps);
+    if (rhs) s->SetModelType(rhs->GetModelType());
+    if (s->OK())  return s;
+    Delete(s);
+    return nullptr;
+}
+
+symbol* symbol::makeConstant(const symbol* w, expr* rhs, List <symbol> *deps)
+{
+    if (bogus_expr::orNull(rhs))    return nullptr;
+    if (!w)                         return nullptr;
+
+    const type* rhstype = rhs->Type();
+    const type* t = w->Type();
+
+    if (!typeconv::isPromotable(rhstype, t)) {
+        typechecking_error E(w);
+        E << "Return type for identifier ";
+        if (w->Name())  E << w->Name();
+        else            E << "(no name)";
+        E << " should be " << *t;
+        return 0;
+    }
+    rhs = typeconv::castExpr(true, w->Where(), t, rhs);
+    symbol* s = new constfunc(w, rhs, deps);
+    if (rhs) s->SetModelType(rhs->GetModelType());
+    if (s->OK())  return s;
+    Delete(s);
+    return nullptr;
+}
+
 
 // ******************************************************************
 // *                                                                *
@@ -325,63 +385,4 @@ void constfunc::Traverse(traverse_data &x)
         if (return_expr)  return_expr->Traverse(x);
   }
 }
-
-// ******************************************************************
-// *                                                                *
-// *                        exprman  methods                        *
-// *                                                                *
-// ******************************************************************
-
-symbol* exprman::makeConstant(const location &W, const type* t,
-      char* name, expr* rhs, List <symbol> *deps) const
-{
-  if (0==t || isError(rhs)) {
-    free(name);
-    return 0;
-  }
-
-  const type* rhstype = SafeType(rhs);
-
-  if (!isPromotable(rhstype, t)) {
-    typechecking_error E(W);
-    E << "Return type for identifier ";
-    if (name)   E << name;
-    else        E << "(no name)";
-    E << " should be " << *t;
-    free(name);
-    return 0;
-  }
-  rhs = promote(rhs, t);
-  symbol* s = new constfunc(W, t, name, rhs, deps);
-  if (rhs) s->SetModelType(rhs->GetModelType());
-  if (s->OK())  return s;
-  Delete(s);
-  return 0;
-}
-
-symbol* exprman::makeConstant(const symbol* w,
-      expr* rhs, List <symbol> *deps) const
-{
-  if (isError(rhs)) return 0;
-  if (0==w)         return 0;
-
-  const type* rhstype = SafeType(rhs);
-  const type* t = SafeType(w);
-
-  if (!isPromotable(rhstype, t)) {
-    typechecking_error E(w);
-    E << "Return type for identifier ";
-    if (w->Name())  E << w->Name();
-    else            E << "(no name)";
-    E << " should be " << *t;
-    return 0;
-  }
-  rhs = promote(rhs, t);
-  symbol* s = new constfunc(w, rhs, deps);
-  if (rhs) s->SetModelType(rhs->GetModelType());
-  if (s->OK())  return s;
-  Delete(s);
-  return 0;
-}
-
 

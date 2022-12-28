@@ -156,53 +156,6 @@ void forstmt::ShowAssignments(std::ostream &s) const
 // *                                                                *
 // ******************************************************************
 
-symbol* exprman::makeIterator(const location &W,
-      const type* t, char* name, expr* vals) const
-{
-  if (isError(vals) || 0==t) {
-    free(name);
-    Delete(vals);
-    return 0;
-  }
-  DCASSERT(!isDefault(vals));
-
-  if (0==t->getSetOfThis()) {
-    typechecking_error E(W);
-    E << "Illegal type for iterator " << name;
-    Delete(vals);
-    free(name);
-    return 0;
-  }
-
-  symbol* s;
-
-  if (0==vals) {
-    unnamed_warning E(W);
-    E << "Empty set for iterator " << name;
-    s = new iterator(W, t, name, vals);
-  } else {
-
-    const type* vt = vals->Type();
-    DCASSERT(vt);
-
-    // Check that the set type matches the iterator.
-    if (getPromoteDistance(vt, t->getSetOfThis()) < 0) {
-        typechecking_error E(W);
-        E << "Type mismatch: iterator " << name;
-        E << " expects set of type " << *t;
-        Delete(vals);
-        free(name);
-        return 0;
-    }
-    vals = makeTypecast(W, t->getSetOfThis(), vals);
-    s = new iterator(W, t, name, vals);
-  } // if getPromoteDistance
-  if (s->OK())  return s;
-  Delete(s);
-  return 0;
-}
-
-
 
 expr* exprman::makeForLoop(const location &W,
       symbol** iters, int dim, expr* stmt) const

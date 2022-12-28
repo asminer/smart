@@ -23,75 +23,89 @@
 */
 
 class iterator : public symbol {
-protected:
-  /// Expression (set type) for the values of the iterator.
-  expr *values;
-  /// Current range of values for the iterator.
-  shared_set *current;
-  /// Index in the above set for the current value.
-  long index;
-public:
-  iterator(const location &W, const type* t, char *n, expr *v);
-protected:
-  virtual ~iterator();
-public:
-  virtual void Compute(traverse_data &x);
+    protected:
+        /// Expression (set type) for the values of the iterator.
+        expr *values;
+        /// Current range of values for the iterator.
+        shared_set *current;
+        /// Index in the above set for the current value.
+        long index;
+    public:
+        iterator(const location &W, const type* t, char *n, expr *v);
+    protected:
+        virtual ~iterator();
+    public:
+        virtual void Compute(traverse_data &x);
 
-  /** Prints the iterator name, and the set of values.
-      Required by for loops.
-  */
-  void PrintAll(std::ostream &s) const;
+        /** Prints the iterator name, and the set of values.
+            Required by for loops.
+        */
+        void PrintAll(std::ostream &s) const;
 
-  /** Compute the current range of values for the iterator.
-      Required by for loops.
-  */
-  void ComputeCurrent(traverse_data &x);
+        /** Compute the current range of values for the iterator.
+            Required by for loops.
+        */
+        void ComputeCurrent(traverse_data &x);
 
-  /** Done with current range of values for the iterator.
-      Required by for loops.
-  */
-  inline void DoneCurrent() {
-    Delete(current);
-    current = 0;
-  }
+        /** Done with current range of values for the iterator.
+            Required by for loops.
+        */
+        inline void DoneCurrent() {
+            Delete(current);
+            current = 0;
+        }
 
-  /** Fix our value to the first element of the current set.
-      Required by for loops.
-        @return true on success.
-   */
-  inline bool FirstIndex() {
-    if (0==current) return false;
-    if (current->Size() < 1) return false;
-    index = 0;
-    return true;
-  }
+        /** Fix our value to the first element of the current set.
+            Required by for loops.
+                @return true on success.
+        */
+        inline bool FirstIndex() {
+            if (0==current) return false;
+            if (current->Size() < 1) return false;
+            index = 0;
+            return true;
+        }
 
-  /** Fix our value to the next element of the current set.
-      Required by for loops.
-        @return true on success.
-   */
-  inline bool NextValue() {
-    DCASSERT(current);
-    index++;
-    return (index < current->Size());
-  }
+        /** Fix our value to the next element of the current set.
+            Required by for loops.
+                @return true on success.
+        */
+        inline bool NextValue() {
+            DCASSERT(current);
+            index++;
+            return (index < current->Size());
+        }
 
-  /** The element number of the current set that we are "on".
-      Required for arrays.
-   */
-  inline long Index() {
-    return index;
-  }
+        /** The element number of the current set that we are "on".
+            Required for arrays.
+        */
+        inline long Index() {
+            return index;
+        }
 
-  /** Copy the current range of values.
-      Required for arrays.
-  */
-  inline shared_set* CopyCurrent() {
-    return Share(current);
-  }
+        /** Copy the current range of values.
+            Required for arrays.
+        */
+        inline shared_set* CopyCurrent() {
+            return Share(current);
+        }
 
-  /// For debugging.
-  void ShowAssignment(std::ostream &s) const;
+        /// For debugging.
+        void ShowAssignment(std::ostream &s) const;
+
+    public:
+
+        /** Make an iterator variable.
+            Checks for type consistency.
+                @param  W     Where defined.
+                @param  t     Type of the variable.
+                @param  name  Name of the variable.
+                @param  vals  Set of values for the variable.
+                @return 0, if some error occurred.
+                        A new expression, otherwise.
+        */
+        static symbol* makeIterator(const location& W, const type* t,
+            char* name, expr* vals);
 };
 
 

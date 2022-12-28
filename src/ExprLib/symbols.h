@@ -81,6 +81,34 @@ class symbol : public expr {
 
         /// Notify everyone on our waiting list, and destroy the list.
         void notifyList();
+
+    public:
+        /** Make a "constant" (function with no parameters) symbol,
+            not within a converge block.
+                @param  W     Where defined.
+                @param  t     Type of the variable.
+                @param  name  Name of the variable.
+                @param  rhs   Expression to assign to this symbol.
+                @param  deps  List of symbols that must be
+                              "computed" before this one.
+                @return 0, if some error occurred.
+                        A new expression, otherwise.
+        */
+        static symbol* makeConstant(const location& W, const type* t,
+            char* name, expr* rhs, List <symbol> *deps=nullptr);
+
+
+        /** Make a "constant" (function with no parameters) symbol,
+            not within a converge block.
+                @param  w     Wrapper symbol around this one.
+                @param  rhs   Expression to assign to this symbol.
+                @param  deps  List of symbols that must be
+                              "computed" before this one.
+                @return 0, if some error occurred.
+                        A new expression, otherwise.
+        */
+        static symbol* makeConstant(const symbol* w, expr* rhs,
+                List <symbol> *deps=nullptr);
 };
 
 
