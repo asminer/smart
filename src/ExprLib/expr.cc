@@ -10,7 +10,7 @@
 #include "../include/list.h"
 #include "type.h"
 #include "result.h"
-#include "exprman.h"
+// #include "exprman.h"
 
 // ******************************************************************
 // *                     traverse_data  methods                     *

@@ -82,7 +82,7 @@ class assoc_op {
                                 (i.e., type mismatch).
                         a new expression, otherwise.
         */
-        static expr* makeExpr(const location& W, assoc_opcode op,
+        static expr* makeExpr(const location& W, opcode op,
                 expr** opnds, bool* f, int nops);
 
     protected:
@@ -144,7 +144,7 @@ class assoc_op {
                 @return A new expression, or 0 if an error occurred.
                         Will return 0 if "isDefinedForTypes()" returns false.
         */
-        virtual assoc* makeExpr(const location& W, expr** list,
+        virtual expr* makeExpr(const location& W, expr** list,
                 bool* flip, int N) const = 0;
 
     private:
@@ -175,11 +175,11 @@ class assoc : public expr {
 protected:
   int opnd_count;
   expr** operands;
-  exprman::assoc_opcode opcode;
+  assoc_op::opcode opcode;
 public:
-  assoc(const location &W, exprman::assoc_opcode oc,
+  assoc(const location &W, assoc_op::opcode oc,
         const type* t, expr **x, int n);
-  assoc(const location &W, exprman::assoc_opcode oc,
+  assoc(const location &W, assoc_op::opcode oc,
         typelist* t, expr **x, int n);
 protected:
   virtual ~assoc();
@@ -213,7 +213,7 @@ protected:
   /// Can be NULL to signify "no flips".
   bool* flip;
 public:
-  flipassoc(const location &W, exprman::assoc_opcode oc,
+  flipassoc(const location &W, assoc_op::opcode oc,
     const type* t, expr** x, bool* f, int n);
 protected:
   virtual ~flipassoc();
@@ -260,7 +260,7 @@ protected:
 
 class summation : public flipassoc {
 public:
-    summation(const location &W, exprman::assoc_opcode oc,
+    summation(const location &W, assoc_op::opcode oc,
         const type* t, expr** x, bool* f, int n);
 protected:
     inline void inftyMinusInfty(const expr* opnd, result* ans) const {
@@ -288,7 +288,7 @@ protected:
 
 class product : public flipassoc {
 public:
-    product(const location &W, exprman::assoc_opcode oc,
+    product(const location &W, assoc_op::opcode oc,
         const type* t, expr** x, bool* f, int n);
     virtual void Traverse(traverse_data &x);
 protected:

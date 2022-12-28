@@ -4,7 +4,8 @@
 
 #include "unary.h"
 #include "binary.h"
-#include "exprman.h"
+#include "assoc.h"
+// #include "exprman.h"
 
 class shared_state;
 
@@ -257,7 +258,7 @@ public:
         @throws       Appropriate error code.
   */
   virtual void  buildAssoc(const shared_object* left,
-                            bool flip, exprman::assoc_opcode op,
+                            bool flip, assoc_op::opcode op,
                             const shared_object* right,
                             shared_object* ans) = 0;
 

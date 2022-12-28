@@ -67,7 +67,6 @@ smart_SOURCES = \
   \
   ExprLib/engine.cc \
   ExprLib/formalism.cc \
-  ExprLib/init_data.cc \
   ExprLib/type.cc \
   ExprLib/result.cc \
   ExprLib/expr.cc \
@@ -206,7 +205,6 @@ icp_SOURCES = \
 	\
   ExprLib/engine.cc \
   ExprLib/formalism.cc \
-  ExprLib/init_data.cc \
   ExprLib/type.cc \
   ExprLib/result.cc \
   ExprLib/expr.cc \
