@@ -6,6 +6,9 @@
 // *                       bogus_expr methods                       *
 // ******************************************************************
 
+expr* bogus_expr::the_error = nullptr;
+expr* bogus_expr::the_default = nullptr;
+
 bogus_expr::bogus_expr(const char* w)
     : expr( location::NOWHERE(), (typelist*) 0)
 {
@@ -35,9 +38,8 @@ int bogus_expr::Compare(const shared_object* o) const
     return strcmp(which, foo->which);
 }
 
-expr* bogus_expr::getError()
+expr* bogus_expr::makeError()
 {
-    static expr* the_error = nullptr;
     if (!the_error) {
         the_error = new bogus_expr("error");
     }
@@ -45,9 +47,8 @@ expr* bogus_expr::getError()
     return the_error;
 }
 
-expr* bogus_expr::getDefault()
+expr* bogus_expr::makeDefault()
 {
-    static expr* the_default = nullptr;
     if (!the_default) {
         the_default = new bogus_expr("default");
     }

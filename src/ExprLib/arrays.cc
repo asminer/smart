@@ -1,6 +1,7 @@
 
 #include "arrays.h"
-// #include "exprman.h"
+#include "bogus.h"
+#include "casting.h"
 #include "sets.h"
 #include "../Utils/strings.h"
 #include "../Options/options.h"
@@ -18,27 +19,27 @@
 
 array_item::array_item(expr* rhs) : shared_object()
 {
-  r.setNull();
-  e = rhs;
+    r.setNull();
+    e = rhs;
 }
 
 array_item::~array_item()
 {
-  r.deletePtr();
-  Delete(e);
+    r.deletePtr();
+    Delete(e);
 }
 
 bool array_item::Print(std::ostream &s, int) const
 {
-  // DCASSERT(0);
-  s << "array_item ";
-  if (e) {
-    s << "(uncomputed) ";
-    e->Print(s, 0);
-  } else {
-    s << "(computed) " << r.getInt();
-  }
-  return true;
+    // DCASSERT(0);
+    s << "array_item ";
+    if (e) {
+        s << "(uncomputed) ";
+        e->Print(s, 0);
+    } else {
+        s << "(computed) " << r.getInt();
+    }
+    return true;
 }
 
 // ******************************************************************
@@ -55,18 +56,18 @@ bool array_item::Print(std::ostream &s, int) const
 */
 
 struct array_desc : public shared_object {
-  /// The values that can be assumed here.
-  shared_set* values;
-  /** Pointers to the next dimension (another array_desc)
-      or to the array values (a variable).
-      Note that the dimension of this array is equal to the
-      size of the set "values".
-   */
-  shared_object** down;
+    /// The values that can be assumed here.
+    shared_set* values;
+    /** Pointers to the next dimension (another array_desc)
+        or to the array values (a variable).
+        Note that the dimension of this array is equal to the
+        size of the set "values".
+    */
+    shared_object** down;
 
-  array_desc(shared_set *v);
-  ~array_desc();
-  virtual bool Print(std::ostream &s, int) const;
+    array_desc(shared_set *v);
+    ~array_desc();
+    virtual bool Print(std::ostream &s, int) const;
 };
 
 // ******************************************************************
@@ -75,29 +76,29 @@ struct array_desc : public shared_object {
 
 array_desc::array_desc(shared_set* v)
 {
-  values = v;
-  if (values) {
-    down = new shared_object*[values->Size()];
-    for (long i=0; i<values->Size(); i++) down[i] = 0;
-  } else {
-    down = 0;
-  }
+    values = v;
+    if (values) {
+        down = new shared_object*[values->Size()];
+        for (long i=0; i<values->Size(); i++) down[i] = 0;
+    } else {
+        down = 0;
+    }
 }
 
 array_desc::~array_desc()
 {
-  if (values) {
-    for (long i=0; i<values->Size(); i++)  Delete(down[i]);
-    delete[] down;
-    Delete(values);
-  }
+    if (values) {
+        for (long i=0; i<values->Size(); i++)  Delete(down[i]);
+        delete[] down;
+        Delete(values);
+    }
 }
 
 bool array_desc::Print(std::ostream &s, int) const
 {
-  DCASSERT(0);
-  s << "array_desc";
-  return true;
+    DCASSERT(0);
+    s << "array_desc";
+    return true;
 }
 
 // ******************************************************************
@@ -112,17 +113,17 @@ bool array_desc::Print(std::ostream &s, int) const
 
 class array_instance : public array {
 protected:
-  /// The descriptor, which includes data.
-  array_desc* descriptor;
+    /// The descriptor, which includes data.
+    array_desc* descriptor;
 public:
-  array_instance(const array* wrapper);
-  array_instance(const location &W, const type* t, char* n, iterator** il, int dim);
+    array_instance(const array* wrapper);
+    array_instance(const location &W, const type* t, char* n, iterator** il, int dim);
 
-  virtual ~array_instance();
+    virtual ~array_instance();
 
-  virtual void SetCurrentReturn(expr* retval, bool rename);
-  virtual array_item* GetCurrentReturn();
-  virtual array_item* GetItem(expr** indexes, result &x);
+    virtual void SetCurrentReturn(expr* retval, bool rename);
+    virtual array_item* GetCurrentReturn();
+    virtual array_item* GetItem(expr** indexes, result &x);
 };
 
 // ******************************************************************
@@ -131,129 +132,130 @@ public:
 
 array_instance::array_instance(const array* wrapper) : array(wrapper)
 {
-  descriptor = 0;
+    descriptor = 0;
 }
 
 array_instance::array_instance(const location &W, const type* t,
         char* n, iterator** il, int dim)
  : array(W, t, n, il, dim)
 {
-  descriptor = 0;
+    descriptor = 0;
 }
 
 array_instance::~array_instance()
 {
-  Delete(descriptor);
+    Delete(descriptor);
 }
 
 void array_instance::SetCurrentReturn(expr* retval, bool rename)
 {
-  array_desc* prev = 0;
-  shared_object* curr = descriptor;
-  long lastindex = 0;
-  for (int i=0; i<dimension; i++) {
-    if (0==curr) {
-      array_desc* foo = new array_desc(index_list[i]->CopyCurrent());
-      if (prev) {
-        DCASSERT(0==prev->down[lastindex]);
-        prev->down[lastindex] = foo;
-      } else {
-        DCASSERT(0==descriptor);
-        descriptor = foo;
-      }
-      curr = foo;
+    array_desc* prev = 0;
+    shared_object* curr = descriptor;
+    long lastindex = 0;
+    for (int i=0; i<dimension; i++) {
+        if (0==curr) {
+            array_desc* foo = new array_desc(index_list[i]->CopyCurrent());
+            if (prev) {
+                DCASSERT(0==prev->down[lastindex]);
+                prev->down[lastindex] = foo;
+            } else {
+                DCASSERT(0==descriptor);
+                descriptor = foo;
+            }
+            curr = foo;
+        }
+        lastindex = index_list[i]->Index();
+        prev = smart_cast <array_desc*>(curr);
+        DCASSERT(prev);
+        curr = prev->down[lastindex];
     }
-    lastindex = index_list[i]->Index();
-    prev = smart_cast <array_desc*>(curr);
-    DCASSERT(prev);
-    curr = prev->down[lastindex];
-  }
-  if (curr) {
-    // we already have a value...
-    internal_error E(__FILE__, __LINE__);
-    E << "array reassignment?";
-  }
-  prev->down[lastindex] = new array_item(retval);
+    if (curr) {
+        // we already have a value...
+        internal_error E(__FILE__, __LINE__);
+        E << "array reassignment?";
+    }
+    prev->down[lastindex] = new array_item(retval);
 
-  if (!rename)    return;
-  if (0==retval)  return;
+    if (!rename)    return;
+    if (0==retval)  return;
 
-  traverse_data x(traverse_data::Compute);
-  result ind;
-  x.answer = &ind;
-  std::stringstream s;
-  s << Name() << "[";
-  for (int i=0; i<dimension; i++) {
-    DCASSERT(index_list[i]->Type());
-    if (i) s << ", ";
-    SafeCompute(index_list[i], x);
-    index_list[i]->Type()->print(s, ind);
-  }
-  s << "]";
-  shared_string* name = new shared_string(s.str().c_str());
-  retval->Rename(name);
+    traverse_data x(traverse_data::Compute);
+    result ind;
+    x.answer = &ind;
+    std::stringstream s;
+    s << Name() << "[";
+    for (int i=0; i<dimension; i++) {
+        DCASSERT(index_list[i]->Type());
+        if (i) s << ", ";
+        SafeCompute(index_list[i], x);
+        index_list[i]->Type()->print(s, ind);
+    }
+    s << "]";
+    shared_string* name = new shared_string(s.str().c_str());
+    retval->Rename(name);
 }
 
 array_item* array_instance::GetCurrentReturn()
 {
-  array_desc* prev = 0;
-  shared_object* curr = descriptor;
-  long lastindex = 0;
-  for (int i=0; i<dimension; i++) {
-    if (0==curr) {
-      array_desc* foo = new array_desc(index_list[i]->CopyCurrent());
-      if (prev) {
-        DCASSERT(0==prev->down[lastindex]);
-        prev->down[lastindex] = foo;
-      } else {
-        DCASSERT(0==descriptor);
-        descriptor = foo;
-      }
-      curr = foo;
+    array_desc* prev = 0;
+    shared_object* curr = descriptor;
+    long lastindex = 0;
+    for (int i=0; i<dimension; i++) {
+        if (0==curr) {
+            array_desc* foo = new array_desc(index_list[i]->CopyCurrent());
+            if (prev) {
+                DCASSERT(0==prev->down[lastindex]);
+                prev->down[lastindex] = foo;
+            } else {
+                DCASSERT(0==descriptor);
+                descriptor = foo;
+            }
+            curr = foo;
+        }
+        lastindex = index_list[i]->Index();
+        prev = smart_cast <array_desc*> (curr);
+        DCASSERT(prev);
+        curr = prev->down[lastindex];
     }
-    lastindex = index_list[i]->Index();
-    prev = smart_cast <array_desc*> (curr);
-    DCASSERT(prev);
-    curr = prev->down[lastindex];
-  }
-  if (0==curr)  return 0;
-  array_item* ans = smart_cast <array_item*> (curr);
-  DCASSERT(ans);
-  return ans;
+    if (0==curr)  return 0;
+    array_item* ans = smart_cast <array_item*> (curr);
+    DCASSERT(ans);
+    return ans;
 }
 
 array_item* array_instance::GetItem(expr** il, result& x)
 {
-  traverse_data foo(traverse_data::Compute);
-  foo.answer = &x;
-  array_desc* prev = 0;
-  shared_object* curr = descriptor;
-  for (int i=0; i<dimension; i++) {
-    if (0==curr)  return 0;
-    prev = smart_cast <array_desc*> (curr);
-    DCASSERT(prev);
-    SafeCompute(il[i], foo);
-    if (x.isNormal()||x.isInfinity()) {
-      long ndx = prev->values->IndexOf(x);
-      if (ndx<0) {
-        // range error
-        expr_error E(il[i], nullptr);
-        E << "Bad value: ";
-        DCASSERT(il[i]->Type());
-        il[i]->Type()->print(E.stream(), x);
-        E << " for index " << index_list[i]->Name() << " in array " << Name();
+    traverse_data foo(traverse_data::Compute);
+    foo.answer = &x;
+    array_desc* prev = 0;
+    shared_object* curr = descriptor;
+    for (int i=0; i<dimension; i++) {
+        if (0==curr)  return 0;
+        prev = smart_cast <array_desc*> (curr);
+        DCASSERT(prev);
+        SafeCompute(il[i], foo);
+        if (x.isNormal()||x.isInfinity()) {
+            long ndx = prev->values->IndexOf(x);
+            if (ndx<0) {
+                // range error
+                expr_error E(il[i], nullptr);
+                E << "Bad value: ";
+                DCASSERT(il[i]->Type());
+                il[i]->Type()->print(E.stream(), x);
+                E << " for index " << index_list[i]->Name()
+                  << " in array " << Name();
+                return 0;
+            }
+            curr = prev->down[ndx];
+            continue;
+        }
+        // there is something strange with x (null, error, etc), bail out
         return 0;
-      }
-      curr = prev->down[ndx];
-      continue;
     }
-    // there is something strange with x (null, error, etc), bail out
-    return 0;
-  }
-  if (0==curr)  return 0;
-  array_item* ans = smart_cast <array_item*> (curr);
-  DCASSERT(ans);
-  return ans;
+    if (0==curr)  return 0;
+    array_item* ans = smart_cast <array_item*> (curr);
+    DCASSERT(ans);
+    return ans;
 }
 
 
@@ -268,15 +270,15 @@ array_item* array_instance::GetItem(expr** il, result& x)
  */
 
 class arrayassign : public expr {
-  array* f;
-  expr* retval;
+    array* f;
+    expr* retval;
 public:
-  arrayassign(const location &W, array *a, expr *e);
-  virtual ~arrayassign();
+    arrayassign(const location &W, array *a, expr *e);
+    virtual ~arrayassign();
 
-  virtual bool Print(std::ostream &s, int) const;
-  virtual void Compute(traverse_data &x);
-  virtual void Traverse(traverse_data &x);
+    virtual bool Print(std::ostream &s, int) const;
+    virtual void Compute(traverse_data &x);
+    virtual void Traverse(traverse_data &x);
 };
 
 // ******************************************************************
@@ -286,41 +288,41 @@ public:
 arrayassign::arrayassign(const location &W, array *a, expr *e)
   : expr(W, STMT)
 {
-  f = a;
-  retval = e;
-  f->SetModelType(retval->GetModelType());
+    f = a;
+    retval = e;
+    f->SetModelType(retval->GetModelType());
 }
 
 arrayassign::~arrayassign()
 {
-  Delete(retval);
+    Delete(retval);
 }
 
 bool arrayassign::Print(std::ostream &s, int w) const
 {
-  DCASSERT(f);
-  s << padding(w);
-  f->PrintHeader(s);
-  s << " := ";
-  if (retval)   retval->Print(s);
-  else          s << "null";
-  s << ";\n";
-  return true;
+    DCASSERT(f);
+    s << padding(w);
+    f->PrintHeader(s);
+    s << " := ";
+    if (retval)   retval->Print(s);
+    else          s << "null";
+    s << ";\n";
+    return true;
 }
 
 void arrayassign::Compute(traverse_data &td)
 {
-  // De-iterate the return value
-  expr* rv = (retval) ? (retval->Substitute(0)) : 0;
-  expr* arrayval = em->makeConstant(Where(), f->Type(), 0, rv, 0);
-  f->SetCurrentReturn(arrayval, true);
-  if (expr_debug.start()) {
-    expr_debug << "executing assignment: ";
-    arrayval->Print(expr_debug.stream());
-    expr_debug << " := ";
-    rv->Print(expr_debug.stream());
-    expr_debug.stop();
-  }
+    // De-iterate the return value
+    expr* rv = (retval) ? (retval->Substitute(0)) : 0;
+    expr* arrayval = symbol::makeConstant(Where(), f->Type(), 0, rv);
+    f->SetCurrentReturn(arrayval, true);
+    if (expr_debug.start()) {
+        expr_debug << "executing assignment: ";
+        arrayval->Print(expr_debug.stream());
+        expr_debug << " := ";
+        rv->Print(expr_debug.stream());
+        expr_debug.stop();
+    }
 }
 
 void arrayassign::Traverse(traverse_data &td)
@@ -337,15 +339,15 @@ void arrayassign::Traverse(traverse_data &td)
  */
 class acall : public expr {
 protected:
-  array* func;
-  expr** pass;
-  int numpass;
+    array* func;
+    expr** pass;
+    int numpass;
 public:
-  acall(const location &W, const type* t, array *f, expr **p, int np);
-  virtual ~acall();
-  virtual void Compute(traverse_data &x);
-  virtual void Traverse(traverse_data &x);
-  virtual bool Print(std::ostream &s, int) const;
+    acall(const location &W, const type* t, array *f, expr **p, int np);
+    virtual ~acall();
+    virtual void Compute(traverse_data &x);
+    virtual void Traverse(traverse_data &x);
+    virtual bool Print(std::ostream &s, int) const;
 };
 
 // ******************************************************************
@@ -355,34 +357,34 @@ public:
 acall::acall(const location &W, const type* t, array *f,
     expr **p, int np) : expr(W, t)
 {
-  func = f;
-  pass = p;
-  numpass = np;
+    func = f;
+    pass = p;
+    numpass = np;
 }
 
 acall::~acall()
 {
-  // don't delete func
-  int i;
-  for (i=0; i<numpass; i++) Delete(pass[i]);
-  delete[] pass;
+    // don't delete func
+    int i;
+    for (i=0; i<numpass; i++) Delete(pass[i]);
+    delete[] pass;
 }
 
 void acall::Compute(traverse_data &x)
 {
-  DCASSERT(x.answer);
-  DCASSERT(0==x.aggregate);
-  array_item* elem = func->GetItem(pass, *x.answer);
+    DCASSERT(x.answer);
+    DCASSERT(0==x.aggregate);
+    array_item* elem = func->GetItem(pass, *x.answer);
 
-  if (expr_debug.start()) {
-    expr_debug << "got array element: ";
-    if (elem)   elem->Print(expr_debug.stream());
-    else        expr_debug << "null";
-    expr_debug.stop();
-  }
+    if (expr_debug.start()) {
+        expr_debug << "got array element: ";
+        if (elem)   elem->Print(expr_debug.stream());
+        else        expr_debug << "null";
+        expr_debug.stop();
+    }
 
-  if (elem)   elem->Compute(x, func->IsFixed());
-  else        x.answer->setNull();
+    if (elem)   elem->Compute(x, func->IsFixed());
+    else        x.answer->setNull();
 }
 
 void acall::Traverse(traverse_data &x)
@@ -411,7 +413,7 @@ void acall::Traverse(traverse_data &x)
 
       if (changed) {
         x.answer->setPtr(
-          em->makeArrayCall(Where(), fsub, newpass, numpass)
+          array::makeArrayCall(Where(), fsub, newpass, numpass)
         );
       } else {
         Delete(fsub);
@@ -461,30 +463,31 @@ bool acall::Print(std::ostream &s, int) const
 
 array::array(const array* wrapper) : symbol(wrapper)
 {
-  DCASSERT(wrapper);
-  dimension = wrapper->dimension;
-  index_list = new iterator* [dimension];
-  for (int i=0; i<dimension; i++)
-    index_list[i] = Share(wrapper->index_list[i]);
-  SetSubstitution(false);
-  is_fixed = false;
+    DCASSERT(wrapper);
+    dimension = wrapper->dimension;
+    index_list = new iterator* [dimension];
+    for (int i=0; i<dimension; i++) {
+        index_list[i] = Share(wrapper->index_list[i]);
+    }
+    SetSubstitution(false);
+    is_fixed = false;
 }
 
 array::array(const location &W, const type* t, char* n,
     iterator** il, int dim) : symbol(W, t, n)
 {
-  index_list = il;
-  dimension = dim;
-  SetSubstitution(false);
-  is_fixed = false;
+    index_list = il;
+    dimension = dim;
+    SetSubstitution(false);
+    is_fixed = false;
 }
 
 array::~array()
 {
-  if (index_list) {
-    for (int i=0; i<dimension; i++)  Delete(index_list[i]);
-    delete[] index_list;
-  }
+    if (index_list) {
+        for (int i=0; i<dimension; i++)  Delete(index_list[i]);
+        delete[] index_list;
+    }
 }
 
 void array::SetCurrentReturn(expr*, bool)
@@ -509,145 +512,141 @@ array_item* array::GetItem(expr**, result &x)
 
 bool array::checkArrayCall(const location &W, expr** indexes, int dim) const
 {
-  // check that dim matches our dimension
-  if (GetDimension() != dim) {
-    typechecking_error E(W);
-    E << "Array " << Name() << " has dimension " << GetDimension();
-    return false;
-  }
-
-  // type checking
-  for (int i=0; i<dim; i++) {
-    if (!em->isPromotable(indexes[i]->Type(), GetIndexType(i))) {
-      typechecking_error E(W);
-      E << "Array ";
-      PrintHeader(E.stream());
-      const type* at = GetIndexType(i);
-      DCASSERT(at);
-      E << " expects type " << *at << " for index " << GetIndexName(i);
-      return false;
+    // check that dim matches our dimension
+    if (GetDimension() != dim) {
+        typechecking_error E(W);
+        E << "Array " << Name() << " has dimension " << GetDimension();
+        return false;
     }
-    indexes[i] = em->promote(indexes[i], GetIndexType(i));
-    DCASSERT(indexes[i]);
-    if (em->isError(indexes[i]))  return false;
-  } // for i
-  return true;
+
+    // type checking
+    for (int i=0; i<dim; i++) {
+        if (!typeconv::isPromotable(indexes[i]->Type(), GetIndexType(i))) {
+            typechecking_error E(W);
+            E << "Array ";
+            PrintHeader(E.stream());
+            const type* at = GetIndexType(i);
+            DCASSERT(at);
+            E << " expects type " << *at << " for index " << GetIndexName(i);
+            return false;
+        }
+        indexes[i] = typeconv::castExpr(true, W, GetIndexType(i), indexes[i]);
+        DCASSERT(indexes[i]);
+        if (bogus_expr::orNull(indexes[i])) return false;
+    } // for i
+    return true;
 }
 
 void array::Traverse(traverse_data &x)
 {
-  switch (x.which) {
-    case traverse_data::Affix:
-        is_fixed = true;
-        return;
+    switch (x.which) {
+        case traverse_data::Affix:
+            is_fixed = true;
+            return;
 
-    default:
-        symbol::Traverse(x);
-  }
+        default:
+            symbol::Traverse(x);
+    }
 }
 
 void array::PrintHeader(std::ostream &s) const
 {
-  s << Name();
-  for (int i=0; i<dimension; i++) {
-    s << "[";
-    s << index_list[i]->Name();
-    s << "]";
-  }
+    s << Name();
+    for (int i=0; i<dimension; i++) {
+        s << "[";
+        s << index_list[i]->Name();
+        s << "]";
+    }
 }
 
 array* array::instantiateMe() const
 {
-  return new array_instance(this);
+    return new array_instance(this);
 }
-
 
 // ******************************************************************
-// *                                                                *
-// *                        exprman  methods                        *
-// *                                                                *
-// ******************************************************************
 
-symbol* exprman::makeArray(const location &W, const type* t, char* n, symbol** indexes, int dim) const
+symbol* array::makeArray(const location &W, const type* t, char* n, symbol** indexes, int dim)
 {
-  if (0==indexes) {
-    free(n);
-    return 0;
-  }
-  // Check indexes
-  for (int i=0; i<dim; i++) {
-    iterator* it = dynamic_cast <iterator*> (indexes[i]);
-    if (it)  continue;
-    // bad iterator, bail out
-    for (int j=0; j<dim; j++)  Delete(indexes[j]);
-    delete[] indexes;
-    free(n);
-    return 0;
-  }
-
-  return new array_instance(W, t, n, (iterator**) indexes, dim);
-}
-
-
-expr* exprman::makeArrayAssign(const location &W,
-      symbol* arr, expr* rhs) const
-{
-  array* a = dynamic_cast <array*> (arr);
-  if (0==a) {
-    Delete(rhs);
-    return 0;
-  }
-  if (!isOrdinary(rhs))    return 0;
-
-  // Check return type
-  if (!isPromotable(rhs->Type(), a->Type())) {
-    typechecking_error E(W);
-    E << "Type mismatch in assignment for array " << a->Name();
-    Delete(rhs);
-    return 0;
-  }
-
-  rhs = promote(rhs, a->Type());
-  if (isError(rhs))  return 0;
-
-  // This array is not in a converge, so we can use the values immediately:
-  a->setDefined();
-  a->Affix();
-  return new arrayassign(W, a, rhs);
-}
-
-
-expr* exprman::makeArrayCall(const location &W,
-      symbol* arr, expr** indexes, int dim) const
-{
-  if (0==indexes)  return makeError();
-  bool nul = false;
-  bool err = false;
-  array* a = dynamic_cast <array*> (arr);
-  if (0==a) {
-    err = true;
-  } else {
+    if (!indexes) {
+        free(n);
+        return nullptr;
+    }
+    // Check indexes
     for (int i=0; i<dim; i++) {
-      if (0 == indexes[i]) {
-        nul = true;
-        break;
-      }
-      if (isError(indexes[i]))  err = true;
-    } // for i
-  }
+        iterator* it = dynamic_cast <iterator*> (indexes[i]);
+        if (it)  continue;
+        // bad iterator, bail out
+        for (int j=0; j<dim; j++)  Delete(indexes[j]);
+        delete[] indexes;
+        free(n);
+        return nullptr;
+    }
 
-  // check that dim matches dimension of a!
-  if (!err && !nul) {
-    err = !a->checkArrayCall(W, indexes, dim);
-  }
+    return new array_instance(W, t, n, (iterator**) indexes, dim);
+}
 
-  if (err || nul) {
-    for (int i=0; i<dim; i++)  Delete(indexes[i]);
-    delete[] indexes;
-    if (nul)  return 0;
-    else      return makeError();
-  }
 
-  return new acall(W, a->Type(), a, indexes, dim);
+expr* array::makeArrayAssign(const location &W,
+      symbol* arr, expr* rhs)
+{
+    array* a = dynamic_cast <array*> (arr);
+    if (!a) {
+        Delete(rhs);
+        return nullptr;
+    }
+    if (bogus_expr::orNull(rhs)) return nullptr;
+
+    // Check return type
+    if (!typeconv::isPromotable(rhs->Type(), a->Type())) {
+        typechecking_error E(W);
+        E << "Type mismatch in assignment for array " << a->Name();
+        Delete(rhs);
+        return nullptr;
+    }
+
+    rhs = typeconv::castExpr(true, W, a->Type(), rhs);
+
+    if (bogus_expr::isError(rhs)) return nullptr;
+
+    // This array is not in a converge, so we can use the values immediately:
+    a->setDefined();
+    a->Affix();
+    return new arrayassign(W, a, rhs);
+}
+
+
+expr* array::makeArrayCall(const location &W,
+      symbol* arr, expr** indexes, int dim)
+{
+    if (!indexes)  return bogus_expr::makeError();
+    bool nul = false;
+    bool err = false;
+    array* a = dynamic_cast <array*> (arr);
+    if (0==a) {
+        err = true;
+    } else {
+        for (int i=0; i<dim; i++) {
+            if (0 == indexes[i]) {
+                nul = true;
+                break;
+            }
+            if (bogus_expr::isError(indexes[i]))  err = true;
+        } // for i
+    }
+
+    // check that dim matches dimension of a!
+    if (!err && !nul) {
+        err = !a->checkArrayCall(W, indexes, dim);
+    }
+
+    if (err || nul) {
+        for (int i=0; i<dim; i++)  Delete(indexes[i]);
+        delete[] indexes;
+        if (nul)  return 0;
+        else      return bogus_expr::makeError();
+    }
+
+    return new acall(W, a->Type(), a, indexes, dim);
 }
 

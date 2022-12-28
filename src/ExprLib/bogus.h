@@ -21,8 +21,10 @@ public:
 
     // Only need one instance of these:
 
-    static expr* getError();
-    static expr* getDefault();
+    static expr* makeError();
+    static expr* makeDefault();
+    static inline bool isError(const expr* x)   { return x == the_error; }
+    static inline bool isDefault(const expr* x) { return x == the_default; }
 
     static inline bool orNull(expr* x) {
         if (!x) return true;
@@ -30,6 +32,9 @@ public:
     }
 protected:
     virtual void Traverse(traverse_data &x);
+private:
+    static expr* the_error;
+    static expr* the_default;
 };
 
 #endif
