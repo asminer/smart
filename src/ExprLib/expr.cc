@@ -109,29 +109,11 @@ bool traverse_data::Print(std::ostream &s) const
 // *                          expr methods                          *
 // ******************************************************************
 
-const type* expr::STMT = 0;
-
+const type* expr::STMT = nullptr;
+int expr::global_IDnum = 0;
 debugging_msg expr::expr_debug;
 debugging_msg expr::waitlist_debug;
 debugging_msg expr::model_debug;
-
-static message_initializer _e_debug(expr::expr_debug,
-    "exprs",
-    "When set, low-level expression and statement messages are displayed."
-);
-static message_initializer _e_wait(expr::waitlist_debug,
-    "waitlist",
-    "When set, diagnostic messages are displayed regarding symbol waiting lists."
-);
-static message_initializer _e_model(expr::model_debug,
-    "models",
-    "When set, diagnostic messages are displayed regarding model construction."
-);
-
-
-exprman* expr::em = 0;
-long expr::global_IDnum = 0;
-
 
 expr::expr(const location &W, const type* t) : shared_object()
 {
@@ -458,5 +440,48 @@ typechecking_error::typechecking_error(const expr* x)
     }
     Out << ':';
     newLine();
+}
+
+// ******************************************************************
+// *                                                                *
+// *                         Initialization                         *
+// *                                                                *
+// ******************************************************************
+
+class expr_initializer : public initializer {
+    public:
+        expr_initializer();
+    protected:
+        virtual void execute();
+};
+static expr_initializer the_expr_initializer;
+
+expr_initializer::expr_initializer() : initializer(__FILE__, 1, 2)
+{
+    builds_resource(0, "exprs");
+    needs_resource(1, "types");
+    needs_resource(2, "Debug");
+}
+
+void expr_initializer::execute()
+{
+    expr::STMT = type::find("void");
+    initialize_msg(expr::expr_debug,
+        "exprs",
+        "When set, low-level expression and statement messages are displayed.",
+        get_object(2, "Debug")
+    );
+
+    initialize_msg(expr::waitlist_debug,
+        "waitlist",
+        "When set, diagnostic messages are displayed regarding symbol waiting lists.",
+        get_object(2, "Debug")
+    );
+
+    initialize_msg(expr::model_debug,
+        "models",
+        "When set, diagnostic messages are displayed regarding model construction.",
+        get_object(2, "Debug")
+    );
 }
 

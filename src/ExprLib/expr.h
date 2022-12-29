@@ -17,7 +17,8 @@ class rng_stream;
 
 // class io_environ;    // defined in Streams module
 
-class option_manager;   // defined in Options module
+class option;
+class option_enum;
 
 class model_def;  // defined in models.h
 
@@ -201,309 +202,396 @@ public:
 */
 
 class expr : public shared_object {
-  // static things and their manipulation.
-public:
-  /// Expression debugging.
-  static debugging_msg expr_debug;
-  /// Symbol waiting list debugging.
-  static debugging_msg waitlist_debug;
-  /// Model debugging.
-  static debugging_msg model_debug;
-protected:
-  /// Type to use for statements.
-  static const type* STMT;
-  /// Expression manager, for "global" options and such.
-  static exprman* em;
-  // friend, needed to initialize the static items.
-  friend exprman* Initialize_Expressions(option_manager *om);
+    public:
+        /** Constructor for simple types.
+                @param  W     Where declared.
+                @param  t     simple type of expression.
+        */
+        expr(const location& W, const type* t);
 
-private:
-  /// Where the expression was declared.
-  location where;
-  /// Faster and easier to just define types here.
-  const type* simple;
-  typelist* aggtype;
-  /// Model definition that built us, if any (more detailed type info).
-  const model_def* model_type;
-  /// Helpful for compiling, and for returning construction errors.
-  char state;
-  /// Unique identifier, for quick comparison of expression equality.
-  int IDnum;
-  /// Static member used to set the identifiers
-  static long global_IDnum;
-public:
-  /** Constructor for simple types.
-        @param  W     Where declared.
-        @param  t     simple type of expression.
-  */
-  expr(const location& W, const type* t);
+        /** Constructor for aggregates.
+                @param  W     Where declared.
+                @param  t     Aggregate type, will be "owned" by expression.
+        */
+        expr(const location& W, typelist* t);
 
-  /** Constructor for aggregates.
-        @param  W     Where declared.
-        @param  t     Aggregate type, will be "owned" by expression.
-  */
-  expr(const location& W, typelist* t);
+        /** NOT a copy constructor.
+            Sets the filename, linenumber, and type
+            from the given expression.
+                @param  x  Expr to grab from.
+        */
+        expr(const expr* x);
 
-  /** NOT a copy constructor.
-      Sets the filename, linenumber, and type
-      from the given expression.
-        @param  x  Expr to grab from.
-  */
-  expr(const expr* x);
+    protected:
+        virtual ~expr();
 
-protected:
-  virtual ~expr();
-
-   /// Helper for constructors
-  void Init(const location &W, const type* st,
+        /// Helper for constructors
+        void Init(const location &W, const type* st,
             typelist* at, const model_def* mt);
 
-public:
-  inline int getID() const { return IDnum; }
+    public:
+        inline int getID() const { return IDnum; }
 
-  inline bool OK() const { return state >= 0; }
-  inline bool hadNull() const { return -1 == state; }
-  inline bool hadError() const { return -2 == state; }
-  inline bool isComputed() const { return state >= 5; }
-  inline bool isReady() const { return state >= 4; }
-  inline bool isBlocked() const { return 3 == state; }
-  inline bool isDefined() const { return state >= 2; }
-  inline bool isGuessed() const { return state >= 1; }
+        inline bool OK() const { return state >= 0; }
+        inline bool hadNull() const { return -1 == state; }
+        inline bool hadError() const { return -2 == state; }
+        inline bool isComputed() const { return state >= 5; }
+        inline bool isReady() const { return state >= 4; }
+        inline bool isBlocked() const { return 3 == state; }
+        inline bool isDefined() const { return state >= 2; }
+        inline bool isGuessed() const { return state >= 1; }
 
-  inline void setGuessed() {
-    DCASSERT(state >= 0);
-    DCASSERT(state < 1);
-    state = 1;
-  }
-  inline void setDefined() {
-    DCASSERT(state >= 0);
-    DCASSERT(state < 2);
-    state = 2;
-  }
-  inline void setBlocked() {
-    DCASSERT(state >= 0);
-    DCASSERT(state <= 3);
-    state = 3;
-  }
-  inline void setReady() {
-    DCASSERT(state >= 0);
-    DCASSERT(state < 4);
-    state = 4;
-  }
-  inline void setComputed() {
-    DCASSERT(state >= 0);
-    DCASSERT(state < 5);
-    state = 5;
-  }
+        inline void setGuessed() {
+            CHECK_RANGE(0, state, 1);
+            state = 1;
+        }
+        inline void setDefined() {
+            CHECK_RANGE(0, state, 2);
+            state = 2;
+        }
+        inline void setBlocked() {
+            CHECK_RANGE(0, state, 3);   // or 4?
+            state = 3;
+        }
+        inline void setReady() {
+            CHECK_RANGE(0, state, 4);
+            state = 4;
+        }
+        inline void setComputed() {
+            CHECK_RANGE(0, state, 5);
+            state = 5;
+        }
 
-protected:
-  inline void setOK() { state = 0; }
-  inline void setNull() { state = -1; }
-  inline void setError() { state = -2; }
+    protected:
+        inline void setOK() { state = 0; }
+        inline void setNull() { state = -1; }
+        inline void setError() { state = -2; }
 
-public:
+    public:
 
-  /** Useful for rare cases when we do not know the expression
-      type a priori.  If this is to be used, then the expression should be
-      constructed either with type 0, or a typelist of 0
-      (the two are equivalent).
-        @param  t  The type of the expression.
-  */
-  void SetType(const type* t);
+        /** Useful for rare cases when we do not know the expression
+            type a priori.  If this is to be used, then the expression
+            should be constructed either with type 0, or a typelist of 0
+            (the two are equivalent).
+                @param  t  The type of the expression.
+        */
+        void SetType(const type* t);
 
-  /** Useful for rare cases when we do not know the expression
-      type a priori.  If this is to be used, then the expression should be
-      constructed either with type 0, or a typelist of 0
-      (the two are equivalent).
-        @param  t  The type of the expression.
-  */
-  void SetType(typelist* t);
+        /** Useful for rare cases when we do not know the expression
+            type a priori.  If this is to be used, then the expression
+            should be constructed either with type 0, or a typelist of 0
+            (the two are equivalent).
+                @param  t  The type of the expression.
+        */
+        void SetType(typelist* t);
 
-  /** Useful for rare cases when we do not know the expression
-      type a priori.  If this is to be used, then the expression should be
-      constructed either with type 0, or a typelist of 0
-      (the two are equivalent).
-        @param  t  Expression to take the type from.
-  */
-  void SetType(const expr* t);
+        /** Useful for rare cases when we do not know the expression
+            type a priori.  If this is to be used, then the expression
+            should be constructed either with type 0, or a typelist of 0
+            (the two are equivalent).
+                @param  t  Expression to take the type from.
+        */
+        void SetType(const expr* t);
 
-  /** Set the model that constructed us.
-      Will also set the type if necessary.
+        /** Set the model that constructed us.
+            Will also set the type if necessary.
 
-        @param  mt  Model definition that the expression
-                    is based on.  Makes sense only for
-                    expressions of type MODEL.
-  */
-  void SetModelType(const model_def* mt);
+                @param  mt  Model definition that the expression
+                            is based on.  Makes sense only for
+                            expressions of type MODEL.
+        */
+        void SetModelType(const model_def* mt);
 
-  inline const model_def* GetModelType() const { return model_type; }
+        inline const model_def* GetModelType() const { return model_type; }
 
-  inline const location& Where() const { return where; }
+        inline const location& Where() const { return where; }
 
-  /// The number of aggregate components in this expression.
-  inline int NumComponents() const {
-    return (aggtype) ? aggtype->Length() : 1;
-  }
+        /// The number of aggregate components in this expression.
+        inline int NumComponents() const {
+            return (aggtype) ? aggtype->Length() : 1;
+        }
 
-  /// Return a pointer to component i.
-  virtual expr* GetComponent(int i);
+        /// Return a pointer to component i.
+        virtual expr* GetComponent(int i);
 
-  /// The type of component i.
-  inline const type* Type(int i) const {
-    if (aggtype) {
-      return aggtype->GetItem(i);
-    } else {
-      DCASSERT(0==i);
-      return simple;
-    }
-  }
+        /// The type of component i.
+        inline const type* Type(int i) const {
+            if (aggtype) {
+                return aggtype->GetItem(i);
+            } else {
+                DCASSERT(0==i);
+                return simple;
+            }
+        }
 
-  /// The type, assuming we are simple.
-  inline const type* Type() const {
-    DCASSERT(0==aggtype);
-    return simple;
-  }
+        /// The type, assuming we are simple.
+        inline const type* Type() const {
+            DCASSERT(0==aggtype);
+            return simple;
+        }
 
-  /** Show the type.  Super handy!
-      virtualness: super duper handy for error expressions!
-  */
-  virtual void PrintType(std::ostream &s) const;
+        /** Show the type.  Super handy!
+            virtualness: super duper handy for error expressions!
+        */
+        virtual void PrintType(std::ostream &s) const;
 
-  /** Compute the expression.
-      A special case of Traversal, because it needs to be fast.
-  */
-  virtual void Compute(traverse_data &x);
+        /** Compute the expression.
+            A special case of Traversal, because it needs to be fast.
+        */
+        virtual void Compute(traverse_data &x);
 
-  /** Get the expression name.
-      Will be NULL unless this is a symbol, in which case
-      the symbol name is returned.
-  */
-  virtual const char* Name() const;
+        /** Get the expression name.
+            Will be NULL unless this is a symbol, in which case
+            the symbol name is returned.
+        */
+        virtual const char* Name() const;
 
-  /** Get the expression name, as a shared_object.
-      Will be NULL unless this is a symbol.
-  */
-  virtual shared_object* SharedName() const;
+        /** Get the expression name, as a shared_object.
+            Will be NULL unless this is a symbol.
+        */
+        virtual shared_object* SharedName() const;
 
-  /** Rename the expression.
-      @param  newname The new name to use, as a shared_object.
-                      (Should be a shared_string.)
-  */
-  virtual void Rename(shared_object* newname);
+        /** Rename the expression.
+            @param  newname The new name to use, as a shared_object.
+                            (Should be a shared_string.)
+        */
+        virtual void Rename(shared_object* newname);
 
-  /// Returns true if the types and names match perfectly.
-  bool Matches(const expr* sym) const;
+        /// Returns true if the types and names match perfectly.
+        bool Matches(const expr* sym) const;
 
 
-  /** Clear the compute cache.
-      We use a compute cache for each function with no parameters.
-      This is required to handle dependent random variables correctly!
-      So, we need a meachanism to clear the caches.
-      This method is a front-end for Traverse().
-  */
-  void ClearCache();
+        /** Clear the compute cache.
+            We use a compute cache for each function with no parameters.
+            This is required to handle dependent random variables correctly!
+            So, we need a meachanism to clear the caches.
+            This method is a front-end for Traverse().
+        */
+        void ClearCache();
 
-  /** Compute the const parts of an expression.
-      Used to prevent repeated sampling of consts, e.g.:
-        Avg(uniform(0.0, 1000.0) + Fib(20));
-        Avg(uniform(Fib(1), Fib(20));
-        real m := avg_ss(tk(p) + Fib(20));
+        /** Compute the const parts of an expression.
+            Used to prevent repeated sampling of consts, e.g.:
+                Avg(uniform(0.0, 1000.0) + Fib(20));
+                Avg(uniform(Fib(1), Fib(20));
+                real m := avg_ss(tk(p) + Fib(20));
 
-      Also, causes execution of converge "guess" statements.
+            Also, causes execution of converge "guess" statements.
 
-      This method is a front-end for Traverse().
-  */
-  void PreCompute();
+            This method is a front-end for Traverse().
+        */
+        void PreCompute();
 
-  /** Fix values of converge variables.
-      This method is a front-end for Traverse().
-  */
-  void Affix();
+        /** Fix values of converge variables.
+            This method is a front-end for Traverse().
+        */
+        void Affix();
 
-  /** Create a copy of this expression with values substituted
-      for certain symbols.
-      (The symbols themselves determine the substitution.)
-      Normally this is used by arrays within for loops.
-      We make shallow copies (shared pointers to expressions)
-      whenever possible.
-        @param  i  The component to substitute.
-   */
-  expr* Substitute(int i);
+        /** Create a copy of this expression with values substituted
+            for certain symbols.
+            (The symbols themselves determine the substitution.)
+            Normally this is used by arrays within for loops.
+            We make shallow copies (shared pointers to expressions)
+            whenever possible.
+                @param  i  The component to substitute.
+        */
+        expr* Substitute(int i);
 
-  /** Like substitute, but for measures.
-  */
-  expr* Measurify(model_def* parent);
+        /** Like substitute, but for measures.
+        */
+        expr* Measurify(model_def* parent);
 
 
-  /** Build a list of expressions for a particular type of traversal.
-        @param  w     Type of list to build.
-        @param  i     The component to check.
-        @param  L     List in which we try to store items; can be 0.
-        @return The number of items that should appear in the list.
-                The actual list might be smaller (e.g., if list is 0,
-                or we ran out of memory).
-  */
-  int BuildExprList(traverse_data::traversal_type w, int i, List <expr> *L);
+        /** Build a list of expressions for a particular type of traversal.
+                @param  w   Type of list to build.
+                @param  i   The component to check.
+                @param  L   List in which we try to store items;
+                            can be 0.
+                @return     The number of items that should appear in the
+                            list. The actual list might be smaller (e.g.,
+                            if list is 0, or we ran out of memory).
+        */
+        int BuildExprList(traverse_data::traversal_type w, int i,
+                List <expr> *L);
 
-  /** Build a list of symbols for a particular type of traversal.
-        @param  w     Type of list to build.
-        @param  i     The component to check.
-        @param  L     List in which we try to store items; can be 0.
-        @return The number of items that should appear in the list.
-                The actual list might be smaller (e.g., if list is 0,
-                or we ran out of memory).
-  */
-  int BuildSymbolList(traverse_data::traversal_type w, int i, List <symbol> *L);
+        /** Build a list of symbols for a particular type of traversal.
+                @param  w   Type of list to build.
+                @param  i   The component to check.
+                @param  L   List in which we try to store items;
+                            can be 0.
+                @return     The number of items that should appear in the
+                            list. The actual list might be smaller (e.g.,
+                            if list is 0, or we ran out of memory).
+        */
+        int BuildSymbolList(traverse_data::traversal_type w, int i,
+                List <symbol> *L);
 
-  /** Traverse the expression.
-      All non-critical expression traversals are
-      handled by this function, by specifying the
-      appropriate members of the passed parameter.
+        /** Traverse the expression.
+            All non-critical expression traversals are
+            handled by this function, by specifying the
+            appropriate members of the passed parameter.
 
-      @param  x  Struct of data for traversals.
+            @param  x  Struct of data for traversals.
 
-      Based on the value of \a which, we do the following.
-      For all of them, \a aggregate specifies
-      the component to use of an aggregate expression.
+            Based on the value of \a which, we do the following.
+            For all of them, \a aggregate specifies
+            the component to use of an aggregate expression.
 
-      PreCompute:
-        pre-compute and remember
-        any "const" parts of the expression
-        (because we are about to sample it,
-        perhaps several times).
+            PreCompute:
+                pre-compute and remember
+                any "const" parts of the expression
+                (because we are about to sample it,
+                perhaps several times).
 
-      ClearCache:
-        clear any memory used by PreCompute.
+            ClearCache:
+                clear any memory used by PreCompute.
 
-      Substitute:
-        Make a copy of this expression, with values
-        substituted for the appropriate symbols,
-        and return an expression pointer in \a answer.
+            Substitute:
+                Make a copy of this expression, with values
+                substituted for the appropriate symbols,
+                and return an expression pointer in \a answer.
 
-      GetSymbols:
-      GetVarDeps:
-      GetProducts:
-      GetMeasures:
-        Input: \a answer is a list of expressions
-          (see objlist.h)
-        Output: we have added the requested items to the list.
-          We do not check for duplicates, so
-          the same item may appear several times.
+            GetSymbols:
+            GetVarDeps:
+            GetProducts:
+            GetMeasures:
+                Input: \a answer is a list of expressions
+                (see objlist.h)
+                Output: we have added the requested items to the list.
+                        We do not check for duplicates, so
+                        the same item may appear several times.
 
-      GetVarDeps:
-        Like GetSymbols, except it also includes any
-        symbols that a symbol depends on.
+            GetVarDeps:
+                Like GetSymbols, except it also includes any
+                symbols that a symbol depends on.
 
-      BuildDD:
-        Builds a decision diagram for this expression,
-        using the specified Decision Diagram library
-        (member \a ddlib); the result is stored as a
-        shared_object in member \a answer.
-  */
-  virtual void Traverse(traverse_data &x);
-  virtual long getDelta() const;
-  virtual long getLower() const;
-  virtual long getUpper() const;
+            BuildDD:
+                Builds a decision diagram for this expression,
+                using the specified Decision Diagram library
+                (member \a ddlib); the result is stored as a
+                shared_object in member \a answer.
+        */
+        virtual void Traverse(traverse_data &x);
+        virtual long getDelta() const;
+        virtual long getLower() const;
+        virtual long getUpper() const;
+
+    //
+    // static things and their manipulation.
+    //
+
+    public:
+        /** Make an expression statement.
+            Normally this is allowed only for void expressions,
+            and in this case the expression is returned unchanged.
+            In the mean time, we also allow statements of the form:
+                5+7;
+            which will simply cause the expression to be computed and printed.
+            Implemented in stmts.cc.
+
+                @param  W     Where defined.
+                @param  e   Expression
+
+                @return ERROR, if an error ocurred.
+                        A new "compute statement", otherwise.
+        */
+        static expr* makeExprStatement(const location& W, expr* e);
+
+
+        /** Make an option-setting statement.
+            Implemented in stmts.cc.
+
+                @param  W     Where defined.
+                @param  o     Option to set.
+                @param  e     Value to assign to the option.
+
+                @return ERROR, if an error occurred.
+                        A new statement, otherwise.
+        */
+        static expr* makeOptionStatement(const location& W,
+                option *o, expr *e);
+
+
+        /** Make an option-setting statement.
+            Implemented in stmts.cc.
+
+                @param  W     Where defined.
+                @param  o     Option to set.
+                @param  v     Constant to assign to the option.
+
+                @return ERROR, if an error occurred.
+                        A new statement, otherwise.
+        */
+        static expr* makeOptionStatement(const location& W,
+            option *o, option_enum *v);
+
+
+        /** Make a checkbox-setting statement.
+            Used for checkbox-style options.  Note that the action is
+            performed directly on the option constant.  The option is
+            provided only for display purposes.
+            Implemented in stmts.cc.
+
+                @param  W       Where defined.
+                @param  o       Option.
+                @param  check   If true, we will "check the box";
+                                otherwise, we will "uncheck the box".
+                @param  vlist   List of items to check or uncheck.
+                @param  nv      Number of list items.
+
+                @return ERROR, if an error occurred.
+                        A new statement, otherwise.
+        */
+        static expr* makeOptionStatement(const location& W, option* o,
+            bool check, option_enum **vlist, int nv);
+
+
+        /** Make a for loop statement.
+            This is an expression with type "void" which,
+            when computed, will set all possible assignments to
+            a set of iterator variables, and for each assignment,
+            will execute another statement (void-type expression).
+            Implemented in forloops.cc.
+
+                @param  W       Where defined.
+                @param  iters   Array of iterators.
+                @param  dim     Dimension of the loop (number of iterators).
+                @param  stmt    The statement to execute within the loop.
+                                (can be a statement block).
+
+                @return ERROR,  if some error occurred.
+                        A new void-type expression, otherwise.
+        */
+        static expr* makeForLoop(const location& W,
+            symbol** iters, int dim, expr* stmt);
+
+
+    protected:
+        /// Expression debugging.
+        static debugging_msg expr_debug;
+        /// Symbol waiting list debugging.
+        static debugging_msg waitlist_debug;
+        /// Model debugging.
+        static debugging_msg model_debug;
+    protected:
+        /// Type to use for statements.
+        static const type* STMT;
+    private:
+        /// Where the expression was declared.
+        location where;
+        /// The expression type, if it is not aggregate.
+        const type* simple;
+        /// The expression type, if it is aggregate.
+        typelist* aggtype;
+        /// Model definition that built us, if any (more detailed type info).
+        const model_def* model_type;
+        /// Helpful for compiling, and for returning construction errors.
+        char state;
+        /// Unique identifier, for quick comparison of expression equality.
+        int IDnum;
+        /// Static member used to set the identifiers
+        static int global_IDnum;
+
+        friend class expr_initializer;
 };
 
 

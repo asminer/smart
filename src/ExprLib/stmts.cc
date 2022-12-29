@@ -5,7 +5,8 @@
 #include "../Options/optman.h"
 #include "../Options/radio_opt.h"
 #include "../Options/checklist.h"
-#include "expr.h"
+#include "bogus.h"
+#include "casting.h"
 // #include "exprman.h"
 #include "result.h"
 
@@ -13,7 +14,7 @@
 
 #define ALLOW_NON_VOID_EXPRSTMT
 
-inline const type* Opt2Type(const exprman* em, option::type ot)
+inline const type* Opt2Type(option::type ot)
 {
     switch (ot) {
         case option::Boolean:   return  type::find("bool");
@@ -67,7 +68,6 @@ bool exprstmt::Print(std::ostream &s, int w) const
 
 void exprstmt::Compute(traverse_data &td)
 {
-  DCASSERT(em);
   DCASSERT(td.which == traverse_data::Compute);
   DCASSERT(td.answer);
   if (td.stopExecution())  return;
@@ -140,7 +140,6 @@ bool optassign_val::Print(std::ostream &s, int w) const
 
 void optassign_val::Compute(traverse_data &td)
 {
-  DCASSERT(em);
   DCASSERT(td.which == traverse_data::Compute);
   DCASSERT(td.answer);
   if (td.stopExecution())  return;
@@ -242,7 +241,6 @@ bool optassign_id::Print(std::ostream &s, int w) const
 
 void optassign_id::Compute(traverse_data &td)
 {
-  DCASSERT(em);
   DCASSERT(td.which == traverse_data::Compute);
   DCASSERT(td.answer);
   if (td.stopExecution())  return;
@@ -338,61 +336,57 @@ void opt_checker::Traverse(traverse_data &td)
 // *                                                                *
 // ******************************************************************
 
-expr* exprman::makeExprStatement(const location &W, expr* e) const
+expr* expr::makeExprStatement(const location &W, expr* e)
 {
-  if (0==e)  {
-    Delete(e);
-    return 0;
-  }
-  if (e->Type()->matches("void"))  return Share(e);
+    if (!e)                             return nullptr;
+    if (e->Type()->matches("void"))     return Share(e);
 #ifdef ALLOW_NON_VOID_EXPRSTMT
-  return new exprstmt(W, e);
+    return new exprstmt(W, e);
 #else
-  // print an error message here
-  return makeError();
+    // print an error message here
+    return bogus_expr::makeError();
 #endif
 }
 
-expr* exprman::makeOptionStatement(const location &W,
-        option *o, expr *e) const
+expr* expr::makeOptionStatement(const location &W, option *o, expr *e)
 {
-  if (0==o || 0==e) {
-    Delete(e);
-    return 0;
-  }
-  const type* ot = Opt2Type(this, o->Type());
-  if (0==ot) {
-    // we have a selection-type option, trying to plug a value.
-    typechecking_error E(W);
-    E << "Option " << *o << " is a selction-type option";
-    Delete(e);
-    return makeError();
-  }
-  DCASSERT(ot);
-  const type* et = e->Type();
-  DCASSERT(et);
-  if (!isPromotable(et, ot)) {
-      typechecking_error E(W);
-      E << "Option " << *o << " expects type " << *ot;
-      return makeError();
-  }
+    if (!o || !e) {
+        Delete(e);
+        return nullptr;
+    }
+    const type* ot = Opt2Type(o->Type());
+    if (!ot) {
+        // we have a selection-type option, trying to plug a value.
+        typechecking_error E(W);
+        E << "Option " << *o << " is a selction-type option";
+        Delete(e);
+        return bogus_expr::makeError();
+    }
+    DCASSERT(ot);
+    const type* et = e->Type();
+    DCASSERT(et);
+    if (!typeconv::isPromotable(et, ot)) {
+        typechecking_error E(W);
+        E << "Option " << *o << " expects type " << *ot;
+        return bogus_expr::makeError();
+    }
 
-  e = promote(e, ot);
-  return new optassign_val(W, o, e);
+    e = typeconv::castExpr(true, W, ot, e);
+    return new optassign_val(W, o, e);
 }
 
-expr* exprman::makeOptionStatement(const location &W,
-        option *o, option_enum *v) const
+expr* expr::makeOptionStatement(const location &W, option *o,
+        option_enum *v)
 {
-    if (0==o || 0==v) {
-        return 0;
+    if (!o || !v) {
+        return nullptr;
     }
 
     // check option type
     if (option::RadioButton != o->Type()) {
         typechecking_error E(W);
         E << "Option " << *o << " is not a selection-type option";
-        return makeError();
+        return bogus_expr::makeError();
     }
 
     // check option constant
@@ -400,7 +394,7 @@ expr* exprman::makeOptionStatement(const location &W,
         // We can only get here if the caller is foobar.
         typechecking_error E(W);
         E << "Option " << *o << " cannot be set to " << *v;
-        return makeError();
+        return bogus_expr::makeError();
     }
 
     radio_button* rb = smart_cast <radio_button*> (v);
@@ -409,20 +403,20 @@ expr* exprman::makeOptionStatement(const location &W,
     return new optassign_id(W, o, rb);
 }
 
-expr* exprman::makeOptionStatement(const location &W,
-      option* o, bool check, option_enum **vlist, int nv) const
+expr* expr::makeOptionStatement(const location &W, option* o, bool check,
+        option_enum **vlist, int nv)
 {
-    if (0==o) {
+    if (!o) {
         delete[] vlist;
-        return 0;
+        return nullptr;
     }
-    if (0==vlist)  return 0;
+    if (!vlist)  return nullptr;
 
     // check option type
     if (option::Checklist != o->Type()) {
         typechecking_error E(W);
         E << "Option " << *o << " is not a checklist-type option";
-        return makeError();
+        return bogus_expr::makeError();
     }
 
 #ifdef DEVELOPMENT_CODE

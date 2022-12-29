@@ -1,9 +1,10 @@
 
 #include "forloops.h"
-#include "exprman.h"
 #include "iterators.h"
 #include "../Options/options.h"
 #include "result.h"
+#include "bogus.h"
+#include "casting.h"
 #include <stdlib.h>
 
 // ******************************************************************
@@ -157,26 +158,25 @@ void forstmt::ShowAssignments(std::ostream &s) const
 // ******************************************************************
 
 
-expr* exprman::makeForLoop(const location &W,
-      symbol** iters, int dim, expr* stmt) const
+expr* expr::makeForLoop(const location &W, symbol** iters, int dim, expr* stmt)
 {
-  if (!isOrdinary(stmt))  {
-    return Share(stmt);
-  }
-  DCASSERT(type::matches(stmt->Type(), "void"));
+    if (bogus_expr::orNull(stmt)) {
+        return Share(stmt);
+    }
+    DCASSERT(type::matches(stmt->Type(), "void"));
 #ifdef DEVELOPMENT_CODE
-  for (int i=0; i<dim; i++) {
-    iterator* foo = dynamic_cast <iterator*> (iters[i]);
-    DCASSERT(foo);
-  }
+    for (int i=0; i<dim; i++) {
+        iterator* foo = dynamic_cast <iterator*> (iters[i]);
+        DCASSERT(foo);
+    }
 #endif
-  expr* x = new forstmt(W, (iterator**) iters, dim, stmt);
-  if (x->OK())  return x;
-  if (x->hadError()) {
+    expr* x = new forstmt(W, (iterator**) iters, dim, stmt);
+    if (x->OK())  return x;
+    if (x->hadError()) {
+        Delete(x);
+        return bogus_expr::makeError();
+    }
     Delete(x);
-    return makeError();
-  }
-  Delete(x);
-  return 0;
+    return nullptr;
 }
 
