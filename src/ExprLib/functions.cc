@@ -4,6 +4,8 @@
 #include "../Utils/textfmt.h"
 #include "../Utils/initializer.h"
 #include "functions.h"
+#include "bogus.h"
+#include "casting.h"
 #include "mod_def.h"
 #include "mod_inst.h"
 #include <string.h>
@@ -523,7 +525,7 @@ public:
 
   inline formal_param* newCopy() {
 #ifdef DEBUG_FUNC_WRAPPERS
-    em->cout() << "creating link for fp wrapper " << Name() << "\n";
+    std::cout() << "creating link for fp wrapper " << Name() << "\n";
 #endif
     link = new fp_onstack(this);
     return link;
@@ -843,34 +845,34 @@ bool fplist::hasNameConflict(symbol** pl, int np, int* tmp) const
   return (0==ourExtra || 0==theirExtra);
 }
 
-void addToScores(const exprman* em, int errcode, const type* pass,
+void addToScores(int errcode, const type* pass,
   const type* formal, int* scores)
 {
   DCASSERT(formal);
   // scores[0]: no promotion of formal parameter
   if (scores[0] >= 0) {
-    int d = em->getPromoteDistance(pass, formal);
+    int d = typeconv::getPromoteDistance(pass, formal);
     if (d < 0)  scores[0] = errcode;
     else  scores[0] += d;
   }
   // scores[1]: can we promote formal to "rand"
   if (scores[1] >= 0) {
     const type* rf = randify(formal, true);
-    int d = em->getPromoteDistance(pass, rf);
+    int d = typeconv::getPromoteDistance(pass, rf);
     if (d < 0)  scores[1] = errcode;
     else  scores[1] += d;
   }
   // scores[2]: can we promote formal to "proc"
   if (scores[2] >= 0) {
     const type* pf = procify(formal, true);
-    int d = em->getPromoteDistance(pass, pf);
+    int d = typeconv::getPromoteDistance(pass, pf);
     if (d < 0)  scores[2] = errcode;
     else  scores[2] += d;
   }
   // scores[3]: what about "proc rand"?
   if (scores[3] >= 0) {
     const type* prf = procify(randify(formal, true), true);
-    int d = em->getPromoteDistance(pass, prf);
+    int d = typeconv::getPromoteDistance(pass, prf);
     if (d < 0)  scores[3] = errcode;
     else  scores[3] += d;
   }
@@ -881,7 +883,7 @@ inline void SetAllScores(int* scores, int val)
   scores[0] = scores[1] = scores[2] = scores[3] = val;
 }
 
-void fplist::check(const exprman* em, expr** pass, int np, int* scores) const
+void fplist::check(expr** pass, int np, int* scores) const
 {
   DCASSERT(scores);
   scores[0] = 0;  // score with no formal param promotion
@@ -899,7 +901,7 @@ void fplist::check(const exprman* em, expr** pass, int np, int* scores) const
       fp = repeat_point;
     } // if fp
 
-    if (em->isDefault(pass[i])) {
+    if (bogus_expr::isDefault(pass[i])) {
       // Parameter is "default".
       if (!formal[i]->HasDefault()) {
         SetAllScores(scores, err);
@@ -909,7 +911,7 @@ void fplist::check(const exprman* em, expr** pass, int np, int* scores) const
     }
 
     if (0==pass[i]) { // null parameter, may be ok
-      addToScores(em, err, type::null, formal[fp]->Type(), scores);
+      addToScores(err, type::null, formal[fp]->Type(), scores);
       continue;
     }
 
@@ -919,31 +921,31 @@ void fplist::check(const exprman* em, expr** pass, int np, int* scores) const
     }
 
     for (int a=pass[i]->NumComponents()-1; a>=0; a--)
-      addToScores(em, err, pass[i]->Type(a), formal[fp]->Type(a), scores);
+      addToScores(err, pass[i]->Type(a), formal[fp]->Type(a), scores);
 
   } // for i
   if (fp < num_formal)  SetAllScores(scores, function::NotEnoughParams(np));
 }
 
-int fplist::check(const exprman* em, expr** pass, int np, const type* ret) const
+int fplist::check(expr** pass, int np, const type* ret) const
 {
   int scores[4];
-  check(em, pass, np, scores);
+  check(pass, np, scores);
 
   if (scores[0] >= 0)  return scores[0];
   if (scores[1] >= 0) {
     const type* rmod = randify(ret, true);
-    if (rmod)  return scores[1] + em->getPromoteDistance(ret, rmod);
+    if (rmod)  return scores[1] + typeconv::getPromoteDistance(ret, rmod);
     return scores[0];
   }
   if (scores[2] >= 0) {
     const type* rmod = procify(ret, true);
-    if (rmod)  return scores[2] + em->getPromoteDistance(ret, rmod);
+    if (rmod)  return scores[2] + typeconv::getPromoteDistance(ret, rmod);
     return scores[0];
   }
   if (scores[3] >= 0) {
     const type* rmod = procify(randify(ret, true), true);
-    if (rmod)  return scores[3] + em->getPromoteDistance(ret, rmod);
+    if (rmod)  return scores[3] + typeconv::getPromoteDistance(ret, rmod);
     return scores[0];
   }
 
@@ -951,10 +953,10 @@ int fplist::check(const exprman* em, expr** pass, int np, const type* ret) const
 }
 
 const type* fplist
-::getType(const exprman* em, expr** pass, int np, const type* rt) const
+::getType(expr** pass, int np, const type* rt) const
 {
   int scores[4];
-  check(em, pass, np, scores);
+  check(pass, np, scores);
 
   if (scores[0] >= 0)  return rt;
   if (scores[1] >= 0)  return randify(rt, true);
@@ -966,12 +968,12 @@ const type* fplist
 }
 
 bool fplist
-::promote(const exprman* em, expr** pass, int np, const type* rt) const
+::promote(expr** pass, int np, const type* rt) const
 {
   bool rand = false;
   bool proc = false;
   int scores[4];
-  check(em, pass, np, scores);
+  check(pass, np, scores);
   if (scores[0] >= 0) {
     // nothing!
   } else if (scores[1] >= 0) {
@@ -993,12 +995,12 @@ bool fplist
       DCASSERT(repeat_point >= 0);
       fp = repeat_point;
     } // if fp
-    if (em->isDefault(pass[i])) {
+    if (bogus_expr::isDefault(pass[i])) {
       pass[i] = Share(formal[i]->Default());
     } else if (pass[i]) {
-      pass[i] = em->promote(pass[i], proc, rand, formal[fp]);
+      pass[i] = typeconv::promoteExpr(pass[i], proc, rand, formal[fp]);
     }
-    DCASSERT(! em->isError(pass[i]) );
+    DCASSERT(! bogus_expr::isError(pass[i]) );
   } // for i
   return true;
 }
@@ -1013,7 +1015,7 @@ void fplist::traverse(traverse_data &x)
 }
 
 int fplist
-::named2Positional(exprman* em, symbol** np, int nnp,
+::named2Positional(symbol** np, int nnp,
     expr** buffer, int bufsize) const
 {
   // if buffer is not large enough, don't bother!
@@ -1026,7 +1028,7 @@ int fplist
   // First, initialize everything to "default"
   if (buffer) {
     for (int i=0; i<num_formal; i++) {
-      buffer[i] = em->makeDefault();
+      buffer[i] = bogus_expr::makeDefault();
     }
   }
 
@@ -1126,14 +1128,14 @@ int simple_internal::Traverse(traverse_data &x, expr** pass, int np)
 {
   switch (x.which) {
     case traverse_data::Typecheck:
-        return formals.check(em, pass, np, Type());
+        return formals.check(pass, np, Type());
 
     case traverse_data::GetType:
-        x.the_type = formals.getType(em, pass, np, Type());
+        x.the_type = formals.getType(pass, np, Type());
         return 0;
 
     case traverse_data::Promote:
-        formals.promote(em, pass, np, Type());
+        formals.promote(pass, np, Type());
         return Promote_Success;
 
     default:
@@ -1161,7 +1163,7 @@ int simple_internal::maxNamedParams() const
 int simple_internal
 ::named2Positional(symbol** np, int nnp, expr** buffer, int bufsize) const
 {
-  return formals.named2Positional(em, np, nnp, buffer, bufsize);
+  return formals.named2Positional(np, nnp, buffer, bufsize);
 }
 
 model_instance* simple_internal
@@ -1291,14 +1293,14 @@ int user_func::Traverse(traverse_data &x, expr** pass, int np)
 {
   switch (x.which) {
     case traverse_data::Typecheck:
-        return formals.check(em, pass, np, Type());
+        return formals.check(pass, np, Type());
 
     case traverse_data::GetType:
-        x.the_type = formals.getType(em, pass, np, Type());
+        x.the_type = formals.getType(pass, np, Type());
         return 0;
 
     case traverse_data::Promote:
-        formals.promote(em, pass, np, Type());
+        formals.promote(pass, np, Type());
         return Promote_Success;
 
     default:
@@ -1358,7 +1360,7 @@ int user_func::maxNamedParams() const
 int user_func
 ::named2Positional(symbol** np, int nnp, expr** buffer, int bufsize) const
 {
-  return formals.named2Positional(em, np, nnp, buffer, bufsize);
+  return formals.named2Positional(np, nnp, buffer, bufsize);
 }
 
 
@@ -1556,11 +1558,11 @@ symbol* wrapped_user_func::instantiate()
   expr* rhs = return_expr ? return_expr->Substitute(0) : 0;
   link->SetReturn(rhs);
 #ifdef DEBUG_FUNC_WRAPPERS
-  em->cout() << "instantiated function: ";
-  link->Print(em->cout(), 0);
-  em->cout() << " := ";
-  if (rhs) rhs->Print(em->cout(), 0); else em->cout() << "null";
-  em->cout() << '\n';
+  std::cout << "instantiated function: ";
+  link->Print(std::cout);
+  std::cout << " := ";
+  if (rhs) rhs->Print(std::cout); else std::cout << "null";
+  std::cout << '\n';
 #endif
   return link;
 }
@@ -1658,12 +1660,11 @@ void stack_size_watcher::notify(const option* opt)
 
 // ******************************************************************
 // *                                                                *
-// *                        exprman  methods                        *
+// *                          expr methods                          *
 // *                                                                *
 // ******************************************************************
 
-expr* exprman::makeFunctionCall(const location &W,
-      symbol *f, expr **p, int np) const
+expr* expr::makeFunctionCall(const location &W, symbol *f, expr **p, int np)
 {
   function* func = dynamic_cast <function*> (f);
   bool bail_out = (0==func);
@@ -1701,7 +1702,7 @@ expr* exprman::makeFunctionCall(const location &W,
   if (0 == t) {
     for (int i=0; i<np; i++)  Delete(p[i]);
     delete[] p;
-    return makeError();
+    return bogus_expr::makeError();
   }
 
   return new fcall(W, t, func, p, np);
@@ -1732,27 +1733,27 @@ symbol* MakeFormalParam(typelist* t, char* name)
   return new fp_onstack(t, name);
 }
 
-symbol* MakeFormalParam(const exprman* em, const location &W,
+symbol* MakeFormalParam(const location &W,
       const type* t, char* name, expr* def, bool in_model)
 {
-  // check return type for default
-  const type* dt = em->SafeType(def);
-  if (!em->isPromotable(dt, t)) {
-    typechecking_error E(W);
-    E << "default type does not match parameter " << name;
-    free(name);
-    Delete(def);
-    return 0;
-  }
+    // check return type for default
+    const type* dt = def ? def->Type() : type::null;
+    if (!typeconv::isPromotable(dt, t)) {
+        typechecking_error E(W);
+        E << "default type does not match parameter " << name;
+        free(name);
+        Delete(def);
+        return nullptr;
+    }
 
-  formal_param* fp;
-  if (in_model) {
-    fp = new fp_wrapper(W, t, name);
-  } else {
-    fp = new fp_onstack(W, t, name);
-  }
-  fp->SetDefault(def);
-  return fp;
+    formal_param* fp;
+    if (in_model) {
+        fp = new fp_wrapper(W, t, name);
+    } else {
+        fp = new fp_onstack(W, t, name);
+    }
+    fp->SetDefault(def);
+    return fp;
 }
 
 symbol* MakeNamedParam(const location &W, char* name, expr* pass)
@@ -1760,7 +1761,7 @@ symbol* MakeNamedParam(const location &W, char* name, expr* pass)
   return new named_param(W, name, pass);
 }
 
-function* MakeUserFunction(const exprman* em, const location &W,
+function* MakeUserFunction(const location &W,
       const type* t, char* name, symbol** formals, int np, bool in_model)
 {
   if (0==formals) {
@@ -1785,7 +1786,7 @@ function* MakeUserFunction(const exprman* em, const location &W,
   }
 }
 
-function* MakeUserConstFunc(const exprman* em, const location &W,
+function* MakeUserConstFunc(const location &W,
       const type* t, char* name, bool in_model)
 {
   if (in_model) {
@@ -1795,7 +1796,7 @@ function* MakeUserConstFunc(const exprman* em, const location &W,
   }
 }
 
-void ResetUserFunctionParams(const exprman* em, const location &W,
+void ResetUserFunctionParams(const location &W,
       symbol* userfunc, symbol** formals, int nfp)
 {
   function* f = dynamic_cast <function*> (userfunc);
@@ -1841,7 +1842,7 @@ void ResetUserFunctionParams(const exprman* em, const location &W,
   }
 }
 
-expr* DefineUserFunction(const exprman* em, const location &W,
+expr* DefineUserFunction(const location &W,
       symbol* userfunc, expr* rhs, model_def* mdl)
 {
   user_func* uf = dynamic_cast <user_func*> (userfunc);
@@ -1851,14 +1852,14 @@ expr* DefineUserFunction(const exprman* em, const location &W,
     return 0;
   }
 
-  if (0==rhs || em->isError(rhs)) {
+  if (bogus_expr::orNull(rhs)) {
     uf->SetReturn(0);
     return 0;
   }
 
   // check if return expression matches type of f
   const type* target = uf->Type();
-  if (!em->isPromotable(rhs->Type(), target)) {
+  if (!typeconv::isPromotable(rhs->Type(), target)) {
     typechecking_error E(W);
     E << "Return type for function " << uf->Name() << " should be ";
     uf->PrintType(E.stream());
@@ -1866,8 +1867,8 @@ expr* DefineUserFunction(const exprman* em, const location &W,
     uf->Invalidate();
     return 0;
   }
-  rhs = em->promote(rhs, target);
-  DCASSERT(! em->isError(rhs) );
+  rhs = typeconv::castExpr(true, W, target, rhs);
+  DCASSERT(! bogus_expr::isError(rhs) );
   uf->SetReturn(rhs);
 
   if (0==mdl) return 0;

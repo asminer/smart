@@ -402,7 +402,6 @@ private:
             passed parameters to match formal parameters.
         -x: An appropriate code for failure to match.
 
-        @param  em      Expression manager.
         @param  pass    Array of passed parameters, in order.
         @param  np      Number of passed parameters.
         @param  scores  Dimension is at least 4.
@@ -412,7 +411,7 @@ private:
                   scores[2] is the score if formals are made "proc".
                   scores[3] is the score if formals are made "proc rand".
   */
-  void check(const exprman* em, expr** pass, int np, int* scores) const;
+  void check(expr** pass, int np, int* scores) const;
 
 
 
@@ -424,21 +423,19 @@ public:
       Basically, calls the other version of check and then makes sure
       the return type can be promoted as required.
 
-      @param  em    Expression manager.
       @param  pass  Array of passed parameters, in order.
       @param  np    Number of passed parameters.
       @param  rt    Unmodified return type.
 
       @return The score, taking everything into account.
   */
-  int check(const exprman* em, expr** pass, int np, const type* rt) const;
+  int check(expr** pass, int np, const type* rt) const;
 
 
   /** Return type, based on passed parameters.
       Assumes the passed parameters will fit with some kind of
       formal parameter promotion.
 
-      @param  em    Expression manager.
       @param  pass  Array of passed parameters, in order.
       @param  np    Number of passed parameters.
       @param  rt    Unmodified return type.
@@ -446,17 +443,15 @@ public:
       @return Modified return type, according to promotions
               necessary to formal parameters.
   */
-  const type* getType(const exprman* em, expr** pass,
-        int np, const type* rt) const;
+  const type* getType(expr** pass, int np, const type* rt) const;
 
   /** Promote passed parameters as necessary.
-      @param  em    Expression manager.
       @param  pass  Array of passed parameters, in order.
       @param  np    Number of passed parameters.
       @param  rt    Return type, as a sanity check.
       @return true on success.
   */
-  bool promote(const exprman* em, expr** pass, int np, const type* rt) const;
+  bool promote(expr** pass, int np, const type* rt) const;
 
   /// Traverse all formals.
   void traverse(traverse_data &x);
@@ -464,7 +459,6 @@ public:
   /** Convert named parameters to positional ones.
       Does NO typechecking; only converts based on parameter names.
 
-        @param  em      Expression manager; needed to build defaults.
         @param  np      Input: Array of named parameters
         @param  nnp     Input: Number of named parameters
         @param  buffer  Output: Positional parameters will be stored here
@@ -480,8 +474,7 @@ public:
                 -a lot            if we cannot do it (default implementation
                                   returns this).
   */
-  int named2Positional(exprman* em, symbol** np, int nnp,
-          expr** buffer, int bufsize) const;
+  int named2Positional(symbol** np, int nnp, expr** buffer, int bufsize) const;
 
 private:
 
@@ -663,7 +656,6 @@ symbol* MakeFormalParam(const location &W,
 /** Used primarily by compiler.
     Build a formal parameter with a default value for a function or model.
 
-      @param  em        Expression manager for error reporting.
       @param  W         Location of declaration
       @param  t         Data type of parameter
       @param  name      Parameter name
@@ -672,8 +664,8 @@ symbol* MakeFormalParam(const location &W,
 
       @return An appropriate symbol, or 0 on error (will make noise).
 */
-symbol* MakeFormalParam(const exprman* em, const location &W,
-                        const type* t, char* name, expr* def, bool in_model);
+symbol* MakeFormalParam(const location &W, const type* t, char* name,
+        expr* def, bool in_model);
 
 
 /** Used primarily by compiler.
@@ -691,7 +683,6 @@ symbol* MakeNamedParam(const location &W, char* name, expr* pass);
 /** Used primarily by compiler.
     Build a user-function "header".
 
-      @param  em        Expression manager for error reporting.
       @param  W         Location of declaration
       @param  t         Return type of function
       @param  name      Name of function
@@ -701,13 +692,12 @@ symbol* MakeNamedParam(const location &W, char* name, expr* pass);
 
       @return An appropriate function, or 0 on error (will make noise).
 */
-function* MakeUserFunction(const exprman* em, const location &W,
-            const type* t, char* name, symbol** formals, int np, bool in_model);
+function* MakeUserFunction(const location &W, const type* t, char* name,
+        symbol** formals, int np, bool in_model);
 
 /** Used primarily by compiler.
     Build a user-defined "header" with no parameters.
 
-      @param  em        Expression manager for error reporting.
       @param  W         Location of declaration
       @param  t         Return type of function
       @param  name      Name of function
@@ -715,8 +705,8 @@ function* MakeUserFunction(const exprman* em, const location &W,
 
       @return An appropriate function, or 0 on error (will make noise).
 */
-function* MakeUserConstFunc(const exprman* em, const location &W,
-            const type* t, char* name, bool in_model);
+function* MakeUserConstFunc(const location &W, const type* t, char* name,
+        bool in_model);
 
 /** Used primarily by compiler, for forward-defined functions.
     Reset the formal parameters for an existing user function.
@@ -724,14 +714,13 @@ function* MakeUserConstFunc(const exprman* em, const location &W,
       int foo(int a, int b);
       int foo(int c, int d) := c+d;
     The old formal parameters are destroyed.
-      @param  em        Expression manager for error reporting.
       @param  W         Location of declaration
       @param  userfunc  User function to modify.
       @param  formals   Array of formal parameters
       @param  nfp       Number of formal parameters
 */
-void ResetUserFunctionParams(const exprman* em, const location &W,
-                              symbol* userfunc, symbol** formals, int nfp);
+void ResetUserFunctionParams(const location &W, symbol* userfunc,
+        symbol** formals, int nfp);
 
 
 /** Build a "user function definition" statement.
@@ -740,7 +729,6 @@ void ResetUserFunctionParams(const exprman* em, const location &W,
     If we are not inside a model function, we simply set the return
     value for the function (and return 0); otherwise an actual
     statement is required.
-      @param  em        Expression manager for error reporting.
       @param  W         Location of declaration
       @param  userfunc  User function to modify.
                         Should have been created using
@@ -751,8 +739,8 @@ void ResetUserFunctionParams(const exprman* em, const location &W,
       @return 0, if mdl is 0 or an error occurred.
               An appropriate void type expression (statement) otherwise.
 */
-expr* DefineUserFunction(const exprman* em, const location &W,
-                          symbol* userfunc, expr* rhs, model_def* mdl);
+expr* DefineUserFunction(const location &W, symbol* userfunc,
+        expr* rhs, model_def* mdl);
 
 
 #endif

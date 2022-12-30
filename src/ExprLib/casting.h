@@ -113,6 +113,26 @@ class typeconv {
         static expr* castExpr(bool promote_only, const location &W,
                 const type* newt, expr* e);
 
+        /** Convert an expression for passing as a parameter.
+            Like castExpr() with promote_only set to true, but
+                (1) it will print a warning (disabled by default)
+                    if the types are different;
+                (2) it takes care of aggregate expressions;
+                (3) the new expression will have the same location
+                    as the original.
+
+            @param  e       The original expression.
+            @param  prc     Should fp components be promoted to proc.
+            @param  rnd     Should fp components be promoted to rand.
+            @param  fp      An expression (e.g., formal parameter)
+                            whose type we want to match.
+            @return 0,      if e is 0.
+                    ERROR,  if e is ERROR, or if no promotion is possible.
+                    e,      if e already has type \a newtype.
+                    a new expression, otherwise.
+        */
+        static expr* promoteExpr(expr* e, bool prc, bool rnd, const expr* fp);
+
     protected:
         static const int RANGE_EXPAND = 1;  // e.g., int -> bigint
         static const int SIMPLE_CONV = 2;   // e.g., int -> real
@@ -133,6 +153,9 @@ class typeconv {
         static general_conv* general_list;
         static specific_conv* promote_list;
         static specific_conv* cast_list;
+        static warning_msg promote_arg;
+
+        friend class casting_init;
 };
 
 // ******************************************************************

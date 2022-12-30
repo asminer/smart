@@ -564,6 +564,21 @@ class expr : public shared_object {
         static expr* makeForLoop(const location& W,
             symbol** iters, int dim, expr* stmt);
 
+        //
+        //
+        //
+
+        /** Make an expression to call a function.
+            Passed parameters must match exactly in type.
+
+                @param  W   Where defined.
+                @param  f   The function to call.  Can be user-defined,
+                            internal, or pretty much anything.
+                @param  p   The parameters to pass, as an array of expressions.
+                @param  np  Number of passed parameters.
+        */
+        static expr* makeFunctionCall(const location& W, symbol *f,
+                expr **p, int np);
 
     protected:
         /// Expression debugging.

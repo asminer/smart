@@ -409,13 +409,4 @@ inline const type* Phase2Rand(const type* lct)
 
 
 
-// TBD: remove these
-
-/*
-type* newModifiedType(const char* n, modifier m, simple_type* base);
-type* newProcType(const char* n, type* base);
-type* newSetType(const char* n, simple_type* base);
-*/
-
-
 #endif

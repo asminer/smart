@@ -136,6 +136,44 @@ expr* typeconv::castExpr(bool promote_only, const location &W,
     return bogus_expr::getError();
 }
 
+expr* typeconv::promoteExpr(expr* e, bool prc, bool rnd, const expr* fp)
+{
+    if (bogus_expr::orNull(e)) return e;
+    if (!fp) {
+        Delete(e);
+        return nullptr;
+    }
+    if (fp->NumComponents() != e->NumComponents()) {
+        return bogus_expr::makeError();
+    }
+
+    bool changetype = false;
+    int nc = e->NumComponents();
+    for (int i=0; i<nc; i++) {
+        const type* fpt = fp->Type(i);            DCASSERT(fpt);
+        if (rand) fpt = fpt->modifyType(RAND);    DCASSERT(fpt);
+        if (proc) fpt = fpt->addProc();           DCASSERT(fpt);
+        int d = getPromoteDistance(e->Type(i), fpt);
+        if (d<0) return bogus_expr::makeError();
+        if (d>0) changetype = true;
+    }
+
+    if (!changetype) {
+        return e;
+    }
+
+    if (promote_arg.start(e->Where())) {
+      promote_arg << "Promoting argument ";
+      e->Print(promote_arg.stream(), 0);
+      promote_arg << " to type ";
+      fp->PrintType(promote_arg.stream());
+      promote_arg.stop();
+    }
+  return makeTypecast(e->Where(), proc, rand, fp, e);
+}
+
+
+
 //
 // Private helpers
 //
@@ -822,14 +860,25 @@ class casting_init : public initializer {
 };
 static casting_init the_casting_initializer;
 
-casting_init::casting_init() : initializer(__FILE__, 1, 1)
+casting_init::casting_init() : initializer(__FILE__, 1, 2)
 {
     builds_resource(0, "casts");
     needs_resource(1, "types"); // not sure how important this is
+    needs_resource(2, "Warning");
 }
 
 void casting_init::execute()
 {
+    //
+    // Promotion warning
+    //
+    initialize_msg(promote_arg,
+        "promote_args",
+        "When arguments are automatically promoted in a function call",
+        get_object(2, "Warning")
+    );
+    promote_arg.Deactivate();
+
     //
     // Build and register type conversion rules
     //
