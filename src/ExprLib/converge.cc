@@ -4,8 +4,9 @@
 #include "../Options/options.h"
 #include "../Utils/init_opts.h"
 
-#include "exprman.h"
 #include "symbols.h"
+#include "bogus.h"
+#include "casting.h"
 #include "result.h"
 #include "arrays.h"
 
@@ -237,7 +238,7 @@ guess_stmt::guess_stmt(const location &W, converge_var* v, expr* g)
   var = v;
   DCASSERT(var);
   guess = g;
-  DCASSERT(! em->isError(guess) );
+  DCASSERT(! bogus_expr::isError(guess) );
 }
 
 guess_stmt::~guess_stmt()
@@ -330,7 +331,7 @@ assign_stmt::assign_stmt(const location &W, converge_var* v, expr* r)
   var = v;
   DCASSERT(var);
   rhs = r;
-  DCASSERT(! em->isError(rhs) );
+  DCASSERT(! bogus_expr::isError(rhs) );
 }
 
 assign_stmt::~assign_stmt()
@@ -447,7 +448,7 @@ array_guess_stmt::array_guess_stmt(const location &W, array* v, expr* g)
   var = v;
   DCASSERT(var);
   guess = g;
-  DCASSERT(! em->isError(guess) );
+  DCASSERT(! bogus_expr::isError(guess) );
 }
 
 array_guess_stmt::~array_guess_stmt()
@@ -551,7 +552,7 @@ array_assign_stmt::array_assign_stmt(const location &W, array* v, expr* r)
   var = v;
   DCASSERT(var);
   rhs = r;
-  DCASSERT(! em->isError(rhs) );
+  DCASSERT(! bogus_expr::isError(rhs) );
 }
 
 array_assign_stmt::~array_assign_stmt()
@@ -670,7 +671,7 @@ void array_assign_stmt::Update(converge_var* var)
 // *                                                                *
 // ******************************************************************
 
-symbol* exprman::makeCvgVar(const location &W, const type* t, char* name) const
+symbol* symbol::makeCvgVar(const location &W, const type* t, char* name)
 {
     if (0==t || !t->matches("real")) {
         typechecking_error E(W);
@@ -682,34 +683,35 @@ symbol* exprman::makeCvgVar(const location &W, const type* t, char* name) const
 }
 
 
-expr* exprman::makeConverge(const location &W, expr* stmt, bool top) const
+expr* expr::makeConverge(const location &W, expr* stmt, bool top)
 {
-  if (isOrdinary(stmt))   return new converge_stmt(W, stmt, top);
-
-  return Share(stmt);
+    if (!bogus_expr::orNull(stmt)) {
+        return new converge_stmt(W, stmt, top);
+    } else {
+        return Share(stmt);
+    }
 }
 
 
-expr* MakeCvgThing(const exprman* em, const location &W,
-      symbol* cvgvar, expr* rhs, bool guess)
+expr* MakeCvgThing(const location &W, symbol* cvgvar, expr* rhs, bool guess)
 {
-    if (nullptr==em || em->isError(rhs))  return nullptr;
+    if ( bogus_expr::isError(rhs) ) return nullptr;
     converge_var* var = dynamic_cast <converge_var*> (cvgvar);
     if (nullptr==var) {
         Delete(rhs);
         return nullptr;
     }
     const type* REAL = type::find("real");
-    const type* gt = em->SafeType(rhs);
-    if (!em->isPromotable(gt, REAL)) {
+    const type* gt = rhs ? rhs->Type() : type::null;
+    if (!typeconv::isPromotable(gt, REAL)) {
         typechecking_error E(W);
         E << "Return type for identifier " << var->Name() << " should be ";
         var->PrintType(E.stream());
         Delete(rhs);
         return nullptr;
     }
-    rhs = em->promote(rhs, REAL);
-    DCASSERT(! em->isError(rhs) );
+    rhs = typeconv::castExpr(true, W, REAL, rhs);
+    DCASSERT(! bogus_expr::isError(rhs) );
     if (guess) {
         var->setGuessed();
         return new guess_stmt(W, var, rhs);
@@ -720,38 +722,37 @@ expr* MakeCvgThing(const exprman* em, const location &W,
 }
 
 
-expr* exprman::makeCvgGuess(const location &W, symbol* cvgvar, expr* rhs) const
+expr* expr::makeCvgGuess(const location &W, symbol* cvgvar, expr* rhs)
 {
-  return MakeCvgThing(this, W, cvgvar, rhs, true);
+  return MakeCvgThing(W, cvgvar, rhs, true);
 }
 
 
-expr* exprman::makeCvgAssign(const location &W, symbol* cvgvar, expr* rhs) const
+expr* expr::makeCvgAssign(const location &W, symbol* cvgvar, expr* rhs)
 {
-  return MakeCvgThing(this, W, cvgvar, rhs, false);
+  return MakeCvgThing(W, cvgvar, rhs, false);
 }
 
 
-expr* MakeArrayThing(const exprman* em, const location &W,
-      symbol* a, expr* rhs, bool guess)
+expr* MakeArrayThing(const location &W, symbol* a, expr* rhs, bool guess)
 {
-    if (nullptr==em || em->isError(rhs))  return nullptr;
+    if (bogus_expr::isError(rhs))  return nullptr;
     array* var = dynamic_cast <array*> (a);
     if (nullptr==var) {
         Delete(rhs);
         return nullptr;
     }
     const type* REAL = type::find("real");
-    const type* gt = em->SafeType(rhs);
-    if (!em->isPromotable(gt, REAL)) {
+    const type* gt = rhs ? rhs->Type() : type::null;
+    if (!typeconv::isPromotable(gt, REAL)) {
         typechecking_error E(W);
         E << "Return type for array " << var->Name() << " should be ";
         var->PrintType(E.stream());
         Delete(rhs);
         return nullptr;
     }
-    rhs = em->promote(rhs, REAL);
-    DCASSERT(! em->isError(rhs) );
+    rhs = typeconv::castExpr(true, W, REAL, rhs);
+    DCASSERT(! bogus_expr::isError(rhs) );
     if (guess) {
         var->setGuessed();
         return new array_guess_stmt(W, var, rhs);
@@ -762,15 +763,15 @@ expr* MakeArrayThing(const exprman* em, const location &W,
 }
 
 
-expr* exprman::makeArrayCvgGuess(const location &W, symbol* arr, expr* gss) const
+expr* expr::makeArrayCvgGuess(const location &W, symbol* arr, expr* gss)
 {
-  return MakeArrayThing(this, W, arr, gss, true);
+  return MakeArrayThing(W, arr, gss, true);
 }
 
 
-expr* exprman::makeArrayCvgAssign(const location &W, symbol* arr, expr* rhs) const
+expr* expr::makeArrayCvgAssign(const location &W, symbol* arr, expr* rhs)
 {
-  return MakeArrayThing(this, W, arr, rhs, false);
+  return MakeArrayThing(W, arr, rhs, false);
 }
 
 
@@ -786,6 +787,8 @@ class converge_initializer : public initializer {
     protected:
         virtual void execute();
 };
+static converge_initializer _the_converge_init;
+
 
 converge_initializer::converge_initializer()
     : initializer("converge.cc", 1, 2)
@@ -831,7 +834,3 @@ void converge_initializer::execute()
         fixpoint_stmt::use_current
     );
 }
-
-
-static converge_initializer _the_converge_init;
-

@@ -71,7 +71,7 @@ expr* unary_op::makeExpr(const location &W, opcode code, expr* opnd)
     E << "Undefined unary operation: " << getOp(code) << " ";
     opnd->PrintType(E.stream());
     Delete(opnd);
-    return bogus_expr::getError();
+    return bogus_expr::makeError();
 }
 
 const unary_op* unary_op::bestMatch(opcode code, const type* x)

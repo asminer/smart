@@ -155,6 +155,21 @@ class type : public shared_string {
         static modifier findModifier(const char* name);
 
         /**
+            For convenience: apply proc (or not) and modifier
+            to a given type.
+                @param  p   If true, add proc to the type
+                @param  m   Add the modifier to the type
+                @param  t   Base type
+        */
+        static inline const type* procMod(bool p, modifier m, const type* t)
+        {
+            if (!t) return t;
+            t = t->modifyType(m);
+            if (!t || !p) return t;
+            return t->addProc();
+        }
+
+        /**
             Register a type into the type system.
                 @param  t   New type to add.
                 @return     If there's already a type with the same name as

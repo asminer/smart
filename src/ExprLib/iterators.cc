@@ -76,7 +76,7 @@ void iterator::ShowAssignment(std::ostream &s) const
 
 // ******************************************************************
 
-symbol* iterator::makeIterator(const location &W, const type* t,
+symbol* symbol::makeIterator(const location &W, const type* t,
         char* name, expr* vals)
 {
     if (!t || bogus_expr::orNull(vals)) {

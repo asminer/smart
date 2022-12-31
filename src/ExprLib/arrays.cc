@@ -566,7 +566,7 @@ array* array::instantiateMe() const
 
 // ******************************************************************
 
-symbol* array::makeArray(const location &W, const type* t, char* n, symbol** indexes, int dim)
+symbol* symbol::makeArray(const location &W, const type* t, char* n, symbol** indexes, int dim)
 {
     if (!indexes) {
         free(n);
@@ -587,7 +587,7 @@ symbol* array::makeArray(const location &W, const type* t, char* n, symbol** ind
 }
 
 
-expr* array::makeArrayAssign(const location &W,
+expr* expr::makeArrayAssign(const location &W,
       symbol* arr, expr* rhs)
 {
     array* a = dynamic_cast <array*> (arr);
@@ -616,7 +616,7 @@ expr* array::makeArrayAssign(const location &W,
 }
 
 
-expr* array::makeArrayCall(const location &W,
+expr* expr::makeArrayCall(const location &W,
       symbol* arr, expr** indexes, int dim)
 {
     if (!indexes)  return bogus_expr::makeError();

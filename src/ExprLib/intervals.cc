@@ -1,6 +1,6 @@
 
 #include "intervals.h"
-#include "exprman.h"
+#include "type.h"
 
 // #define DEBUG_UNION
 // #define DEBUG_MAX_POINT

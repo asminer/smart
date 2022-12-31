@@ -109,6 +109,48 @@ class symbol : public expr {
         */
         static symbol* makeConstant(const symbol* w, expr* rhs,
                 List <symbol> *deps=nullptr);
+
+        /** Make an iterator variable.
+            I.e., a variable used as an array index, also as
+            for-loop iterators.
+            Implemented in forloops.cc.
+                @param  W       Where defined.
+                @param  t       Type of the variable.
+                @param  name    Name of the variable.
+                @param  vals    Set of values for the variable.
+                @return 0,      if some error occurred.
+                        A new expression, otherwise.
+        */
+        static symbol* makeIterator(const location& W, const type* t,
+            char* name, expr* vals);
+
+        /** Make a new array.
+            Implemented in arrays.cc.
+
+                @param  W       Where defined.
+                @param  t       Type of the array.
+                @param  name    Name of the array.
+                @param  indexes List of iterators, which define the "shape"
+                                of the array.  Each iterator must have been
+                                created by calling MakeIterator().
+                @param  dim     Length of the list of indexes.
+                                Can be considered the dimension of the array.
+                @return 0,      if some error occurred (will make noise).
+                                A new array, otherwise.
+        */
+        static symbol* makeArray(const location& W, const type* t,
+            char* n, symbol** indexes, int dim);
+
+        /** Make a variable within a converge block.
+            Implemented in converge.cc.
+
+                @param  W   Where defined.
+                @param  t   Type of the variable.
+                @param  n   Name of the variable.
+                @return 0,  if some error occurred (will make noise).
+                        A new variable, otherwise.
+        */
+        static symbol* makeCvgVar(const location& W, const type* t, char* n);
 };
 
 

@@ -2,9 +2,10 @@
 #include "casting.h"
 #include "sets.h"
 #include "unary.h"
+#include "assoc.h"
 #include "bogus.h"
 #include "intervals.h"
-#include "../Utils/initializer.h"
+#include "../Utils/init_opts.h"
 
 
 // ******************************************************************
@@ -104,7 +105,7 @@ expr* typeconv::castExpr(bool promote_only, const location &W,
 
     if (!newt) {
         Delete(e);
-        return bogus_expr::getError();
+        return bogus_expr::makeError();
     }
 
     const type* oldt = e->Type();
@@ -133,7 +134,7 @@ expr* typeconv::castExpr(bool promote_only, const location &W,
     // Can't convert; return error
     //
     Delete(e);
-    return bogus_expr::getError();
+    return bogus_expr::makeError();
 }
 
 expr* typeconv::promoteExpr(expr* e, bool prc, bool rnd, const expr* fp)
@@ -147,20 +148,35 @@ expr* typeconv::promoteExpr(expr* e, bool prc, bool rnd, const expr* fp)
         return bogus_expr::makeError();
     }
 
+    //
+    // Make sure the requested promotion is possible
+    //
+
     bool changetype = false;
     int nc = e->NumComponents();
     for (int i=0; i<nc; i++) {
-        const type* fpt = fp->Type(i);            DCASSERT(fpt);
-        if (rand) fpt = fpt->modifyType(RAND);    DCASSERT(fpt);
-        if (proc) fpt = fpt->addProc();           DCASSERT(fpt);
+        const type* fpt = fp->Type(i);
+        DCASSERT(fpt);
+        if (rnd) fpt = fpt->modifyType(RAND);
+        DCASSERT(fpt);
+        if (prc) fpt = fpt->addProc();
+        DCASSERT(fpt);
         int d = getPromoteDistance(e->Type(i), fpt);
         if (d<0) return bogus_expr::makeError();
         if (d>0) changetype = true;
     }
 
+    //
+    // Fast and easy case: no promotion(s) needed
+    //
+
     if (!changetype) {
         return e;
     }
+
+    //
+    // Actually change the type
+    //
 
     if (promote_arg.start(e->Where())) {
       promote_arg << "Promoting argument ";
@@ -169,7 +185,40 @@ expr* typeconv::promoteExpr(expr* e, bool prc, bool rnd, const expr* fp)
       fp->PrintType(promote_arg.stream());
       promote_arg.stop();
     }
-  return makeTypecast(e->Where(), proc, rand, fp, e);
+
+    //
+    // Common and easier case: the expression has only one aggregate
+    //
+
+    if (1==nc) {
+        const type* prf = type::procMod(prc, rnd ? RAND : DETERM, fp->Type());
+        DCASSERT(prf);
+        return castExpr(true, e->Where(), prf, e);
+    }
+
+    //
+    // Promote each aggregate as necessary
+    //
+    expr** newagg = new expr*[nc];
+    for (int i=0; i<nc; i++) {
+        const type* prf = type::procMod(prc, rnd ? RAND : DETERM, fp->Type(i));
+        DCASSERT(prf);
+        expr* thisagg = Share(e->GetComponent(i));
+        if (!thisagg) {
+            newagg[i] = thisagg;
+        } else {
+            newagg[i] = castExpr(true, e->Where(), prf, e);
+            DCASSERT(!bogus_expr::orNull(newagg[i]));
+        }
+    }
+
+    //
+    // Build the new aggregate
+    //
+    expr* f = assoc_op::makeExpr(e->Where(), assoc_op::aop_colon,
+                newagg, nullptr, nc);
+    Delete(e);
+    return f;
 }
 
 
@@ -383,7 +432,6 @@ null2any::null2any() : general_conv()
 int null2any::getDistance(const type* src, const type* dest) const
 {
   DCASSERT(src != dest);
-  DCASSERT(em);
   if (src != type::null) return -1;
   return RANGE_EXPAND;
 }
@@ -476,7 +524,6 @@ formalism2model::formalism2model() : general_conv()
 int formalism2model::getDistance(const type* src, const type* dest) const
 {
   DCASSERT(src != dest);
-  DCASSERT(em);
   if (!dest->matches("model")) return -1;
   DCASSERT(src);
   return src->isAFormalism() ? 0 : -1;
@@ -582,7 +629,6 @@ precomp_add::precomp_add() : general_conv()
 int precomp_add::getDistance(const type* src, const type* dest) const
 {
   DCASSERT(src != dest);
-  DCASSERT(em);
   if (src->hasProc()) return -1;
   if (src->isASet()) return -1;
   if (dest->isASet()) return -1;
@@ -635,7 +681,6 @@ noop_addproc::noop_addproc() : general_conv()
 int noop_addproc::getDistance(const type* src, const type* dest) const
 {
   DCASSERT(src != dest);
-  DCASSERT(em);
   if (src->isASet()) return -1;
   if (dest->isASet()) return -1;
   if (!dest->hasProc()) return -1;
@@ -872,12 +917,12 @@ void casting_init::execute()
     //
     // Promotion warning
     //
-    initialize_msg(promote_arg,
+    initialize_msg(typeconv::promote_arg,
         "promote_args",
         "When arguments are automatically promoted in a function call",
         get_object(2, "Warning")
     );
-    promote_arg.Deactivate();
+    typeconv::promote_arg.Deactivate();
 
     //
     // Build and register type conversion rules

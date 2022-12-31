@@ -564,6 +564,100 @@ class expr : public shared_object {
         static expr* makeForLoop(const location& W,
             symbol** iters, int dim, expr* stmt);
 
+        /** Make an array assignment statement, not within a converge block.
+            These handle statements of the form
+                int a[i][j][k] := rhs;
+
+            @param  W       Where defined.
+            @param  array   Array to use for the assignment.
+                            Must have been created by a call to MakeArray().
+            @param  rhs     The right-hand side of the assignment.
+            @return ERROR,  if some error occurred (will make noise).
+                            A new statement, otherwise.
+        */
+        static expr* makeArrayAssign(const location& W, symbol* array,
+            expr* rhs);
+
+        /** Make a converge statement.
+            Implemented in converge.cc.
+
+                @param  W       Where defined.
+                @param  stmt    The statement to execute within the converge.
+                                (can be a statement block).
+                @param  top     True iff this is the topmost converge
+                                statement. (If so we will "affix" variables
+                                after executing.)
+
+                @return ERROR,  if some error occurred.
+                                A new void-type expression, otherwise.
+        */
+        static expr* makeConverge(const location& W, expr* stmt, bool top);
+
+        /** Make a guess statement for inside a converge block.
+            These handle statements of the form
+                real foo guess rhs;
+            Implemented in converge.cc.
+
+                @param  W       Where defined.
+                @param  cvgvar  Converge variable to use.  Must have
+                                been created by a call to MakeCvgVar().
+                @param  rhs     The right-hand side of the guess.
+                @return 0,      if some error occurred (will make noise).
+                                A new statement, otherwise.
+        */
+        static expr* makeCvgGuess(const location& W, symbol* cvgvar, expr* rhs);
+
+
+        /** Make an assignment statement for inside a converge block.
+            These handle statements of the form
+                real foo := rhs;
+            that appear within a converge block.
+            Implemented in converge.cc.
+
+                @param  W       Where defined.
+                @param  cvgvar  Converge variable to use.  Must have
+                                been created by a call to MakeCvgVar().
+                @param  rhs     The right-hand side of the assignment.
+                @return 0,      if some error occurred (will make noise).
+                                A new statement, otherwise.
+        */
+        static expr* makeCvgAssign(const location& W, symbol* cvgvar,
+                expr* rhs);
+
+
+        /** Make an array guess statement for inside a converge block.
+            These handle statements of the form
+                real foo[i][j] guess rhs;
+            Implemented in converge.cc.
+
+                @param  W       Where defined.
+                @param  cvgvar  Converge variable to use.  Must have
+                                been created by a call to MakeCvgVar().
+                @param  rhs     The right-hand side of the guess.
+                @return 0,      if some error occurred (will make noise).
+                                A new statement, otherwise.
+        */
+        static expr* makeArrayCvgGuess(const location& W, symbol* array,
+                expr* guess);
+
+
+        /** Make an array assignment statement, within a converge block.
+            These handle statements of the form
+                int a[i][j][k] := rhs;
+            that appear within a converge block.
+            Implemented in converge.cc.
+
+                @param  W       Where defined.
+                @param  array   Array to use for the assignment.  Must have
+                                been created by a call to MakeArray().
+                @param  rhs     The right-hand side of the assignment.
+                @return ERROR,  if some error occurred (will make noise).
+                                A new statement, otherwise.
+        */
+        static expr* makeArrayCvgAssign(const location& W, symbol* array,
+                expr* rhs);
+
+
         //
         //
         //
@@ -579,6 +673,22 @@ class expr : public shared_object {
         */
         static expr* makeFunctionCall(const location& W, symbol *f,
                 expr **p, int np);
+
+        /** Make an array dereferencing expression.
+            These handle expressions of the form
+                a[3][5+n][4-3*foobar(7, x)]
+
+            @param  W     Where defined.
+            @param  array   Array to use.
+                            Must have been created by a call to MakeArray().
+            @param  indexes List of indices to be "passed" to the array.
+            @param  dim     Number of indices in the list \a indexes.
+            @return ERROR,  if some error occurred (will make noise).
+                            A new expression, otherwise.
+        */
+        static expr* makeArrayCall(const location& W, symbol* array,
+            expr** indexes, int dim);
+
 
     protected:
         /// Expression debugging.

@@ -87,7 +87,7 @@ expr* binary_op::makeExpr(const location& W, expr* lt, opcode op, expr* rt)
     rt->PrintType(E.stream());
     Delete(lt);
     Delete(rt);
-    return bogus_expr::getError();
+    return bogus_expr::makeError();
 }
 
 const binary_op* binary_op::bestMatch(const type* l, opcode code, const type* r)

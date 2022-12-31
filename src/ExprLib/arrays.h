@@ -136,55 +136,6 @@ class array : public symbol {
         virtual void Traverse(traverse_data &x);
         void PrintHeader(std::ostream &s) const;
 
-        //
-        // Statics to build and type check arrays
-        //
-
-        /** Make a new array.
-
-            @param  W     Where defined.
-            @param  t       Type of the array.
-            @param  name    Name of the array.
-            @param  indexes List of iterators, which define the "shape"
-                            of the array.  Each iterator must have been
-                            created by calling MakeIterator().
-            @param  dim     Length of the list of indexes.
-                            Can be considered the dimension of the array.
-            @return 0,  if some error occurred (will make noise).
-                        A new array, otherwise.
-        */
-        static symbol* makeArray(const location& W, const type* t,
-            char* n, symbol** indexes, int dim);
-
-        /** Make an array assignment statement, not within a converge block.
-            These handle statements of the form
-                int a[i][j][k] := rhs;
-
-            @param  W       Where defined.
-            @param  array   Array to use for the assignment.
-                            Must have been created by a call to MakeArray().
-            @param  rhs     The right-hand side of the assignment.
-            @return ERROR,  if some error occurred (will make noise).
-                            A new statement, otherwise.
-        */
-        static expr* makeArrayAssign(const location& W, symbol* array,
-            expr* rhs);
-
-        /** Make an array dereferencing expression.
-            These handle expressions of the form
-                a[3][5+n][4-3*foobar(7, x)]
-
-            @param  W     Where defined.
-            @param  array   Array to use.
-                            Must have been created by a call to MakeArray().
-            @param  indexes List of indices to be "passed" to the array.
-            @param  dim     Number of indices in the list \a indexes.
-            @return ERROR,  if some error occurred (will make noise).
-                            A new expression, otherwise.
-        */
-        static expr* makeArrayCall(const location& W, symbol* array,
-            expr** indexes, int dim);
-
     protected:
         array* instantiateMe() const;
 

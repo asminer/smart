@@ -91,7 +91,7 @@ expr* trinary_op::makeExpr(const location& W, opcode op, expr* l,
     Delete(l);
     Delete(m);
     Delete(r);
-    return bogus_expr::getError();
+    return bogus_expr::makeError();
 }
 
 const trinary_op* trinary_op::bestMatch(opcode code, const type* left,

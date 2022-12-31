@@ -257,8 +257,8 @@ public:
         @return 0, if some error occurred.
                 A new expression, otherwise.
   */
-  symbol* makeIterator(const location& W, const type* t,
-      char* name, expr* vals) const;
+  // symbol* makeIterator(const location& W, const type* t,
+      //char* name, expr* vals) const;
 
 
   /** Make a "constant" (function with no parameters) symbol,
@@ -273,8 +273,8 @@ public:
         @return 0, if some error occurred.
                 A new expression, otherwise.
   */
-  symbol* makeConstant(const location& W, const type* t,
-      char* name, expr* rhs, List <symbol> *deps) const;
+  //symbol* makeConstant(const location& W, const type* t,
+      //char* name, expr* rhs, List <symbol> *deps) const;
 
 
   /** Make a "constant" (function with no parameters) symbol,
@@ -287,7 +287,7 @@ public:
         @return 0, if some error occurred.
                 A new expression, otherwise.
   */
-  symbol* makeConstant(const symbol* w, expr* rhs, List <symbol> *deps) const;
+  // symbol* makeConstant(const symbol* w, expr* rhs, List <symbol> *deps) const;
 
 
   // +-----------------------------------------------------------------+
@@ -311,7 +311,7 @@ public:
         @return ERROR, if an error ocurred.
                 A new "compute statement", otherwise.
   */
-  expr* makeExprStatement(const location& W, expr* e) const;
+  // expr* makeExprStatement(const location& W, expr* e) const;
 
 
   /** Make an option-setting statement.
@@ -324,8 +324,8 @@ public:
         @return ERROR, if an error occurred.
                 A new statement, otherwise.
   */
-  expr* makeOptionStatement(const location& W,
-        option *o, expr *e) const;
+  // expr* makeOptionStatement(const location& W,
+        // option *o, expr *e) const;
 
 
   /** Make an option-setting statement.
@@ -338,8 +338,8 @@ public:
         @return ERROR, if an error occurred.
                 A new statement, otherwise.
   */
-  expr* makeOptionStatement(const location& W,
-      option *o, option_enum *v) const;
+  // expr* makeOptionStatement(const location& W,
+      // option *o, option_enum *v) const;
 
 
   /** Make a checkbox-setting statement.
@@ -358,8 +358,8 @@ public:
         @return ERROR, if an error occurred.
                 A new statement, otherwise.
   */
-  expr* makeOptionStatement(const location& W, option* o,
-    bool check, option_enum **vlist, int nv) const;
+  // expr* makeOptionStatement(const location& W, option* o,
+    // bool check, option_enum **vlist, int nv) const;
 
 
   /** Make a for loop statement.
@@ -378,8 +378,8 @@ public:
         @return ERROR,  if some error occurred.
                 A new void-type expression, otherwise.
   */
-  expr* makeForLoop(const location& W,
-      symbol** iters, int dim, expr* stmt) const;
+  // expr* makeForLoop(const location& W,
+      // symbol** iters, int dim, expr* stmt) const;
 
 
   // +-----------------------------------------------------------------+
@@ -402,8 +402,8 @@ public:
         @return 0, if some error occurred (will make noise).
                 A new array, otherwise.
   */
-  symbol* makeArray(const location& W, const type* t,
-      char* n, symbol** indexes, int dim) const;
+  // symbol* makeArray(const location& W, const type* t,
+      // char* n, symbol** indexes, int dim) const;
 
   /** Make an array assignment statement, not within a converge block.
       These handle statements of the form
@@ -484,7 +484,7 @@ public:
         @return 0, if some error occurred (will make noise).
                 A new variable, otherwise.
   */
-  symbol* makeCvgVar(const location& W, const type* t, char* name) const;
+//  symbol* makeCvgVar(const location& W, const type* t, char* name) const;
 
   /** Make a converge statement.
       Implemented in converge.cc.
@@ -498,7 +498,7 @@ public:
         @return ERROR,  if some error occurred.
                 A new void-type expression, otherwise.
   */
-  expr* makeConverge(const location& W, expr* stmt, bool top) const;
+  //expr* makeConverge(const location& W, expr* stmt, bool top) const;
 
 
   /** Make a guess statement for inside a converge block.
@@ -513,7 +513,7 @@ public:
         @return 0, if some error occurred (will make noise).
                 A new statement, otherwise.
   */
-  expr* makeCvgGuess(const location& W, symbol* cvgvar, expr* rhs) const;
+  //expr* makeCvgGuess(const location& W, symbol* cvgvar, expr* rhs) const;
 
 
   /** Make an assignment statement for inside a converge block.
@@ -529,7 +529,7 @@ public:
         @return 0, if some error occurred (will make noise).
                 A new statement, otherwise.
   */
-  expr* makeCvgAssign(const location& W, symbol* cvgvar, expr* rhs) const;
+  //expr* makeCvgAssign(const location& W, symbol* cvgvar, expr* rhs) const;
 
 
   /** Make an array guess statement for inside a converge block.
@@ -544,7 +544,7 @@ public:
         @return 0, if some error occurred (will make noise).
                 A new statement, otherwise.
   */
-  expr* makeArrayCvgGuess(const location& W, symbol* array, expr* guess) const;
+  //expr* makeArrayCvgGuess(const location& W, symbol* array, expr* guess) const;
 
 
   /** Make an array assignment statement, within a converge block.
@@ -560,8 +560,8 @@ public:
         @return ERROR, if some error occurred (will make noise).
                 A new statement, otherwise.
   */
-  expr* makeArrayCvgAssign(const location& W,
-        symbol* array, expr* rhs) const;
+  //expr* makeArrayCvgAssign(const location& W,
+        //symbol* array, expr* rhs) const;
 
 
   // +-----------------------------------------------------------------+

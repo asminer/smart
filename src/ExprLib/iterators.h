@@ -92,20 +92,6 @@ class iterator : public symbol {
 
         /// For debugging.
         void ShowAssignment(std::ostream &s) const;
-
-    public:
-
-        /** Make an iterator variable.
-            Checks for type consistency.
-                @param  W     Where defined.
-                @param  t     Type of the variable.
-                @param  name  Name of the variable.
-                @param  vals  Set of values for the variable.
-                @return 0, if some error occurred.
-                        A new expression, otherwise.
-        */
-        static symbol* makeIterator(const location& W, const type* t,
-            char* name, expr* vals);
 };
 
 
