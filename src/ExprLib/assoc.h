@@ -148,7 +148,7 @@ class assoc_op {
                 bool* flip, int N) const = 0;
 
     private:
-        static bool registerOp(assoc_op* op);
+        static void registerOp(assoc_op* op);
 
     private:
         opcode code;

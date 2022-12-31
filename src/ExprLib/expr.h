@@ -11,7 +11,6 @@
 #include "result.h"
 
 class debugging_msg;
-class exprman;
 class result;
 class rng_stream;
 

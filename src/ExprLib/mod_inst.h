@@ -12,6 +12,8 @@
 
 #include "symbols.h"
 
+class exprman;  // TBD
+
 class measure;
 class set_of_measures;
 class model_def;
@@ -39,8 +41,6 @@ class subengine;
 class lldsm : public shared_object {
   /// Engine to call for continuing to build the model.
   subengine* next_phase;
-protected:
-  static const exprman* em;
 
 public:
   /// Possible types of low level models.

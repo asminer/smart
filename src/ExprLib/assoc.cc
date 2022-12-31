@@ -1,5 +1,6 @@
 
 #include "assoc.h"
+#include "bogus.h"
 #include "result.h"
 #include "dd_front.h"
 
@@ -13,7 +14,7 @@
 
 const assoc_op** assoc_op::registry = nullptr;
 
-assoc_op::assoc_op(exprman::assoc_opcode o)
+assoc_op::assoc_op(opcode o)
 {
     code = o;
     registerOp(this);
@@ -60,7 +61,7 @@ const type* assoc_op::getTypeOf(const type* lt, bool flip, opcode op,
     const assoc_op* match = nullptr;
     int best_match = -1;
     unsigned num_matches = 0;
-    for (const assoc_op* ptr = (code<aop_none) ? registry[code] : nullptr;
+    for (const assoc_op* ptr = (op<aop_none) ? registry[op] : nullptr;
             ptr; ptr=ptr->next)
     {
         int d = ptr->getPromoteDistance(flip, lt, rt);
@@ -99,15 +100,15 @@ expr* assoc_op::makeExpr(const location &W, opcode op, expr** opnds,
     bool has_null = false;
     bool has_error = false;
     for (int i=0; i<N; i++) {
-        if (0==opnds[i]) {
+        if (!opnds[i]) {
             has_null = true;
             continue;
         }
-        if (isError(opnds[i])) {
+        if (bogus_expr::isError(opnds[i])) {
             has_error = true;
             continue;
         }
-        DCASSERT(isOrdinary(opnds[i]));
+        DCASSERT(!bogus_expr::orNull(opnds[i]));
     }
     //
     // If there's a null or an error,
@@ -119,7 +120,7 @@ expr* assoc_op::makeExpr(const location &W, opcode op, expr** opnds,
         delete[] opnds;
         delete[] flip;
         if (op != aop_colon && has_null)  return 0;
-        return makeError();
+        return bogus_expr::makeError();
     }
 
     const assoc_op* match = 0;
@@ -150,11 +151,14 @@ expr* assoc_op::makeExpr(const location &W, opcode op, expr** opnds,
         // too many matches, this should not happen!
         internal_error E(__FILE__, __LINE__);
         E << "Cannot decide on associative operation: ";
-        if (lt) E << *lt;
-        else    E << "notype";
-        E << " " << getOp(flip, op) << " ";
-        if (rt) E << *rt;
-        else    E << "notype";
+        if (opnds[0])   opnds[0]->PrintType(E.stream());
+        else            E << *type::null;
+        for (int i=1; i<N; i++) {
+            bool f = flip ? flip[i] : false;
+            E << " " << getOp(f, op) << " ";
+            if (opnds[i])   opnds[i]->PrintType(E.stream());
+            else            E << *type::null;
+        }
         return nullptr; // irrelevant
     }
     if (!num_matches) {
@@ -171,7 +175,7 @@ expr* assoc_op::makeExpr(const location &W, opcode op, expr** opnds,
         for (int i=0; i<N; i++)  Delete(opnds[i]);
         delete[] opnds;
         delete[] flip;
-        return makeError();
+        return bogus_expr::makeError();
     }
 
     DCASSERT(1==num_matches);
@@ -205,7 +209,7 @@ void assoc_op::registerOp(assoc_op* op)
 // *                                                                *
 // ******************************************************************
 
-assoc::assoc(const location &W, exprman::assoc_opcode oc,
+assoc::assoc(const location &W, assoc_op::opcode oc,
   const type* t, expr **x, int n) : expr(W, t)
 {
   opnd_count = n;
@@ -213,7 +217,7 @@ assoc::assoc(const location &W, exprman::assoc_opcode oc,
   opcode = oc;
 }
 
-assoc::assoc(const location &W, exprman::assoc_opcode oc,
+assoc::assoc(const location &W, assoc_op::opcode oc,
   typelist* t, expr **x, int n) : expr(W, t)
 {
   opnd_count = n;
@@ -327,7 +331,7 @@ expr* assoc::MakeAnother(expr **newx, int newn)
 // *                                                                *
 // ******************************************************************
 
-flipassoc::flipassoc(const location &W, exprman::assoc_opcode oc,
+flipassoc::flipassoc(const location &W, assoc_op::opcode oc,
  const type* t, expr** x, bool* f, int n) : assoc(W, oc, t, x, n)
 {
   flip = checkFlip(f, n);
@@ -415,15 +419,15 @@ void flipassoc::Traverse(traverse_data &x)
 
 bool flipassoc::Print(std::ostream &s, int) const
 {
-  s << '(';
-  if (flip && flip[0]) s << em->getOp(true, opcode);
-  operands[0]->Print(s, 0);
-  for (int i=1; i<opnd_count; i++) {
-    s << em->getOp(flip && flip[i], opcode);
-    operands[i]->Print(s, 0);
-  }
-  s << ')';
-  return true;
+    s << '(';
+    if (flip && flip[0]) s << assoc_op::getOp(true, opcode);
+    operands[0]->Print(s, 0);
+    for (int i=1; i<opnd_count; i++) {
+        s << assoc_op::getOp(flip && flip[i], opcode);
+        operands[i]->Print(s, 0);
+    }
+    s << ')';
+    return true;
 }
 
 expr* flipassoc::MakeAnother(expr **newx, bool* newf, int newn)
@@ -466,7 +470,7 @@ expr* flipassoc::buildAnother(expr** newx, int newn) const
 // *                                                                *
 // ******************************************************************
 
-summation::summation(const location &W, exprman::assoc_opcode oc,
+summation::summation(const location &W, assoc_op::opcode oc,
   const type* t, expr** x, bool* f, int n)
  : flipassoc(W, oc, t, x, f, n)
 {
@@ -478,7 +482,7 @@ summation::summation(const location &W, exprman::assoc_opcode oc,
 // *                                                                *
 // ******************************************************************
 
-product::product(const location &W, exprman::assoc_opcode oc,
+product::product(const location &W, assoc_op::opcode oc,
   const type* t, expr** x, bool* f, int n)
  : flipassoc(W, oc, t, x, f, n)
 {
