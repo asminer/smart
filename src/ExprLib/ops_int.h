@@ -22,7 +22,7 @@
 */
 class int_assoc_op : public assoc_op {
 public:
-  int_assoc_op(exprman::assoc_opcode op);
+  int_assoc_op(assoc_op::opcode op);
   virtual int getPromoteDistance(expr** list, bool* flip, int N) const;
   virtual int getPromoteDistance(bool f, const type* lt, const type* rt) const;
   virtual const type* getExprType(bool f, const type* l, const type* r) const;

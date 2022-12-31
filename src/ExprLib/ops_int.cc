@@ -1,9 +1,12 @@
 
 #include "ops_int.h"
-#include "exprman.h"
 #include "unary.h"
 #include "binary.h"
 #include "assoc.h"
+#include "bogus.h"
+#include "casting.h"
+
+#include "../Utils/initializer.h"
 
 /**
 
@@ -14,57 +17,59 @@
 
 //#define DEBUG_DEEP
 
+inline const type* SafeType(const expr* x)
+{
+    return x ? x->Type() : type::null;
+}
 
 inline const type*
-IntResultType(const exprman* em, const type* lt, const type* rt)
+IntResultType(const type* lt, const type* rt)
 {
-  DCASSERT(em);
   if (type::null == lt || type::null ==rt)  return 0;
-  const type* lct = Phase2Rand(em->getLeastCommonType(lt, rt));
+  const type* lct = Phase2Rand(typeconv::getLeastCommonType(lt, rt));
   if (0==lct)                         return 0;
   if (!type::matches(lct->getBaseType(), "int"))  return 0;
   if (lct->isASet())                  return 0;
   return lct;
 }
 
-inline int IntAlignDistance(const exprman* em, const type* lt, const type* rt)
+inline int IntAlignDistance(const type* lt, const type* rt)
 {
-  DCASSERT(em);
-  const type* lct = IntResultType(em, lt, rt);
+  const type* lct = IntResultType(lt, rt);
   if (0==lct)        return -1;
 
-  int dl = em->getPromoteDistance(lt, lct);
+  int dl = typeconv::getPromoteDistance(lt, lct);
   if (dl<0) return -1;
-  int dr = em->getPromoteDistance(rt, lct);
+  int dr = typeconv::getPromoteDistance(rt, lct);
   if (dr<0) return -1;
 
   return dl+dr;
 }
 
-inline const type* AlignIntegers(const exprman* em, expr* &l, expr* &r)
+inline const type* AlignIntegers(const location &W, expr* &l, expr* &r)
 {
-  DCASSERT(em);
   DCASSERT(l);
   DCASSERT(r);
-  const type* lct = IntResultType(em, l->Type(), r->Type());
+  const type* lct = IntResultType(l->Type(), r->Type());
   if (0==lct) {
     Delete(l);
     Delete(r);
     return 0;
   }
-  l = em->promote(l, lct);   DCASSERT(em->isOrdinary(l));
-  r = em->promote(r, lct);   DCASSERT(em->isOrdinary(r));
+  l = typeconv::castExpr(true, W, lct, l);
+  r = typeconv::castExpr(true, W, lct, r);
+  DCASSERT(!bogus_expr::orNull(l));
+  DCASSERT(!bogus_expr::orNull(r));
   return lct;
 }
 
-inline int IntAlignDistance(const exprman* em, expr** x, int N)
+inline int IntAlignDistance(expr** x, int N)
 {
-  DCASSERT(em);
   DCASSERT(x);
 
-  const type* lct = em->SafeType(x[0]);
+  const type* lct = SafeType(x[0]);
   for (int i=1; i<N; i++) {
-    lct = em->getLeastCommonType(lct, em->SafeType(x[i]));
+    lct = typeconv::getLeastCommonType(lct, SafeType(x[i]));
   }
   lct = Phase2Rand(lct);
   if (0==lct)                         return -1;
@@ -73,21 +78,20 @@ inline int IntAlignDistance(const exprman* em, expr** x, int N)
 
   int d = 0;
   for (int i=0; i<N; i++) {
-    int dx = em->getPromoteDistance(em->SafeType(x[i]), lct);
+    int dx = typeconv::getPromoteDistance(SafeType(x[i]), lct);
     if (dx<0) return -1;
     d += dx;
   }
   return d;
 }
 
-inline const type* AlignIntegers(const exprman* em, expr** x, int N)
+inline const type* AlignIntegers(const location &W, expr** x, int N)
 {
-  DCASSERT(em);
   DCASSERT(x);
 
-  const type* lct = em->SafeType(x[0]);
+  const type* lct = SafeType(x[0]);
   for (int i=1; i<N; i++) {
-    lct = em->getLeastCommonType(lct, em->SafeType(x[i]));
+    lct = typeconv::getLeastCommonType(lct, SafeType(x[i]));
   }
   lct = Phase2Rand(lct);
   if (  (0==lct) || (!type::matches(lct->getBaseType(), "int")) || lct->isASet() ) {
@@ -95,8 +99,8 @@ inline const type* AlignIntegers(const exprman* em, expr** x, int N)
     return 0;
   }
   for (int i=0; i<N; i++) {
-    x[i] = em->promote(x[i], lct);
-    DCASSERT(em->isOrdinary(x[i]));
+    x[i] = typeconv::castExpr(true, W, lct, x[i]);
+    DCASSERT(!bogus_expr::orNull(x[i]));
   }
   return lct;
 }
@@ -138,7 +142,7 @@ public:
 // ******************************************************************
 
 int_neg_op::expression::expression(const location &W, expr *x)
- : negop(W, exprman::uop_neg, x->Type(), x)
+ : negop(W, unary_op::uop_neg, x->Type(), x)
 {
 }
 
@@ -157,13 +161,12 @@ void int_neg_op::expression::Compute(traverse_data &x)
   }
 }
 
-int_neg_op::int_neg_op() : unary_op(exprman::uop_neg)
+int_neg_op::int_neg_op() : unary_op(unary_op::uop_neg)
 {
 }
 
 const type* int_neg_op::getExprType(const type* t) const
 {
-  DCASSERT(em);
   if (0==t)    return 0;
   if (t->isASet())  return 0;
   const type* bt = t->getBaseType();
@@ -189,25 +192,25 @@ unary* int_neg_op::makeExpr(const location &W, expr* x) const
 // *                                                                *
 // ******************************************************************
 
-int_assoc_op::int_assoc_op(exprman::assoc_opcode op) : assoc_op(op)
+int_assoc_op::int_assoc_op(assoc_op::opcode op) : assoc_op(op)
 {
 }
 
 int int_assoc_op::getPromoteDistance(expr** list, bool* flip, int N) const
 {
-  return IntAlignDistance(em, list, N);
+  return IntAlignDistance(list, N);
 }
 
 int int_assoc_op
 ::getPromoteDistance(bool f, const type* lt, const type* rt) const
 {
-  return IntAlignDistance(em, lt, rt);
+  return IntAlignDistance(lt, rt);
 }
 
 const type* int_assoc_op
 ::getExprType(bool f, const type* l, const type* r) const
 {
-  return IntResultType(em, l, r);
+  return IntResultType(l, r);
 }
 
 
@@ -220,7 +223,7 @@ const type* int_assoc_op
 
 int_add_op::expression
 ::expression(const location &W, const type* t, expr **x, bool* f, int n)
- : summation(W, exprman::aop_plus, t, x, f, n)
+ : summation(W, assoc_op::aop_plus, t, x, f, n)
 {
 }
 
@@ -322,14 +325,14 @@ expr* int_add_op::expression::buildAnother(expr** x, bool* f, int n) const
 // *                                                                *
 // ******************************************************************
 
-int_add_op::int_add_op() : int_assoc_op(exprman::aop_plus)
+int_add_op::int_add_op() : int_assoc_op(assoc_op::aop_plus)
 {
 }
 
 assoc* int_add_op::makeExpr(const location &W, expr** list,
         bool* flip, int N) const
 {
-  const type* lct = AlignIntegers(em, list, N);
+  const type* lct = AlignIntegers(W, list, N);
   // see if flips are redundant
   if (flip) {
     bool all_false = true;
@@ -360,7 +363,7 @@ assoc* int_add_op::makeExpr(const location &W, expr** list,
 
 int_mult_op::expression
 ::expression(const location &W, const type* t, expr **x, int n)
- : product(W, exprman::aop_times, t, x, 0, n)
+ : product(W, assoc_op::aop_times, t, x, 0, n)
 {
 }
 
@@ -492,7 +495,7 @@ expr* int_mult_op::expression::buildAnother(expr **x, bool* f, int n) const
 // *                                                                *
 // ******************************************************************
 
-int_mult_op::int_mult_op() : int_assoc_op(exprman::aop_times)
+int_mult_op::int_mult_op() : int_assoc_op(assoc_op::aop_times)
 {
 }
 
@@ -500,27 +503,27 @@ int int_mult_op::getPromoteDistance(expr** list, bool* flip, int N) const
 {
   // first, make sure no items are flipped
   if (flip) for (int i=0; i<N; i++) if (flip[i])  return -1;
-  return IntAlignDistance(em, list, N);
+  return IntAlignDistance(list, N);
 }
 
 int int_mult_op
 ::getPromoteDistance(bool f, const type* lt, const type* rt) const
 {
   if (f)  return -1;
-  return IntAlignDistance(em, lt, rt);
+  return IntAlignDistance(lt, rt);
 }
 
 const type* int_mult_op
 ::getExprType(bool f, const type* l, const type* r) const
 {
   if (f)  return 0;
-  return IntResultType(em, l, r);
+  return IntResultType(l, r);
 }
 
 assoc* int_mult_op::makeExpr(const location &W, expr** list,
         bool* flip, int N) const
 {
-  const type* lct = AlignIntegers(em, list, N);
+  const type* lct = AlignIntegers(W, list, N);
   if (flip) for (int i=0; i<N; i++) if (flip[i])  lct = 0;
   delete[] flip;
   if (lct)  return new expression(W, lct, list, N);
@@ -553,7 +556,7 @@ protected:
 
 int_multdiv
  ::int_multdiv(const location &W, const type* t, expr **x, bool *f, int n)
- : product(W, exprman::aop_times, t, x, f, n)
+ : product(W, assoc_op::aop_times, t, x, f, n)
 {
   DCASSERT(f);  // otherwise, use int_mult!
 }
@@ -734,7 +737,7 @@ public:
 // *                     int_multdiv_op methods                     *
 // ******************************************************************
 
-int_multdiv_op::int_multdiv_op() : int_assoc_op(exprman::aop_times)
+int_multdiv_op::int_multdiv_op() : int_assoc_op(assoc_op::aop_times)
 {
 }
 
@@ -749,21 +752,21 @@ int int_multdiv_op::getPromoteDistance(expr** list, bool* flip, int N) const
     break;
   }
   if (unflipped)  return -1;
-  return IntAlignDistance(em, list, N);
+  return IntAlignDistance(list, N);
 }
 
 int int_multdiv_op
 ::getPromoteDistance(bool f, const type* lt, const type* rt) const
 {
   if (!f)  return -1;
-  return IntAlignDistance(em, lt, rt);
+  return IntAlignDistance(lt, rt);
 }
 
 const type* int_multdiv_op
 ::getExprType(bool f, const type* l, const type* r) const
 {
   if (!f)  return 0;
-  const type* lct = IntResultType(em, l, r);
+  const type* lct = IntResultType(l, r);
   if (lct)  lct = lct->changeBaseType(type::find("real"));
   return lct;
 }
@@ -771,7 +774,7 @@ const type* int_multdiv_op
 assoc* int_multdiv_op::makeExpr(const location &W, expr** list,
         bool* flip, int N) const
 {
-  const type* lct = AlignIntegers(em, list, N);
+  const type* lct = AlignIntegers(W, list, N);
   if (0==flip) {
     lct = 0;
   } else {
@@ -872,7 +875,7 @@ expr* int_mod::buildAnother(expr *l, expr *r) const
 
 class int_binary_op : public binary_op {
 public:
-  int_binary_op(exprman::binary_opcode op);
+  int_binary_op(binary_op::opcode op);
   virtual int getPromoteDistance(const type* lt, const type* rt) const;
   virtual const type* getExprType(const type* l, const type* r) const;
 };
@@ -881,18 +884,18 @@ public:
 // *                     int_binary_op  methods                     *
 // ******************************************************************
 
-int_binary_op::int_binary_op(exprman::binary_opcode op) : binary_op(op)
+int_binary_op::int_binary_op(binary_op::opcode op) : binary_op(op)
 {
 }
 
 int int_binary_op::getPromoteDistance(const type* lt, const type* rt) const
 {
-  return IntAlignDistance(em, lt, rt);
+  return IntAlignDistance(lt, rt);
 }
 
 const type* int_binary_op::getExprType(const type* l, const type* r) const
 {
-  return IntResultType(em, l, r);
+  return IntResultType(l, r);
 }
 
 // ******************************************************************
@@ -903,7 +906,7 @@ const type* int_binary_op::getExprType(const type* l, const type* r) const
 
 class int_comp_op : public int_binary_op {
 public:
-  int_comp_op(exprman::binary_opcode op);
+  int_comp_op(binary_op::opcode op);
   virtual const type* getExprType(const type* l, const type* r) const;
 };
 
@@ -911,13 +914,13 @@ public:
 // *                      int_comp_op  methods                      *
 // ******************************************************************
 
-int_comp_op::int_comp_op(exprman::binary_opcode op) : int_binary_op(op)
+int_comp_op::int_comp_op(binary_op::opcode op) : int_binary_op(op)
 {
 }
 
 const type* int_comp_op::getExprType(const type* l, const type* r) const
 {
-  const type* t = IntResultType(em, l, r);
+  const type* t = IntResultType(l, r);
   if (t)  t = t->changeBaseType(type::find("bool"));
   return t;
 }
@@ -938,13 +941,13 @@ public:
 // *                       int_mod_op methods                       *
 // ******************************************************************
 
-int_mod_op::int_mod_op() : int_binary_op(exprman::bop_mod)
+int_mod_op::int_mod_op() : int_binary_op(binary_op::bop_mod)
 {
 }
 
 binary* int_mod_op::makeExpr(const location &W, expr* l, expr* r) const
 {
-  const type* lct = AlignIntegers(em, l, r);
+  const type* lct = AlignIntegers(W, l, r);
   if (0==lct)  return 0;
   return new int_mod(W, lct, l, r);
 }
@@ -1007,13 +1010,13 @@ public:
 // *                      int_equal_op methods                      *
 // ******************************************************************
 
-int_equal_op::int_equal_op() : int_comp_op(exprman::bop_equals)
+int_equal_op::int_equal_op() : int_comp_op(binary_op::bop_equals)
 {
 }
 
 binary* int_equal_op::makeExpr(const location &W, expr* l, expr* r) const
 {
-  const type* lct = AlignIntegers(em, l, r);
+  const type* lct = AlignIntegers(W, l, r);
   if (0==lct)  return 0;
   lct = lct->changeBaseType(type::find("bool"));
   DCASSERT(lct);
@@ -1079,13 +1082,13 @@ public:
 // *                       int_neq_op methods                       *
 // ******************************************************************
 
-int_neq_op::int_neq_op() : int_comp_op(exprman::bop_nequal)
+int_neq_op::int_neq_op() : int_comp_op(binary_op::bop_nequal)
 {
 }
 
 binary* int_neq_op::makeExpr(const location &W, expr* l, expr* r) const
 {
-  const type* lct = AlignIntegers(em, l, r);
+  const type* lct = AlignIntegers(W, l, r);
   if (0==lct)  return 0;
   lct = lct->changeBaseType(type::find("bool"));
   DCASSERT(lct);
@@ -1150,13 +1153,13 @@ public:
 // *                       int_gt_op  methods                       *
 // ******************************************************************
 
-int_gt_op::int_gt_op() : int_comp_op(exprman::bop_gt)
+int_gt_op::int_gt_op() : int_comp_op(binary_op::bop_gt)
 {
 }
 
 binary* int_gt_op::makeExpr(const location &W, expr* l, expr* r) const
 {
-  const type* lct = AlignIntegers(em, l, r);
+  const type* lct = AlignIntegers(W, l, r);
   if (0==lct)  return 0;
   lct = lct->changeBaseType(type::find("bool"));
   DCASSERT(lct);
@@ -1221,13 +1224,13 @@ public:
 // *                       int_ge_op  methods                       *
 // ******************************************************************
 
-int_ge_op::int_ge_op() : int_comp_op(exprman::bop_ge)
+int_ge_op::int_ge_op() : int_comp_op(binary_op::bop_ge)
 {
 }
 
 binary* int_ge_op::makeExpr(const location &W, expr* l, expr* r) const
 {
-  const type* lct = AlignIntegers(em, l, r);
+  const type* lct = AlignIntegers(W, l, r);
   if (0==lct)  return 0;
   lct = lct->changeBaseType(type::find("bool"));
   DCASSERT(lct);
@@ -1292,13 +1295,13 @@ public:
 // *                       int_lt_op  methods                       *
 // ******************************************************************
 
-int_lt_op::int_lt_op() : int_comp_op(exprman::bop_lt)
+int_lt_op::int_lt_op() : int_comp_op(binary_op::bop_lt)
 {
 }
 
 binary* int_lt_op::makeExpr(const location &W, expr* l, expr* r) const
 {
-  const type* lct = AlignIntegers(em, l, r);
+  const type* lct = AlignIntegers(W, l, r);
   if (0==lct)  return 0;
   lct = lct->changeBaseType(type::find("bool"));
   DCASSERT(lct);
@@ -1363,13 +1366,13 @@ public:
 // *                       int_le_op  methods                       *
 // ******************************************************************
 
-int_le_op::int_le_op() : int_comp_op(exprman::bop_le)
+int_le_op::int_le_op() : int_comp_op(binary_op::bop_le)
 {
 }
 
 binary* int_le_op::makeExpr(const location &W, expr* l, expr* r) const
 {
-  const type* lct = AlignIntegers(em, l, r);
+  const type* lct = AlignIntegers(W, l, r);
   if (0==lct)  return 0;
   lct = lct->changeBaseType(type::find("bool"));
   DCASSERT(lct);
@@ -1378,24 +1381,37 @@ binary* int_le_op::makeExpr(const location &W, expr* l, expr* r) const
 
 // ******************************************************************
 // *                                                                *
-// *                           Front  end                           *
+// *                         Initialization                         *
 // *                                                                *
 // ******************************************************************
 
-void InitIntegerOps(exprman* em)
+class ops_int_init : public initializer {
+    public:
+        ops_int_init();
+    protected:
+        virtual void execute();
+};
+static ops_int_init the_ops_int_initializer;
+
+ops_int_init::ops_int_init() : initializer(__FILE__, 0, 1)
 {
-  if (0==em)  return;
-  em->registerOperation( new int_neg_op     );
-  em->registerOperation( new int_add_op     );
-  em->registerOperation( new int_mult_op    );
-  em->registerOperation( new int_multdiv_op );
-  em->registerOperation( new int_mod_op     );
-  em->registerOperation( new int_equal_op   );
-  em->registerOperation( new int_neq_op     );
-  em->registerOperation( new int_gt_op      );
-  em->registerOperation( new int_ge_op      );
-  em->registerOperation( new int_lt_op      );
-  em->registerOperation( new int_le_op      );
+    builds_resource(0, "ops_int");
+}
+
+void ops_int_init::execute()
+{
+    // The constructors will register these operations
+    new int_neg_op;
+    new int_add_op;
+    new int_mult_op;
+    new int_multdiv_op;
+    new int_mod_op;
+    new int_equal_op;
+    new int_neq_op;
+    new int_gt_op;
+    new int_ge_op;
+    new int_lt_op;
+    new int_le_op;
 }
 
 
