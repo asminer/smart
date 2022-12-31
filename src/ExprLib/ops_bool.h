@@ -15,8 +15,8 @@
 // *                                                                *
 // ******************************************************************
 
-class exprman;
-void InitBooleanOps(exprman* em);
+// class exprman;
+// void InitBooleanOps(exprman* em);
 
 #endif
 

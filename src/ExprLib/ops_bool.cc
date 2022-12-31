@@ -3,6 +3,10 @@
 #include "unary.h"
 #include "binary.h"
 #include "assoc.h"
+#include "bogus.h"
+#include "casting.h"
+
+#include "../Utils/initializer.h"
 
 //#define OPTIMIZE_AND_ORDER
 //#define OPTIMIZE_OR_ORDER
@@ -13,92 +17,100 @@
 
  */
 
+inline const type* SafeType(const expr* x)
+{
+    return x ? x->Type() : type::null;
+}
+
 inline const type*
-BoolResultType(const exprman* em, const type* lt, const type* rt)
+BoolResultType(const type* lt, const type* rt)
 {
-    DCASSERT(em);
-  if (type::null == lt || type::null ==rt)          return nullptr;
-  const type* lct = em->getLeastCommonType(lt, rt);
-  if (!lct)                                         return nullptr;
-  if (!type::matches(lct->getBaseType(), "bool"))   return nullptr;
-  if (lct->isASet())                                return nullptr;
-  return lct;
+    if (type::null == lt || type::null ==rt)            return nullptr;
+    const type* lct = typeconv::getLeastCommonType(lt, rt);
+    if (!lct)                                           return nullptr;
+    if (!type::matches(lct->getBaseType(), "bool"))     return nullptr;
+    if (lct->isASet())                                  return nullptr;
+    return lct;
 }
 
-inline int BoolAlignDistance(const exprman* em, const type* lt, const type* rt)
+inline int BoolAlignDistance(const type* lt, const type* rt)
 {
-  const type* lct = BoolResultType(em, lt, rt);
-  if (0==lct)        return -1;
+    const type* lct = BoolResultType(lt, rt);
+    if (!lct) return -1;
+    int dl = typeconv::getPromoteDistance(lt, lct);
+    if (dl<0) return -1;
+    int dr = typeconv::getPromoteDistance(rt, lct);
+    if (dr<0) return -1;
 
-  int dl = em->getPromoteDistance(lt, lct);
-  if (dl<0) return -1;
-  int dr = em->getPromoteDistance(rt, lct);
-  if (dr<0) return -1;
-
-  return dl+dr;
+    return dl+dr;
 }
 
-inline const type* AlignBooleans(const exprman* em, expr* &l, expr* &r)
+inline const type* AlignBooleans(const location &W, expr* &l, expr* &r)
 {
-  DCASSERT(l);
-  DCASSERT(r);
-  const type* lct = BoolResultType(em, l->Type(), r->Type());
-  if (0==lct) {
-    Delete(l);
-    Delete(r);
-    return 0;
-  }
-  l = em->promote(l, lct);   DCASSERT(em->isOrdinary(l));
-  r = em->promote(r, lct);   DCASSERT(em->isOrdinary(r));
-  return lct;
+    DCASSERT(l);
+    DCASSERT(r);
+    const type* lct = BoolResultType(l->Type(), r->Type());
+    if (0==lct) {
+        Delete(l);
+        Delete(r);
+        return nullptr;
+    }
+    l = typeconv::castExpr(true, W, lct, l);
+    r = typeconv::castExpr(true, W, lct, r);
+    DCASSERT(!bogus_expr::orNull(l));
+    DCASSERT(!bogus_expr::orNull(r));
+    return lct;
 }
 
-inline int BoolAlignDistance(const exprman* em, expr** x, bool* f, int N)
+inline int BoolAlignDistance(expr** x, bool* f, int N)
 {
-  DCASSERT(em);
-  DCASSERT(x);
+    DCASSERT(x);
 
-  // check flips, if any
-  if (f) for (int i=0; i<N; i++) if (f[i])  return -1;
+    // check flips, if any
+    if (f) for (int i=0; i<N; i++) if (f[i])  return -1;
 
-  const type* lct = em->SafeType(x[0]);
-  for (int i=1; i<N; i++) {
-    lct = em->getLeastCommonType(lct, em->SafeType(x[i]));
-  }
-  if (0==lct)                         return -1;
-  if (!type::matches(lct->getBaseType(), "bool")) return -1;
-  if (lct->isASet())                  return -1;
+    const type* lct = SafeType(x[0]);
+    for (int i=1; i<N; i++) {
+        lct = typeconv::getLeastCommonType(lct, SafeType(x[i]));
+    }
+    if (!lct) return -1;
+    if (!type::matches(lct->getBaseType(), "bool")) return -1;
+    if (lct->isASet()) return -1;
 
-  int d = 0;
-  for (int i=0; i<N; i++) {
-    int dx = em->getPromoteDistance(em->SafeType(x[i]), lct);
-    if (dx<0) return -1;
-    d += dx;
-  }
-  return d;
+    int d = 0;
+    for (int i=0; i<N; i++) {
+        int dx = typeconv::getPromoteDistance(
+                    x[i] ? x[i]->Type() : type::null,
+                    lct
+                );
+        if (dx<0) return -1;
+        d += dx;
+    }
+    return d;
 }
 
-inline const type* AlignBooleans(const exprman* em, expr** x, bool* f, int N)
+inline const type* AlignBooleans(const location &W, expr** x, bool* f, int N)
 {
-  DCASSERT(em);
-  DCASSERT(x);
+    DCASSERT(x);
 
-  // check flips, if any
-  if (f) for (int i=0; i<N; i++) if (f[i])  return 0;
+    // check flips, if any
+    if (f) for (int i=0; i<N; i++) if (f[i])  return nullptr;
 
-  const type* lct = em->SafeType(x[0]);
-  for (int i=1; i<N; i++) {
-    lct = em->getLeastCommonType(lct, em->SafeType(x[i]));
-  }
-  if (  (0==lct) || (!type::matches(lct->getBaseType(), "bool")) || lct->isASet() ) {
-    for (int i=0; i<N; i++)  Delete(x[i]);
-    return 0;
-  }
-  for (int i=0; i<N; i++) {
-    x[i] = em->promote(x[i], lct);
-    DCASSERT(em->isOrdinary(x[i]));
-  }
-  return lct;
+    const type* lct = SafeType(x[0]);
+    for (int i=1; i<N; i++) {
+        lct = typeconv::getLeastCommonType(lct, SafeType(x[i]));
+    }
+    if (  (0==lct) || (!type::matches(lct->getBaseType(), "bool"))
+                   || lct->isASet() )
+    {
+        for (int i=0; i<N; i++)  Delete(x[i]);
+        return nullptr;
+    }
+    for (int i=0; i<N; i++) {
+        x[i] = typeconv::castExpr(true, W, lct, x[i]);
+        DCASSERT(!bogus_expr::orNull(x[i]));
+    }
+    return lct;
 }
 
 
@@ -122,7 +134,7 @@ protected:
 // ******************************************************************
 
 bool_not_expr::bool_not_expr(const location &W, expr *x)
- : negop(W, exprman::uop_not, x->Type(), x)
+ : negop(W, unary_op::uop_not, x->Type(), x)
 {
 }
 
@@ -160,7 +172,7 @@ public:
 // *                      bool_not_op  methods                      *
 // ******************************************************************
 
-bool_not_op::bool_not_op() : unary_op(exprman::uop_not)
+bool_not_op::bool_not_op() : unary_op(unary_op::uop_not)
 {
 }
 
@@ -169,7 +181,6 @@ const type* bool_not_op::getExprType(const type* t) const
   if (0==t)    return 0;
   if (t->isASet())  return 0;
   const type* bt = t->getBaseType();
-  DCASSERT(em);
   if (!type::matches(bt, "bool"))  return 0;
   return t;
 }
@@ -204,7 +215,7 @@ protected:
 // ******************************************************************
 
 bool_or::bool_or(const location &W, const type* t, expr **x, int n)
- : summation(W, exprman::aop_or, t, x, 0, n)
+ : summation(W, assoc_op::aop_or, t, x, 0, n)
 {
 }
 
@@ -249,7 +260,7 @@ expr* bool_or::buildAnother(expr **x, bool* f, int n) const
 
 class bool_assoc_op : public assoc_op {
 public:
-  bool_assoc_op(exprman::assoc_opcode op);
+  bool_assoc_op(assoc_op::opcode op);
   virtual int getPromoteDistance(expr** list, bool* flip, int N) const;
   virtual int getPromoteDistance(bool f, const type* lt, const type* rt) const;
   virtual const type* getExprType(bool f, const type* l, const type* r) const;
@@ -259,27 +270,27 @@ public:
 // *                     bool_assoc_op  methods                     *
 // ******************************************************************
 
-bool_assoc_op::bool_assoc_op(exprman::assoc_opcode op) : assoc_op(op)
+bool_assoc_op::bool_assoc_op(assoc_op::opcode op) : assoc_op(op)
 {
 }
 
 int bool_assoc_op::getPromoteDistance(expr** list, bool* flip, int N) const
 {
-  return BoolAlignDistance(em, list, flip, N);
+  return BoolAlignDistance(list, flip, N);
 }
 
 int bool_assoc_op
 ::getPromoteDistance(bool f, const type* lt, const type* rt) const
 {
   if (f) return -1;
-  return BoolAlignDistance(em, lt, rt);
+  return BoolAlignDistance(lt, rt);
 }
 
 const type* bool_assoc_op
 ::getExprType(bool f, const type* l, const type* r) const
 {
   if (f) return 0;
-  return BoolResultType(em, l, r);
+  return BoolResultType(l, r);
 }
 
 
@@ -300,14 +311,14 @@ public:
 // *                       bool_or_op methods                       *
 // ******************************************************************
 
-bool_or_op::bool_or_op() : bool_assoc_op(exprman::aop_or)
+bool_or_op::bool_or_op() : bool_assoc_op(assoc_op::aop_or)
 {
 }
 
 assoc* bool_or_op::makeExpr(const location &W, expr** list,
         bool* flip, int N) const
 {
-  const type* lct = AlignBooleans(em, list, flip, N);
+  const type* lct = AlignBooleans(W, list, flip, N);
   delete[] flip;
   if (lct)  return new bool_or(W, lct, list, N);
   // there was an error
@@ -336,7 +347,7 @@ protected:
 // ******************************************************************
 
 bool_and::bool_and(const location &W, const type* t, expr **x, int n)
- : product(W, exprman::aop_and, t, x, 0, n)
+ : product(W, assoc_op::aop_and, t, x, 0, n)
 {
 }
 
@@ -390,14 +401,14 @@ public:
 // *                      bool_and_op  methods                      *
 // ******************************************************************
 
-bool_and_op::bool_and_op() : bool_assoc_op(exprman::aop_and)
+bool_and_op::bool_and_op() : bool_assoc_op(assoc_op::aop_and)
 {
 }
 
 assoc* bool_and_op::makeExpr(const location &W, expr** list,
         bool* flip, int N) const
 {
-  const type* lct = AlignBooleans(em, list, flip, N);
+  const type* lct = AlignBooleans(W, list, flip, N);
   delete[] flip;
   if (lct)  return new bool_and(W, lct, list, N);
   // there was an error
@@ -426,7 +437,7 @@ protected:
 // ******************************************************************
 
 bool_implies::bool_implies(const location &W, const type* t, expr *l, expr* r)
- : binary(W, exprman::bop_implies, t, l, r)
+ : binary(W, binary_op::bop_implies, t, l, r)
 {
 }
 
@@ -473,7 +484,7 @@ expr* bool_implies::buildAnother(expr* l, expr* r) const
 
 class bool_binary_op : public binary_op {
 public:
-  bool_binary_op(exprman::binary_opcode op);
+  bool_binary_op(binary_op::opcode op);
   virtual int getPromoteDistance(const type* lt, const type* rt) const;
   virtual const type* getExprType(const type* l, const type* r) const;
 };
@@ -482,18 +493,18 @@ public:
 // *                     bool_binary_op methods                     *
 // ******************************************************************
 
-bool_binary_op::bool_binary_op(exprman::binary_opcode op) : binary_op(op)
+bool_binary_op::bool_binary_op(binary_op::opcode op) : binary_op(op)
 {
 }
 
 int bool_binary_op::getPromoteDistance(const type* lt, const type* rt) const
 {
-  return BoolAlignDistance(em, lt, rt);
+  return BoolAlignDistance(lt, rt);
 }
 
 const type* bool_binary_op::getExprType(const type* l, const type* r) const
 {
-  return BoolResultType(em, l, r);
+  return BoolResultType(l, r);
 }
 
 // ******************************************************************
@@ -512,13 +523,13 @@ public:
 // *                    bool_implies_op  methods                    *
 // ******************************************************************
 
-bool_implies_op::bool_implies_op() : bool_binary_op(exprman::bop_implies)
+bool_implies_op::bool_implies_op() : bool_binary_op(binary_op::bop_implies)
 {
 }
 
 binary* bool_implies_op::makeExpr(const location &W, expr* l, expr* r) const
 {
-  const type* lct = AlignBooleans(em, l, r);
+  const type* lct = AlignBooleans(W, l, r);
   if (0==lct)  return 0;
   return new bool_implies(W, lct, l, r);
 }
@@ -580,13 +591,13 @@ public:
 // *                     bool_equal_op  methods                     *
 // ******************************************************************
 
-bool_equal_op::bool_equal_op() : bool_binary_op(exprman::bop_equals)
+bool_equal_op::bool_equal_op() : bool_binary_op(binary_op::bop_equals)
 {
 }
 
 binary* bool_equal_op::makeExpr(const location &W, expr* l, expr* r) const
 {
-  const type* lct = AlignBooleans(em, l, r);
+  const type* lct = AlignBooleans(W, l, r);
   if (0==lct)  return 0;
   return new bool_equal(W, lct, l, r);
 }
@@ -648,32 +659,45 @@ public:
 // *                      bool_neq_op  methods                      *
 // ******************************************************************
 
-bool_neq_op::bool_neq_op() : bool_binary_op(exprman::bop_nequal)
+bool_neq_op::bool_neq_op() : bool_binary_op(binary_op::bop_nequal)
 {
 }
 
 binary* bool_neq_op::makeExpr(const location &W, expr* l, expr* r) const
 {
-  const type* lct = AlignBooleans(em, l, r);
+  const type* lct = AlignBooleans(W, l, r);
   if (0==lct)  return 0;
   return new bool_neq(W, lct, l, r);
 }
 
 // ******************************************************************
 // *                                                                *
-// *                           Front  end                           *
+// *                         Initialization                         *
 // *                                                                *
 // ******************************************************************
 
-void InitBooleanOps(exprman* em)
+class ops_bool_init : public initializer {
+    public:
+        ops_bool_init();
+    protected:
+        virtual void execute();
+};
+static ops_bool_init the_ops_bool_initializer;
+
+ops_bool_init::ops_bool_init() : initializer(__FILE__, 0, 1)
 {
-  if (0==em)  return;
-  em->registerOperation(  new bool_not_op     );
-  em->registerOperation(  new bool_or_op      );
-  em->registerOperation(  new bool_and_op     );
-  em->registerOperation(  new bool_implies_op );
-  em->registerOperation(  new bool_equal_op   );
-  em->registerOperation(  new bool_neq_op     );
+    builds_resource(0, "ops_bool");
+}
+
+void ops_bool_init::execute()
+{
+    // The constructors will register these operations
+    new bool_not_op;
+    new bool_or_op;
+    new bool_and_op;
+    new bool_implies_op;
+    new bool_equal_op;
+    new bool_neq_op;
 }
 
 

@@ -49,26 +49,59 @@ int typeconv::getPromoteDistance(const type* t1, const type* t2)
     }
 }
 
-const type* typeconv::getLeastCommonType(const type* a, const type* b) const
+const type* typeconv::getLeastCommonType(const type* a, const type* b)
 {
-  if (!a || !b) return nullptr;
-  if (a==b)     return a;
+    if (!a || !b) return nullptr;
 
-  bool is_set = a->isASet() || b->isASet();
-  bool proc = a->hasProc() || b->hasProc();
+    // Common and easy case
+    if (a==b)     return a;
 
-  modifier m = MAX( a->getModifier(), b->getModifier() );
+    //
+    // Determine least set, proc, and modifiers required
+    //
+    bool is_set = a->isASet() || b->isASet();
+    bool proc = a->hasProc() || b->hasProc();
+    modifier m = MAX( a->getModifier(), b->getModifier() );
 
-  const simple_type* ba = a->getBaseType();
-  const simple_type* bb = b->getBaseType();
+    //
+    // Determine the base type to use
+    //
+    const simple_type* ba = a->getBaseType();
+    const simple_type* bb = b->getBaseType();
+    const type* t = nullptr;
 
-  const type* t = nullptr;
-  if (isPromotable(ba, bb)) t = bb;
-  if (isPromotable(bb, ba)) t = ba;
-  if (t)                    t = t->modifyType(m);
-  if (t) if (proc)          t = t->addProc();
-  if (t) if (is_set)        t = t->getSetOfThis();
-  return t;
+    if (ba == bb) {
+        // Another common and easy case
+        t = ba;
+    } else {
+        int a2b = getPromoteDistance(ba, bb);
+        int b2a = getPromoteDistance(bb, ba);
+        if (a2b >= 0 && b2a >= 0) {
+            // Can this happen?
+            // If so, take the lesser promotion distance
+            DCASSERT(a2b != b2a);
+            if (a2b < b2a) {
+                t = bb;
+            } else {
+                t = ba;
+            }
+        }
+        if (a2b >= 0 && b2a < 0) {
+            t = bb;
+        }
+        if (a2b < 0 && b2a >= 0) {
+            t = ba;
+        }
+    }
+
+    //
+    // Add set, proc, and modifiers as required
+    //
+    t = type::procMod(proc, m, t);
+    if (is_set && t) {
+        t = t->getSetOfThis();
+    }
+    return t;
 }
 
 bool typeconv::isCastable(const type* t1, const type* t2)

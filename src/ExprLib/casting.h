@@ -83,7 +83,7 @@ class typeconv {
                     from a to c and from b to c.
                     Otherwise, return 0.
         */
-        const type* getLeastCommonType(const type* a, const type* b) const;
+        static const type* getLeastCommonType(const type* a, const type* b);
 
 
         /** Returns true if type t1 can be cast to type t2.
