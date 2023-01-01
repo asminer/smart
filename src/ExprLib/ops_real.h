@@ -15,8 +15,8 @@
 // *                                                                *
 // ******************************************************************
 
-class exprman;
-void InitRealOps(exprman* em);
+// class exprman;
+// void InitRealOps(exprman* em);
 
 #endif
 

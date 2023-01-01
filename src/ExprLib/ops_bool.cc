@@ -1,5 +1,4 @@
 
-#include "ops_bool.h"
 #include "unary.h"
 #include "binary.h"
 #include "assoc.h"
@@ -16,11 +15,6 @@
    Implementation of operator classes, for bool variables.
 
  */
-
-inline const type* SafeType(const expr* x)
-{
-    return x ? x->Type() : type::null;
-}
 
 inline const type*
 BoolResultType(const type* lt, const type* rt)
@@ -69,9 +63,9 @@ inline int BoolAlignDistance(expr** x, bool* f, int N)
     // check flips, if any
     if (f) for (int i=0; i<N; i++) if (f[i])  return -1;
 
-    const type* lct = SafeType(x[0]);
+    const type* lct = expr::SafeType(x[0]);
     for (int i=1; i<N; i++) {
-        lct = typeconv::getLeastCommonType(lct, SafeType(x[i]));
+        lct = typeconv::getLeastCommonType(lct, expr::SafeType(x[i]));
     }
     if (!lct) return -1;
     if (!type::matches(lct->getBaseType(), "bool")) return -1;
@@ -96,9 +90,9 @@ inline const type* AlignBooleans(const location &W, expr** x, bool* f, int N)
     // check flips, if any
     if (f) for (int i=0; i<N; i++) if (f[i])  return nullptr;
 
-    const type* lct = SafeType(x[0]);
+    const type* lct = expr::SafeType(x[0]);
     for (int i=1; i<N; i++) {
-        lct = typeconv::getLeastCommonType(lct, SafeType(x[i]));
+        lct = typeconv::getLeastCommonType(lct, expr::SafeType(x[i]));
     }
     if (  (0==lct) || (!type::matches(lct->getBaseType(), "bool"))
                    || lct->isASet() )

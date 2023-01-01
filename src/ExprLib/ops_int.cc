@@ -17,11 +17,6 @@
 
 //#define DEBUG_DEEP
 
-inline const type* SafeType(const expr* x)
-{
-    return x ? x->Type() : type::null;
-}
-
 inline const type*
 IntResultType(const type* lt, const type* rt)
 {
@@ -67,9 +62,9 @@ inline int IntAlignDistance(expr** x, int N)
 {
   DCASSERT(x);
 
-  const type* lct = SafeType(x[0]);
+  const type* lct = expr::SafeType(x[0]);
   for (int i=1; i<N; i++) {
-    lct = typeconv::getLeastCommonType(lct, SafeType(x[i]));
+    lct = typeconv::getLeastCommonType(lct, expr::SafeType(x[i]));
   }
   lct = Phase2Rand(lct);
   if (0==lct)                         return -1;
@@ -78,7 +73,7 @@ inline int IntAlignDistance(expr** x, int N)
 
   int d = 0;
   for (int i=0; i<N; i++) {
-    int dx = typeconv::getPromoteDistance(SafeType(x[i]), lct);
+    int dx = typeconv::getPromoteDistance(expr::SafeType(x[i]), lct);
     if (dx<0) return -1;
     d += dx;
   }
@@ -89,9 +84,9 @@ inline const type* AlignIntegers(const location &W, expr** x, int N)
 {
   DCASSERT(x);
 
-  const type* lct = SafeType(x[0]);
+  const type* lct = expr::SafeType(x[0]);
   for (int i=1; i<N; i++) {
-    lct = typeconv::getLeastCommonType(lct, SafeType(x[i]));
+    lct = typeconv::getLeastCommonType(lct, expr::SafeType(x[i]));
   }
   lct = Phase2Rand(lct);
   if (  (0==lct) || (!type::matches(lct->getBaseType(), "int")) || lct->isASet() ) {

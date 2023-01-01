@@ -14,8 +14,8 @@
 // *                                                                *
 // ******************************************************************
 
-class exprman;
-void InitMiscOps(exprman* em);
+// class exprman;
+// void InitMiscOps(exprman* em);
 
 
 #endif

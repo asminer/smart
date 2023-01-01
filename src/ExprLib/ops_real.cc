@@ -1,9 +1,11 @@
 
-#include "ops_real.h"
-#include "exprman.h"
 #include "unary.h"
 #include "binary.h"
 #include "assoc.h"
+#include "bogus.h"
+#include "casting.h"
+
+#include "../Utils/initializer.h"
 
 /**
 
@@ -14,55 +16,53 @@
 //#define DEBUG_DEEP
 
 inline const type*
-RealResultType(const exprman* em, const type* lt, const type* rt)
+RealResultType(const type* lt, const type* rt)
 {
-  DCASSERT(em);
   if (type::null == lt || type::null == rt)  return 0;
-  const type* lct = Phase2Rand(em->getLeastCommonType(lt, rt));
+  const type* lct = Phase2Rand(typeconv::getLeastCommonType(lt, rt));
   if (0==lct)                         return 0;
   if (!type::matches(lct->getBaseType(), "real")) return 0;
   if (lct->isASet())                  return 0;
   return lct;
 }
 
-inline int RealAlignDistance(const exprman* em, const type* lt, const type* rt)
+inline int RealAlignDistance(const type* lt, const type* rt)
 {
-  DCASSERT(em);
-  const type* lct = RealResultType(em, lt, rt);
+  const type* lct = RealResultType(lt, rt);
   if (0==lct)        return -1;
 
-  int dl = em->getPromoteDistance(lt, lct);
+  int dl = typeconv::getPromoteDistance(lt, lct);
   if (dl<0) return -1;
-  int dr = em->getPromoteDistance(rt, lct);
+  int dr = typeconv::getPromoteDistance(rt, lct);
   if (dr<0) return -1;
 
   return dl+dr;
 }
 
-inline const type* AlignReals(const exprman* em, expr* &l, expr* &r)
+inline const type* AlignReals(const location &W, expr* &l, expr* &r)
 {
-  DCASSERT(em);
   DCASSERT(l);
   DCASSERT(r);
-  const type* lct = RealResultType(em, l->Type(), r->Type());
+  const type* lct = RealResultType(l->Type(), r->Type());
   if (0==lct) {
     Delete(l);
     Delete(r);
     return 0;
   }
-  l = em->promote(l, lct);   DCASSERT(em->isOrdinary(l));
-  r = em->promote(r, lct);   DCASSERT(em->isOrdinary(r));
+  l = typeconv::castExpr(true, W, lct, l);
+  r = typeconv::castExpr(true, W, lct, r);
+  DCASSERT(!bogus_expr::orNull(l));
+  DCASSERT(!bogus_expr::orNull(r));
   return lct;
 }
 
-inline int RealAlignDistance(const exprman* em, expr** x, int N)
+inline int RealAlignDistance(expr** x, int N)
 {
-  DCASSERT(em);
   DCASSERT(x);
 
-  const type* lct = em->SafeType(x[0]);
+  const type* lct = expr::SafeType(x[0]);
   for (int i=1; i<N; i++) {
-    lct = em->getLeastCommonType(lct, em->SafeType(x[i]));
+    lct = typeconv::getLeastCommonType(lct, expr::SafeType(x[i]));
   }
   lct = Phase2Rand(lct);
   if (0==lct)                         return -1;
@@ -71,30 +71,31 @@ inline int RealAlignDistance(const exprman* em, expr** x, int N)
 
   int d = 0;
   for (int i=0; i<N; i++) {
-    int dx = em->getPromoteDistance(em->SafeType(x[i]), lct);
+    int dx = typeconv::getPromoteDistance(expr::SafeType(x[i]), lct);
     if (dx<0) return -1;
     d += dx;
   }
   return d;
 }
 
-inline const type* AlignReals(const exprman* em, expr** x, int N)
+inline const type* AlignReals(const location &W, expr** x, int N)
 {
-  DCASSERT(em);
   DCASSERT(x);
 
-  const type* lct = em->SafeType(x[0]);
+  const type* lct = expr::SafeType(x[0]);
   for (int i=1; i<N; i++) {
-    lct = em->getLeastCommonType(lct, em->SafeType(x[i]));
+    lct = typeconv::getLeastCommonType(lct, expr::SafeType(x[i]));
   }
   lct = Phase2Rand(lct);
-  if (  (0==lct) || (!type::matches(lct->getBaseType(), "real")) || lct->isASet() ) {
+  if (  (0==lct) || (!type::matches(lct->getBaseType(), "real"))
+                 || lct->isASet() )
+  {
     for (int i=0; i<N; i++)  Delete(x[i]);
     return 0;
   }
   for (int i=0; i<N; i++) {
-    x[i] = em->promote(x[i], lct);
-    DCASSERT(em->isOrdinary(x[i]));
+    x[i] = typeconv::castExpr(true, W, lct, x[i]);
+    DCASSERT(!bogus_expr::orNull(x[i]));
   }
   return lct;
 }
@@ -120,7 +121,7 @@ protected:
 // ******************************************************************
 
 real_neg_expr::real_neg_expr(const location &W, expr *x)
- : negop(W, exprman::uop_neg, x->Type(), x)
+ : negop(W, unary_op::uop_neg, x->Type(), x)
 {
 }
 
@@ -160,7 +161,7 @@ public:
 // *                      real_neg_op  methods                      *
 // ******************************************************************
 
-real_neg_op::real_neg_op() : unary_op(exprman::uop_neg)
+real_neg_op::real_neg_op() : unary_op(unary_op::uop_neg)
 {
 }
 
@@ -204,7 +205,7 @@ protected:
 
 real_add
 ::real_add(const location &W, const type* t, expr** x, bool* f, int n)
- : summation(W, exprman::aop_plus, t, x, f, n)
+ : summation(W, assoc_op::aop_plus, t, x, f, n)
 {
 }
 
@@ -307,7 +308,7 @@ expr* real_add::buildAnother(expr **x, bool* f, int n) const
 
 class real_assoc_op : public assoc_op {
 public:
-  real_assoc_op(exprman::assoc_opcode op);
+  real_assoc_op(assoc_op::opcode op);
   virtual int getPromoteDistance(expr** list, bool* flip, int N) const;
   virtual int getPromoteDistance(bool f, const type* lt, const type* rt) const;
   virtual const type* getExprType(bool f, const type* l, const type* r) const;
@@ -317,25 +318,25 @@ public:
 // *                     real_assoc_op  methods                     *
 // ******************************************************************
 
-real_assoc_op::real_assoc_op(exprman::assoc_opcode op) : assoc_op(op)
+real_assoc_op::real_assoc_op(assoc_op::opcode op) : assoc_op(op)
 {
 }
 
 int real_assoc_op::getPromoteDistance(expr** list, bool* flip, int N) const
 {
-  return RealAlignDistance(em, list, N);
+  return RealAlignDistance(list, N);
 }
 
 int real_assoc_op
 ::getPromoteDistance(bool f, const type* lt, const type* rt) const
 {
-  return RealAlignDistance(em, lt, rt);
+  return RealAlignDistance(lt, rt);
 }
 
 const type* real_assoc_op
 ::getExprType(bool f, const type* l, const type* r) const
 {
-  return RealResultType(em, l, r);
+  return RealResultType(l, r);
 }
 
 
@@ -356,14 +357,14 @@ public:
 // *                      real_add_op  methods                      *
 // ******************************************************************
 
-real_add_op::real_add_op() : real_assoc_op(exprman::aop_plus)
+real_add_op::real_add_op() : real_assoc_op(assoc_op::aop_plus)
 {
 }
 
 assoc* real_add_op::makeExpr(const location &W, expr** list,
         bool* flip, int N) const
 {
-  const type* lct = AlignReals(em, list, N);
+  const type* lct = AlignReals(W, list, N);
   // see if flips are redundant
   if (flip) {
     bool all_false = true;
@@ -407,7 +408,7 @@ protected:
 
 real_mult
 ::real_mult(const location &W, const type* t, expr **x, bool* f, int n)
- : product(W, exprman::aop_times, t, x, f, n)
+ : product(W, assoc_op::aop_times, t, x, f, n)
 {
 }
 
@@ -584,14 +585,14 @@ public:
 // *                      real_mult_op methods                      *
 // ******************************************************************
 
-real_mult_op::real_mult_op() : real_assoc_op(exprman::aop_times)
+real_mult_op::real_mult_op() : real_assoc_op(assoc_op::aop_times)
 {
 }
 
 assoc* real_mult_op::makeExpr(const location &W, expr** list,
         bool* flip, int N) const
 {
-  const type* lct = AlignReals(em, list, N);
+  const type* lct = AlignReals(W, list, N);
   // see if flips are redundant
   if (flip) {
     bool all_false = true;
@@ -665,7 +666,7 @@ expr* real_equal::buildAnother(expr *l, expr *r) const
 
 class real_binary_op : public binary_op {
 public:
-  real_binary_op(exprman::binary_opcode op);
+  real_binary_op(binary_op::opcode op);
   virtual int getPromoteDistance(const type* lt, const type* rt) const;
   virtual const type* getExprType(const type* l, const type* r) const;
 };
@@ -674,18 +675,18 @@ public:
 // *                     real_binary_op methods                     *
 // ******************************************************************
 
-real_binary_op::real_binary_op(exprman::binary_opcode op) : binary_op(op)
+real_binary_op::real_binary_op(binary_op::opcode op) : binary_op(op)
 {
 }
 
 int real_binary_op::getPromoteDistance(const type* lt, const type* rt) const
 {
-  return RealAlignDistance(em, lt, rt);
+  return RealAlignDistance(lt, rt);
 }
 
 const type* real_binary_op::getExprType(const type* l, const type* r) const
 {
-  return RealResultType(em, l, r);
+  return RealResultType(l, r);
 }
 
 // ******************************************************************
@@ -696,7 +697,7 @@ const type* real_binary_op::getExprType(const type* l, const type* r) const
 
 class real_comp_op : public real_binary_op {
 public:
-  real_comp_op(exprman::binary_opcode op);
+  real_comp_op(binary_op::opcode op);
   virtual const type* getExprType(const type* l, const type* r) const;
 };
 
@@ -705,13 +706,13 @@ public:
 // ******************************************************************
 
 real_comp_op
-::real_comp_op(exprman::binary_opcode op) : real_binary_op(op)
+::real_comp_op(binary_op::opcode op) : real_binary_op(op)
 {
 }
 
 const type* real_comp_op::getExprType(const type* l, const type* r) const
 {
-  const type* t = RealResultType(em, l, r);
+  const type* t = RealResultType(l, r);
   if (t)  t = t->changeBaseType(type::find("bool"));
   return t;
 }
@@ -732,13 +733,13 @@ public:
 // *                     real_equal_op  methods                     *
 // ******************************************************************
 
-real_equal_op::real_equal_op() : real_comp_op(exprman::bop_equals)
+real_equal_op::real_equal_op() : real_comp_op(binary_op::bop_equals)
 {
 }
 
 binary* real_equal_op::makeExpr(const location &W, expr* l, expr* r) const
 {
-  const type* lct = AlignReals(em, l, r);
+  const type* lct = AlignReals(W, l, r);
   if (0==lct)  return 0;
   lct = lct->changeBaseType(type::find("bool"));
   DCASSERT(lct);
@@ -803,13 +804,13 @@ public:
 // *                      real_neq_op  methods                      *
 // ******************************************************************
 
-real_neq_op::real_neq_op() : real_comp_op(exprman::bop_nequal)
+real_neq_op::real_neq_op() : real_comp_op(binary_op::bop_nequal)
 {
 }
 
 binary* real_neq_op::makeExpr(const location &W, expr* l, expr* r) const
 {
-  const type* lct = AlignReals(em, l, r);
+  const type* lct = AlignReals(W, l, r);
   if (0==lct)  return 0;
   lct = lct->changeBaseType(type::find("bool"));
   DCASSERT(lct);
@@ -874,13 +875,13 @@ public:
 // *                       real_gt_op methods                       *
 // ******************************************************************
 
-real_gt_op::real_gt_op() : real_comp_op(exprman::bop_gt)
+real_gt_op::real_gt_op() : real_comp_op(binary_op::bop_gt)
 {
 }
 
 binary* real_gt_op::makeExpr(const location &W, expr* l, expr* r) const
 {
-  const type* lct = AlignReals(em, l, r);
+  const type* lct = AlignReals(W, l, r);
   if (0==lct)  return 0;
   lct = lct->changeBaseType(type::find("bool"));
   DCASSERT(lct);
@@ -945,13 +946,13 @@ public:
 // *                       real_ge_op methods                       *
 // ******************************************************************
 
-real_ge_op::real_ge_op() : real_comp_op(exprman::bop_ge)
+real_ge_op::real_ge_op() : real_comp_op(binary_op::bop_ge)
 {
 }
 
 binary* real_ge_op::makeExpr(const location &W, expr* l, expr* r) const
 {
-  const type* lct = AlignReals(em, l, r);
+  const type* lct = AlignReals(W, l, r);
   if (0==lct)  return 0;
   lct = lct->changeBaseType(type::find("bool"));
   DCASSERT(lct);
@@ -1016,13 +1017,13 @@ public:
 // *                       real_lt_op methods                       *
 // ******************************************************************
 
-real_lt_op::real_lt_op() : real_comp_op(exprman::bop_lt)
+real_lt_op::real_lt_op() : real_comp_op(binary_op::bop_lt)
 {
 }
 
 binary* real_lt_op::makeExpr(const location &W, expr* l, expr* r) const
 {
-  const type* lct = AlignReals(em, l, r);
+  const type* lct = AlignReals(W, l, r);
   if (0==lct)  return 0;
   lct = lct->changeBaseType(type::find("bool"));
   DCASSERT(lct);
@@ -1087,13 +1088,13 @@ public:
 // *                       real_le_op methods                       *
 // ******************************************************************
 
-real_le_op::real_le_op() : real_comp_op(exprman::bop_le)
+real_le_op::real_le_op() : real_comp_op(binary_op::bop_le)
 {
 }
 
 binary* real_le_op::makeExpr(const location &W, expr* l, expr* r) const
 {
-  const type* lct = AlignReals(em, l, r);
+  const type* lct = AlignReals(W, l, r);
   if (0==lct)  return 0;
   lct = lct->changeBaseType(type::find("bool"));
   DCASSERT(lct);
@@ -1102,21 +1103,34 @@ binary* real_le_op::makeExpr(const location &W, expr* l, expr* r) const
 
 // ******************************************************************
 // *                                                                *
-// *                           Front  end                           *
+// *                         Initialization                         *
 // *                                                                *
 // ******************************************************************
 
-void InitRealOps(exprman* em)
+class ops_real_init : public initializer {
+    public:
+        ops_real_init();
+    protected:
+        virtual void execute();
+};
+static ops_real_init the_ops_real_initializer;
+
+ops_real_init::ops_real_init() : initializer(__FILE__, 0, 1)
 {
-  if (0==em)  return;
-  em->registerOperation(  new real_neg_op   );
-  em->registerOperation(  new real_add_op   );
-  em->registerOperation(  new real_mult_op  );
-  em->registerOperation(  new real_equal_op );
-  em->registerOperation(  new real_neq_op   );
-  em->registerOperation(  new real_gt_op    );
-  em->registerOperation(  new real_ge_op    );
-  em->registerOperation(  new real_lt_op    );
-  em->registerOperation(  new real_le_op    );
+    builds_resource(0, "ops_real");
+}
+
+void ops_real_init::execute()
+{
+    // The constructors will register these operations
+    new real_neg_op;
+    new real_add_op;
+    new real_mult_op;
+    new real_equal_op;
+    new real_neq_op;
+    new real_gt_op;
+    new real_ge_op;
+    new real_lt_op;
+    new real_le_op;
 }
 

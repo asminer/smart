@@ -1,8 +1,10 @@
 
-#include "ops_misc.h"
 #include "../Options/options.h"
-#include "exprman.h"
 #include "assoc.h"
+#include "bogus.h"
+#include "casting.h"
+
+#include "../Utils/initializer.h"
 
 /**
 
@@ -29,7 +31,7 @@ public:
 // *                      sequence_op  methods                      *
 // ******************************************************************
 
-sequence_op::sequence_op(const type* wh) : assoc_op(exprman::aop_semi)
+sequence_op::sequence_op(const type* wh) : assoc_op(assoc_op::aop_semi)
 {
   which = wh;
   DCASSERT(which);
@@ -86,7 +88,7 @@ protected:
 // ******************************************************************
 
 void_seq::void_seq(const location &W, expr** x, int n)
- : assoc(W, exprman::aop_semi, type::find("void"), x, n)
+ : assoc(W, assoc_op::aop_semi, type::find("void"), x, n)
 {
 }
 
@@ -174,7 +176,7 @@ protected:
 // ******************************************************************
 
 next_state_seq::next_state_seq(const location &W, expr** x, int n)
- : assoc(W, exprman::aop_semi, type::find("next state"), x, n)
+ : assoc(W, assoc_op::aop_semi, type::find("next state"), x, n)
 {
 }
 
@@ -284,13 +286,13 @@ protected:
 // ******************************************************************
 
 aggregates::aggregates(const location &W, expr **x, int nc)
- : assoc (W, exprman::aop_colon, (typelist*) 0, x, nc)
+ : assoc (W, assoc_op::aop_colon, (typelist*) 0, x, nc)
 {
   DCASSERT(nc>0);
   // determine the type
   typelist* tl = new typelist(nc);
   for (unsigned i=0; i<nc; i++) {
-    tl->SetItem(i, em->SafeType(x[i]));
+    tl->SetItem(i, expr::SafeType(x[i]));
   }
   SetType(tl);
 }
@@ -358,7 +360,7 @@ public:
 // *                       aggreg_op  methods                       *
 // ******************************************************************
 
-aggreg_op::aggreg_op() : assoc_op(exprman::aop_colon)
+aggreg_op::aggreg_op() : assoc_op(assoc_op::aop_colon)
 {
 }
 
@@ -389,16 +391,30 @@ assoc* aggreg_op::makeExpr(const location &W, expr** list,
 
 // ******************************************************************
 // *                                                                *
-// *                           Front  end                           *
+// *                         Initialization                         *
 // *                                                                *
 // ******************************************************************
 
-void InitMiscOps(exprman* em)
+class ops_misc_init : public initializer {
+    public:
+        ops_misc_init();
+    protected:
+        virtual void execute();
+};
+static ops_misc_init the_ops_misc_initializer;
+
+ops_misc_init::ops_misc_init() : initializer(__FILE__, 1, 1)
 {
-  if (0==em)  return;
-  em->registerOperation(new void_seq_op(type::find("void")));
-  em->registerOperation(new next_state_seq_op(type::find("next state")));
-  em->registerOperation(new aggreg_op);
+    builds_resource(0, "ops_misc");
+    needs_resource(1, "types");
+}
+
+void ops_misc_init::execute()
+{
+    // The constructors will register these operations
+    new void_seq_op(type::find("void"));
+    new next_state_seq_op(type::find("next state"));
+    new aggreg_op;
 }
 
 

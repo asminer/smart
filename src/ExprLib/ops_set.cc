@@ -1,76 +1,72 @@
 
-#include "ops_set.h"
 #include "trinary.h"
 #include "sets.h"
-#include <string.h>  // splay needs memcpy
-#include <stdlib.h>
-#include "exprman.h"
 #include "assoc.h"
+#include "bogus.h"
+#include "casting.h"
+
+#include "../Utils/initializer.h"
 
 /**
    Implementation of simple set stuff.
 */
 
 inline const type*
-SetResultType(const exprman* em, const type* lt, const type* rt)
+SetResultType(const type* lt, const type* rt)
 {
-  DCASSERT(em);
   if (type::null == lt || type::null ==rt)  return 0;
-  const type* lct = em->getLeastCommonType(lt, rt);
+  const type* lct = typeconv::getLeastCommonType(lt, rt);
   if (0==lct)             return 0;
   if (!lct->isASet())     return 0;
   return lct;
 }
 
-inline int SetAlignDistance(const exprman* em, const type* lt, const type* rt)
+inline int SetAlignDistance(const type* lt, const type* rt)
 {
-  DCASSERT(em);
-  const type* lct = SetResultType(em, lt, rt);
+  const type* lct = SetResultType(lt, rt);
   if (0==lct)        return -1;
 
-  int dl = em->getPromoteDistance(lt, lct);   DCASSERT(dl>=0);
-  int dr = em->getPromoteDistance(rt, lct);   DCASSERT(dr>=0);
+  int dl = typeconv::getPromoteDistance(lt, lct);   DCASSERT(dl>=0);
+  int dr = typeconv::getPromoteDistance(rt, lct);   DCASSERT(dr>=0);
 
   return dl+dr;
 }
 
-inline int SetAlignDistance(const exprman* em, expr** x, int N)
+inline int SetAlignDistance(expr** x, int N)
 {
-  DCASSERT(em);
   DCASSERT(x);
 
-  const type* lct = em->SafeType(x[0]);
+  const type* lct = expr::SafeType(x[0]);
   for (int i=1; i<N; i++) {
-    lct = em->getLeastCommonType(lct, em->SafeType(x[i]));
+    lct = typeconv::getLeastCommonType(lct, expr::SafeType(x[i]));
   }
   if (0==lct)           return -1;
   if (!lct->isASet())   return -1;
 
   int d = 0;
   for (int i=0; i<N; i++) {
-    int dx = em->getPromoteDistance(em->SafeType(x[i]), lct);
+    int dx = typeconv::getPromoteDistance(expr::SafeType(x[i]), lct);
     DCASSERT(dx>=0);
     d += dx;
   }
   return d;
 }
 
-inline const type* AlignSets(const exprman* em, expr** x, int N)
+inline const type* AlignSets(const location &W, expr** x, int N)
 {
-  DCASSERT(em);
   DCASSERT(x);
 
-  const type* lct = em->SafeType(x[0]);
+  const type* lct = expr::SafeType(x[0]);
   for (int i=1; i<N; i++) {
-    lct = em->getLeastCommonType(lct, em->SafeType(x[i]));
+    lct = typeconv::getLeastCommonType(lct, expr::SafeType(x[i]));
   }
   if (  (0==lct) || !lct->isASet() ) {
     for (int i=0; i<N; i++)  Delete(x[i]);
     return 0;
   }
   for (int i=0; i<N; i++) {
-    x[i] = em->promote(x[i], lct);
-    DCASSERT(em->isOrdinary(x[i]));
+    x[i] = typeconv::castExpr(true, W, lct, x[i]);
+    DCASSERT(!bogus_expr::orNull(x[i]));
   }
   return lct;
 }
@@ -182,19 +178,18 @@ public:
 // *                       int_ivlop  methods                       *
 // ******************************************************************
 
-int_ivlop::int_ivlop() : trinary_op(exprman::top_interval)
+int_ivlop::int_ivlop() : trinary_op(trinary_op::top_interval)
 {
 }
 
 int int_ivlop::
 getPromoteDistance(const type* lt, const type* mt, const type* rt) const
 {
-  DCASSERT(em);
   if (type::null == lt || type::null == mt || type::null == rt) return -1;
   const type* INT = type::find("int");
-  int dl = em->getPromoteDistance(lt, INT);
-  int dm = em->getPromoteDistance(mt, INT);
-  int dr = em->getPromoteDistance(rt, INT);
+  int dl = typeconv::getPromoteDistance(lt, INT);
+  int dm = typeconv::getPromoteDistance(mt, INT);
+  int dr = typeconv::getPromoteDistance(rt, INT);
   if ( (dl<0) || (dm<0) || (dr<0) )  return -1;
   return dl + dm + dr;
 }
@@ -204,9 +199,9 @@ const type* int_ivlop::getExprType(const type* lt, const type* mt,
 {
   if (type::null == lt || type::null == mt || type::null == rt) return 0;
   const type* INT = type::find("int");
-  if (!em->isPromotable(lt, INT))  return 0;
-  if (!em->isPromotable(mt, INT))  return 0;
-  if (!em->isPromotable(rt, INT))  return 0;
+  if (!typeconv::isPromotable(lt, INT))  return 0;
+  if (!typeconv::isPromotable(mt, INT))  return 0;
+  if (!typeconv::isPromotable(rt, INT))  return 0;
   return INT->getSetOfThis();
 }
 
@@ -214,11 +209,14 @@ trinary* int_ivlop::makeExpr(const location &W, expr* left,
         expr* middle, expr* right) const
 {
   const type* INT = type::find("int");
-  left = em->promote(left, INT);
-  middle = em->promote(middle, INT);
-  right = em->promote(right, INT);
+  left = typeconv::castExpr(true, W, INT, left);
+  middle = typeconv::castExpr(true, W, INT, middle);
+  right = typeconv::castExpr(true, W, INT, right);
 
-  if ( (!em->isOrdinary(left)) || (!em->isOrdinary(middle)) || (!em->isOrdinary(right)) ) {
+  if ( (bogus_expr::orNull(left))
+        || (bogus_expr::orNull(middle))
+        || (bogus_expr::orNull(right)) )
+  {
     Delete(left);
     Delete(middle);
     Delete(right);
@@ -335,19 +333,18 @@ public:
 // *                       real_ivlop methods                       *
 // ******************************************************************
 
-real_ivlop::real_ivlop() : trinary_op(exprman::top_interval)
+real_ivlop::real_ivlop() : trinary_op(trinary_op::top_interval)
 {
 }
 
 int real_ivlop::
 getPromoteDistance(const type* lt, const type* mt, const type* rt) const
 {
-  DCASSERT(em);
   if (type::null == lt || type::null == mt || type::null == rt) return -1;
   const type* REAL = type::find("real");
-  int dl = em->getPromoteDistance(lt, REAL);
-  int dm = em->getPromoteDistance(mt, REAL);
-  int dr = em->getPromoteDistance(rt, REAL);
+  int dl = typeconv::getPromoteDistance(lt, REAL);
+  int dm = typeconv::getPromoteDistance(mt, REAL);
+  int dr = typeconv::getPromoteDistance(rt, REAL);
   if ( (dl<0) || (dm<0) || (dr<0) )  return -1;
   return dl + dm + dr;
 }
@@ -357,9 +354,9 @@ const type* real_ivlop::getExprType(const type* lt, const type* mt,
 {
   if (type::null == lt || type::null == mt || type::null == rt) return 0;
   const type* REAL = type::find("real");
-  if (!em->isPromotable(lt, REAL))  return 0;
-  if (!em->isPromotable(mt, REAL))  return 0;
-  if (!em->isPromotable(rt, REAL))  return 0;
+  if (!typeconv::isPromotable(lt, REAL))  return 0;
+  if (!typeconv::isPromotable(mt, REAL))  return 0;
+  if (!typeconv::isPromotable(rt, REAL))  return 0;
   return REAL->getSetOfThis();
 }
 
@@ -367,11 +364,14 @@ trinary* real_ivlop::makeExpr(const location &W, expr* left,
         expr* middle, expr* right) const
 {
   const type* REAL = type::find("real");
-  left = em->promote(left, REAL);
-  middle = em->promote(middle, REAL);
-  right = em->promote(right, REAL);
+  left = typeconv::castExpr(true, W, REAL, left);
+  middle = typeconv::castExpr(true, W, REAL, middle);
+  right = typeconv::castExpr(true, W, REAL, right);
 
-  if ( (!em->isOrdinary(left)) || (!em->isOrdinary(middle)) || (!em->isOrdinary(right)) ) {
+  if ( (bogus_expr::orNull(left))
+          || (bogus_expr::orNull(middle))
+          || (bogus_expr::orNull(right)) )
+  {
     Delete(left);
     Delete(middle);
     Delete(right);
@@ -759,7 +759,7 @@ protected:
 
 set_union
 ::set_union(const location &W, const type* settype, expr** x, int n)
- : summation(W, exprman::aop_union, settype, x, 0, n)
+ : summation(W, assoc_op::aop_union, settype, x, 0, n)
 {
 }
 
@@ -819,34 +819,34 @@ public:
 // *                      set_union_op methods                      *
 // ******************************************************************
 
-set_union_op::set_union_op() : assoc_op(exprman::aop_union)
+set_union_op::set_union_op() : assoc_op(assoc_op::aop_union)
 {
 }
 
 int set_union_op::getPromoteDistance(expr** list, bool* flip, int N) const
 {
-  return SetAlignDistance(em, list, N);
+  return SetAlignDistance(list, N);
 }
 
 int set_union_op
 ::getPromoteDistance(bool flip, const type* lt, const type* rt) const
 {
   if (flip)  return -1;
-  return SetAlignDistance(em, lt, rt);
+  return SetAlignDistance(lt, rt);
 }
 
 const type* set_union_op
 ::getExprType(bool flip, const type* lt, const type* rt) const
 {
   if (flip)  return 0;
-  return SetResultType(em, lt, rt);
+  return SetResultType(lt, rt);
 }
 
 assoc* set_union_op::makeExpr(const location &W, expr** list,
         bool* flip, int N) const
 {
   delete[] flip;
-  const type* lct = AlignSets(em, list, N);
+  const type* lct = AlignSets(W, list, N);
   if (lct)  return new set_union(W, lct, list, N);
   // there was an error
   delete[] list;
@@ -857,16 +857,29 @@ assoc* set_union_op::makeExpr(const location &W, expr** list,
 
 // ******************************************************************
 // *                                                                *
-// *                           Front  end                           *
+// *                         Initialization                         *
 // *                                                                *
 // ******************************************************************
 
-void InitSetOps(exprman* em)
+class ops_set_init : public initializer {
+    public:
+        ops_set_init();
+    protected:
+        virtual void execute();
+};
+static ops_set_init the_ops_set_initializer;
+
+ops_set_init::ops_set_init() : initializer(__FILE__, 0, 1)
 {
-  if (0==em)  return;
-  em->registerOperation(  new int_ivlop     );
-  em->registerOperation(  new real_ivlop    );
-  em->registerOperation(  new set_union_op  );
+    builds_resource(0, "ops_set");
+}
+
+void ops_set_init::execute()
+{
+    // The constructors will register these operations
+    new int_ivlop;
+    new real_ivlop;
+    new set_union_op;
 }
 
 

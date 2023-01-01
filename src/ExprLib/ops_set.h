@@ -19,8 +19,8 @@
 // *                                                                *
 // ******************************************************************
 
-class exprman;
-void InitSetOps(exprman* em);
+// class exprman;
+// void InitSetOps(exprman* em);
 
 
 #endif

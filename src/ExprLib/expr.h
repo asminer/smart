@@ -479,6 +479,11 @@ class expr : public shared_object {
     //
 
     public:
+        static inline const type* SafeType(const expr* x)
+        {
+            return x ? x->Type() : type::null;
+        }
+
         /** Make an expression statement.
             Normally this is allowed only for void expressions,
             and in this case the expression is returned unchanged.
