@@ -1,14 +1,16 @@
 
 
-#include "../ExprLib/startup.h"
-#include "../ExprLib/exprman.h"
+#include "../Utils/textfmt.h"
+#include "../Utils/library.h"
+#include "../Utils/initializer.h"
+
+#include "../ExprLib/bogus.h"
 #include "../ExprLib/casting.h"
 #include "../ExprLib/binary.h"
 #include "../ExprLib/assoc.h"
 #include "../ExprLib/symb_tab.h"
 #include "../ExprLib/functions.h"
-#include "../Utils/textfmt.h"
-#include "../Utils/library.h"
+
 #include "biginttype.h"
 
 #include <math.h>
@@ -461,7 +463,7 @@ protected:
 // ******************************************************************
 
 bigint_neg::bigint_neg(const location &W, expr *x)
- : negop(W, exprman::uop_neg, x->Type(), x)
+ : negop(W, unary_op::uop_neg, x->Type(), x)
 {
 }
 
@@ -508,7 +510,7 @@ protected:
 
 bigint_add::
 bigint_add(const location &W, const type* t, expr** x, bool* f, int n)
- : summation(W, exprman::aop_plus, t, x, f, n)
+ : summation(W, assoc_op::aop_plus, t, x, f, n)
 {
 }
 
@@ -627,7 +629,7 @@ protected:
 
 bigint_mult
 ::bigint_mult(const location &W, const type* t, expr **x, int n)
- : product(W, exprman::aop_times, t, x, 0, n)
+ : product(W, assoc_op::aop_times, t, x, 0, n)
 {
 }
 
@@ -797,7 +799,7 @@ protected:
 // ******************************************************************
 
 bigint_multdiv::bigint_multdiv(const location &W, const type* t,
-  expr** x, bool* f, int n) : product(W, exprman::aop_times, t, x, f, n)
+  expr** x, bool* f, int n) : product(W, assoc_op::aop_times, t, x, f, n)
 {
   DCASSERT(f);
 }
@@ -1366,11 +1368,10 @@ expr* bigint_le::buildAnother(expr *l, expr *r) const
 // ******************************************************************
 
 inline const type*
-BigintResultType(const exprman* em, const type* lt, const type* rt)
+BigintResultType(const type* lt, const type* rt)
 {
-  DCASSERT(em);
   if (type::null == lt || type::null ==rt)  return 0;
-  const type* lct = em->getLeastCommonType(lt, rt);
+  const type* lct = typeconv::getLeastCommonType(lt, rt);
   if (0==lct)        return 0;
   if (!type::matches(lct->getBaseType(), "bigint")) return 0;
   if (lct->isASet())      return 0;
@@ -1378,42 +1379,41 @@ BigintResultType(const exprman* em, const type* lt, const type* rt)
 }
 
 inline int
-BigintAlignDistance(const exprman* em, const type* lt, const type* rt)
+BigintAlignDistance(const type* lt, const type* rt)
 {
-  DCASSERT(em);
-  const type* lct = BigintResultType(em, lt, rt);
+  const type* lct = BigintResultType(lt, rt);
   if (0==lct)        return -1;
 
-  int dl = em->getPromoteDistance(lt, lct);   DCASSERT(dl>=0);
-  int dr = em->getPromoteDistance(rt, lct);   DCASSERT(dr>=0);
+  int dl = typeconv::getPromoteDistance(lt, lct);   DCASSERT(dl>=0);
+  int dr = typeconv::getPromoteDistance(rt, lct);   DCASSERT(dr>=0);
 
   return dl+dr;
 }
 
-inline const type* AlignBigints(const exprman* em, expr* &l, expr* &r)
+inline const type* AlignBigints(const location &W, expr* &l, expr* &r)
 {
-  DCASSERT(em);
   DCASSERT(l);
   DCASSERT(r);
-  const type* lct = BigintResultType(em, l->Type(), r->Type());
+  const type* lct = BigintResultType(l->Type(), r->Type());
   if (0==lct) {
     Delete(l);
     Delete(r);
     return 0;
   }
-  l = em->promote(l, lct);   DCASSERT(em->isOrdinary(l));
-  r = em->promote(r, lct);   DCASSERT(em->isOrdinary(r));
+  l = typeconv::castExpr(true, W, lct, l);
+  r = typeconv::castExpr(true, W, lct, r);
+  DCASSERT(!bogus_expr::orNull(l));
+  DCASSERT(!bogus_expr::orNull(r));
   return lct;
 }
 
-inline int BigintAlignDistance(const exprman* em, expr** x, int N)
+inline int BigintAlignDistance(expr** x, int N)
 {
-  DCASSERT(em);
   DCASSERT(x);
 
-  const type* lct = em->SafeType(x[0]);
+  const type* lct = expr::SafeType(x[0]);
   for (int i=1; i<N; i++) {
-    lct = em->getLeastCommonType(lct, em->SafeType(x[i]));
+    lct = typeconv::getLeastCommonType(lct, expr::SafeType(x[i]));
   }
   if (0==lct)        return -1;
   if (type::matches(lct->getBaseType(), "bigint")) return -1;
@@ -1421,29 +1421,28 @@ inline int BigintAlignDistance(const exprman* em, expr** x, int N)
 
   int d = 0;
   for (int i=0; i<N; i++) {
-    int dx = em->getPromoteDistance(em->SafeType(x[i]), lct);
+    int dx = typeconv::getPromoteDistance(expr::SafeType(x[i]), lct);
     DCASSERT(dx>=0);
     d += dx;
   }
   return d;
 }
 
-inline const type* AlignBigints(const exprman* em, expr** x, int N)
+inline const type* AlignBigints(const location &W, expr** x, int N)
 {
-  DCASSERT(em);
   DCASSERT(x);
 
-  const type* lct = em->SafeType(x[0]);
+  const type* lct = expr::SafeType(x[0]);
   for (int i=1; i<N; i++) {
-    lct = em->getLeastCommonType(lct, em->SafeType(x[i]));
+    lct = typeconv::getLeastCommonType(lct, expr::SafeType(x[i]));
   }
   if (  (0==lct) || type::matches(lct->getBaseType(), "bigint") || lct->isASet() ) {
     for (int i=0; i<N; i++)  Delete(x[i]);
     return 0;
   }
   for (int i=0; i<N; i++) {
-    x[i] = em->promote(x[i], lct);
-    DCASSERT(em->isOrdinary(x[i]));
+    x[i] = typeconv::castExpr(true, W, lct, x[i]);
+    DCASSERT(!bogus_expr::orNull(x[i]));
   }
   return lct;
 }
@@ -1457,7 +1456,7 @@ inline const type* AlignBigints(const exprman* em, expr** x, int N)
 
 class bigint_assoc_op : public assoc_op {
 public:
-  bigint_assoc_op(exprman::assoc_opcode op);
+  bigint_assoc_op(assoc_op::opcode op);
   virtual int getPromoteDistance(expr** list, bool* flip, int N) const;
   virtual int getPromoteDistance(bool f, const type* lt, const type* rt) const;
   virtual const type* getExprType(bool f, const type* l, const type* r) const;
@@ -1467,25 +1466,25 @@ public:
 // *                    bigint_assoc_op  methods                    *
 // ******************************************************************
 
-bigint_assoc_op::bigint_assoc_op(exprman::assoc_opcode op) : assoc_op(op)
+bigint_assoc_op::bigint_assoc_op(assoc_op::opcode op) : assoc_op(op)
 {
 }
 
 int bigint_assoc_op::getPromoteDistance(expr** list, bool* flip, int N) const
 {
-  return BigintAlignDistance(em, list, N);
+  return BigintAlignDistance(list, N);
 }
 
 int bigint_assoc_op
 ::getPromoteDistance(bool f, const type* lt, const type* rt) const
 {
-  return BigintAlignDistance(em, lt, rt);
+  return BigintAlignDistance(lt, rt);
 }
 
 const type* bigint_assoc_op
 ::getExprType(bool f, const type* l, const type* r) const
 {
-  return BigintResultType(em, l, r);
+  return BigintResultType(l, r);
 }
 
 
@@ -1497,7 +1496,7 @@ const type* bigint_assoc_op
 
 class bigint_binary_op : public binary_op {
 public:
-  bigint_binary_op(exprman::binary_opcode op);
+  bigint_binary_op(binary_op::opcode op);
   virtual int getPromoteDistance(const type* lt, const type* rt) const;
   virtual const type* getExprType(const type* l, const type* r) const;
 };
@@ -1506,18 +1505,18 @@ public:
 // *                    bigint_binary_op methods                    *
 // ******************************************************************
 
-bigint_binary_op::bigint_binary_op(exprman::binary_opcode op) : binary_op(op)
+bigint_binary_op::bigint_binary_op(binary_op::opcode op) : binary_op(op)
 {
 }
 
 int bigint_binary_op::getPromoteDistance(const type* lt, const type* rt) const
 {
-  return BigintAlignDistance(em, lt, rt);
+  return BigintAlignDistance(lt, rt);
 }
 
 const type* bigint_binary_op::getExprType(const type* l, const type* r) const
 {
-  return BigintResultType(em, l, r);
+  return BigintResultType(l, r);
 }
 
 // ******************************************************************
@@ -1528,7 +1527,7 @@ const type* bigint_binary_op::getExprType(const type* l, const type* r) const
 
 class bigint_comp_op : public bigint_binary_op {
 public:
-  bigint_comp_op(exprman::binary_opcode op);
+  bigint_comp_op(binary_op::opcode op);
   virtual const type* getExprType(const type* l, const type* r) const;
 };
 
@@ -1536,13 +1535,13 @@ public:
 // *                     bigint_comp_op methods                     *
 // ******************************************************************
 
-bigint_comp_op::bigint_comp_op(exprman::binary_opcode op) : bigint_binary_op(op)
+bigint_comp_op::bigint_comp_op(binary_op::opcode op) : bigint_binary_op(op)
 {
 }
 
 const type* bigint_comp_op::getExprType(const type* l, const type* r) const
 {
-  const type* t = BigintResultType(em, l, r);
+  const type* t = BigintResultType(l, r);
   if (t)  t = t->changeBaseType(type::find("bool"));
   return t;
 }
@@ -1564,13 +1563,12 @@ public:
 // *                     bigint_neg_op  methods                     *
 // ******************************************************************
 
-bigint_neg_op::bigint_neg_op() : unary_op(exprman::uop_neg)
+bigint_neg_op::bigint_neg_op() : unary_op(unary_op::uop_neg)
 {
 }
 
 const type* bigint_neg_op::getExprType(const type* t) const
 {
-  DCASSERT(em);
   if (0==t)    return 0;
   if (t->isASet())  return 0;
   const type* bt = t->getBaseType();
@@ -1605,14 +1603,14 @@ public:
 // *                     bigint_add_op  methods                     *
 // ******************************************************************
 
-bigint_add_op::bigint_add_op() : bigint_assoc_op(exprman::aop_plus)
+bigint_add_op::bigint_add_op() : bigint_assoc_op(assoc_op::aop_plus)
 {
 }
 
 assoc* bigint_add_op::makeExpr(const location &W, expr** list,
         bool* flip, int N) const
 {
-  const type* lct = AlignBigints(em, list, N);
+  const type* lct = AlignBigints(W, list, N);
   // see if flips are redundant
   if (flip) {
     bool all_false = true;
@@ -1653,7 +1651,7 @@ public:
 // *                     bigint_mult_op methods                     *
 // ******************************************************************
 
-bigint_mult_op::bigint_mult_op() : bigint_assoc_op(exprman::aop_times)
+bigint_mult_op::bigint_mult_op() : bigint_assoc_op(assoc_op::aop_times)
 {
 }
 
@@ -1661,27 +1659,27 @@ int bigint_mult_op::getPromoteDistance(expr** list, bool* flip, int N) const
 {
   // first, make sure no items are flipped
   if (flip) for (int i=0; i<N; i++) if (flip[i])  return -1;
-  return BigintAlignDistance(em, list, N);
+  return BigintAlignDistance(list, N);
 }
 
 int bigint_mult_op
 ::getPromoteDistance(bool f, const type* lt, const type* rt) const
 {
   if (f)  return -1;
-  return BigintAlignDistance(em, lt, rt);
+  return BigintAlignDistance(lt, rt);
 }
 
 const type* bigint_mult_op
 ::getExprType(bool f, const type* l, const type* r) const
 {
   if (f)  return 0;
-  return BigintResultType(em, l, r);
+  return BigintResultType(l, r);
 }
 
 assoc* bigint_mult_op::makeExpr(const location &W, expr** list,
         bool* flip, int N) const
 {
-  const type* lct = AlignBigints(em, list, N);
+  const type* lct = AlignBigints(W, list, N);
   if (flip) for (int i=0; i<N; i++) if (flip[i])  lct = 0;
   delete[] flip;
   if (lct)  return new bigint_mult(W, lct, list, N);
@@ -1711,7 +1709,7 @@ public:
 // *                   bigint_multdiv_op  methods                   *
 // ******************************************************************
 
-bigint_multdiv_op::bigint_multdiv_op() : bigint_assoc_op(exprman::aop_times)
+bigint_multdiv_op::bigint_multdiv_op() : bigint_assoc_op(assoc_op::aop_times)
 {
 }
 
@@ -1726,21 +1724,21 @@ int bigint_multdiv_op::getPromoteDistance(expr** list, bool* flip, int N) const
     break;
   }
   if (unflipped)  return -1;
-  return BigintAlignDistance(em, list, N);
+  return BigintAlignDistance(list, N);
 }
 
 int bigint_multdiv_op
 ::getPromoteDistance(bool f, const type* lt, const type* rt) const
 {
   if (!f)  return -1;
-  return BigintAlignDistance(em, lt, rt);
+  return BigintAlignDistance(lt, rt);
 }
 
 const type* bigint_multdiv_op
 ::getExprType(bool f, const type* l, const type* r) const
 {
   if (!f)  return 0;
-  const type* lct = BigintResultType(em, l, r);
+  const type* lct = BigintResultType(l, r);
   if (lct)  lct = lct->changeBaseType(type::find("real"));
   return lct;
 }
@@ -1748,7 +1746,7 @@ const type* bigint_multdiv_op
 assoc* bigint_multdiv_op::makeExpr(const location &W, expr** list,
         bool* flip, int N) const
 {
-  const type* lct = AlignBigints(em, list, N);
+  const type* lct = AlignBigints(W, list, N);
   if (0==flip) {
     lct = 0;
   } else {
@@ -1783,13 +1781,13 @@ public:
 // *                     bigint_mod_op  methods                     *
 // ******************************************************************
 
-bigint_mod_op::bigint_mod_op() : bigint_binary_op(exprman::bop_mod)
+bigint_mod_op::bigint_mod_op() : bigint_binary_op(binary_op::bop_mod)
 {
 }
 
 binary* bigint_mod_op::makeExpr(const location &W, expr* l, expr* r) const
 {
-  const type* lct = AlignBigints(em, l, r);
+  const type* lct = AlignBigints(W, l, r);
   if (0==lct)  return 0;
   return new bigint_mod(W, lct, l, r);
 }
@@ -1811,14 +1809,14 @@ public:
 // *                    bigint_equal_op  methods                    *
 // ******************************************************************
 
-bigint_equal_op::bigint_equal_op() : bigint_comp_op(exprman::bop_equals)
+bigint_equal_op::bigint_equal_op() : bigint_comp_op(binary_op::bop_equals)
 {
 }
 
 binary* bigint_equal_op
  ::makeExpr(const location &W, expr* l, expr* r) const
 {
-  const type* lct = AlignBigints(em, l, r);
+  const type* lct = AlignBigints(W, l, r);
   if (0==lct)  return 0;
   lct = lct->changeBaseType(type::find("bool"));
   DCASSERT(lct);
@@ -1841,13 +1839,13 @@ public:
 // *                     bigint_neq_op  methods                     *
 // ******************************************************************
 
-bigint_neq_op::bigint_neq_op() : bigint_comp_op(exprman::bop_nequal)
+bigint_neq_op::bigint_neq_op() : bigint_comp_op(binary_op::bop_nequal)
 {
 }
 
 binary* bigint_neq_op::makeExpr(const location &W, expr* l, expr* r) const
 {
-  const type* lct = AlignBigints(em, l, r);
+  const type* lct = AlignBigints(W, l, r);
   if (0==lct)  return 0;
   lct = lct->changeBaseType(type::find("bool"));
   DCASSERT(lct);
@@ -1870,13 +1868,13 @@ public:
 // *                      bigint_gt_op methods                      *
 // ******************************************************************
 
-bigint_gt_op::bigint_gt_op() : bigint_comp_op(exprman::bop_gt)
+bigint_gt_op::bigint_gt_op() : bigint_comp_op(binary_op::bop_gt)
 {
 }
 
 binary* bigint_gt_op::makeExpr(const location &W, expr* l, expr* r) const
 {
-  const type* lct = AlignBigints(em, l, r);
+  const type* lct = AlignBigints(W, l, r);
   if (0==lct)  return 0;
   lct = lct->changeBaseType(type::find("bool"));
   DCASSERT(lct);
@@ -1899,13 +1897,13 @@ public:
 // *                      bigint_ge_op methods                      *
 // ******************************************************************
 
-bigint_ge_op::bigint_ge_op() : bigint_comp_op(exprman::bop_ge)
+bigint_ge_op::bigint_ge_op() : bigint_comp_op(binary_op::bop_ge)
 {
 }
 
 binary* bigint_ge_op::makeExpr(const location &W, expr* l, expr* r) const
 {
-  const type* lct = AlignBigints(em, l, r);
+  const type* lct = AlignBigints(W, l, r);
   if (0==lct)  return 0;
   lct = lct->changeBaseType(type::find("bool"));
   DCASSERT(lct);
@@ -1928,13 +1926,13 @@ public:
 // *                      bigint_lt_op methods                      *
 // ******************************************************************
 
-bigint_lt_op::bigint_lt_op() : bigint_comp_op(exprman::bop_lt)
+bigint_lt_op::bigint_lt_op() : bigint_comp_op(binary_op::bop_lt)
 {
 }
 
 binary* bigint_lt_op::makeExpr(const location &W, expr* l, expr* r) const
 {
-  const type* lct = AlignBigints(em, l, r);
+  const type* lct = AlignBigints(W, l, r);
   if (0==lct)  return 0;
   lct = lct->changeBaseType(type::find("bool"));
   DCASSERT(lct);
@@ -1957,13 +1955,13 @@ public:
 // *                      bigint_le_op methods                      *
 // ******************************************************************
 
-bigint_le_op::bigint_le_op() : bigint_comp_op(exprman::bop_le)
+bigint_le_op::bigint_le_op() : bigint_comp_op(binary_op::bop_le)
 {
 }
 
 binary* bigint_le_op::makeExpr(const location &W, expr* l, expr* r) const
 {
-  const type* lct = AlignBigints(em, l, r);
+  const type* lct = AlignBigints(W, l, r);
   if (0==lct)  return 0;
   lct = lct->changeBaseType(type::find("bool"));
   DCASSERT(lct);
@@ -2069,51 +2067,44 @@ void bigintdiv_si::Compute(traverse_data &x, expr** pass, int np)
 // *                                                                *
 // ******************************************************************
 
-class init_bigints : public startup {
-  public:
-    init_bigints();
-    virtual bool execute();
+class init_bigints : public initializer {
+    public:
+        init_bigints();
+    protected:
+        virtual void execute();
 };
-init_bigints the_bigint_startup;
+static init_bigints the_bigint_initializer;
 
-init_bigints::init_bigints() : startup("init_bigints")
+init_bigints::init_bigints() : initializer(__FILE__, 1, 1)
 {
-  usesResource("em");
-  usesResource("st");
-  buildsResource("biginttype");
-  buildsResource("types");
+    builds_resource(0, "bigints");
+    needs_resource(1, "types");
 }
 
-bool init_bigints::execute()
+void init_bigints::execute()
 {
-  if (0==em)  return false;
+    // Type registry
+    type::registerNew(new bigint_type);
 
-  // Type registry
-  type::registerNew(new bigint_type);
+    // Type changes; constructors will register them
+    new int2bigint;
+    new bigint2int;
+    new bigint2real;
 
-  // Type changes
-  em->registerConversion(  new int2bigint  );
-  em->registerConversion(  new bigint2int  );
-  em->registerConversion(  new bigint2real );
+    // Operators; constructors will register these
+    new bigint_neg_op;
+    new bigint_add_op;
+    new bigint_mult_op;
+    new bigint_multdiv_op;
+    new bigint_mod_op;
+    new bigint_equal_op;
+    new bigint_neq_op;
+    new bigint_gt_op;
+    new bigint_ge_op;
+    new bigint_lt_op;
+    new bigint_le_op;
 
-  // Operators
-  em->registerOperation(  new bigint_neg_op     );
-  em->registerOperation(  new bigint_add_op     );
-  em->registerOperation(  new bigint_mult_op    );
-  em->registerOperation(  new bigint_multdiv_op );
-  em->registerOperation(  new bigint_mod_op     );
-  em->registerOperation(  new bigint_equal_op   );
-  em->registerOperation(  new bigint_neq_op     );
-  em->registerOperation(  new bigint_gt_op      );
-  em->registerOperation(  new bigint_ge_op      );
-  em->registerOperation(  new bigint_lt_op      );
-  em->registerOperation(  new bigint_le_op      );
-
-  if (0==st) return true;
-
-  // Functions
-  st->addSymbol(  new bigintdiv_si  );
-
-  return true;
+    // Functions
+    symbol_table::addGlobal(  new bigintdiv_si  );
 }
 

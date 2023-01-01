@@ -8,9 +8,6 @@
 #ifndef BIGINTTYPE_H
 #define BIGINTTYPE_H
 
-class exprman;
-class symbol_table;
-
 #include "config.h"
 #ifdef HAVE_LIBGMP
 #include <gmp.h>
@@ -143,12 +140,5 @@ public:
   }
 };
 
-/** Initialize bigint module.
-    Nice, minimalist front-end.
-      @param  em  The expression manager to use.
-      @param  st  Symbol table to add any bigint functions.
-                  If 0, functions will not be added.
-*/
-// void InitBigintType(exprman* em, symbol_table* st);
 
 #endif
