@@ -662,6 +662,80 @@ class expr : public shared_object {
                 expr* rhs);
 
 
+        /** Make a statement for constructing model variables.
+            This handles declarations of the form
+                place p, q, r, s;
+            within a model.
+            Implemented in mod_vars.cc.
+
+                @param  W       Where defined.
+                @param  p       Model definition containing the declaration.
+                @param  t       Type of the variables.
+                @param  bounds  Bounds for the variables (a set of something),
+                                or null for unknown or no bounds.
+                @param  names   Names of the variables
+                                (they already exist as placeholder symbols).
+                @param  N       Number of names.
+
+                @return NULL,   if any name is NULL,
+                        ERROR,  if any error occurs,
+                        a new statement (void expression), otherwise.
+        */
+        static expr* makeModelVarDecs(const location& W, model_def* p,
+            const type* t, expr* bounds, symbol** names, int N);
+
+        /** Make a statement for constructing model array variables.
+            This handles declarations of the form
+                place p[i], q[i], r[i], s[i];
+            within a model.
+            Implemented in mod_vars.cc.
+
+                @param  W       Where defined.
+                @param  p       Model definition containing the declaration.
+                @param  t       Type of the arrays.
+                @param  arrays  Names of the arrays
+                                (they already exist as placeholder symbols).
+                @param  N       Number of arrays.
+
+                @return NULL,   if any name is NULL,
+                        ERROR,  if any error occurs,
+                        a new statement (void expression), otherwise.
+        */
+        static expr* makeModelArrayDecs(const location& W, model_def* p,
+            const type* t, symbol** arrays, int N);
+
+        /** Make a statement to build a measure in a model.
+            Implemented in mod_vars.cc.
+
+                @param  W       Where defined.
+                @param  p       Model definition containing the statement.
+                @param  m       The measure.
+                @param  rhs     Right-hand side of the measure assignment.
+
+                @return NULL,   if p, m, or rhs is NULL.
+                        ERROR,  if some error occurs (will make noise).
+                        A new statement, otherwise.
+        */
+        static expr* makeModelMeasureAssign(const location& W,
+            model_def* p, symbol* m, expr* rhs);
+
+        /** Make a statement to build an array of measures in a model.
+            Implemented in mod_vars.cc.
+
+                @param  W       Where defined.
+                @param  p       Model definition containing the statement.
+                @param  am      The array of measures.
+                @param  rhs     Right-hand side of the measure assignment.
+
+                @return NULL,   if p, m, or rhs is NULL.
+                        ERROR,  if some error occurs (will make noise).
+                        A new statement, otherwise.
+        */
+        static expr* makeModelMeasureArray(const location& W,
+            model_def* p, symbol* am, expr* rhs);
+
+
+
         //
         //
         //

@@ -888,8 +888,8 @@ public:
 
         @return  a new placeholder symbol.
   */
-  symbol* makeModelSymbol(const location& W,
-        const type* t, char* name) const;
+  // symbol* makeModelSymbol(const location& W,
+        // const type* t, char* name) const;
 
 
   /** Make an array within a model definition.
@@ -908,8 +908,8 @@ public:
         @return  0, if some error occurred (will make noise).
                 A new array, otherwise.
   */
-  symbol* makeModelArray(const location& W, const type* t, char* n,
-      symbol** indexes, int dim) const;
+  // symbol* makeModelArray(const location& W, const type* t, char* n,
+      // symbol** indexes, int dim) const;
 
 
   /** Make a statement for constructing model variables.
@@ -930,8 +930,8 @@ public:
                 ERROR,  if any error occurs,
                 a new statement (void expression), otherwise.
   */
-  expr* makeModelVarDecs(const location& W, model_def* p,
-    const type* t, expr* bounds, symbol** names, int N) const;
+  // expr* makeModelVarDecs(const location& W, model_def* p,
+    // const type* t, expr* bounds, symbol** names, int N) const;
 
 
   /** Make a statement for constructing model array variables.
@@ -951,8 +951,8 @@ public:
                 ERROR,  if any error occurs,
                 a new statement (void expression), otherwise.
   */
-  expr* makeModelArrayDecs(const location& W, model_def* p,
-      const type* t, symbol** arrays, int N) const;
+  // expr* makeModelArrayDecs(const location& W, model_def* p,
+      // const type* t, symbol** arrays, int N) const;
 
 
   /** Make a statement to build a measure in a model.
@@ -967,8 +967,8 @@ public:
                 ERROR,  if some error occurs (will make noise).
                 A new statement, otherwise.
   */
-  expr* makeModelMeasureAssign(const location& W,
-      model_def* p, symbol* m, expr* rhs) const;
+  // expr* makeModelMeasureAssign(const location& W,
+      // model_def* p, symbol* m, expr* rhs) const;
 
 
   /** Make a statement to build an array of measures in a model.
@@ -983,8 +983,8 @@ public:
                 ERROR,  if some error occurs (will make noise).
                 A new statement, otherwise.
   */
-  expr* makeModelMeasureArray(const location& W,
-      model_def* p, symbol* am, expr* rhs) const;
+  // expr* makeModelMeasureArray(const location& W,
+      // model_def* p, symbol* am, expr* rhs) const;
 
 
   /** Finish a model definition.

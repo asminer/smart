@@ -1,7 +1,8 @@
 #include "mod_vars.h"
 #include "mod_def.h"
-#include "exprman.h"
 #include "arrays.h"
+#include "bogus.h"
+#include "casting.h"
 #include "measures.h"
 #include "sets.h"
 #include "formalism.h"
@@ -848,7 +849,7 @@ void measure_assign::Compute(traverse_data &x)
 			dl = 0;
 		}
 	}
-	symbol* m = em->makeConstant(wrapper, rv, dl);
+	symbol* m = symbol::makeConstant(wrapper, rv, dl);
 
 	parent->AcceptExternalSymbol(msr_slot, m);
 	wrapper->SetLink(m);
@@ -943,7 +944,7 @@ void measure_array_assign::Compute(traverse_data &x) {
 			delete dl;
 			dl = 0;
 		}
-		m = em->makeConstant(wrapper, rv, dl);
+		m = symbol::makeConstant(wrapper, rv, dl);
 	}
 	inst->SetCurrentReturn(m, true);
 	if (model_debug.start()) {
@@ -966,7 +967,8 @@ void measure_array_assign::Traverse(traverse_data &x) {
 // ******************************************************************
 
 clev_op::clev_op(const location &W, expr* b, model_var* v) :
-		unary(W, type::find(false, true, DETERM, "bool"), v) {
+    unary(W, unary_op::uop_custom, type::find(false, true, DETERM, "bool"), v)
+{
 	DCASSERT(b);DCASSERT(0==b->BuildExprList(traverse_data::GetSymbols, 0, 0));
 	traverse_data x(traverse_data::Compute);
 	result foo;
@@ -979,7 +981,8 @@ clev_op::clev_op(const location &W, expr* b, model_var* v) :
 }
 
 clev_op::clev_op(const location &W, long b, model_var* v) :
-		unary(W, type::find(false, true, DETERM, "bool"), v) {
+    unary(W, unary_op::uop_custom, type::find(false, true, DETERM, "bool"), v)
+{
 	lower = b;
 }
 
@@ -1065,7 +1068,7 @@ protected:
 // ******************************************************************
 
 blev_op::blev_op(const location &W, expr* b, model_var* v) :
-		binary(W, exprman::bop_le, type::find(false, true, DETERM, "bool"), b, v) {
+		binary(W, binary_op::bop_le, type::find(false, true, DETERM, "bool"), b, v) {
 }
 
 void blev_op::Compute(traverse_data &x) {
@@ -1132,7 +1135,7 @@ void blev_op::Traverse(traverse_data &x) {
 	em->cout() << "\n";
 	x.ddlib->dumpForest(em->cout());
 #endif
-	x.ddlib->buildBinary(ldd, exprman::bop_le, ans, ans);
+	x.ddlib->buildBinary(ldd, binary_op::bop_le, ans, ans);
 	Delete(ldd);
 	x.answer->setPtr(ans);
 }
@@ -1171,7 +1174,8 @@ protected:
 // ******************************************************************
 
 vltc_op::vltc_op(const location &W, model_var* v, expr* b) :
-		unary(W, type::find(false, true, DETERM, "bool"), v) {
+    unary(W, unary_op::uop_custom, type::find(false, true, DETERM, "bool"), v)
+{
 	DCASSERT(b);DCASSERT(0==b->BuildExprList(traverse_data::GetSymbols, 0, 0));
 	traverse_data x(traverse_data::Compute);
 	result foo;
@@ -1184,7 +1188,8 @@ vltc_op::vltc_op(const location &W, model_var* v, expr* b) :
 }
 
 vltc_op::vltc_op(const location &W, model_var* v, long b) :
-		unary(W, type::find(false, true, DETERM, "bool"), v) {
+    unary(W, unary_op::uop_custom, type::find(false, true, DETERM, "bool"), v)
+{
 	upper = b;
 }
 
@@ -1267,7 +1272,7 @@ protected:
 // ******************************************************************
 
 vltb_op::vltb_op(const location &W, model_var* v, expr* b) :
-		binary(W, exprman::bop_lt, type::find(false, true, DETERM, "bool"), v, b) {
+		binary(W, binary_op::bop_lt, type::find(false, true, DETERM, "bool"), v, b) {
 }
 
 void vltb_op::Compute(traverse_data &x) {
@@ -1324,7 +1329,7 @@ void vltb_op::Traverse(traverse_data &x) {
 	DCASSERT(ans);
 	x.ddlib->buildSymbolicSV(sv, false, 0, ans);
 	// ans := ans < rdd
-	x.ddlib->buildBinary(ans, exprman::bop_lt, rdd, ans);
+	x.ddlib->buildBinary(ans, binary_op::bop_lt, rdd, ans);
 	Delete(rdd);
 	x.answer->setPtr(ans);
 }
@@ -1360,10 +1365,13 @@ protected:
 // *                       clevltc_op methods                       *
 // ******************************************************************
 
-clevltc_op::clevltc_op(const location &W, expr* lb, model_var* v,
-		expr* ub) :
-		unary(W, type::find(false, true, DETERM, "bool"), v) {
-	DCASSERT(lb);DCASSERT(ub);DCASSERT(0==lb->BuildExprList(traverse_data::GetSymbols, 0, 0));DCASSERT(0==ub->BuildExprList(traverse_data::GetSymbols, 0, 0));
+clevltc_op::clevltc_op(const location &W, expr* lb, model_var* v, expr* ub) :
+    unary(W, unary_op::uop_custom, type::find(false, true, DETERM, "bool"), v)
+{
+	DCASSERT(lb);
+    DCASSERT(ub);
+    DCASSERT(0==lb->BuildExprList(traverse_data::GetSymbols, 0, 0));
+    DCASSERT(0==ub->BuildExprList(traverse_data::GetSymbols, 0, 0));
 	traverse_data x(traverse_data::Compute);
 	result foo;
 	x.answer = &foo;
@@ -1380,7 +1388,8 @@ clevltc_op::clevltc_op(const location &W, expr* lb, model_var* v,
 }
 
 clevltc_op::clevltc_op(const location &W, long lb, model_var* v, long ub) :
-		unary(W, type::find(false, true, DETERM, "bool"), v) {
+    unary(W, unary_op::uop_custom, type::find(false, true, DETERM, "bool"), v)
+{
 	lower = lb;
 	upper = ub;
 }
@@ -1585,11 +1594,11 @@ void blevltb_op::Traverse(traverse_data &x) {
 #endif
 
 	// ldd := ldd <= vdd
-	x.ddlib->buildBinary(ldd, exprman::bop_le, vdd, ldd);
+	x.ddlib->buildBinary(ldd, binary_op::bop_le, vdd, ldd);
 	// udd := vdd < udd
-	x.ddlib->buildBinary(vdd, exprman::bop_lt, udd, udd);
+	x.ddlib->buildBinary(vdd, binary_op::bop_lt, udd, udd);
 	// vdd := ldd & udd
-	x.ddlib->buildAssoc(ldd, false, exprman::aop_and, udd, vdd);
+	x.ddlib->buildAssoc(ldd, false, assoc_op::aop_and, udd, vdd);
 	Delete(ldd);
 	Delete(udd);
 	x.answer->setPtr(vdd);
@@ -1655,7 +1664,7 @@ void cupdate_op::Traverse(traverse_data &x) {
 		x.ddlib->buildSymbolicSV(var, true, 0, vv);
 
 		// vv := vv == v
-		x.ddlib->buildBinary(vv, exprman::bop_equals, v, vv);
+		x.ddlib->buildBinary(vv, binary_op::bop_equals, v, vv);
 		Delete(v);
 		x.answer->setPtr(vv);
 		return;
@@ -1780,19 +1789,19 @@ void vupdate_op::Traverse(traverse_data &x) {
 			x.ddlib->buildSymbolicConst(0L, dec);
 		}
 		// inc -= dec
-		x.ddlib->buildAssoc(inc, true, exprman::aop_plus, dec, inc);
+		x.ddlib->buildAssoc(inc, true, assoc_op::aop_plus, dec, inc);
 		Delete(dec);
 		// Build var
 		shared_object* v = x.ddlib->makeEdge(0);
 		x.ddlib->buildSymbolicSV(var, false, 0, v);
 		// var += inc
-		x.ddlib->buildAssoc(v, false, exprman::aop_plus, inc, v);
+		x.ddlib->buildAssoc(v, false, assoc_op::aop_plus, inc, v);
 		Delete(inc);
 		// Build var'
 		shared_object* vv = x.ddlib->makeEdge(0);
 		x.ddlib->buildSymbolicSV(var, true, 0, vv);
 		// Build var' := var' == var
-		x.ddlib->buildBinary(vv, exprman::bop_equals, v, vv);
+		x.ddlib->buildBinary(vv, binary_op::bop_equals, v, vv);
 		Delete(v);
 		x.answer->setPtr(vv);
 		return;
@@ -1887,7 +1896,7 @@ void cassign_op::Traverse(traverse_data &x) {
 		shared_object* vv = x.ddlib->makeEdge(0);
 		x.ddlib->buildSymbolicSV(var, true, 0, vv);
 		// vv := (vv == d)
-		x.ddlib->buildBinary(vv, exprman::bop_equals, d, vv);
+		x.ddlib->buildBinary(vv, binary_op::bop_equals, d, vv);
 		Delete(d);
 		x.answer->setPtr(vv);
 		return;
@@ -1968,7 +1977,7 @@ void vassign_op::Traverse(traverse_data &x) {
 		shared_object* vv = x.ddlib->makeEdge(0);
 		x.ddlib->buildSymbolicSV(var, true, 0, vv);
 		// vv := (vv == d)
-		x.ddlib->buildBinary(vv, exprman::bop_equals, d, vv);
+		x.ddlib->buildBinary(vv, binary_op::bop_equals, d, vv);
 		x.answer->setPtr(vv);
 		return;
 	}
@@ -2004,17 +2013,18 @@ bool vassign_op::Print(std::ostream &s, int) const {
 
 // ******************************************************************
 // *                                                                *
-// *                        exprman  methods                        *
+// *                        static   methods                        *
 // *                                                                *
 // ******************************************************************
 
-symbol* exprman::makeModelSymbol(const location &W, const type* t,
-		char* name) const {
+symbol* symbol::makeModelSymbol(const location &W, const type* t, char* name)
+{
 	return new model_symbol(W, t, name);
 }
 
-symbol* exprman::makeModelArray(const location &W, const type* t, char* n,
-		symbol** indexes, int dim) const {
+symbol* symbol::makeModelArray(const location &W, const type* t, char* n,
+		symbol** indexes, int dim)
+{
 	if (0 == indexes) {
 		free(n);
 		return 0;
@@ -2035,8 +2045,9 @@ symbol* exprman::makeModelArray(const location &W, const type* t, char* n,
 	return new model_array(W, t, n, (iterator**) indexes, dim);
 }
 
-expr* exprman::makeModelVarDecs(const location &W, model_def* p,
-		const type* t, expr* bnds, symbol** names, int N) const {
+expr* expr::makeModelVarDecs(const location &W, model_def* p,
+		const type* t, expr* bnds, symbol** names, int N)
+{
 	bool bailout = (0 == names || 0 == t || 0 == p);
 	if (!bailout) {
 		// make sure we can declare vars of this type!
@@ -2052,11 +2063,11 @@ expr* exprman::makeModelVarDecs(const location &W, model_def* p,
 	// typecheck the bounds
 	if (!bailout)
 		if (bnds) {
-			if (!isPromotable(bnds->Type(), t->getSetOfThis())) {
+			if (!typeconv::isPromotable(bnds->Type(), t->getSetOfThis())) {
 				bailout = 1;
 			} else {
-				bnds = makeTypecast(W, t->getSetOfThis(), bnds);
-				DCASSERT(isOrdinary(bnds));
+				bnds = typeconv::castExpr(true, W, t->getSetOfThis(), bnds);
+				DCASSERT(!bogus_expr::orNull(bnds));
 			}
 		}
 	// check the names
@@ -2078,8 +2089,9 @@ expr* exprman::makeModelVarDecs(const location &W, model_def* p,
 	return new model_var_stmt(W, p, t, bnds, (model_symbol**) names, N);
 }
 
-expr* exprman::makeModelArrayDecs(const location &W, model_def* p,
-		const type* t, symbol** arrays, int N) const {
+expr* expr::makeModelArrayDecs(const location &W, model_def* p,
+		const type* t, symbol** arrays, int N)
+{
 	if (0 == arrays)
 		return 0;
 	bool bailout = (0 == p);
@@ -2115,10 +2127,11 @@ expr* exprman::makeModelArrayDecs(const location &W, model_def* p,
 	return new model_varray_stmt(W, p, t, (model_array**) arrays, N);
 }
 
-expr* exprman::makeModelMeasureAssign(const location &W, model_def* p,
-		symbol* m, expr* rhs) const {
+expr* expr::makeModelMeasureAssign(const location &W, model_def* p,
+		symbol* m, expr* rhs)
+{
 	model_symbol* w = dynamic_cast<model_symbol*>(m);
-	if (nullptr == w || nullptr == p || isError(rhs)) {
+	if (nullptr == w || nullptr == p || bogus_expr::isError(rhs)) {
 		Delete(rhs);
 		return nullptr;
 	}
@@ -2135,21 +2148,22 @@ expr* exprman::makeModelMeasureAssign(const location &W, model_def* p,
 		return nullptr;
 	}
 
-	if (!isPromotable(rhstype, t)) {
+	if (!typeconv::isPromotable(rhstype, t)) {
         typechecking_error E(W);
         E << "Return type for measure " << w->Name();
 		E << " should be " << *t;
 		return nullptr;
 	}
-	rhs = promote(rhs, t);
-	DCASSERT(! isError(rhs) );
+	rhs = typeconv::castExpr(true, W, t, rhs);
+	DCASSERT(! bogus_expr::isError(rhs) );
 	return new measure_assign(W, p, w, rhs);
 }
 
-expr* exprman::makeModelMeasureArray(const location &W, model_def* p,
-		symbol* am, expr* rhs) const {
+expr* expr::makeModelMeasureArray(const location &W, model_def* p,
+		symbol* am, expr* rhs)
+{
 	model_array* w = dynamic_cast<model_array*>(am);
-	if (nullptr == w || nullptr == p || isError(rhs)) {
+	if (nullptr == w || nullptr == p || bogus_expr::isError(rhs)) {
 		Delete(rhs);
 		return nullptr;
 	}
@@ -2166,14 +2180,14 @@ expr* exprman::makeModelMeasureArray(const location &W, model_def* p,
 		return nullptr;
 	}
 
-	if (!isPromotable(rhstype, t)) {
+	if (!typeconv::isPromotable(rhstype, t)) {
         typechecking_error E(W);
         E << "Return type for measure " << w->Name();
 		E << " should be " << *t;
 		return nullptr;
 	}
-	rhs = promote(rhs, t);
-	DCASSERT(! isError(rhs) );
+	rhs = typeconv::castExpr(true, W, t, rhs);
+	DCASSERT(! bogus_expr::isError(rhs) );
 	return new measure_array_assign(W, p, w, rhs);
 }
 
@@ -2185,7 +2199,8 @@ expr* exprman::makeModelMeasureArray(const location &W, model_def* p,
 // *                                                                *
 // ******************************************************************
 
-expr* MakeBleVltB(const exprman* em, expr* lb, model_var* sv, expr* ub) {
+expr* MakeBleVltB(expr* lb, model_var* sv, expr* ub)
+{
 	if ((0 == lb && 0 == ub) || (0 == sv)) {
 		Delete(lb);
 		Delete(sv);
@@ -2226,7 +2241,8 @@ expr* MakeBleVltB(const exprman* em, expr* lb, model_var* sv, expr* ub) {
 	return answer;
 }
 
-expr* MakeVarUpdate(const exprman* em, model_var* sv, expr* dec, expr* inc) {
+expr* MakeVarUpdate(model_var* sv, expr* dec, expr* inc)
+{
 	if ((0 == dec && 0 == inc) || (0 == sv)) {
 		Delete(sv);
 		Delete(dec);
@@ -2276,7 +2292,8 @@ expr* MakeVarUpdate(const exprman* em, model_var* sv, expr* dec, expr* inc) {
 	return answer;
 }
 
-expr* MakeVarAssign(const exprman* em, model_var* sv, expr* rhs) {
+expr* MakeVarAssign(model_var* sv, expr* rhs)
+{
 	if (0 == sv || 0 == rhs) {
 		Delete(sv);
 		Delete(rhs);
@@ -2305,7 +2322,8 @@ expr* MakeVarAssign(const exprman* em, model_var* sv, expr* rhs) {
 	return answer;
 }
 
-expr* MakeVarAssign(const exprman* em, model_var* sv, long rhs) {
+expr* MakeVarAssign(model_var* sv, long rhs)
+{
 	if (0 == sv)
 		return 0;
 	expr* answer = new cassign_op(location::NOWHERE(), sv, rhs);
@@ -2316,3 +2334,4 @@ expr* MakeVarAssign(const exprman* em, model_var* sv, long rhs) {
 #endif
 	return answer;
 }
+

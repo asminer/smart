@@ -151,6 +151,42 @@ class symbol : public expr {
                         A new variable, otherwise.
         */
         static symbol* makeCvgVar(const location& W, const type* t, char* n);
+
+
+        /** Make a symbol within a model definition.
+            The symbol is simply a "placeholder" that will be replaced
+            each time the model is instantiated.
+            Implemented in mod_vars.cc.
+
+                @param  W     Where defined.
+                @param  t     Type of the symbol.
+                @param  name  Name of the symbol.
+
+                @return  a new placeholder symbol.
+        */
+        static symbol* makeModelSymbol(const location& W, const type* t,
+                char* name);
+
+
+        /** Make an array within a model definition.
+            The array is simply a "placeholder" that will be replaced
+            each time the model is instantiated.
+            Implemented in mod_vars.cc.
+
+                @param  W     Where defined.
+                @param  t       Type of the array.
+                @param  name    Name of the array.
+                @param  indexes List of iterators, which define the "shape"
+                                of the array.  Each iterator must have been
+                                created by calling MakeIterator().
+                @param  dim     Length of the list of indexes.
+                                Can be considered the dimension of the array.
+                @return  0,     if some error occurred (will make noise).
+                                A new array, otherwise.
+        */
+        static symbol* makeModelArray(const location& W, const type* t,
+                char* name, symbol** indexes, int dim);
+
 };
 
 

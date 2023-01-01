@@ -33,6 +33,7 @@ const char* unary_op::getOp(opcode code)
         case uop_future:    return "F";
         case uop_globally:  return "G";
         case uop_next:      return "X";
+        case uop_custom:    return "custom";
         default:            return "unknown_op";
     }
     return "error";  // will never get here, keep compilers happy

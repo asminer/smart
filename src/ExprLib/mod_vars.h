@@ -576,44 +576,6 @@ public:
 
 };
 
-// ******************************************************************
-// *                                                                *
-// *                           Front  end                           *
-// *                                                                *
-// ******************************************************************
-
-/** Make a comparison expression:
- lb <= sv < ub
- If lb is null, then make the expression sv < ub,
- and if ub us null, then make the expression lb <= sv.
- */
-expr* MakeBleVltB(expr* lb, model_var* sv, expr* ub);
-
-/** Make a model var update expression.
- Used for building "next-state" expressions.
- @param  sv  State var to update.
- @param  dec Proc int expression for decrementing, or 0.
- @param  inc Proc int expression for incrementing, or 0.
- @return A new expression, or 0 if both inc, dec are 0.
- */
-expr* MakeVarUpdate(model_var* sv, expr* dec, expr* inc);
-
-/** Make a model var assignment expression.
- Used for building "next-state" expressions.
- @param  sv    State var to update.
- @param  rhs   New value to be assigned to sv.
- @return A new expression, or 0 if rhs or sv are 0.
- */
-expr* MakeVarAssign(model_var* sv, expr* rhs);
-
-/** Make a model var assignment expression.
- Used for building "next-state" expressions.
- @param  sv    State var to update.
- @param  rhs   New value to be assigned to sv.
- @return A new expression, or 0 if sv is 0.
- */
-expr* MakeVarAssign(model_var* sv, long rhs);
-
 // **************************************************************************
 // *                                                                        *
 // *                             clev_op  class                             *
@@ -658,5 +620,44 @@ public:
 	virtual void Compute(traverse_data &x) override;
 	virtual bool Print(std::ostream &s, int) const override;
 };
+
+// ******************************************************************
+// *                                                                *
+// *                           Front  end                           *
+// *                                                                *
+// ******************************************************************
+
+/** Make a comparison expression:
+ lb <= sv < ub
+ If lb is null, then make the expression sv < ub,
+ and if ub us null, then make the expression lb <= sv.
+ */
+expr* MakeBleVltB(expr* lb, model_var* sv, expr* ub);
+
+/** Make a model var update expression.
+ Used for building "next-state" expressions.
+ @param  sv  State var to update.
+ @param  dec Proc int expression for decrementing, or 0.
+ @param  inc Proc int expression for incrementing, or 0.
+ @return A new expression, or 0 if both inc, dec are 0.
+ */
+expr* MakeVarUpdate(model_var* sv, expr* dec, expr* inc);
+
+/** Make a model var assignment expression.
+ Used for building "next-state" expressions.
+ @param  sv    State var to update.
+ @param  rhs   New value to be assigned to sv.
+ @return A new expression, or 0 if rhs or sv are 0.
+ */
+expr* MakeVarAssign(model_var* sv, expr* rhs);
+
+/** Make a model var assignment expression.
+ Used for building "next-state" expressions.
+ @param  sv    State var to update.
+ @param  rhs   New value to be assigned to sv.
+ @return A new expression, or 0 if sv is 0.
+ */
+expr* MakeVarAssign(model_var* sv, long rhs);
+
 
 #endif

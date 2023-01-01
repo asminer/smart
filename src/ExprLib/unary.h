@@ -38,8 +38,10 @@ class unary_op {
             uop_globally  = 5,
             /// Temporal operator "X"
             uop_next      = 6,
+            /// Custom operations
+            uop_custom    = 7,
             /// no operation (placeholder).  MUST BE THE LARGEST INTEGER.
-            uop_none      = 7
+            uop_none      = 8
         };
 
     public:
