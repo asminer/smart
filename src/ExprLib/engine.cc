@@ -209,9 +209,9 @@ engtype::engtype(const char* n, const char* d, calling_form f)
 {
     doc = d;
     form = f;
-    // index = 0;
 
     finalized = false;
+    is_blocked_engine = false;
 
     EngTree = 0;
     engineList = 0;
@@ -626,6 +626,7 @@ void engine_init::execute()
     engtype* blocked = engtype::registerEngineType(
         new engtype("Blocked Engine", "Blocked measures", engtype::Single)
     );
+    blocked->is_blocked_engine = true;
     RegisterEngine(blocked, "fail", "Fail and bail out", &the_bogus_engine);
     blocked->finalizeRegistry();
 }

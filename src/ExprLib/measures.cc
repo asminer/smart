@@ -3,7 +3,6 @@
 #include "mod_inst.h"
 #include "mod_def.h"
 
-#include "exprman.h"
 #include "engine.h"
 
 #include "../Utils/strings.h"
@@ -51,7 +50,7 @@ void measure::Solve(traverse_data &x)
   DCASSERT(owner);
 
   if (class_deps) {
-    DCASSERT(em->BLOCKED_ENGINE == which_engine);
+    DCASSERT(which_engine->isBlockedEngine());
     int stop = class_deps->Length();
     for (int i=0; i<stop; i++) {
       if (0==class_deps) break;
@@ -61,7 +60,7 @@ void measure::Solve(traverse_data &x)
     } // for i
   }
 
-  DCASSERT(em->BLOCKED_ENGINE != which_engine);
+  DCASSERT(!which_engine->isBlockedEngine());
 
   if (solve_deps) {
     DCASSERT(isBlocked());
@@ -140,7 +139,7 @@ void measure::notifyFrom(const symbol *p)
   if (isComputed() || isReady()) return;
 
   if (class_deps) {
-    DCASSERT(which_engine == em->BLOCKED_ENGINE);
+    DCASSERT(which_engine->isBlockedEngine());
     for (int i=0; i<class_deps->Length(); i++) {
       if (! class_deps->ReadItem(i)->isComputed()) return;
     } // for i
@@ -148,7 +147,7 @@ void measure::notifyFrom(const symbol *p)
     delete class_deps;
     class_deps = 0;
     classifyNow();
-    DCASSERT(em->BLOCKED_ENGINE != which_engine);
+    DCASSERT(!which_engine->isBlockedEngine());
     owner->GroupMeasure(this);
   } // if class_deps
 
@@ -170,12 +169,12 @@ void measure::notifyFrom(const symbol *p)
 
 bool measure::isBlockedEngine() const
 {
-  return which_engine == em->BLOCKED_ENGINE;
+  return which_engine->isBlockedEngine();
 }
 
 void measure::classifyNow()
 {
-    if (which_engine != em->BLOCKED_ENGINE) return;
+    if (!which_engine->isBlockedEngine()) return;
     internal_error E(__FILE__, __LINE__, Where());
     E << "No classification method for blocked measure!";
 }
@@ -217,7 +216,7 @@ measure::errmsg::~errmsg()
 
 time_measure
  ::time_measure(const expr* e, model_def* p, expr* rhs)
- : measure(e, em->BLOCKED_ENGINE, p, rhs)
+ : measure(e, engtype::findEngineType("Blocked Engine"), p, rhs)
 {
   time = -1;
   stop_time = -1;
@@ -470,7 +469,8 @@ int msr_func::Traverse(traverse_data &x, expr** pass, int np)
 
   measure* subst = buildMeasure(x, pass, np);
   if (0==subst)   return 0;
-  if (em->BLOCKED_ENGINE != subst->EngineType()) {
+  const engtype* et = subst->EngineType();
+  if (!et || !et->isBlockedEngine()) {
     DCASSERT(x.model);
     x.model->GroupMeasure(subst);
   } else {
@@ -507,9 +507,9 @@ void msr_noengine::Compute(traverse_data &x, expr** pass, int np)
 measure* msr_noengine
 ::buildMeasure(traverse_data &x, expr** pass, int np)
 {
-  expr* comp = em->makeFunctionCall(
+  expr* comp = expr::makeFunctionCall(
           x.parent ? x.parent->Where() : location::NOWHERE(), this, pass, np);
-  engtype* et = em->NO_ENGINE;
+  engtype* et = engtype::findEngineType("No Engine");
   return new measure(x.parent, et, x.model, comp);
 }
 

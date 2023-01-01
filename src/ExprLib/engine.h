@@ -246,6 +246,12 @@ class engtype : public shared_string {
         inline calling_form getForm() const { return form; }
         inline unsigned getIndex() const { return index; }
 
+        // Special engine types
+
+        inline bool isBlockedEngine() const {
+            return is_blocked_engine;
+        }
+
         /**
             Register a solution engine.
             The first solution engine to be registered will also
@@ -367,6 +373,7 @@ class engtype : public shared_string {
         unsigned index;
 
         bool finalized;
+        bool is_blocked_engine;
 
         // pre-finalization
         splayOfShared* EngTree;
@@ -378,6 +385,7 @@ class engtype : public shared_string {
 
         friend class engine_watcher;
         friend class build_groups_traversal;
+        friend class engine_init;
 
     private:
         /// Registry of all engine types
