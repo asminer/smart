@@ -999,8 +999,8 @@ public:
                         of the model.
         @param  ns      Number of externally-visible symbols.
   */
-  void finishModelDef(model_def* p, expr* stmts,
-      symbol** st, int ns) const;
+//  void finishModelDef(model_def* p, expr* stmts,
+ //     symbol** st, int ns) const;
 
 
   // +-----------------------------------------------------------------+
@@ -1031,8 +1031,8 @@ public:
                         as appropriate on the error channel.
                 A new expression p(pass).name, otherwise.
   */
-  expr* makeMeasureCall(const location& W, model_def* p,
-      expr** pass, int np, const char* name) const;
+  // expr* makeMeasureCall(const location& W, model_def* p,
+      // expr** pass, int np, const char* name) const;
 
   /** Make a measure array call expression.
       For expressions of the form
@@ -1053,9 +1053,9 @@ public:
                         messages relayed as appropriate on the error channel.
                 A new expression p(pass).name[i], otherwise.
   */
-  expr* makeMeasureCall(const location& W, model_def* p,
-      expr** pass, int np, const char* name,
-      expr** i, int ni) const;
+  // expr* makeMeasureCall(const location& W, model_def* p,
+      // expr** pass, int np, const char* name,
+      // expr** i, int ni) const;
 
   /** Make a measure call expression.
       For expressions of the form

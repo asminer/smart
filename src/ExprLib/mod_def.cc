@@ -6,13 +6,308 @@
 #include "../Utils/strings.h"
 #include "../Utils/init_opts.h"
 #include "arrays.h"
-#include "exprman.h"
+#include "bogus.h"
 
 #include <string.h>
 #include <stdlib.h>
 
 // #define ARRAY_TRACE
 // #define MSR_DEBUG
+
+// ******************************************************************
+// *                                                                *
+// *                         md_call  class                         *
+// *                                                                *
+// ******************************************************************
+
+/**  An expression to compute a model call.
+     That is, this computes expressions of the type
+        model(p1, p2, p3).measure;
+*/
+
+class md_call : public expr {
+protected:
+  model_def *mdl;
+  expr** pass;
+  int numpass;
+  int msr_slot;
+public:
+  md_call(const location &W, model_def *m, expr **p, int np, int slot);
+  virtual ~md_call();
+
+  virtual void Compute(traverse_data &x);
+  virtual void Traverse(traverse_data &x);
+  virtual bool Print(std::ostream &s, int) const;
+};
+
+md_call::md_call(const location &W, model_def *m,
+      expr **p, int np, int slot)
+  : expr (W, (typelist*) 0)
+{
+  const symbol* s = m->GetSymbol(slot);
+  SetType(expr::SafeType(s));
+  mdl = m;
+  pass = p;
+  numpass = np;
+  msr_slot = slot;
+}
+
+md_call::~md_call()
+{
+  for (int i=0; i<numpass; i++)  Delete(pass[i]);
+  delete[] pass;
+}
+
+void md_call::Compute(traverse_data &x)
+{
+  DCASSERT(x.answer);
+  DCASSERT(0==x.aggregate);
+  DCASSERT(mdl);
+  const expr* oldp = x.parent;
+  x.parent = this;
+
+  // instantiate the model
+  model_instance* mi = mdl->Instantiate(x, pass, numpass);
+
+  if (mi->NotProperInstance(this, 0)) {
+    x.answer->setNull();
+  } else {
+    // find and compute the measure
+    symbol* find = mi->FindExternalSymbol(msr_slot);
+    SafeCompute(find, x);
+  }
+
+  x.parent = oldp;
+}
+
+void md_call::Traverse(traverse_data &x)
+{
+  DCASSERT(mdl);
+  switch (x.which) {
+    case traverse_data::Substitute: {
+        DCASSERT(x.answer);
+        expr** newpass = new expr* [numpass];
+        bool notequal = false;
+        for (int i=0; i<numpass; i++) {
+          if (pass[i]) {
+            pass[i]->Traverse(x);
+            newpass[i] = smart_cast <expr*> (Share(x.answer->getPtr()));
+          } else {
+            newpass[i] = 0;
+          }
+          if (newpass[i] != pass[i])  notequal = true;
+         } // for i
+        if (notequal) {
+          x.answer->setPtr(new md_call(Where(), mdl,
+                newpass, numpass, msr_slot));
+        } else {
+          for (int i=0; i<numpass; i++)  Delete(newpass[i]);
+          delete[] newpass;
+          x.answer->setPtr(Share(this));
+        }
+        return;
+    } // traverse_data::Substitute
+
+    case traverse_data::PreCompute:
+    case traverse_data::ClearCache:
+        for (int i=0; i<numpass; i++) if (pass[i]) {
+          pass[i]->Traverse(x);
+        } // for i
+        return;
+
+    default:
+        mdl->Traverse(x, pass, numpass);
+  }
+}
+
+bool md_call::Print(std::ostream &s, int) const
+{
+  if (mdl->Name()==NULL) return false; // can this happen?
+  s << mdl->Name();
+  if (numpass) {
+    s << "(";
+    int i;
+    for (i=0; i<numpass; i++) {
+      if (i) s << ", ";
+      if (pass[i])  pass[i]->Print(s, 0);
+      else          s << "null";
+    }
+    s << ")";
+  }
+  s << ".";
+  const symbol* msr = mdl->GetSymbol(msr_slot);
+  s << msr->Name();
+  return true;
+}
+
+
+// ******************************************************************
+// *                                                                *
+// *                         md_acall class                         *
+// *                                                                *
+// ******************************************************************
+
+/**  An expression to compute a model call for an array measure.
+     That is, this computes expressions of the type
+        model(p1, p2, p3).measure[i][j];
+*/
+
+class md_acall : public expr {
+protected:
+  // model call part
+  model_def* mdl;
+  expr** pass;
+  int numpass;
+  // measure call part
+  int msr_slot;
+  expr** indx;
+  int numindx;
+public:
+  md_acall(const location &W, model_def* m, expr** p, int np,
+    int slot, expr** i, int ni);
+  virtual ~md_acall();
+
+  virtual void Compute(traverse_data &x);
+  virtual void Traverse(traverse_data &x);
+  virtual bool Print(std::ostream &s, int) const;
+};
+
+md_acall::md_acall(const location &W, model_def* m, expr** p, int np,
+      int slot, expr** i, int ni)
+ : expr (W, (typelist*) 0)
+{
+  const symbol* s = m->GetSymbol(slot);
+  SetType(expr::SafeType(s));
+  mdl = m;
+  pass = p;
+  numpass = np;
+  msr_slot = slot;
+  indx = i;
+  numindx = ni;
+}
+
+md_acall::~md_acall()
+{
+  for (int i=0; i<numpass; i++)  Delete(pass[i]);
+  delete[] pass;
+  for (int i=0; i<numindx; i++) Delete(indx[i]);
+  delete[] indx;
+}
+
+void md_acall::Compute(traverse_data &x)
+{
+  DCASSERT(x.answer);
+  DCASSERT(0==x.aggregate);
+  DCASSERT(mdl);
+  const expr* oldp = x.parent;
+  x.parent = this;
+
+  // instantiate the model
+  model_instance* mi = mdl->Instantiate(x, pass, numpass);
+
+  if (mi->NotProperInstance(this, 0)) {
+    x.answer->setNull();
+  } else {
+    // find the measure array
+    array_item* elem;
+    symbol* find = mi->FindExternalSymbol(msr_slot);
+    if (find) {
+      array* rewards = smart_cast <array*> (find);
+      DCASSERT(rewards);
+      // compute the array element.
+      elem = rewards->GetItem(indx, *x.answer);
+    } else {
+      elem = 0;
+    }
+    if (elem)   elem->Compute(x, false);
+    else        x.answer->setNull();
+  }
+
+  x.parent = oldp;
+}
+
+void md_acall::Traverse(traverse_data &x)
+{
+  DCASSERT(mdl);
+  switch (x.which) {
+    case traverse_data::Substitute: {
+        DCASSERT(x.answer);
+         // build new list of passed parameters
+        expr** newpass = new expr* [numpass];
+        bool notequal = false;
+        for (int i=0; i<numpass; i++) {
+          if (pass[i]) {
+            pass[i]->Traverse(x);
+            newpass[i] = smart_cast <expr*> (Share(x.answer->getPtr()));
+          } else {
+            newpass[i] = 0;
+          }
+          if (newpass[i] != pass[i])  notequal = true;
+         } // for i
+        // build new list of array indexes
+        expr** newindx = new expr*[numindx];
+        for (int i=0; i<numindx; i++) {
+          if (indx[i]) {
+            indx[i]->Traverse(x);
+            newindx[i] = smart_cast <expr*> (Share(x.answer->getPtr()));
+          } else {
+            newindx[i] = 0;
+          }
+          if (newindx[i] != indx[i])  notequal = true;
+         } // for i
+
+        // build a new call
+        if (notequal) {
+          x.answer->setPtr(new md_acall(Where(), mdl,
+                newpass, numpass, msr_slot, newindx, numindx));
+        } else {
+          for (int i=0; i<numpass; i++)  Delete(newpass[i]);
+          delete[] newpass;
+          for (int i=0; i<numindx; i++)  Delete(newindx[i]);
+          delete[] newindx;
+          x.answer->setPtr(Share(this));
+        }
+        return;
+    } // Substitute
+
+    case traverse_data::PreCompute:
+    case traverse_data::ClearCache:
+        for (int i=0; i<numpass; i++) if (pass[i]) {
+          pass[i]->Traverse(x);
+        } // for i
+        return;
+
+    default:
+        mdl->Traverse(x, pass, numpass);
+  }
+}
+
+bool md_acall::Print(std::ostream &s, int) const
+{
+  if (mdl->Name()==NULL) return false; // can this happen?
+  s << mdl->Name();
+  if (numpass) {
+    s << "(";
+    int i;
+    for (i=0; i<numpass; i++) {
+      if (i) s << ", ";
+      if (pass[i])  pass[i]->Print(s, 0);
+      else          s << "null";
+    }
+    s << ")";
+  }
+  const symbol* msr = mdl->GetSymbol(msr_slot);
+  s << "." << msr->Name();
+  for (int n=0; n<numindx; n++) {
+    s << "[";
+    if (indx[n])  indx[n]->Print(s, 0);
+    else          s << "null";
+    s << indx[n] << "]";
+  }
+  return true;
+}
+
+
 
 // ******************************************************************
 // *                                                                *
@@ -229,14 +524,14 @@ int model_def::Traverse(traverse_data &x, expr** pass, int np)
 {
   switch (x.which) {
     case traverse_data::Typecheck:
-        return formals.check(em, pass, np, Type());
+        return formals.check(pass, np, Type());
 
     case traverse_data::Promote:
-        formals.promote(em, pass, np, Type());
+        formals.promote(pass, np, Type());
         return Promote_Success;
 
     case traverse_data::GetType:
-        x.the_type = formals.getType(em, pass, np, Type());
+        x.the_type = formals.getType(pass, np, Type());
         x.the_model_type = this;
         return 0;
 
@@ -253,7 +548,7 @@ int model_def::maxNamedParams() const
 int model_def
 ::named2Positional(symbol** np, int nnp, expr** buffer, int bufsize) const
 {
-  return formals.named2Positional(em, np, nnp, buffer, bufsize);
+  return formals.named2Positional(np, nnp, buffer, bufsize);
 }
 
 
@@ -289,313 +584,13 @@ void model_def::SaveParams()
 }
 
 
-//
-// HIDDEN STUFF
-//
-
-
 // ******************************************************************
 // *                                                                *
-// *                         md_call  class                         *
+// *                         static methods                         *
 // *                                                                *
 // ******************************************************************
 
-/**  An expression to compute a model call.
-     That is, this computes expressions of the type
-        model(p1, p2, p3).measure;
-*/
-
-class md_call : public expr {
-protected:
-  model_def *mdl;
-  expr** pass;
-  int numpass;
-  int msr_slot;
-public:
-  md_call(const location &W, model_def *m, expr **p, int np, int slot);
-  virtual ~md_call();
-
-  virtual void Compute(traverse_data &x);
-  virtual void Traverse(traverse_data &x);
-  virtual bool Print(std::ostream &s, int) const;
-};
-
-md_call::md_call(const location &W, model_def *m,
-      expr **p, int np, int slot)
-  : expr (W, (typelist*) 0)
-{
-  const symbol* s = m->GetSymbol(slot);
-  SetType(em->SafeType(s));
-  mdl = m;
-  pass = p;
-  numpass = np;
-  msr_slot = slot;
-}
-
-md_call::~md_call()
-{
-  for (int i=0; i<numpass; i++)  Delete(pass[i]);
-  delete[] pass;
-}
-
-void md_call::Compute(traverse_data &x)
-{
-  DCASSERT(x.answer);
-  DCASSERT(0==x.aggregate);
-  DCASSERT(mdl);
-  const expr* oldp = x.parent;
-  x.parent = this;
-
-  // instantiate the model
-  model_instance* mi = mdl->Instantiate(x, pass, numpass);
-
-  if (mi->NotProperInstance(this, 0)) {
-    x.answer->setNull();
-  } else {
-    // find and compute the measure
-    symbol* find = mi->FindExternalSymbol(msr_slot);
-    SafeCompute(find, x);
-  }
-
-  x.parent = oldp;
-}
-
-void md_call::Traverse(traverse_data &x)
-{
-  DCASSERT(mdl);
-  switch (x.which) {
-    case traverse_data::Substitute: {
-        DCASSERT(x.answer);
-        expr** newpass = new expr* [numpass];
-        bool notequal = false;
-        for (int i=0; i<numpass; i++) {
-          if (pass[i]) {
-            pass[i]->Traverse(x);
-            newpass[i] = smart_cast <expr*> (Share(x.answer->getPtr()));
-          } else {
-            newpass[i] = 0;
-          }
-          if (newpass[i] != pass[i])  notequal = true;
-         } // for i
-        if (notequal) {
-          x.answer->setPtr(new md_call(Where(), mdl,
-                newpass, numpass, msr_slot));
-        } else {
-          for (int i=0; i<numpass; i++)  Delete(newpass[i]);
-          delete[] newpass;
-          x.answer->setPtr(Share(this));
-        }
-        return;
-    } // traverse_data::Substitute
-
-    case traverse_data::PreCompute:
-    case traverse_data::ClearCache:
-        for (int i=0; i<numpass; i++) if (pass[i]) {
-          pass[i]->Traverse(x);
-        } // for i
-        return;
-
-    default:
-        mdl->Traverse(x, pass, numpass);
-  }
-}
-
-bool md_call::Print(std::ostream &s, int) const
-{
-  if (mdl->Name()==NULL) return false; // can this happen?
-  s << mdl->Name();
-  if (numpass) {
-    s << "(";
-    int i;
-    for (i=0; i<numpass; i++) {
-      if (i) s << ", ";
-      if (pass[i])  pass[i]->Print(s, 0);
-      else          s << "null";
-    }
-    s << ")";
-  }
-  s << ".";
-  const symbol* msr = mdl->GetSymbol(msr_slot);
-  s << msr->Name();
-  return true;
-}
-
-
-// ******************************************************************
-// *                                                                *
-// *                         md_acall class                         *
-// *                                                                *
-// ******************************************************************
-
-/**  An expression to compute a model call for an array measure.
-     That is, this computes expressions of the type
-        model(p1, p2, p3).measure[i][j];
-*/
-
-class md_acall : public expr {
-protected:
-  // model call part
-  model_def* mdl;
-  expr** pass;
-  int numpass;
-  // measure call part
-  int msr_slot;
-  expr** indx;
-  int numindx;
-public:
-  md_acall(const location &W, model_def* m, expr** p, int np,
-    int slot, expr** i, int ni);
-  virtual ~md_acall();
-
-  virtual void Compute(traverse_data &x);
-  virtual void Traverse(traverse_data &x);
-  virtual bool Print(std::ostream &s, int) const;
-};
-
-md_acall::md_acall(const location &W, model_def* m, expr** p, int np,
-      int slot, expr** i, int ni)
- : expr (W, (typelist*) 0)
-{
-  const symbol* s = m->GetSymbol(slot);
-  SetType(em->SafeType(s));
-  mdl = m;
-  pass = p;
-  numpass = np;
-  msr_slot = slot;
-  indx = i;
-  numindx = ni;
-}
-
-md_acall::~md_acall()
-{
-  for (int i=0; i<numpass; i++)  Delete(pass[i]);
-  delete[] pass;
-  for (int i=0; i<numindx; i++) Delete(indx[i]);
-  delete[] indx;
-}
-
-void md_acall::Compute(traverse_data &x)
-{
-  DCASSERT(x.answer);
-  DCASSERT(0==x.aggregate);
-  DCASSERT(mdl);
-  const expr* oldp = x.parent;
-  x.parent = this;
-
-  // instantiate the model
-  model_instance* mi = mdl->Instantiate(x, pass, numpass);
-
-  if (mi->NotProperInstance(this, 0)) {
-    x.answer->setNull();
-  } else {
-    // find the measure array
-    array_item* elem;
-    symbol* find = mi->FindExternalSymbol(msr_slot);
-    if (find) {
-      array* rewards = smart_cast <array*> (find);
-      DCASSERT(rewards);
-      // compute the array element.
-      elem = rewards->GetItem(indx, *x.answer);
-    } else {
-      elem = 0;
-    }
-    if (elem)   elem->Compute(x, false);
-    else        x.answer->setNull();
-  }
-
-  x.parent = oldp;
-}
-
-void md_acall::Traverse(traverse_data &x)
-{
-  DCASSERT(mdl);
-  switch (x.which) {
-    case traverse_data::Substitute: {
-        DCASSERT(x.answer);
-         // build new list of passed parameters
-        expr** newpass = new expr* [numpass];
-        bool notequal = false;
-        for (int i=0; i<numpass; i++) {
-          if (pass[i]) {
-            pass[i]->Traverse(x);
-            newpass[i] = smart_cast <expr*> (Share(x.answer->getPtr()));
-          } else {
-            newpass[i] = 0;
-          }
-          if (newpass[i] != pass[i])  notequal = true;
-         } // for i
-        // build new list of array indexes
-        expr** newindx = new expr*[numindx];
-        for (int i=0; i<numindx; i++) {
-          if (indx[i]) {
-            indx[i]->Traverse(x);
-            newindx[i] = smart_cast <expr*> (Share(x.answer->getPtr()));
-          } else {
-            newindx[i] = 0;
-          }
-          if (newindx[i] != indx[i])  notequal = true;
-         } // for i
-
-        // build a new call
-        if (notequal) {
-          x.answer->setPtr(new md_acall(Where(), mdl,
-                newpass, numpass, msr_slot, newindx, numindx));
-        } else {
-          for (int i=0; i<numpass; i++)  Delete(newpass[i]);
-          delete[] newpass;
-          for (int i=0; i<numindx; i++)  Delete(newindx[i]);
-          delete[] newindx;
-          x.answer->setPtr(Share(this));
-        }
-        return;
-    } // Substitute
-
-    case traverse_data::PreCompute:
-    case traverse_data::ClearCache:
-        for (int i=0; i<numpass; i++) if (pass[i]) {
-          pass[i]->Traverse(x);
-        } // for i
-        return;
-
-    default:
-        mdl->Traverse(x, pass, numpass);
-  }
-}
-
-bool md_acall::Print(std::ostream &s, int) const
-{
-  if (mdl->Name()==NULL) return false; // can this happen?
-  s << mdl->Name();
-  if (numpass) {
-    s << "(";
-    int i;
-    for (i=0; i<numpass; i++) {
-      if (i) s << ", ";
-      if (pass[i])  pass[i]->Print(s, 0);
-      else          s << "null";
-    }
-    s << ")";
-  }
-  const symbol* msr = mdl->GetSymbol(msr_slot);
-  s << "." << msr->Name();
-  for (int n=0; n<numindx; n++) {
-    s << "[";
-    if (indx[n])  indx[n]->Print(s, 0);
-    else          s << "null";
-    s << indx[n] << "]";
-  }
-  return true;
-}
-
-
-// ******************************************************************
-// *                                                                *
-// *                        exprman  methods                        *
-// *                                                                *
-// ******************************************************************
-
-void exprman::finishModelDef(model_def* p, expr* stmts,
-      symbol** st, int ns) const
+void model_def::finishModelDef(model_def* p, expr* stmts, symbol** st, int ns)
 {
   if (0==p) {
     Delete(stmts);
@@ -614,8 +609,8 @@ inline void TrashPass(expr** p, int np)
   delete[] p;
 }
 
-expr* exprman::makeMeasureCall(const location &W, model_def* m,
-      expr** p, int np, const char* msr_name) const
+expr* model_def::makeMeasureCall(const location &W, model_def* m,
+      expr** p, int np, const char* msr_name)
 {
   if (0==m || 0==msr_name) {
     TrashPass(p, np);
@@ -628,7 +623,7 @@ expr* exprman::makeMeasureCall(const location &W, model_def* m,
       E << "Measure " << msr_name << " does not exist in model ";
       if (m->Name()) E << m->Name();
       TrashPass(p, np);
-      return makeError();
+      return bogus_expr::makeError();
   }
 
   const symbol* msr = m->GetSymbol(slot);
@@ -639,7 +634,7 @@ expr* exprman::makeMeasureCall(const location &W, model_def* m,
       E << "Measure " << msr->Name() << " within model ";
       E << m->Name() << " is an array";
       TrashPass(p, np);
-      return makeError();
+      return bogus_expr::makeError();
   }
 
   m->PromoteParams(p, np);
@@ -647,9 +642,9 @@ expr* exprman::makeMeasureCall(const location &W, model_def* m,
 }
 
 
-expr* exprman::makeMeasureCall(const location &W, model_def* m,
+expr* model_def::makeMeasureCall(const location &W, model_def* m,
       expr** p, int np, const char* msr_name,
-      expr** indexes, int ni) const
+      expr** indexes, int ni)
 {
   if (0==m || 0==msr_name) {
     TrashPass(p, np);
@@ -664,7 +659,7 @@ expr* exprman::makeMeasureCall(const location &W, model_def* m,
       E << " does not exist in model " << m->Name();
       TrashPass(p, np);
       TrashPass(indexes, ni);
-      return makeError();
+      return bogus_expr::makeError();
   }
 
   const symbol* foo = m->GetSymbol(slot);
@@ -676,13 +671,13 @@ expr* exprman::makeMeasureCall(const location &W, model_def* m,
       E << m->Name() << " is not an array";
       TrashPass(p, np);
       TrashPass(indexes, ni);
-      return makeError();
+      return bogus_expr::makeError();
   }
 
   if (!msr->checkArrayCall(W, indexes, ni)) {
     TrashPass(p, np);
     TrashPass(indexes, ni);
-    return makeError();
+    return bogus_expr::makeError();
   }
 
   m->PromoteParams(p, np);

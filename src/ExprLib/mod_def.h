@@ -38,38 +38,6 @@ class model_var;
 */
 class model_def : public function {
 public:
-  /// Warning option.
-  static warning_msg not_our_var;
-
-private:
-  /// Formal parameters of the model
-  fplist formals;
-
-  /// Statements to execute when instantiating the model
-  expr* stmt_block;
-
-  /// List of externally visible measures and measure arrays
-  symbol** mysymbols;
-  /// Size of the symbol "table"
-  int num_symbols;
-
-  /// Stack space for computing parameters.
-  result* current_params;
-
-  /// Parameters computed last time we were called directly.
-  result* last_params;
-
-  /// Previously constructed model.
-  model_instance* last_build;
-
-  /// Name to use for dotfile, if any
-  shared_string* dotfile;
-
-protected:
-  /// The model instance currently being constructed
-  model_instance* current;
-
-public:
   model_def(const location &W, const type* t, char* n,
     formal_param **pl, int np);
 protected:
@@ -112,13 +80,6 @@ public:
       Allows models to dump a dot file when they are instantiated.
   */
   void SetDotFile(result& x);
-
-protected:
-  /** Builds current instantiation.
-      Model parameters have already been computed.
-      Don't call this directly; it is used by Compute and Instantiate.
-  */
-  void BuildModel(traverse_data &x);
 
 public:
 
@@ -188,7 +149,76 @@ public:
   */
   virtual model_var* MakeModelVar(const symbol* wrap, shared_object* s) = 0;
 
+  //
+  // Static methods, called by compiler
+  //
+
+  /** Finish a model definition.
+      Implemented in mod_def.cc.
+
+        @param  p       Model "header", everything is ready except for
+                        the statements and symbols within the model.
+        @param  stmts   Block of statements to execute when
+                        instantiating the model.
+        @param  st      Array of externally-visible symbols
+                        (usually measures, or arrays of measures)
+                        of the model.
+        @param  ns      Number of externally-visible symbols.
+  */
+  static void finishModelDef(model_def* p, expr* stmts, symbol** st, int ns);
+
+  /** Make a measure call expression.
+      For expressions of the form
+        foo(3.4, 7).msr;
+      I.e., to be used when we call the model definition directly.
+      Implemented in mod_def.cc.
+
+        @param  W     Where defined.
+        @param  p     Model definition block containing the measure.
+        @param  pass  Parameters to pass to the model definition.
+        @param  np    Number of passed parameters.
+        @param  name  Name of the measure.
+
+        @return ERROR,  if some error occurs (e.g., no measure with
+                        the given name), with error messages relayed
+                        as appropriate on the error channel.
+                A new expression p(pass).name, otherwise.
+  */
+  static expr* makeMeasureCall(const location& W, model_def* p,
+      expr** pass, int np, const char* name);
+
+  /** Make a measure array call expression.
+      For expressions of the form
+        foo(3.4, 7).msr[i, j, k];
+      I.e., to be used when we call the model definition directly.
+      Implemented in mod_def.cc.
+
+        @param  W     Where defined.
+        @param  p     Model definition block containing the measure.
+        @param  pass  Parameters to pass to the model definition.
+        @param  np    Number of passed parameters.
+        @param  name  Name of the measure array.
+        @param  i     Passed array indexes.
+        @param  ni    Number of passed indexes.
+
+        @return ERROR,  if some error occurs (e.g., no measure with
+                        the given name, wrong dimension), with error
+                        messages relayed as appropriate on the error channel.
+                A new expression p(pass).name[i], otherwise.
+  */
+  static expr* makeMeasureCall(const location& W, model_def* p,
+      expr** pass, int np, const char* name, expr** i, int ni);
+
+
+
+
 protected:
+  /** Builds current instantiation.
+      Model parameters have already been computed.
+      Don't call this directly; it is used by Compute and Instantiate.
+  */
+  void BuildModel(traverse_data &x);
+
   /** Prepare for instantiation.
       Provided in derived classes.  Called immediately before
       the model is constructed for specific parameters.
@@ -229,8 +259,7 @@ private:
   bool SameParams() const;
   void SaveParams();
 
-
-public:
+protected:
     /*
      * Model (definition) construction errors
      */
@@ -242,6 +271,40 @@ public:
     };
 
     friend class errmsg;
+
+
+public:
+  /// Warning option.
+  static warning_msg not_our_var;
+
+private:
+  /// Formal parameters of the model
+  fplist formals;
+
+  /// Statements to execute when instantiating the model
+  expr* stmt_block;
+
+  /// List of externally visible measures and measure arrays
+  symbol** mysymbols;
+  /// Size of the symbol "table"
+  int num_symbols;
+
+  /// Stack space for computing parameters.
+  result* current_params;
+
+  /// Parameters computed last time we were called directly.
+  result* last_params;
+
+  /// Previously constructed model.
+  model_instance* last_build;
+
+  /// Name to use for dotfile, if any
+  shared_string* dotfile;
+
+protected:
+  /// The model instance currently being constructed
+  model_instance* current;
+
 };
 
 #endif

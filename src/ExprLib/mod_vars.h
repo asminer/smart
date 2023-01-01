@@ -587,7 +587,7 @@ public:
  If lb is null, then make the expression sv < ub,
  and if ub us null, then make the expression lb <= sv.
  */
-expr* MakeBleVltB(const exprman* em, expr* lb, model_var* sv, expr* ub);
+expr* MakeBleVltB(expr* lb, model_var* sv, expr* ub);
 
 /** Make a model var update expression.
  Used for building "next-state" expressions.
@@ -596,7 +596,7 @@ expr* MakeBleVltB(const exprman* em, expr* lb, model_var* sv, expr* ub);
  @param  inc Proc int expression for incrementing, or 0.
  @return A new expression, or 0 if both inc, dec are 0.
  */
-expr* MakeVarUpdate(const exprman* em, model_var* sv, expr* dec, expr* inc);
+expr* MakeVarUpdate(model_var* sv, expr* dec, expr* inc);
 
 /** Make a model var assignment expression.
  Used for building "next-state" expressions.
@@ -604,7 +604,7 @@ expr* MakeVarUpdate(const exprman* em, model_var* sv, expr* dec, expr* inc);
  @param  rhs   New value to be assigned to sv.
  @return A new expression, or 0 if rhs or sv are 0.
  */
-expr* MakeVarAssign(const exprman* em, model_var* sv, expr* rhs);
+expr* MakeVarAssign(model_var* sv, expr* rhs);
 
 /** Make a model var assignment expression.
  Used for building "next-state" expressions.
@@ -612,7 +612,7 @@ expr* MakeVarAssign(const exprman* em, model_var* sv, expr* rhs);
  @param  rhs   New value to be assigned to sv.
  @return A new expression, or 0 if sv is 0.
  */
-expr* MakeVarAssign(const exprman* em, model_var* sv, long rhs);
+expr* MakeVarAssign(model_var* sv, long rhs);
 
 // **************************************************************************
 // *                                                                        *

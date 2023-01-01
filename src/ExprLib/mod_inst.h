@@ -12,8 +12,6 @@
 
 #include "symbols.h"
 
-class exprman;  // TBD
-
 class measure;
 class set_of_measures;
 class model_def;
@@ -73,7 +71,7 @@ protected:
   virtual ~lldsm();
   virtual const char* getClassName() const = 0;
 public:
-  static void initOptions(exprman* om);
+  // static void initOptions(exprman* om);
 
   inline model_type Type() const { return mtype; }
   inline void SetParent(const hldsm* p) {
@@ -94,10 +92,9 @@ public:
   virtual bool Print(std::ostream &, int) const;
 
   /** Write memory information to the reporting stream.
-        @param  em      Will write to the report stream of this manager.
         @param  prefix  Prefix to write before each line.
   */
-  virtual void reportMemUsage(exprman* em, const char* prefix) const;
+  virtual void reportMemUsage(const char* prefix) const;
 
   // other virtual functions here
 protected:
@@ -117,8 +114,6 @@ protected:
 /** The base class of high-level discrete-state models.
 */
 class hldsm : public shared_object {
-protected:
-  static const exprman* em;
 public:
   /** Possible types of high level models.
       Use negatives for anything that will NEVER require solution engines.
@@ -206,7 +201,7 @@ public:
 protected:
   virtual ~hldsm();
 public:
-  static void initOptions(exprman* om);
+  // static void initOptions(exprman* om);
   inline model_type Type() const { return mtype; }
   inline void setType(model_type t) {
     DCASSERT(Unknown == mtype);
@@ -505,7 +500,7 @@ public:
 lldsm* MakeErrorModel();
 
 /// Initialize low-level model options.
-void InitLLM(exprman* om);
+// void InitLLM(exprman* om);
 
 #endif
 
