@@ -244,6 +244,7 @@ class engtype : public shared_string {
         inline const char* Name() const { return getStr(); }
         inline const char* Documentation() const { return doc; }
         inline calling_form getForm() const { return form; }
+        inline unsigned getIndex() const { return index; }
 
   /*
   inline void setIndex(int ndx) {
@@ -251,24 +252,7 @@ class engtype : public shared_string {
     index = ndx;
   }
 
-  inline int getIndex() const { return index; }
   */
-        /**
-            Register a new type of solution engine.
-                @param  et  New engine type to register.
-                            If it duplicates an existing one,
-                            it will be deleted and the duplicate returned.
-                @return     The registered engine type.
-        */
-        static engtype* registerEngineType(engtype* et);
-
-        /** Find the engine type with the given name, if there is one.
-                @param  name  Name of engine type to look for.
-                @return The desired engine type, or null if not found.
-        */
-        static engtype* findEngineType(const char* name);
-
-
 
         /**
             Register a solution engine.
@@ -339,10 +323,47 @@ class engtype : public shared_string {
         */
         void solveMeasures(hldsm* m, set_of_measures* list);
 
+    protected:
         /** Build a measure set for this engine type.
             Default behavior is to return 0.
         */
         virtual set_of_measures* makeMeasureSet() const;
+
+    public:
+        //
+        // Static methods for registering engine types
+        //
+
+        /**
+            Register a new type of solution engine.
+                @param  et  New engine type to register.
+                            If it duplicates an existing one,
+                            it will be deleted and the duplicate returned.
+                @return     The registered engine type.
+        */
+        static engtype* registerEngineType(engtype* et);
+
+        /// Get the number of registered engine types.
+        static inline unsigned numEngineTypes() {
+            return registry_size;
+        }
+
+        /**
+            Build a set of measures for each engine type.
+            Used to initialize measure sets within model instances.
+                @return An array of set_of_measure pointers,
+                        with dimension equal to numEngineTypes().
+                        Element i is obtained by calling method
+                        makeMeasureSet on the measure type with index i.
+        */
+        static set_of_measures** buildMeasureGroups();
+
+        /** Find the engine type with the given name, if there is one.
+                @param  name  Name of engine type to look for.
+                @return The desired engine type, or null if not found.
+        */
+        static engtype* findEngineType(const char* name);
+
 
     private:
         void killEngTree();
@@ -351,7 +372,7 @@ class engtype : public shared_string {
     private:
         const char* doc;
         calling_form form;
-    //  int index;
+        unsigned index;
 
         bool finalized;
 
@@ -368,6 +389,7 @@ class engtype : public shared_string {
     private:
         /// Registry of all engine types
         static splayOfShared* registry;
+        static unsigned registry_size;
 };
 
 // ******************************************************************

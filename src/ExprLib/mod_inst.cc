@@ -4,7 +4,6 @@
 #include "mod_def.h"
 #include "../Utils/strings.h"
 #include "../Options/options.h"
-#include "exprman.h"
 #include "arrays.h"
 #include "measures.h"
 #include "engine.h"
@@ -20,8 +19,6 @@
 // *                                                                *
 // ******************************************************************
 
-const exprman* lldsm::em = 0;
-
 lldsm::lldsm(model_type t)
  : shared_object()
 {
@@ -32,13 +29,6 @@ lldsm::lldsm(model_type t)
 
 lldsm::~lldsm()
 {
-}
-
-void lldsm::initOptions(exprman* om)
-{
-  em = om;
-  if (0==om) return;
-
 }
 
 const char* lldsm::getNameOf(model_type t)
@@ -62,7 +52,7 @@ bool lldsm::Print(std::ostream &s, int) const
   return true;
 }
 
-void lldsm::reportMemUsage(exprman* em, const char* prefix) const
+void lldsm::reportMemUsage(const char* prefix) const
 {
 }
 
@@ -83,8 +73,6 @@ long lldsm::bailOut(const char* sfile, unsigned sline, const char* why) const
 // *                                                                *
 // ******************************************************************
 
-const exprman* hldsm::em = 0;
-
 hldsm::hldsm(model_type t) : shared_object()
 {
   mtype = t;
@@ -99,15 +87,10 @@ hldsm::~hldsm()
   delete part;
 }
 
-void hldsm::initOptions(exprman* om)
-{
-  em = om;
-}
-
 bool hldsm::buildPartInfo()
 {
   if (part) return true;
-  engtype* VarOrder = em->findEngineType("VariableOrdering");
+  engtype* VarOrder = engtype::findEngineType("VariableOrdering");
   if (0==VarOrder) return false;
   result dummy;
   VarOrder->runEngine(this, dummy);
@@ -642,7 +625,7 @@ mi_call::mi_call(const location &W, const model_def* p, expr* m, int slot)
   mdl = m;
   msr_slot = slot;
   const symbol* msr = parent->GetSymbol(msr_slot);
-  SetType(em->SafeType(msr));
+  SetType(expr::SafeType(msr));
 }
 
 mi_call::~mi_call()
@@ -755,7 +738,7 @@ mi_acall::mi_acall(const location &W, const model_def* p,
   indx = i;
   numindx = ni;
   const symbol* msr = parent->GetSymbol(msr_slot);
-  SetType(em->SafeType(msr));
+  SetType(expr::SafeType(msr));
 }
 
 mi_acall::~mi_acall()

@@ -173,6 +173,7 @@ option_manager* engine::internalOpts()
 // ******************************************************************
 
 splayOfShared* engtype::registry = nullptr;
+unsigned engtype::registry_size = 0;
 
 engtype::engtype(const char* n, const char* d, calling_form f)
     : shared_string(n)
@@ -194,25 +195,6 @@ engtype::~engtype()
 {
     killEngTree();
     delete[] engineList;
-}
-
-engtype* engtype::registerEngineType(engtype* et)
-{
-    if (!registry) {
-        registry = new splayOfShared(16, 0);
-    }
-    engtype* ret = smart_cast <engtype*> (registry->insert(et));
-    if (ret != et) {
-        Delete(et);
-    }
-    return ret;
-}
-
-engtype* engtype::findEngineType(const char* name)
-{
-    if (!registry) return nullptr;
-    const_string S(name);
-    return smart_cast <engtype*> (registry->find(&S));
 }
 
 void engtype::registerEngine(engine* e)
@@ -313,6 +295,37 @@ set_of_measures* engtype::makeMeasureSet() const
     DCASSERT(Grouped != form);
     return nullptr;
 }
+
+engtype* engtype::registerEngineType(engtype* et)
+{
+    if (!registry) {
+        registry = new splayOfShared(16, 0);
+        registry_size = 0;
+    }
+    et->index = registry_size;
+    engtype* ret = smart_cast <engtype*> (registry->insert(et));
+    if (ret != et) {
+        Delete(et);
+    } else {
+        ++ registry_size;
+    }
+    return ret;
+}
+
+set_of_measures** engtype::buildMeasureGroups()
+{
+    // TBD COPY FROM mod_inst.cc
+    // and build a traversal for this
+    foo bar;
+}
+
+engtype* engtype::findEngineType(const char* name)
+{
+    if (!registry) return nullptr;
+    const_string S(name);
+    return smart_cast <engtype*> (registry->find(&S));
+}
+
 
 void engtype::killEngTree()
 {
