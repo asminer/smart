@@ -246,14 +246,6 @@ class engtype : public shared_string {
         inline calling_form getForm() const { return form; }
         inline unsigned getIndex() const { return index; }
 
-  /*
-  inline void setIndex(int ndx) {
-    DCASSERT(0==index);
-    index = ndx;
-  }
-
-  */
-
         /**
             Register a solution engine.
             The first solution engine to be registered will also
@@ -385,6 +377,7 @@ class engtype : public shared_string {
         engine* selected_engine;
 
         friend class engine_watcher;
+        friend class build_groups_traversal;
 
     private:
         /// Registry of all engine types

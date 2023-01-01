@@ -370,7 +370,7 @@ private:
   /// List of groups of measures, sorted by engine type.
   set_of_measures** mgroups;
   /// Number of measure groups.
-  int num_groups;
+  unsigned num_groups;
 
   /// Discrete-state, compiled "meta" model used by engines.
   hldsm* compiled;

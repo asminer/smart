@@ -7,6 +7,7 @@
 #include "arrays.h"
 #include "measures.h"
 #include "engine.h"
+#include "bogus.h"
 
 #include <sstream>
 
@@ -299,17 +300,8 @@ model_instance::model_instance(const location &W, const model_def* dfn)
   slist = 0;
 
   // Initialize the groups of measures
-  num_groups = em->getNumEngineTypes();
-  mgroups = new set_of_measures* [num_groups];
-  for (int i=0; i<num_groups; i++) mgroups[i] = 0;
-  for (int i=0; i<num_groups; i++) {
-    const engtype* et = em->getEngineTypeNumber(i);
-    int j = et->getIndex();
-    CHECK_RANGE(0, j, num_groups);
-    DCASSERT(0==mgroups[j]);
-    mgroups[j] = et->makeMeasureSet();
-  }
-
+  num_groups = engtype::numEngineTypes();
+  mgroups = engtype::buildMeasureGroups();
   num_accepted_msrs = 0;
 }
 
@@ -402,7 +394,6 @@ void model_instance::GroupMeasure(measure* m)
 void model_instance::SolveMeasure(traverse_data &x, measure* m)
 {
   DCASSERT(m);
-  DCASSERT(em);
   DCASSERT(m->isReady());
   engtype* et = m->EngineType();
   DCASSERT(et);
@@ -508,7 +499,7 @@ void model_instance::Deconstruct()
   Delete(compiled);
   compiled = 0;
 
-  for (int i=0; i<num_groups; i++) delete mgroups[i];
+  for (unsigned i=0; i<num_groups; i++) delete mgroups[i];
   delete[] mgroups;
   num_groups = 0;
 }
@@ -856,15 +847,15 @@ bool mi_acall::Print(std::ostream &s, int) const
 
 inline expr* Bailout(expr* ret, expr** p, int np)
 {
-  if (p) {
-    for (int i=0; i<np; i++)  Delete(p[i]);
-    delete[] p;
-  }
-  return ret;
+    if (p) {
+        for (int i=0; i<np; i++)  Delete(p[i]);
+        delete[] p;
+    }
+    return ret;
 }
 
-const model_def* GrabModelType(const exprman* em, const location &W,
-        bool want_array, const symbol* mi)
+const model_def* GrabModelType(const location &W, bool want_array,
+        const symbol* mi)
 {
     if (0==mi) return 0;
     // first, check array status
@@ -886,8 +877,8 @@ const model_def* GrabModelType(const exprman* em, const location &W,
     return p;
 }
 
-int GrabMsrSlot(const exprman* em, const location &W, const model_def* p,
-    symbol* mi, bool want_array, const char* msr_name)
+int GrabMsrSlot(const location &W, const model_def* p, symbol* mi,
+        bool want_array, const char* msr_name)
 {
     if (0==p || 0==msr_name) return -1;
     int slot = p->FindVisible(msr_name);
@@ -920,77 +911,77 @@ int GrabMsrSlot(const exprman* em, const location &W, const model_def* p,
     return slot;
 }
 
-bool OkMsrArrayCall(const exprman* em, const location &W,
-      const model_def* p, int slot, expr** pass, int np)
+bool OkMsrArrayCall(const location &W, const model_def* p, int slot,
+        expr** pass, int np)
 {
-  if (0==p || slot<0) {
+    if (0==p || slot<0) {
+        if (pass) {
+            for (int i=0; i<np; i++) Delete(pass[i]);
+            delete[] pass;
+        }
+        return false;
+    }
+    const symbol* foo = p->GetSymbol(slot);
+    const array* msr = smart_cast <const array*> (foo);
+    DCASSERT(msr);
+    bool ok = msr->checkArrayCall(W, pass, np);
+    if (ok) return true;
     if (pass) {
-      for (int i=0; i<np; i++) Delete(pass[i]);
-      delete[] pass;
+        for (int i=0; i<np; i++) Delete(pass[i]);
+        delete[] pass;
     }
     return false;
-  }
-  const symbol* foo = p->GetSymbol(slot);
-  const array* msr = smart_cast <const array*> (foo);
-  DCASSERT(msr);
-  bool ok = msr->checkArrayCall(W, pass, np);
-  if (ok) return true;
-  if (pass) {
-    for (int i=0; i<np; i++) Delete(pass[i]);
-    delete[] pass;
-  }
-  return false;
 }
 
 
-expr* exprman::makeMeasureCall(const location &W,
-      symbol* mi, const char* msr_name) const
+expr* expr::makeMeasureCall(const location &W, symbol* mi, const char* name)
 {
-  const model_def* p = GrabModelType(this, W, false, mi);
-  int slot = GrabMsrSlot(this, W, p, mi, false, msr_name);
-  if (slot<0) return makeError();
-  return new mi_call(W, p, mi, slot);
+    const model_def* p = GrabModelType(W, false, mi);
+    int slot = GrabMsrSlot(W, p, mi, false, name);
+    if (slot<0) return bogus_expr::makeError();
+    return new mi_call(W, p, mi, slot);
 }
 
 
-expr* exprman::makeMeasureCall(const location &W,
-      symbol* mi, expr** indexes, int ni, const char* msr_name) const
+expr* expr::makeMeasureCall(const location &W, symbol* mi,
+        expr** indexes, int ni, const char* msr_name)
 {
-  const model_def* p = GrabModelType(this, W, true, mi);
-  int slot = GrabMsrSlot(this, W, p, mi, false, msr_name);
-  expr* m;
-  if (slot >= 0)  m = makeArrayCall(W, mi, indexes, ni);
-  else            m = Bailout(makeError(), indexes, ni);
-  if (!isOrdinary(m))  return m;
-  return new mi_call(W, p, m, slot);
+    const model_def* p = GrabModelType(W, true, mi);
+    int slot = GrabMsrSlot(W, p, mi, false, msr_name);
+    expr* m;
+    if (slot >= 0)  m = makeArrayCall(W, mi, indexes, ni);
+    else            m = Bailout(bogus_expr::makeError(), indexes, ni);
+    if (bogus_expr::orNull(m)) return m;
+    return new mi_call(W, p, m, slot);
 }
 
 
-expr* exprman::makeMeasureCall(const location &W,
-      symbol* mi, const char* msr_name, expr** indexes, int ni) const
+expr* expr::makeMeasureCall(const location &W, symbol* mi,
+        const char* msr_name, expr** indexes, int ni)
 {
-  const model_def* p = GrabModelType(this, W, false, mi);
-  int slot = GrabMsrSlot(this, W, p, mi, true, msr_name);
-  if (OkMsrArrayCall(this, W, p, slot, indexes, ni))
-    return new mi_acall(W, p, mi, slot, indexes, ni);
-  else
-    return makeError();
+    const model_def* p = GrabModelType(W, false, mi);
+    int slot = GrabMsrSlot(W, p, mi, true, msr_name);
+    if (OkMsrArrayCall(W, p, slot, indexes, ni)) {
+        return new mi_acall(W, p, mi, slot, indexes, ni);
+    } else {
+        return bogus_expr::makeError();
+    }
 }
 
-expr* exprman::makeMeasureCall(const location &W,
-      symbol* mi, expr** i, int ni,
-      const char* msr_name, expr** j, int nj) const
+expr* expr::makeMeasureCall(const location &W, symbol* mi, expr** i, int ni,
+      const char* msr_name, expr** j, int nj)
 {
-  const model_def* p = GrabModelType(this, W, true, mi);
-  int slot = GrabMsrSlot(this, W, p, mi, true, msr_name);
-  expr* m;
-  if (slot >= 0)  m = makeArrayCall(W, mi, i, ni);
-  else            m = Bailout(makeError(), i, ni);
-  if (!isOrdinary(m))  return Bailout(m, j, nj);
-  if (OkMsrArrayCall(this, W, p, slot, j, nj))
-    return new mi_acall(W, p, m, slot, j, nj);
-  else
-    return makeError();
+    const model_def* p = GrabModelType(W, true, mi);
+    int slot = GrabMsrSlot(W, p, mi, true, msr_name);
+    expr* m;
+    if (slot >= 0)  m = makeArrayCall(W, mi, i, ni);
+    else            m = Bailout(bogus_expr::makeError(), i, ni);
+    if (bogus_expr::orNull(m))  return Bailout(m, j, nj);
+    if (OkMsrArrayCall(W, p, slot, j, nj)) {
+        return new mi_acall(W, p, m, slot, j, nj);
+    } else {
+        return bogus_expr::makeError();
+    }
 }
 
 
@@ -1002,11 +993,13 @@ expr* exprman::makeMeasureCall(const location &W,
 
 lldsm* MakeErrorModel()
 {
-  return new error_lldsm();
+    return new error_lldsm();
 }
 
+/*
 void InitLLM(exprman* om)
 {
   lldsm::initOptions(om);
   hldsm::initOptions(om);
 }
+*/

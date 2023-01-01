@@ -1070,8 +1070,8 @@ public:
         @return ERROR,  if some error occurs (will make noise).
                 A new measure call expression, otherwise.
   */
-  expr* makeMeasureCall(const location& W,
-      symbol* mi, const char* name) const;
+//  expr* makeMeasureCall(const location& W,
+ //     symbol* mi, const char* name) const;
 
   /** Make a measure array call expression.
       For expressions of the form
@@ -1088,9 +1088,9 @@ public:
         @return ERROR,  if some error occurs (will make noise).
                 A new measure call expression, otherwise.
   */
-  expr* makeMeasureCall(const location& W,
-      symbol* mi, const char* name,
-      expr** i, int ni) const;
+  // expr* makeMeasureCall(const location& W,
+      // symbol* mi, const char* name,
+      // expr** i, int ni) const;
 
   /** Make a measure array call expression.
       For expressions of the form
@@ -1107,9 +1107,9 @@ public:
         @return ERROR,  if some error occurs (will make noise).
                 A new measure call expression, otherwise.
   */
-  expr* makeMeasureCall(const location& W,
-      symbol* mi, expr** i, int ni,
-      const char* name) const;
+  // expr* makeMeasureCall(const location& W,
+      // symbol* mi, expr** i, int ni,
+      // const char* name) const;
 
 
   /** Make a measure array call expression.
@@ -1129,9 +1129,9 @@ public:
         @return ERROR,  if some error occurs (will make noise).
                 A new measure call expression, otherwise.
   */
-  expr* makeMeasureCall(const location& W,
-      symbol* mi, expr** i, int ni,
-      const char* name, expr** j, int nj) const;
+  // expr* makeMeasureCall(const location& W,
+      // symbol* mi, expr** i, int ni,
+      // const char* name, expr** j, int nj) const;
 
 
 

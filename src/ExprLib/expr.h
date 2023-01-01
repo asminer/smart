@@ -767,6 +767,77 @@ class expr : public shared_object {
         static expr* makeArrayCall(const location& W, symbol* array,
             expr** indexes, int dim);
 
+        /** Make a measure call expression.
+            For expressions of the form
+                m.msr;
+            where m is a constant with type "model".
+            Implemented in mod_inst.cc.
+
+                @param  W     Where defined.
+                @param  mi    A model instance.
+                @param  name  Name of the measure.
+
+                @return ERROR,  if some error occurs (will make noise).
+                                A new measure call expression, otherwise.
+        */
+        static expr* makeMeasureCall(const location& W, symbol* mi,
+                const char* name);
+
+        /** Make a measure array call expression.
+            For expressions of the form
+                m.msr[i, j, k];
+            where m is a constant with type "model".
+            Implemented in mod_inst.cc.
+
+                @param  W     Where defined.
+                @param  mi    A model instance.
+                @param  name  Name of the measure.
+                @param  i     Passed array indexes.
+                @param  ni    Number of passed indexes.
+
+                @return ERROR,  if some error occurs (will make noise).
+                                A new measure call expression, otherwise.
+        */
+        static expr* makeMeasureCall(const location& W, symbol* mi,
+                const char* name, expr** i, int ni);
+
+        /** Make a measure array call expression.
+            For expressions of the form
+                m[i, j, k].msr;
+            where m is a constant with type "model".
+            Implemented in mod_inst.cc.
+
+                @param  W     Where defined.
+                @param  mi    A model instance array.
+                @param  i     Passed array indexes.
+                @param  ni    Number of passed indexes.
+                @param  name  Name of the measure.
+
+                @return ERROR,  if some error occurs (will make noise).
+                                A new measure call expression, otherwise.
+        */
+        static expr* makeMeasureCall(const location& W, symbol* mi,
+                expr** i, int ni, const char* name);
+
+        /** Make a measure array call expression.
+            For expressions of the form
+                m[i].msr[j];
+            where m is a constant with type "model".
+            Implemented in mod_inst.cc.
+
+                @param  W     Where defined.
+                @param  mi    A model instance array.
+                @param  i     Passed array indexes, for mi.
+                @param  ni    Number of passed indexes for mi.
+                @param  name  Name of the measure.
+                @param  j     Passed array indexes, for name.
+                @param  nj    Number of passed indexes for name.
+
+                @return ERROR,  if some error occurs (will make noise).
+                                A new measure call expression, otherwise.
+        */
+        static expr* makeMeasureCall(const location& W, symbol* mi,
+                expr** i, int ni, const char* name, expr** j, int nj);
 
     protected:
         /// Expression debugging.

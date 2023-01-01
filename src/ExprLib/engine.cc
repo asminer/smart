@@ -169,6 +169,35 @@ option_manager* engine::internalOpts()
 }
 
 // ******************************************************************
+// *             traversal to build  groups of measures             *
+// ******************************************************************
+
+class build_groups_traversal : public splayOfShared::tree_traversal {
+        set_of_measures** groups;
+        unsigned numgroups;
+    public:
+        build_groups_traversal(set_of_measures** g, unsigned ng);
+        virtual void visit(shared_object* item);
+};
+
+build_groups_traversal::build_groups_traversal(set_of_measures** g,
+        unsigned ng)
+{
+    groups = g;
+    numgroups = ng;
+}
+
+void build_groups_traversal::visit(shared_object* item)
+{
+    const engtype* et = dynamic_cast <const engtype*> (item);
+    DCASSERT(et);
+    const unsigned i = et->getIndex();
+    CHECK_RANGE(0, i, numgroups);
+    DCASSERT(nullptr == groups[i]);
+    groups[i] = et->makeMeasureSet();
+}
+
+// ******************************************************************
 // *                        engtype  methods                        *
 // ******************************************************************
 
@@ -314,9 +343,16 @@ engtype* engtype::registerEngineType(engtype* et)
 
 set_of_measures** engtype::buildMeasureGroups()
 {
-    // TBD COPY FROM mod_inst.cc
-    // and build a traversal for this
-    foo bar;
+    set_of_measures** sets = registry_size
+        ? new set_of_measures*[registry_size]
+        : nullptr;
+
+    for (unsigned i=0; i<registry_size; i++) {
+        sets[i] = nullptr;
+    }
+
+    build_groups_traversal T(sets, registry_size);
+    return sets;
 }
 
 engtype* engtype::findEngineType(const char* name)
