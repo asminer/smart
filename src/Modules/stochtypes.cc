@@ -1,19 +1,17 @@
 
-#include "stochtypes.h"
-
 #include "../Utils/initializer.h"
 
 #include "../ExprLib/symb_tab.h"
-#include "../ExprLib/startup.h"
-#include "../ExprLib/exprman.h"
 #include "../ExprLib/functions.h"
 #include "../ExprLib/engine.h"
 #include "../ExprLib/assoc.h"
 #include "../ExprLib/ops_int.h"
 #include "../ExprLib/intervals.h"
 #include "../ExprLib/casting.h"
+
 #include "../Formlsms/stoch_llm.h"
 #include "../Formlsms/phase_hlm.h"
+
 #include "../_RngLib/rng.h"
 #include "statevects.h"
 
@@ -1091,7 +1089,7 @@ public:
 
 phase_add_op::myexpr
 ::myexpr(const location &W, const type* t, expr **x, bool* f, int n)
- : summation(W, exprman::aop_plus, t, x, f, n)
+ : summation(W, assoc_op::aop_plus, t, x, f, n)
 {
 }
 
@@ -1152,7 +1150,7 @@ expr* phase_add_op::myexpr::buildAnother(expr** x, bool* f, int n) const
 // *                      phase_add_op methods                      *
 // ******************************************************************
 
-phase_add_op::phase_add_op() : assoc_op(exprman::aop_plus)
+phase_add_op::phase_add_op() : assoc_op(assoc_op::aop_plus)
 {
 }
 
@@ -1163,7 +1161,7 @@ int phase_add_op::getPromoteDistance(expr** list, bool* flip, int N) const
   if (0==anstype) return -1;
   int pd = 0;
   for (int i=0; i<N; i++) {
-    int d = em->getPromoteDistance(list[i]->Type(), anstype);
+    int d = typeconv::getPromoteDistance(list[i]->Type(), anstype);
     if (d<0) return -1;
     pd += d;
   }
@@ -1175,8 +1173,8 @@ int phase_add_op
 {
   const type* anstype = getExprType(f, lt, rt);
   if (0==anstype) return -1;
-  int foo = em->getPromoteDistance(lt, anstype);
-  int bar = em->getPromoteDistance(rt, anstype);
+  int foo = typeconv::getPromoteDistance(lt, anstype);
+  int bar = typeconv::getPromoteDistance(rt, anstype);
   DCASSERT(foo>=0);
   DCASSERT(bar>=0);
   return  foo + bar;
@@ -1196,8 +1194,8 @@ const type* phase_add_op
   }
   DCASSERT(anstype);
 
-  if (em->getPromoteDistance(l, anstype) < 0) return 0;
-  if (em->getPromoteDistance(r, anstype) < 0) return 0;
+  if (typeconv::getPromoteDistance(l, anstype) < 0) return 0;
+  if (typeconv::getPromoteDistance(r, anstype) < 0) return 0;
 
   return anstype;
 }
@@ -1215,7 +1213,7 @@ assoc* phase_add_op
   const type* anstype = getType(list, N);
   bool ok = anstype;
   if (ok) for (int i=0; i<N; i++) {
-    list[i] = em->promote(list[i], anstype);
+    list[i] = typeconv::castExpr(true, W, anstype, list[i]);
     if (0==list[i]) ok = false;
   }
   if (!ok)  return killArgs(list, N);
@@ -1298,7 +1296,7 @@ public:
 
 phase_mult_op::myexpr
 ::myexpr(const location &W, const type* t, expr **x, int n)
- : product(W, exprman::aop_times, t, x, 0, n)
+ : product(W, assoc_op::aop_times, t, x, 0, n)
 {
   if (n==2) {
     const_part = Share(x[1]);
@@ -1397,15 +1395,15 @@ int phase_mult_op::getPromoteDistance(expr** list, bool* flip, int N) const
     DCASSERT(ph);
     DCASSERT(con);
   }
-  int pd = em->getPromoteDistance(list[phi]->Type(), ph);
+  int pd = typeconv::getPromoteDistance(list[phi]->Type(), ph);
   DCASSERT(pd>=0);
   for (int i=0; i<phi; i++) {
-    int d = em->getPromoteDistance(list[i]->Type(), con);
+    int d = typeconv::getPromoteDistance(list[i]->Type(), con);
     if (d<0) return -1;
     pd += d;
   }
   for (int i=phi+1; i<N; i++) {
-    int d = em->getPromoteDistance(list[i]->Type(), con);
+    int d = typeconv::getPromoteDistance(list[i]->Type(), con);
     if (d<0) return -1;
     pd += d;
   }
@@ -1426,11 +1424,11 @@ int phase_mult_op
     DCASSERT(base);
     if (has_proc) base = base->addProc();
     DCASSERT(base);
-    int foo = em->getPromoteDistance(lt, base);
+    int foo = typeconv::getPromoteDistance(lt, base);
     if (foo<0) return -1;
     const type* ph = rt;
     if (has_proc) if (false == ph->hasProc()) ph = ph->addProc();
-    int bar = em->getPromoteDistance(rt, ph);
+    int bar = typeconv::getPromoteDistance(rt, ph);
     DCASSERT(bar>=0);
     return foo+bar;
   }
@@ -1451,11 +1449,11 @@ const type* phase_mult_op
     DCASSERT(base);
     if (has_proc) base = base->addProc();
     DCASSERT(base);
-    int foo = em->getPromoteDistance(lt, base);
+    int foo = typeconv::getPromoteDistance(lt, base);
     if (foo<0) return 0;
     const type* ph = rt;
     if (has_proc) if (false == ph->hasProc()) ph = ph->addProc();
-    DCASSERT(em->getPromoteDistance(rt, ph) >= 0);
+    DCASSERT(typeconv::getPromoteDistance(rt, ph) >= 0);
     return ph;
   }
   return 0;
@@ -1487,10 +1485,10 @@ assoc* phase_mult_op
     DCASSERT(con);
   }
   SWAP(list[0], list[phi]);
-  list[0] = em->promote(list[0], ph);
+  list[0] = typeconv::castExpr(true, W, ph, list[0]);
   if (0==list[0]) return killArgs(list, N);
   for (int i=1; i<N; i++) {
-    list[i] = em->promote(list[i], con);
+    list[i] = typeconv::castExpr(true, W, con, list[i]);
     if (0==list[i]) return killArgs(list, N);
   }
   return new myexpr(W, ph, list, N);
@@ -1668,7 +1666,7 @@ int max_ph::Traverse(traverse_data &x, expr** pass, int np)
     return max_si::Traverse(x, pass, np);
 
   // Promotion: first, do the usual
-  formals.promote(em, pass, np, Type());
+  formals.promote(pass, np, Type());
 
   // Now, check for independence
   if (haveDependencies(this, pass, np))
@@ -1720,7 +1718,7 @@ int min_ph::Traverse(traverse_data &x, expr** pass, int np)
     return min_si::Traverse(x, pass, np);
 
   // Promotion: first, do the usual
-  formals.promote(em, pass, np, Type());
+  formals.promote(pass, np, Type());
 
   // Now, check for independence
   if (haveDependencies(this, pass, np))
@@ -1785,7 +1783,7 @@ int order_ph::Traverse(traverse_data &x, expr** pass, int np)
     return order_si::Traverse(x, pass, np);
 
   // Promotion: first, do the usual
-  formals.promote(em, pass, np, Type());
+  formals.promote(pass, np, Type());
 
   // Now, check for independence
   if (haveDependencies(this, pass+1, np-1))
@@ -1904,7 +1902,7 @@ int choose_ph::Traverse(traverse_data &x, expr** pass, int np)
     return choose_si::Traverse(x, pass, np);
 
   // Promotion: first, do the usual
-  formals.promote(em, pass, np, Type());
+  formals.promote(pass, np, Type());
 
   // Now, check for independence
   if (haveDependencies(this, pass, np))
@@ -2284,7 +2282,7 @@ void print_ph::Compute(traverse_data &x, expr** pass, int np)
   out << ", state has dimension " << X->NumStateVars() << "\n";
 
   if (0==ProcGen) {
-    ProcGen = em->findEngineType("ProcessGeneration");
+    ProcGen = engtype::findEngineType("ProcessGeneration");
   }
   if (0==ProcGen) {
     out << "\tCouldn't build process: no engine type!\n";
@@ -2391,7 +2389,7 @@ void print_ddist::Compute(traverse_data &x, expr** pass, int np)
   if (0==X) return;
   if (!X->isDiscrete()) return;
 
-  engtype* ProcGen = em->findEngineType("ProcessGeneration");
+  engtype* ProcGen = engtype::findEngineType("ProcessGeneration");
   if (0==ProcGen) {
     expr_error E(x.parent);
     E << "Couldn't build process: no engine type!\n";
@@ -2534,7 +2532,7 @@ void print_cdist::Compute(traverse_data &x, expr** pass, int np)
   if (0==X) return;
   if (X->isDiscrete()) return;
 
-  engtype* ProcGen = em->findEngineType("ProcessGeneration");
+  engtype* ProcGen = engtype::findEngineType("ProcessGeneration");
   if (0==ProcGen) {
     expr_error E(x.parent);
     E << "Couldn't build process: no engine type!\n";
@@ -2700,7 +2698,6 @@ expo_promotions::expo_promotions() : general_conv()
 int expo_promotions::getDistance(const type* src, const type* dest) const
 {
   DCASSERT(src != dest);
-  DCASSERT(em);
   if (!type::matches(src->getBaseType(), "expo")) return -1;
   if (!type::matches(dest->getBaseType(), "real")) return -1;
   if (dest->getModifier() != PHASE && dest->getModifier() != RAND) return -1;
@@ -2811,7 +2808,6 @@ int2phint::int2phint() : general_conv()
 int int2phint::getDistance(const type* src, const type* dest) const
 {
   DCASSERT(src != dest);
-  DCASSERT(em);
   if (!type::matches(src->getBaseType(), "int")) return -1;
   if (!type::matches(dest->getBaseType(), "int")) return -1;
   if (src->getModifier() != DETERM) return -1;
@@ -2921,7 +2917,6 @@ real2phreal::real2phreal() : general_conv()
 int real2phreal::getDistance(const type* src, const type* dest) const
 {
   DCASSERT(src != dest);
-  DCASSERT(em);
   if (!type::matches(src->getBaseType(), "real")) return -1;
   if (!type::matches(dest->getBaseType(), "real")) return -1;
   if (src->getModifier() != DETERM) return -1;
@@ -3018,7 +3013,6 @@ ph2rand::ph2rand() : general_conv()
 int ph2rand::getDistance(const type* src, const type* dest) const
 {
   DCASSERT(src != dest);
-  DCASSERT(em);
   if (src->getModifier() != PHASE) return -1;
   if (dest->getModifier() != RAND) return -1;
   if (src->hasProc() && !dest->hasProc()) return -1;
@@ -3127,125 +3121,6 @@ phint2randreal::phint2randreal() : specific_conv(false)
 // *                                                                *
 // ******************************************************************
 
-class old_init_stochtypes : public startup {
-  public:
-    old_init_stochtypes();
-    virtual bool execute();
-};
-old_init_stochtypes the_stochtype_startup;
-
-
-old_init_stochtypes::old_init_stochtypes() : startup("init_stochtypes")
-{
-  usesResource("em");
-  usesResource("st");
-  buildsResource("stochtypes");
-  buildsResource("types");
-}
-
-bool old_init_stochtypes::execute()
-{
-  if (0==em)        return false;
-  if (0==st)        return false;
-
-  // Operations
-  em->registerOperation( new phase_add_op   );
-  em->registerOperation( new phase_mult_op  );
-
-  // expo multiplication...
-
-  // Type changes
-  em->registerConversion( new expo_promotions );
-  em->registerConversion( new int2phint       );
-  em->registerConversion( new real2phreal     );
-  em->registerConversion( new ph2rand         );
-  em->registerConversion( new phint2randreal  );
-
-  // Engines
-  engtype* AvgPh = MakeEngineType(em,
-      "AvgPh",
-      "Algorithm to use for computing the expected value of a phase expression.",
-      engtype::Model
-  );
-  engtype* VarPh = MakeEngineType(em,
-      "VarPh",
-      "Algorithm to use for computing the variance of a phase expression.",
-      engtype::Model
-  );
-  engtype* AvgRandReal = MakeEngineType(em,
-      "AvgRandReal",
-      "Algorithm to use for computing the expected value of a rand real expression, or the probability of a rand bool expression.",
-      engtype::FunctionCall
-  );
-
-  //
-  const type* t_int = type::find("int");
-  const type* t_real = type::find("real");
-  const type* t_expo = type::find("expo");
-
-  const type* t_ph_int =  type::find(false, false, PHASE, "int");
-  const type* t_ph_real = type::find(false, false, PHASE, "real");
-
-  const type* t_rand_int =  type::find(false, false, RAND, "int");
-  const type* t_rand_real = type::find(false, false, RAND, "real");
-
-  // Functions
-  st->addSymbol( new prob_finite(t_ph_int, AvgPh)             );
-  st->addSymbol( new prob_finite(t_ph_real, AvgPh)            );
-
-  st->addSymbol( new avg_ph(t_ph_int, AvgPh)                  );
-  st->addSymbol( new avg_ph(t_ph_real, AvgPh)                 );
-  st->addSymbol( new avg_rand(t_rand_real, AvgRandReal)       );
-
-  st->addSymbol( new var_ph(t_ph_int, VarPh)                  );
-  st->addSymbol( new var_ph(t_ph_real, VarPh)                 );
-
-  st->addSymbol( new bernoulli_ph(t_ph_int, t_real)           );
-  st->addSymbol( new bernoulli_rand(t_rand_int, t_rand_real)  );
-
-  st->addSymbol( new geometric_ph(t_ph_int, t_real)           );
-  st->addSymbol( new geometric_rand(t_rand_int, t_rand_real)  );
-
-  st->addSymbol( new equilikely_ph(t_ph_int, t_int)           );
-  st->addSymbol( new equilikely_rand(t_rand_int, t_rand_int)  );
-
-  st->addSymbol( new binomial_ph(t_ph_int, t_int, t_real) );
-  st->addSymbol( new binomial_rand(t_rand_int, t_rand_int, t_rand_real) );
-
-  st->addSymbol( new expo_ph(t_expo, t_real)                );
-  st->addSymbol( new erlang_ph(t_ph_real, t_int, t_real)  );
-
-  st->addSymbol( new expo_rand(t_rand_real, t_rand_real)      );
-  st->addSymbol( new erlang_rand(t_rand_real, t_rand_int, t_rand_real)  );
-  st->addSymbol( new uniform(t_rand_real)                     );
-
-  st->addSymbol( new choose_ph(t_ph_int)                      );
-  st->addSymbol( new choose_ph(t_ph_real)                     );
-  st->addSymbol( new choose_rand(t_rand_int)                  );
-  st->addSymbol( new choose_rand(t_rand_real)                 );
-
-  st->addSymbol( new cph2dph_unif(t_ph_real, t_ph_int)        );
-  st->addSymbol( new cph2dph_embed(t_ph_real, t_ph_int)       );
-  st->addSymbol( new max_ph(t_ph_int)                         );
-  st->addSymbol( new max_ph(t_ph_real)                        );
-  st->addSymbol( new min_ph(t_ph_int)                         );
-  st->addSymbol( new min_ph(t_ph_real)                        );
-  st->addSymbol( new order_ph(t_ph_int)                       );
-  st->addSymbol( new order_ph(t_ph_real)                      );
-
-  st->addSymbol( new print_range(t_rand_real)                 );
-  st->addSymbol( new print_ph(t_ph_int)                       );
-  st->addSymbol( new print_ph(t_ph_real)                      );
-  st->addSymbol( new print_deps(t_ph_int)                     );
-  st->addSymbol( new print_deps(t_ph_real)                    );
-  st->addSymbol( new print_ddist(t_ph_int)                    );
-  st->addSymbol( new print_cdist(t_ph_real)                   );
-
-  return true;
-}
-
-// ******************************************************************
-
 class init_stochtypes : public initializer {
     public:
         init_stochtypes();
@@ -3262,6 +3137,9 @@ init_stochtypes::init_stochtypes() : initializer("stochtypes.cc", 1, 1)
 
 void init_stochtypes::execute()
 {
+    //
+    // Types
+    //
     simple_type* t_expo  = type::registerNew(new simple_type("expo",
         "Exponential distribution",
         "Special type for the exponential distribution.")
@@ -3277,10 +3155,113 @@ void init_stochtypes::execute()
     DCASSERT(INT);
     type::allowProcMod(true, PHASE, INT);
     type::allowProcMod(true, RAND,  INT);
+    const type* t_int = INT;
 
     simple_type* REAL = type::find("real");
     DCASSERT(REAL);
     type::allowProcMod(true, PHASE, REAL);
     type::allowProcMod(true, RAND,  REAL);
+    const type* t_real = REAL;
+
+    //
+    // Type conversions (register themselves)
+    //
+    new expo_promotions;
+    new int2phint;
+    new real2phreal;
+    new ph2rand;
+    new phint2randreal;
+
+    //
+    // Operations (register themselves)
+    //
+    new phase_add_op;
+    new phase_mult_op;
+
+    // expo multiplication...
+
+    //
+    // Engines
+    //
+    engtype* AvgPh = MakeEngineType(
+        "AvgPh",
+        "Algorithm to use for computing the expected value of a phase expression.",
+        engtype::Model
+    );
+    engtype* VarPh = MakeEngineType(
+        "VarPh",
+        "Algorithm to use for computing the variance of a phase expression.",
+        engtype::Model
+    );
+    engtype* AvgRandReal = MakeEngineType(
+        "AvgRandReal",
+        "Algorithm to use for computing the expected value of a rand real expression, or the probability of a rand bool expression.",
+        engtype::FunctionCall
+    );
+
+    //
+    // Functions
+    //
+
+    const type* t_ph_int =  type::find(false, false, PHASE, "int");
+    const type* t_ph_real = type::find(false, false, PHASE, "real");
+
+    const type* t_rand_int =  type::find(false, false, RAND, "int");
+    const type* t_rand_real = type::find(false, false, RAND, "real");
+
+    symbol_table::addGlobal(new prob_finite(t_ph_int, AvgPh)            );
+    symbol_table::addGlobal(new prob_finite(t_ph_real, AvgPh)           );
+
+    symbol_table::addGlobal(new avg_ph(t_ph_int, AvgPh)                 );
+    symbol_table::addGlobal(new avg_ph(t_ph_real, AvgPh)                );
+    symbol_table::addGlobal(new avg_rand(t_rand_real, AvgRandReal)      );
+
+    symbol_table::addGlobal(new var_ph(t_ph_int, VarPh)                 );
+    symbol_table::addGlobal(new var_ph(t_ph_real, VarPh)                );
+
+    symbol_table::addGlobal(new bernoulli_ph(t_ph_int, t_real)          );
+    symbol_table::addGlobal(new bernoulli_rand(t_rand_int, t_rand_real) );
+
+    symbol_table::addGlobal(new geometric_ph(t_ph_int, t_real)          );
+    symbol_table::addGlobal(new geometric_rand(t_rand_int, t_rand_real) );
+
+    symbol_table::addGlobal(new equilikely_ph(t_ph_int, t_int)          );
+    symbol_table::addGlobal(new equilikely_rand(t_rand_int, t_rand_int) );
+
+    symbol_table::addGlobal(new binomial_ph(t_ph_int, t_int, t_real)    );
+    symbol_table::addGlobal(
+            new binomial_rand(t_rand_int, t_rand_int, t_rand_real)
+    );
+
+    symbol_table::addGlobal(new expo_ph(t_expo, t_real)                 );
+    symbol_table::addGlobal(new erlang_ph(t_ph_real, t_int, t_real)     );
+
+    symbol_table::addGlobal(new expo_rand(t_rand_real, t_rand_real)     );
+    symbol_table::addGlobal(
+            new erlang_rand(t_rand_real, t_rand_int, t_rand_real)
+    );
+    symbol_table::addGlobal(new uniform(t_rand_real)                    );
+
+    symbol_table::addGlobal(new choose_ph(t_ph_int)                     );
+    symbol_table::addGlobal(new choose_ph(t_ph_real)                    );
+    symbol_table::addGlobal(new choose_rand(t_rand_int)                 );
+    symbol_table::addGlobal(new choose_rand(t_rand_real)                );
+
+    symbol_table::addGlobal(new cph2dph_unif(t_ph_real, t_ph_int)       );
+    symbol_table::addGlobal(new cph2dph_embed(t_ph_real, t_ph_int)      );
+    symbol_table::addGlobal(new max_ph(t_ph_int)                        );
+    symbol_table::addGlobal(new max_ph(t_ph_real)                       );
+    symbol_table::addGlobal(new min_ph(t_ph_int)                        );
+    symbol_table::addGlobal(new min_ph(t_ph_real)                       );
+    symbol_table::addGlobal(new order_ph(t_ph_int)                      );
+    symbol_table::addGlobal(new order_ph(t_ph_real)                     );
+
+    symbol_table::addGlobal(new print_range(t_rand_real)                );
+    symbol_table::addGlobal(new print_ph(t_ph_int)                      );
+    symbol_table::addGlobal(new print_ph(t_ph_real)                     );
+    symbol_table::addGlobal(new print_deps(t_ph_int)                    );
+    symbol_table::addGlobal(new print_deps(t_ph_real)                   );
+    symbol_table::addGlobal(new print_ddist(t_ph_int)                   );
+    symbol_table::addGlobal(new print_cdist(t_ph_real)                  );
 }
 

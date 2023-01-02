@@ -33,8 +33,6 @@ public:
     */
     class process : public shared_object {
         stochastic_lldsm* parent;
-      protected:
-        static exprman* em;
       public:
         process();
       protected:

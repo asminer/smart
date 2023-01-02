@@ -2,8 +2,6 @@
 #include "../Options/optman.h"
 #include "../Options/options.h"
 #include "../Utils/initializer.h"
-#include "../ExprLib/startup.h" //
-#include "../ExprLib/exprman.h"
 #include "../ExprLib/symb_tab.h"
 #include "../ExprLib/functions.h"
 #include "../ExprLib/mod_vars.h"
@@ -1270,44 +1268,6 @@ void expected_si::Compute(traverse_data &x, expr** pass, int np)
 // *                                                                *
 // ******************************************************************
 
-class old_init_statevects : public startup {
-  public:
-    old_init_statevects();
-    virtual bool execute();
-};
-old_init_statevects the_statevect_startup;
-
-old_init_statevects::old_init_statevects() : startup("init_statevects")
-{
-  usesResource("em");
-  usesResource("st");
-  usesResource("statesettype");
-  buildsResource("statevects");
-  buildsResource("types");
-}
-
-bool old_init_statevects::execute()
-{
-  if (0==em)  return false;
-
-  // Functions
-  // ------------------------------------------------------------------
-  if (0==st) return false;
-  st->addSymbol(  new gt_si                     );
-  st->addSymbol(  new ge_si                     );
-  st->addSymbol(  new lt_si                     );
-  st->addSymbol(  new le_si                     );
-
-  st->addSymbol(  new condition_si              );
-  st->addSymbol(  new prob_si                   );
-  st->addSymbol(  new expected_si(type::find("stateprobs")) );
-  st->addSymbol(  new expected_si(type::find("statemsrs"))  );
-
-  return true;
-}
-
-// ******************************************************************
-
 class init_statevects : public initializer {
     public:
         init_statevects();
@@ -1318,7 +1278,7 @@ static init_statevects the_statevect_initializer;
 
 init_statevects::init_statevects() : initializer(__FILE__, 1, 0)
 {
-    builds_resource(0, "types-extra");
+    builds_resource(0, "statevects");
 }
 
 void init_statevects::execute()
@@ -1354,5 +1314,19 @@ void init_statevects::execute()
         statevect::SSTATE
     );
     statevect::display_style = statevect::SINDEX;
+
+    //
+    // Functions
+    //
+    symbol_table::addGlobal(    new gt_si                                   );
+    symbol_table::addGlobal(    new ge_si                                   );
+    symbol_table::addGlobal(    new lt_si                                   );
+    symbol_table::addGlobal(    new le_si                                   );
+
+    symbol_table::addGlobal(    new condition_si                            );
+    symbol_table::addGlobal(    new prob_si                                 );
+    symbol_table::addGlobal(    new expected_si(type::find("stateprobs"))   );
+    symbol_table::addGlobal(    new expected_si(type::find("statemsrs"))    );
+
 }
 

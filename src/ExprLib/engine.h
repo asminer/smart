@@ -466,23 +466,15 @@ engine* MakeRedirectionEngine(const char* n, const char* d, engtype* e);
 
 
 
-/** Safe and proper registration of engine types.
+/**
+    For backward compatability
 */
-/*
-inline engtype* MakeEngineType(exprman* em, const char* n,
-                            const char* d, engtype::calling_form f)
+inline engtype* MakeEngineType(const char* n, const char* d,
+        engtype::calling_form f)
 {
-  DCASSERT(em);
-  engtype* et = em->findEngineType(n);
-  if (et) {
-    DCASSERT(et->getForm() == f);
-    return et;
-  }
-  et = new engtype(n, d, f);
-  CHECK_RETURN(em->registerEngineType(et), true);
-  return et;
+    return engtype::registerEngineType( new engtype(n, d, f) );
 }
-*/
+
 
 /** Safe and proper registration of engines.
 */

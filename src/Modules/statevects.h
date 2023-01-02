@@ -10,7 +10,6 @@
 
 #include "../_GraphLib/graphlib.h"
 
-class exprman;
 class symbol_table;
 class stochastic_lldsm;
 class stateset;
@@ -148,7 +147,6 @@ private:
   static const unsigned FULL = 0;
   static const unsigned SINDEX = 1;
   static const unsigned SSTATE = 2;
-  friend class old_init_statevects;
   friend class init_statevects;
   friend class statevect_printer;
 };
