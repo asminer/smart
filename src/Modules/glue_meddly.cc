@@ -189,25 +189,6 @@ void shared_ddedge::freeIterator()
 
 // ******************************************************************
 // *                                                                *
-// *                    Helper  functions/macros                    *
-// *                                                                *
-// ******************************************************************
-
-/*
-inline void reportMeddlyError(const exprman* em, const expr* cause,
-    const char* what, MEDDLY::error e)
-{
-  if (em->startError()) {
-    em->causedBy(cause);
-    if (what)  em->cerr() << "Error while " << what << ": ";
-    em->cerr() << e.getName();
-    em->stopIO();
-  }
-}
-*/
-
-// ******************************************************************
-// *                                                                *
 // *                     meddly_encoder methods                     *
 // *                                                                *
 // ******************************************************************
@@ -485,7 +466,7 @@ void meddly_encoder::createMinterms(const int* const* from, const int* const* to
 }
 
 void meddly_encoder
-::buildUnary(exprman::unary_opcode op, const shared_object* opnd,
+::buildUnary(unary_op::opcode op, const shared_object* opnd,
               shared_object* answer)
 {
   const shared_ddedge* opdd = dynamic_cast<const shared_ddedge*> (opnd);
@@ -500,7 +481,7 @@ void meddly_encoder
 
   try {
     switch (op) {
-      case exprman::uop_not: {
+      case unary_op::uop_not: {
         if (MEDDLY::forest::BOOLEAN == F->getRangeType()) {
           F->createEdge(true, out);
           out -= opdd->E;
@@ -512,7 +493,7 @@ void meddly_encoder
         return;
       }
 
-      case exprman::uop_neg: {
+      case unary_op::uop_neg: {
         F->createEdge(long(0), out);
         out -= opdd->E;
         ans->E = out;
@@ -530,7 +511,7 @@ void meddly_encoder
 
 
 void meddly_encoder
-::buildBinary(const shared_object* left, exprman::binary_opcode op,
+::buildBinary(const shared_object* left, binary_op::opcode op,
               const shared_object* right, shared_object* answer)
 {
   const shared_ddedge* meL = dynamic_cast<const shared_ddedge*> (left);
@@ -547,55 +528,55 @@ void meddly_encoder
 
   try {
     switch (op) {
-      case exprman::bop_equals:
+      case binary_op::bop_equals:
         MEDDLY::apply(
           MEDDLY::EQUAL, meL->E, meR->E, out
         );
         break;
 
-      case exprman::bop_nequal:
+      case binary_op::bop_nequal:
         MEDDLY::apply(
           MEDDLY::NOT_EQUAL, meL->E, meR->E, out
         );
         break;
 
-      case exprman::bop_le:
+      case binary_op::bop_le:
         MEDDLY::apply(
           MEDDLY::LESS_THAN_EQUAL, meL->E, meR->E, out
         );
         break;
 
-      case exprman::bop_ge:
+      case binary_op::bop_ge:
         MEDDLY::apply(
           MEDDLY::GREATER_THAN_EQUAL, meL->E, meR->E, out
         );
         break;
 
-      case exprman::bop_gt:
+      case binary_op::bop_gt:
         MEDDLY::apply(
           MEDDLY::GREATER_THAN, meL->E, meR->E, out
         );
         break;
 
-      case exprman::bop_lt:
+      case binary_op::bop_lt:
         MEDDLY::apply(
           MEDDLY::LESS_THAN, meL->E, meR->E, out
         );
         break;
 
-      case exprman::bop_diff:
+      case binary_op::bop_diff:
         MEDDLY::apply(
           MEDDLY::DIFFERENCE, meL->E, meR->E, out
         );
         break;
 
-      case exprman::bop_mod:
+      case binary_op::bop_mod:
         MEDDLY::apply(
           MEDDLY::MODULO, meL->E, meR->E, out
         );
         break;
 
-      case exprman::bop_implies:
+      case binary_op::bop_implies:
         MEDDLY::apply(
           MEDDLY::LESS_THAN_EQUAL, meL->E, meR->E, out
         );
@@ -614,7 +595,7 @@ void meddly_encoder
 
 
 void meddly_encoder
-::buildAssoc(const shared_object* left, bool flip, exprman::assoc_opcode op,
+::buildAssoc(const shared_object* left, bool flip, assoc_op::opcode op,
              const shared_object* right, shared_object* answer)
 {
   const shared_ddedge* meL = dynamic_cast<const shared_ddedge*> (left);
@@ -632,8 +613,8 @@ void meddly_encoder
   try {
     switch (op) {
 
-      case exprman::aop_semi:
-      case exprman::aop_and:
+      case assoc_op::aop_semi:
+      case assoc_op::aop_and:
         DCASSERT(!flip);
         if (MEDDLY::forest::BOOLEAN != F->getRangeType()
             && MEDDLY::forest::EVPLUS != F->getEdgeLabeling())
@@ -646,7 +627,7 @@ void meddly_encoder
           );
         break;
 
-      case exprman::aop_times:
+      case assoc_op::aop_times:
         if (flip) {
           MEDDLY::apply(
             MEDDLY::DIVIDE, meL->E, meR->E, out
@@ -658,8 +639,8 @@ void meddly_encoder
         }
         break;
 
-      case exprman::aop_or:
-      case exprman::aop_union:
+      case assoc_op::aop_or:
+      case assoc_op::aop_union:
         DCASSERT(!flip);
         if (MEDDLY::forest::BOOLEAN != F->getRangeType())
           MEDDLY::apply(
@@ -671,7 +652,7 @@ void meddly_encoder
           );
         break;
 
-      case exprman::aop_plus:
+      case assoc_op::aop_plus:
         if (flip) {
           MEDDLY::apply(
             MEDDLY::MINUS, meL->E, meR->E, out

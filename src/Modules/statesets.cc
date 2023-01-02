@@ -1,8 +1,7 @@
 
 #include "../Options/optman.h"
 #include "../Utils/initializer.h"
-#include "../ExprLib/startup.h" //
-#include "../ExprLib/exprman.h"
+#include "../ExprLib/casting.h"
 #include "../ExprLib/unary.h"
 #include "../ExprLib/binary.h"
 #include "../ExprLib/assoc.h"
@@ -21,18 +20,17 @@
 // *                                                                *
 // ******************************************************************
 
-exprman* stateset::em = 0;
 bool stateset::print_indexes;
 
 stateset::stateset(const state_lldsm* p) : shared_object()
 {
-  parent = p;
+    parent = p;
 }
 
 stateset::stateset(const stateset* clone) : shared_object()
 {
-  DCASSERT(clone);
-  parent = clone->parent;
+    DCASSERT(clone);
+    parent = clone->parent;
 }
 
 stateset::~stateset()
@@ -41,20 +39,21 @@ stateset::~stateset()
 
 const hldsm* stateset::getGrandparent() const
 {
-  return parent ? parent->GetParent() : 0;
+    return parent ? parent->GetParent() : 0;
 }
 
-bool stateset::parentsMatch(const expr* c, const char* op, stateset* A, stateset* B)
+bool stateset::parentsMatch(const expr* c, const char* op,
+        stateset* A, stateset* B)
 {
-  if (0==A || 0==B) return false;
+    if (0==A || 0==B) return false;
 
-  if (A->getParent() != B->getParent()) {
-    expr_error E(c);
-    E << "Statesets in " << op << " are from different model instances";
-    return false;
-  }
+    if (A->getParent() != B->getParent()) {
+        expr_error E(c);
+        E << "Statesets in " << op << " are from different model instances";
+        return false;
+    }
 
-  return true;
+    return true;
 }
 
 void stateset::storageMismatchError(const expr* c, const char* op)
@@ -71,7 +70,7 @@ void stateset::storageMismatchError(const expr* c, const char* op)
 
 class stateset_type : public simple_type {
 public:
-  stateset_type();
+    stateset_type();
 };
 
 // ******************************************************************
@@ -80,7 +79,7 @@ public:
 
 stateset_type::stateset_type() : simple_type("stateset", "Set of states", "Type used for sets of states, used for CTL model checking and other operations.")
 {
-  setPrintable();
+    setPrintable();
 }
 
 // ******************************************************************
@@ -111,7 +110,7 @@ protected:
 // ******************************************************************
 
 stateset_not::stateset_not(const location &W, expr *x)
- : negop(W, exprman::uop_not, x->Type(), x)
+ : negop(W, unary_op::uop_not, x->Type(), x)
 {
 }
 
@@ -161,7 +160,7 @@ protected:
 // ******************************************************************
 
 stateset_diff::stateset_diff(const location &W, expr *l, expr* r)
- : binary(W, exprman::bop_diff, l->Type(), l, r)
+ : binary(W, binary_op::bop_diff, l->Type(), l, r)
 {
 }
 
@@ -254,7 +253,7 @@ protected:
 // ******************************************************************
 
 stateset_implies::stateset_implies(const location &W, expr *l, expr* r)
- : binary(W, exprman::bop_implies, l->Type(), l, r)
+ : binary(W, binary_op::bop_implies, l->Type(), l, r)
 {
 }
 
@@ -348,7 +347,7 @@ protected:
 
 stateset_union
 ::stateset_union(const location &W, const type* t, expr **x, int n)
- : summation(W, exprman::aop_or, t, x, 0, n)
+ : summation(W, assoc_op::aop_or, t, x, 0, n)
 {
 }
 
@@ -417,7 +416,7 @@ protected:
 
 stateset_intersect
 ::stateset_intersect(const location &W, const type* t, expr **x, int n)
- : product(W, exprman::aop_and, t, x, 0, n)
+ : product(W, assoc_op::aop_and, t, x, 0, n)
 {
 }
 
@@ -491,13 +490,12 @@ public:
 // *                    stateset_not_op  methods                    *
 // ******************************************************************
 
-stateset_not_op::stateset_not_op() : unary_op(exprman::uop_not)
+stateset_not_op::stateset_not_op() : unary_op(unary_op::uop_not)
 {
 }
 
 const type* stateset_not_op::getExprType(const type* t) const
 {
-  DCASSERT(em);
   if (0==t)    return 0;
   if (t->isASet())  return 0;
   if (!type::matches(t, "stateset")) return 0;
@@ -523,7 +521,7 @@ unary* stateset_not_op::makeExpr(const location &W, expr* x) const
 /// Abstract base class for binary operations on statesets
 class stateset_binary : public binary_op {
 public:
-  stateset_binary(exprman::binary_opcode opc);
+  stateset_binary(binary_op::opcode opc);
   virtual int getPromoteDistance(const type* lt, const type* rt) const;
   virtual const type* getExprType(const type* lt, const type* rt) const;
 };
@@ -532,24 +530,22 @@ public:
 // *                    stateset_binary  methods                    *
 // ******************************************************************
 
-stateset_binary::stateset_binary(exprman::binary_opcode opc) : binary_op(opc)
+stateset_binary::stateset_binary(binary_op::opcode opc) : binary_op(opc)
 {
 }
 
 int stateset_binary::getPromoteDistance(const type* lt, const type* rt) const
 {
-  DCASSERT(em);
   const type* STATESET = type::find("stateset");
-  int ld = em->getPromoteDistance(lt, STATESET);
+  int ld = typeconv::getPromoteDistance(lt, STATESET);
   if (ld < 0) return ld;
-  int rd = em->getPromoteDistance(rt, STATESET);
+  int rd = typeconv::getPromoteDistance(rt, STATESET);
   if (rd < 0) return rd;
   return ld + rd;
 }
 
 const type* stateset_binary::getExprType(const type* l, const type* r) const
 {
-  DCASSERT(em);
   if (type::null==l) return 0;
   if (type::null==r) return 0;
   return type::find("stateset");
@@ -572,7 +568,7 @@ public:
 // *                    stateset_diff_op methods                    *
 // ******************************************************************
 
-stateset_diff_op::stateset_diff_op() : stateset_binary(exprman::bop_diff)
+stateset_diff_op::stateset_diff_op() : stateset_binary(binary_op::bop_diff)
 {
 }
 
@@ -604,7 +600,7 @@ public:
 // ******************************************************************
 
 stateset_implies_op::stateset_implies_op()
-: stateset_binary(exprman::bop_implies)
+: stateset_binary(binary_op::bop_implies)
 {
 }
 
@@ -627,7 +623,7 @@ binary* stateset_implies_op
 
 class stateset_assoc_op : public assoc_op {
 public:
-  stateset_assoc_op(exprman::assoc_opcode op);
+  stateset_assoc_op(assoc_op::opcode op);
   virtual int getPromoteDistance(expr** list, bool* flip, int N) const;
   virtual int getPromoteDistance(bool f, const type* lt, const type* rt) const;
   virtual const type* getExprType(bool f, const type* l, const type* r) const;
@@ -637,17 +633,16 @@ public:
 // *                   stateset_assoc_op  methods                   *
 // ******************************************************************
 
-stateset_assoc_op::stateset_assoc_op(exprman::assoc_opcode op) : assoc_op(op)
+stateset_assoc_op::stateset_assoc_op(assoc_op::opcode op) : assoc_op(op)
 {
 }
 
 int stateset_assoc_op::getPromoteDistance(expr** list, bool* flip, int N) const
 {
-  DCASSERT(em);
   int d = 0;
   const type* STATESET = type::find("stateset");
   for (int i=0; i<N; i++) {
-    int dx = em->getPromoteDistance(em->SafeType(list[i]), STATESET);
+    int dx = typeconv::getPromoteDistance(expr::SafeType(list[i]), STATESET);
     if (dx < 0) return dx;
     d += dx;
   }
@@ -657,11 +652,10 @@ int stateset_assoc_op::getPromoteDistance(expr** list, bool* flip, int N) const
 int stateset_assoc_op
 ::getPromoteDistance(bool f, const type* lt, const type* rt) const
 {
-  DCASSERT(em);
   const type* STATESET = type::find("stateset");
-  int ld = em->getPromoteDistance(lt, STATESET);
+  int ld = typeconv::getPromoteDistance(lt, STATESET);
   if (ld < 0) return ld;
-  int rd = em->getPromoteDistance(rt, STATESET);
+  int rd = typeconv::getPromoteDistance(rt, STATESET);
   if (rd < 0) return rd;
   return ld + rd;
 }
@@ -669,7 +663,6 @@ int stateset_assoc_op
 const type* stateset_assoc_op
 ::getExprType(bool f, const type* l, const type* r) const
 {
-  DCASSERT(em);
   if (type::null==l) return 0;
   if (type::null==r) return 0;
   return type::find("stateset");
@@ -694,14 +687,13 @@ public:
 // *                   stateset_union_op  methods                   *
 // ******************************************************************
 
-stateset_union_op::stateset_union_op() : stateset_assoc_op(exprman::aop_or)
+stateset_union_op::stateset_union_op() : stateset_assoc_op(assoc_op::aop_or)
 {
 }
 
 assoc* stateset_union_op::makeExpr(const location &W, expr** list,
         bool* flip, int N) const
 {
-  DCASSERT(em);
   if (getPromoteDistance(list, flip, N) < 0) {
     delete[] flip;
     for (int i=0; i<N; i++) Delete(list[i]);
@@ -730,14 +722,13 @@ public:
 // ******************************************************************
 
 stateset_intersect_op::stateset_intersect_op()
- : stateset_assoc_op(exprman::aop_and)
+ : stateset_assoc_op(assoc_op::aop_and)
 {
 }
 
 assoc* stateset_intersect_op::makeExpr(const location &W, expr** list,
         bool* flip, int N) const
 {
-  DCASSERT(em);
   if (getPromoteDistance(list, flip, N) < 0) {
     delete[] flip;
     for (int i=0; i<N; i++) Delete(list[i]);
@@ -825,45 +816,6 @@ void empty_si::Compute(traverse_data &x, expr** pass, int np)
 // *                                                                *
 // ******************************************************************
 
-class old_init_statesets : public startup {
-  public:
-    old_init_statesets();
-    virtual bool execute();
-};
-old_init_statesets the_stateset_startup;
-
-old_init_statesets::old_init_statesets() : startup("init_statesets")
-{
-  usesResource("em");
-  usesResource("st");
-  usesResource("biginttype");
-  buildsResource("statesettype");
-  buildsResource("types");
-}
-
-bool old_init_statesets::execute()
-{
-  if (0==em)  return false;
-
-  stateset::em = em;
-
-  // Operators
-  em->registerOperation(  new stateset_not_op         );
-  em->registerOperation(  new stateset_diff_op        );
-  em->registerOperation(  new stateset_implies_op     );
-  em->registerOperation(  new stateset_union_op       );
-  em->registerOperation(  new stateset_intersect_op   );
-
-  if (0==st) return false;
-
-  // Functions
-  st->addSymbol(  new card_si   );
-  st->addSymbol(  new empty_si  );
-  return true;
-}
-
-// ******************************************************************
-
 class init_statesets : public initializer {
     public:
         init_statesets();
@@ -872,9 +824,11 @@ class init_statesets : public initializer {
 };
 static init_statesets the_stateset_initializer;
 
-init_statesets::init_statesets() : initializer(__FILE__, 1, 0)
+init_statesets::init_statesets() : initializer(__FILE__, 1, 2)
 {
-    builds_resource(0, "types-extra");
+    builds_resource(0, "statesets");
+    needs_resource(1, "types");
+    needs_resource(2, "bigints");
 }
 
 void init_statesets::execute()
@@ -893,5 +847,20 @@ void init_statesets::execute()
         "If true, when a stateset is printed, state indexes are displayed; otherwise, states are displayed.",
         stateset::print_indexes
     );
+
+    //
+    // Operators; automatically registered
+    //
+    new stateset_not_op;
+    new stateset_diff_op;
+    new stateset_implies_op;
+    new stateset_union_op;
+    new stateset_intersect_op;
+
+    //
+    // Functions
+    //
+    symbol_table::addGlobal(    new card_si   );
+    symbol_table::addGlobal(    new empty_si  );
 }
 

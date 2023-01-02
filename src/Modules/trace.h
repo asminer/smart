@@ -48,8 +48,6 @@ public:
   virtual bool Print(std::ostream &s, int width) const;
 
 private:
-  static exprman* em;
-
   const trace* parent;
   List<shared_state> states;
   List<trace> subtraces;

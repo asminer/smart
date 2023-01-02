@@ -1,7 +1,6 @@
 
 #include "../Options/options.h"
-#include "../ExprLib/startup.h"
-#include "../ExprLib/exprman.h"
+#include "../Utils/initializer.h"
 #include "../ExprLib/mod_vars.h"
 
 #include "../Formlsms/graph_llm.h"
@@ -13,8 +12,6 @@
 // *                         trace methods                          *
 // *                                                                *
 // ******************************************************************
-
-exprman* trace::em = 0;
 
 trace::trace()
   : parent(nullptr)
@@ -153,32 +150,20 @@ trace_type::trace_type()
 // *                                                                *
 // ******************************************************************
 
-class init_trace : public startup {
-  public:
-    init_trace();
-    virtual bool execute();
+class init_trace : public initializer {
+    public:
+        init_trace();
+    protected:
+        virtual void execute();
 };
-init_trace the_trace_startup;
+static init_trace the_trace_initializer;
 
-init_trace::init_trace() : startup("init_trace")
+init_trace::init_trace() : initializer(__FILE__, 0, 1)
 {
-  usesResource("em");
-  usesResource("st");
-  buildsResource("tracetype");
-  buildsResource("types");
+  builds_resource("tracetype");
 }
 
-bool init_trace::execute()
+void init_trace::execute()
 {
-  if (0==em)  return false;
-
-  trace::em = em;
-
-  // Type registry
-  simple_type* t_trace = new trace_type;
-  type::registerNew(t_trace);
-
-  if (0==st) return false;
-
-  return true;
+  type::registerNew(new trace_type);
 }

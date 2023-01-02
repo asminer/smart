@@ -9,8 +9,8 @@
 #ifndef EXPL_STATES_H
 #define EXPL_STATES_H
 
+#include "../include/shared.h"
 #include "../Utils/library.h"
-#include "../ExprLib/exprman.h"
 
 namespace StateLib {
   class state_db;

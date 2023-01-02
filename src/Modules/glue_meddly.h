@@ -180,14 +180,14 @@ public:
   virtual void createMinterms(const int* const* from, const int* const* to, int n, shared_object* ans);
   virtual void createMinterms(const int* const* from, const int* const* to, const float* v, int n, shared_object* ans);
 
-  virtual void buildUnary(exprman::unary_opcode op,
+  virtual void buildUnary(unary_op::opcode op,
                             const shared_object* opnd, shared_object* ans);
 
-  virtual void buildBinary(const shared_object* lt, exprman::binary_opcode op,
+  virtual void buildBinary(const shared_object* lt, binary_op::opcode op,
                             const shared_object* rt, shared_object* ans);
 
   virtual void buildAssoc(const shared_object* left,
-                          bool flip, exprman::assoc_opcode op,
+                          bool flip, assoc_op::opcode op,
                           const shared_object* right, shared_object* ans);
 
   virtual void getCardinality(const shared_object* x, long &card);

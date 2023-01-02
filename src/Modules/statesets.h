@@ -12,7 +12,6 @@
 
 class expr;
 class result;
-class exprman;
 class symbol_table;
 class state_lldsm;
 class hldsm;
@@ -154,10 +153,8 @@ protected:
   }
 
 private:
-  static exprman* em;
   const state_lldsm* parent;
   static bool print_indexes;
-  friend class old_init_statesets;
   friend class init_statesets;
 };
 

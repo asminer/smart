@@ -1,5 +1,4 @@
 
-#include "../ExprLib/exprman.h"
 #include "../ExprLib/mod_vars.h"
 #include "../Formlsms/graph_llm.h"
 #include "glue_meddly.h"
@@ -44,7 +43,7 @@ stateset* meddly_stateset::DeepCopy() const
 bool meddly_stateset::Complement()
 {
   shared_ddedge* ans = new shared_ddedge(mdd_wrap->getForest());
-  mdd_wrap->buildUnary(exprman::uop_not, states, ans);
+  mdd_wrap->buildUnary(unary_op::uop_not, states, ans);
   Delete(states);
   states = ans;
   return true;
@@ -73,7 +72,7 @@ bool meddly_stateset::Union(const expr* c, const char* op, const stateset* x)
   }
 
   shared_ddedge* ans = new shared_ddedge(mdd_wrap->getForest());
-  mdd_wrap->buildAssoc(states, false, exprman::aop_or, mx->states, ans);
+  mdd_wrap->buildAssoc(states, false, assoc_op::aop_or, mx->states, ans);
   Delete(states);
   states = ans;
   return true;
@@ -102,7 +101,7 @@ bool meddly_stateset::Intersect(const expr* c, const char* op, const stateset* x
   }
 
   shared_ddedge* ans = new shared_ddedge(mdd_wrap->getForest());
-  mdd_wrap->buildAssoc(states, false, exprman::aop_and, mx->states, ans);
+  mdd_wrap->buildAssoc(states, false, assoc_op::aop_and, mx->states, ans);
   Delete(states);
   states = ans;
   return true;
@@ -135,7 +134,7 @@ bool meddly_stateset::Plus(const expr* c, const char* op, const stateset* x)
   }
 
   shared_ddedge* ans = new shared_ddedge(mx->mdd_wrap->getForest());
-  mdd_wrap->buildAssoc(states, false, exprman::aop_plus, mx->states, ans);
+  mdd_wrap->buildAssoc(states, false, assoc_op::aop_plus, mx->states, ans);
   Delete(states);
   states = ans;
   return true;
