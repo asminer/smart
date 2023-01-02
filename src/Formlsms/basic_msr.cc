@@ -1,5 +1,6 @@
 
-#include "../ExprLib/startup.h"
+#include "../Utils/initializer.h"
+
 #include "../ExprLib/engine.h"
 #include "../ExprLib/mod_def.h"
 #include "../ExprLib/measures.h"
@@ -1457,68 +1458,65 @@ void writedot_si::Compute(traverse_data &x, expr** pass, int np)
 // *                                                                *
 // ******************************************************************
 
-class init_basicmsrs : public startup {
-  public:
-    init_basicmsrs();
-    virtual bool execute();
+class init_basicmsrs : public initializer {
+    public:
+        init_basicmsrs();
+    protected:
+        virtual void execute();
 };
-init_basicmsrs the_basicmsr_startup;
+static init_basicmsrs the_basicmsr_initializer;
 
-init_basicmsrs::init_basicmsrs() : startup("init_basicmsrs")
+init_basicmsrs::init_basicmsrs() : initializer(__FILE__, 3, 1)
 {
-  usesResource("em");
-  usesResource("procgen");
-  usesResource("stringtype");
-  usesResource("biginttype");
-  buildsResource("CML");
+  builds_resource(0, "CML");
+  needs_resource(1, "procgen");
+  needs_resource(2, "stringtype");
+  needs_resource(3, "biginttype");
 }
 
-bool init_basicmsrs::execute()
+void init_basicmsrs::execute()
 {
-  if (0==em) return false;
-
   // Process or model properties
-  CML.Append(new numstates_si);
-  CML.Append(new numstatesCOV_si);
-  CML.Append(new numarcs_si);
-  CML.Append(new numclasses_si);
-  CML.Append(new numlevels_si);
-  CML.Append(new numevents_si);
-  CML.Append(new numvars_si);
+  symbol_table::addToAllModels(new numstates_si);
+  symbol_table::addToAllModels(new numstatesCOV_si);
+  symbol_table::addToAllModels(new numarcs_si);
+  symbol_table::addToAllModels(new numclasses_si);
+  symbol_table::addToAllModels(new numlevels_si);
+  symbol_table::addToAllModels(new numevents_si);
+  symbol_table::addToAllModels(new numvars_si);
 
   // Process or model display
-  CML.Append(new showstates_si);
-  CML.Append(new showstatesCOV_si);
-  CML.Append(new showstateset_si);
-  CML.Append(new showstatesetCOV_si);
-  CML.Append(new showarcs_si);
-  CML.Append(new showarcsCOV_si);
-  CML.Append(new showproc_si);
-  CML.Append(new showclasses_si);
-  CML.Append(new showlevels_si);
-  CML.Append(new showevents_si);
-  CML.Append(new showvars_si);
+  symbol_table::addToAllModels(new showstates_si);
+  symbol_table::addToAllModels(new showstatesCOV_si);
+  symbol_table::addToAllModels(new showstateset_si);
+  symbol_table::addToAllModels(new showstatesetCOV_si);
+  symbol_table::addToAllModels(new showarcs_si);
+  symbol_table::addToAllModels(new showarcsCOV_si);
+  symbol_table::addToAllModels(new showproc_si);
+  symbol_table::addToAllModels(new showclasses_si);
+  symbol_table::addToAllModels(new showlevels_si);
+  symbol_table::addToAllModels(new showevents_si);
+  symbol_table::addToAllModels(new showvars_si);
 
   // Statesets
-  CML.Append(new initial_si);
-  CML.Append(new reachable_si);
-  CML.Append(new potential_si);
+  symbol_table::addToAllModels(new initial_si);
+  symbol_table::addToAllModels(new reachable_si);
+  symbol_table::addToAllModels(new potential_si);
 
   // Miscellaneous
-  CML.Append(new writedot_si);
+  symbol_table::addToAllModels(new writedot_si);
 
   // Junaid, Chuan, Ben: experiments on transforming variable orders.
-  CML.Append(new var_order_transform);
+  symbol_table::addToAllModels(new var_order_transform);
 
   // Model Checking Competition
-  CML.Append(new run_for_MCC_si);
+  symbol_table::addToAllModels(new run_for_MCC_si);
 
   // Model Checking Competition
-  //CML.Append(new run_for_MCC_UPPERBOUNDS_si);
+  //symbol_table::addToAllModels(new run_for_MCC_UPPERBOUNDS_si);
 
   // Engine types
-  proc_noengine::ProcGen = em->findEngineType("ProcessGeneration");
-  return proc_noengine::ProcGen;
+  proc_noengine::ProcGen = engtype::findEngineType("ProcessGeneration");
 }
 
 

@@ -160,7 +160,7 @@ static init_trace the_trace_initializer;
 
 init_trace::init_trace() : initializer(__FILE__, 0, 1)
 {
-  builds_resource("tracetype");
+  builds_resource(0, "tracetype");
 }
 
 void init_trace::execute()

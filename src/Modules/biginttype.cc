@@ -2077,7 +2077,7 @@ static init_bigints the_bigint_initializer;
 
 init_bigints::init_bigints() : initializer(__FILE__, 1, 1)
 {
-    builds_resource(0, "bigints");
+    builds_resource(0, "biginttype");
     needs_resource(1, "types");
 }
 

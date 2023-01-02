@@ -7,6 +7,7 @@
 
 
 symbol_table* symbol_table::_global = nullptr;
+symbol_table* symbol_table::_allModels = nullptr;
 
 // ******************************************************************
 // *                                                                *

@@ -72,6 +72,24 @@ class symbol_table {
         }
 
 
+        /** The common model symbol table.
+            Similar to global(), except this is for functions
+            that can appear inside a model, either for measure
+            computation or other things.
+            These will actually be copied into each model's
+            own symbol table based on criteria.
+        */
+        static inline symbol_table& allModelsTable() {
+            if (!_allModels) _allModels = new symbol_table;
+            DCASSERT(_allModels);
+            return *_allModels;
+        }
+
+        /// Add a symbol to the common model symbol table.
+        static inline void addToAllModels(symbol* s) {
+            allModelsTable().addSymbol(s);
+        }
+
     private:
         /// The head of a list of symbols, with this name.
         struct symbol_list : public shared_object {
@@ -113,6 +131,7 @@ class symbol_table {
         splayOfShared table;
         symbol_list* FreeList;
         static symbol_table* _global;
+        static symbol_table* _allModels;
 };
 
 //

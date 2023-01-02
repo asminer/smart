@@ -4,10 +4,10 @@
 #include "../Utils/strings.h"
 #include "../Utils/initializer.h"
 
-#include "../ExprLib/startup.h"
-#include "../ExprLib/exprman.h"
 #include "../ExprLib/binary.h"
 #include "../ExprLib/assoc.h"
+#include "../ExprLib/bogus.h"
+#include "../ExprLib/casting.h"
 
 
 // ******************************************************************
@@ -75,7 +75,7 @@ protected:
 // ******************************************************************
 
 string_add::string_add(const location &W, expr **x, int n)
- : summation(W, exprman::aop_plus, type::find("string"), x, 0, n)
+ : summation(W, assoc_op::aop_plus, type::find("string"), x, 0, n)
 {
 }
 
@@ -384,11 +384,10 @@ expr* string_le::buildAnother(expr *l, expr *r) const
 // ******************************************************************
 
 inline const type*
-StringResultType(const exprman* em, const type* lt, const type* rt)
+StringResultType(const type* lt, const type* rt)
 {
-  DCASSERT(em);
   if (type::null == lt || type::null == rt)  return nullptr;
-  const type* lct = em->getLeastCommonType(lt, rt);
+  const type* lct = typeconv::getLeastCommonType(lt, rt);
   if (0==lct)        return nullptr;
   if (!type::matches(lct->getBaseType(), "string")) return nullptr;
   if (lct->isASet())      return nullptr;
@@ -396,42 +395,41 @@ StringResultType(const exprman* em, const type* lt, const type* rt)
 }
 
 inline
-int StringAlignDistance(const exprman* em, const type* lt, const type* rt)
+int StringAlignDistance(const type* lt, const type* rt)
 {
-  DCASSERT(em);
-  const type* lct = StringResultType(em, lt, rt);
+  const type* lct = StringResultType(lt, rt);
   if (0==lct)        return -1;
 
-  int dl = em->getPromoteDistance(lt, lct);   DCASSERT(dl>=0);
-  int dr = em->getPromoteDistance(rt, lct);   DCASSERT(dr>=0);
+  int dl = typeconv::getPromoteDistance(lt, lct);   DCASSERT(dl>=0);
+  int dr = typeconv::getPromoteDistance(rt, lct);   DCASSERT(dr>=0);
 
   return dl+dr;
 }
 
-inline const type* AlignStrings(const exprman* em, expr* &l, expr* &r)
+inline const type* AlignStrings(const location &W, expr* &l, expr* &r)
 {
-  DCASSERT(em);
   DCASSERT(l);
   DCASSERT(r);
-  const type* lct = StringResultType(em, l->Type(), r->Type());
+  const type* lct = StringResultType(l->Type(), r->Type());
   if (0==lct) {
     Delete(l);
     Delete(r);
     return 0;
   }
-  l = em->promote(l, lct);   DCASSERT(em->isOrdinary(l));
-  r = em->promote(r, lct);   DCASSERT(em->isOrdinary(r));
+  l = typeconv::castExpr(true, W, lct, l);
+  r = typeconv::castExpr(true, W, lct, r);
+  DCASSERT(!bogus_expr::orNull(l));
+  DCASSERT(!bogus_expr::orNull(r));
   return lct;
 }
 
-inline int StringAlignDistance(const exprman* em, expr** x, int N)
+inline int StringAlignDistance(expr** x, int N)
 {
-  DCASSERT(em);
   DCASSERT(x);
 
-  const type* lct = em->SafeType(x[0]);
+  const type* lct = expr::SafeType(x[0]);
   for (int i=1; i<N; i++) {
-    lct = em->getLeastCommonType(lct, em->SafeType(x[i]));
+    lct = typeconv::getLeastCommonType(lct, expr::SafeType(x[i]));
   }
   if (0==lct)        return -1;
   if (!type::matches(lct->getBaseType(), "string"))  return -1;
@@ -439,29 +437,28 @@ inline int StringAlignDistance(const exprman* em, expr** x, int N)
 
   int d = 0;
   for (int i=0; i<N; i++) {
-    int dx = em->getPromoteDistance(em->SafeType(x[i]), lct);
+    int dx = typeconv::getPromoteDistance(expr::SafeType(x[i]), lct);
     DCASSERT(dx>=0);
     d += dx;
   }
   return d;
 }
 
-inline const type* AlignStrings(const exprman* em, expr** x, int N)
+inline const type* AlignStrings(const location &W, expr** x, int N)
 {
-  DCASSERT(em);
   DCASSERT(x);
 
-  const type* lct = em->SafeType(x[0]);
+  const type* lct = expr::SafeType(x[0]);
   for (int i=1; i<N; i++) {
-    lct = em->getLeastCommonType(lct, em->SafeType(x[i]));
+    lct = typeconv::getLeastCommonType(lct, expr::SafeType(x[i]));
   }
   if (  (0==lct) || !type::matches(lct->getBaseType(), "string") || lct->isASet() ) {
     for (int i=0; i<N; i++)  Delete(x[i]);
     return 0;
   }
   for (int i=0; i<N; i++) {
-    x[i] = em->promote(x[i], lct);
-    DCASSERT(em->isOrdinary(x[i]));
+    x[i] = typeconv::castExpr(true, W, lct, x[i]);
+    DCASSERT(!bogus_expr::orNull(x[i]));
   }
   return lct;
 }
@@ -489,34 +486,34 @@ public:
 // *                     string_add_op  methods                     *
 // ******************************************************************
 
-string_add_op::string_add_op() : assoc_op(exprman::aop_plus)
+string_add_op::string_add_op() : assoc_op(assoc_op::aop_plus)
 {
 }
 
 int string_add_op::getPromoteDistance(expr** list, bool* flip, int N) const
 {
   if (flip) for (int i=0; i<N; i++) if (flip[i]) return -1;
-  return StringAlignDistance(em, list, N);
+  return StringAlignDistance(list, N);
 }
 
 int string_add_op
 ::getPromoteDistance(bool flip, const type* lt, const type* rt) const
 {
   if (flip)  return -1;
-  return StringAlignDistance(em, lt, rt);
+  return StringAlignDistance(lt, rt);
 }
 
 const type* string_add_op
 ::getExprType(bool flip, const type* lt, const type* rt) const
 {
   if (flip)  return 0;
-  return StringResultType(em, lt, rt);
+  return StringResultType(lt, rt);
 }
 
 assoc* string_add_op::makeExpr(const location &W, expr** list,
         bool* flip, int N) const
 {
-  const type* lct = AlignStrings(em, list, N);
+  const type* lct = AlignStrings(W, list, N);
   if (flip) for (int i=0; i<N; i++) if (flip[i]) lct = 0;
   delete[] flip;
   if (lct)  return new string_add(W, list, N);
@@ -533,7 +530,7 @@ assoc* string_add_op::makeExpr(const location &W, expr** list,
 
 class string_binary_op : public binary_op {
 public:
-  string_binary_op(exprman::binary_opcode op);
+  string_binary_op(binary_op::opcode op);
   virtual int getPromoteDistance(const type* lt, const type* rt) const;
   virtual const type* getExprType(const type* l, const type* r) const;
   virtual binary* makeExpr(const location &W, expr* l, expr* r) const;
@@ -545,24 +542,24 @@ protected:
 // *                    string_binary_op methods                    *
 // ******************************************************************
 
-string_binary_op::string_binary_op(exprman::binary_opcode op) : binary_op(op)
+string_binary_op::string_binary_op(binary_op::opcode op) : binary_op(op)
 {
 }
 
 int string_binary_op::getPromoteDistance(const type* lt, const type* rt) const
 {
-  return StringAlignDistance(em, lt, rt);
+  return StringAlignDistance(lt, rt);
 }
 
 const type* string_binary_op::getExprType(const type* l, const type* r) const
 {
-  return StringResultType(em, l, r);
+  return StringResultType(l, r);
 }
 
 binary* string_binary_op
 ::makeExpr(const location &W, expr* l, expr* r) const
 {
-  const type* lct = AlignStrings(em, l, r);
+  const type* lct = AlignStrings(W, l, r);
   if (0==lct)  return 0;
   return makeValid(W, l, r);
 }
@@ -583,13 +580,13 @@ public:
 // *                    string_equal_op  methods                    *
 // ******************************************************************
 
-string_equal_op::string_equal_op() : string_binary_op(exprman::bop_equals)
+string_equal_op::string_equal_op() : string_binary_op(binary_op::bop_equals)
 {
 }
 
 binary* string_equal_op::makeValid(const location &W, expr* l, expr* r) const
 {
-  const type* lct = AlignStrings(em, l, r);
+  const type* lct = AlignStrings(W, l, r);
   if (0==lct)  return 0;
   return new string_equal(W, l, r);
 }
@@ -610,13 +607,13 @@ public:
 // *                     string_neq_op  methods                     *
 // ******************************************************************
 
-string_neq_op::string_neq_op() : string_binary_op(exprman::bop_nequal)
+string_neq_op::string_neq_op() : string_binary_op(binary_op::bop_nequal)
 {
 }
 
 binary* string_neq_op::makeValid(const location &W, expr* l, expr* r) const
 {
-  const type* lct = AlignStrings(em, l, r);
+  const type* lct = AlignStrings(W, l, r);
   if (0==lct)  return 0;
   return new string_neq(W, l, r);
 }
@@ -637,13 +634,13 @@ public:
 // *                      string_gt_op methods                      *
 // ******************************************************************
 
-string_gt_op::string_gt_op() : string_binary_op(exprman::bop_gt)
+string_gt_op::string_gt_op() : string_binary_op(binary_op::bop_gt)
 {
 }
 
 binary* string_gt_op::makeValid(const location &W, expr* l, expr* r) const
 {
-  const type* lct = AlignStrings(em, l, r);
+  const type* lct = AlignStrings(W, l, r);
   if (0==lct)  return 0;
   return new string_gt(W, l, r);
 }
@@ -665,13 +662,13 @@ public:
 // ******************************************************************
 
 string_ge_op::string_ge_op()
- : string_binary_op(exprman::bop_ge)
+ : string_binary_op(binary_op::bop_ge)
 {
 }
 
 binary* string_ge_op::makeValid(const location &W, expr* l, expr* r) const
 {
-  const type* lct = AlignStrings(em, l, r);
+  const type* lct = AlignStrings(W, l, r);
   if (0==lct)  return 0;
   return new string_ge(W, l, r);
 }
@@ -692,13 +689,13 @@ public:
 // *                      string_lt_op methods                      *
 // ******************************************************************
 
-string_lt_op::string_lt_op() : string_binary_op(exprman::bop_lt)
+string_lt_op::string_lt_op() : string_binary_op(binary_op::bop_lt)
 {
 }
 
 binary* string_lt_op::makeValid(const location &W, expr* l, expr* r) const
 {
-  const type* lct = AlignStrings(em, l, r);
+  const type* lct = AlignStrings(W, l, r);
   if (0==lct)  return 0;
   return new string_lt(W, l, r);
 }
@@ -719,13 +716,13 @@ public:
 // *                      string_le_op methods                      *
 // ******************************************************************
 
-string_le_op::string_le_op() : string_binary_op(exprman::bop_le)
+string_le_op::string_le_op() : string_binary_op(binary_op::bop_le)
 {
 }
 
 binary* string_le_op::makeValid(const location &W, expr* l, expr* r) const
 {
-  const type* lct = AlignStrings(em, l, r);
+  const type* lct = AlignStrings(W, l, r);
   if (0==lct)  return 0;
   return new string_le(W, l, r);
 }
@@ -738,37 +735,6 @@ binary* string_le_op::makeValid(const location &W, expr* l, expr* r) const
 // *                                                                *
 // ******************************************************************
 
-class old_init_strings : public startup {
-  public:
-    old_init_strings();
-    virtual bool execute();
-};
-old_init_strings the_string_startup;
-
-old_init_strings::old_init_strings() : startup("init_strings")
-{
-  usesResource("em");
-  buildsResource("stringtype");
-  buildsResource("types");
-}
-
-bool old_init_strings::execute()
-{
-  if (0==em)  return false;
-
-  em->registerOperation(  new string_add_op   );
-  em->registerOperation(  new string_equal_op );
-  em->registerOperation(  new string_neq_op   );
-  em->registerOperation(  new string_gt_op    );
-  em->registerOperation(  new string_ge_op    );
-  em->registerOperation(  new string_lt_op    );
-  em->registerOperation(  new string_le_op    );
-
-  return true;
-}
-
-// ******************************************************************
-
 class init_strings : public initializer {
     public:
         init_strings();
@@ -777,9 +743,10 @@ class init_strings : public initializer {
 };
 static init_strings the_string_initializer;
 
-init_strings::init_strings() : initializer(__FILE__, 1, 0)
+init_strings::init_strings() : initializer(__FILE__, 1, 1)
 {
-    builds_resource(0, "types");
+    builds_resource(0, "stringtype");
+    needs_resource(1, "types");
 }
 
 void init_strings::execute()
@@ -788,4 +755,15 @@ void init_strings::execute()
     // Types.
     //
     type::registerNew(  new string_type );
+
+    //
+    // Operations
+    //
+    new string_add_op;
+    new string_equal_op;
+    new string_neq_op;
+    new string_gt_op;
+    new string_ge_op;
+    new string_lt_op;
+    new string_le_op;
 }

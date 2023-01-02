@@ -50,7 +50,9 @@ public:
       if (funcs) funcs->traverse(t);
   }
 
-  void addCommonFuncs(List <msr_func> &cfl);
+  // void addCommonFuncs(List <msr_func> &cfl);
+  void addCommonFuncs();
+
 
 
   // Formalism-specific identifiers
@@ -94,6 +96,8 @@ protected:
 
   /// Default: false
   virtual bool includeDCP() const;
+
+  friend class copy_into_formalism;
 };
 
 #endif
