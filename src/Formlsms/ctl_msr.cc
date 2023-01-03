@@ -1,6 +1,6 @@
 
-#include "ctl_msr.h"
-#include "../ExprLib/startup.h"
+#include "../Utils/initializer.h"
+
 #include "../ExprLib/engine.h"
 #include "../ExprLib/measures.h"
 #include "../ExprLib/mod_def.h"
@@ -803,7 +803,7 @@ int CTL_trace::Traverse(traverse_data &x, expr** pass, int np)
   }
 
   // Trace functions won't be measurified
-  expr* comp = em->makeFunctionCall(
+  expr* comp = expr::makeFunctionCall(
           x.parent ? x.parent->Where() : location::NOWHERE(), this, pass, np);
   setAnswer(x, comp);
   return 1;
@@ -924,7 +924,7 @@ void And_trace_si::Compute(traverse_data &x, expr** pass, int np)
   ps[3] = new value(Where(), type::find("stateset"), result(right));
   ps[4] = right_cb;
 
-  expr* fc = em->makeFunctionCall(Where(), &the_and_trace_ex, ps, nps);
+  expr* fc = expr::makeFunctionCall(Where(), &the_and_trace_ex, ps, nps);
   setAnswer(x, ans);
   x.the_callback = fc;
 }
@@ -1017,7 +1017,7 @@ void EX_trace_si::Compute(traverse_data &x, expr** pass, int np)
   ps[2] = new value(Where(), type::find("void"), result(td));
   ps[3] = const_cast<expr*>(x.the_callback);
 
-  expr* fc = em->makeFunctionCall(Where(), &the_EX_trace_ex, ps, nps);
+  expr* fc = expr::makeFunctionCall(Where(), &the_EX_trace_ex, ps, nps);
   setAnswer(x, ans);
   x.the_callback = fc;
 }
@@ -1110,7 +1110,7 @@ void EF_trace_si::Compute(traverse_data &x, expr** pass, int np)
   ps[2] = new value(Where(), type::find("void"), result(td));
   ps[3] = const_cast<expr*>(x.the_callback);
 
-  expr* fc = em->makeFunctionCall(Where(), &the_EF_trace_ex, ps, nps);
+  expr* fc = expr::makeFunctionCall(Where(), &the_EF_trace_ex, ps, nps);
   setAnswer(x, ans);
   x.the_callback = fc;
 }
@@ -1205,7 +1205,7 @@ void EG_trace_si::Compute(traverse_data &x, expr** pass, int np)
   ps[2] = new value(Where(), type::find("void"), result(td));
   ps[3] = const_cast<expr*>(x.the_callback);
 
-  expr* fc = em->makeFunctionCall(Where(), &the_EG_trace_ex, ps, nps);
+  expr* fc = expr::makeFunctionCall(Where(), &the_EG_trace_ex, ps, nps);
   setAnswer(x, ans);
   x.the_callback = fc;
 }
@@ -1320,7 +1320,7 @@ void EU_trace_si::Compute(traverse_data &x, expr** pass, int np)
   ps[3] = pcb;
   ps[4] = qcb;
 
-  expr* fc = em->makeFunctionCall(Where(), &the_EG_trace_ex, ps, nps);
+  expr* fc = expr::makeFunctionCall(Where(), &the_EG_trace_ex, ps, nps);
   setAnswer(x, ans);
   x.the_callback = fc;
 }
@@ -1434,27 +1434,24 @@ void traces::traces_ex::Compute(traverse_data &x, expr** pass, int np)
 // *                                                                *
 // ******************************************************************
 
-class init_ctlmsrs : public startup {
-  public:
-    init_ctlmsrs();
-    virtual bool execute();
+class init_ctlmsrs : public initializer {
+    public:
+        init_ctlmsrs();
+    protected:
+        virtual void execute();
 };
-init_ctlmsrs the_ctlmsr_startup;
+static init_ctlmsrs the_ctlmsr_initializer;
 
-init_ctlmsrs::init_ctlmsrs() : startup("init_ctlmsrs")
+init_ctlmsrs::init_ctlmsrs() : initializer(__FILE__, 1, 3)
 {
-  usesResource("em");
-  usesResource("st");
-  usesResource("statesettype");
-  usesResource("biginttype");
-  usesResource("procgen");
-  buildsResource("CML");
+  builds_resource(0, "CML");
+  needs_resource(1, "statesettype");
+  needs_resource(2, "biginttype");
+  needs_resource(3, "procgen");
 }
 
-bool init_ctlmsrs::execute()
+void init_ctlmsrs::execute()
 {
-  if (0==em) return false;
-
   //
   // CTL help topic
   //
@@ -1463,71 +1460,40 @@ bool init_ctlmsrs::execute()
     "A CTL formula phi may be checked by constructing the set of states satisfying phi.  This is done by splitting the formula into quantifier, operator pairs and using the appropriate function.  The set of initial states are then compared to the set of states satisfying phi to determine if the model satisfies phi.  Note that both \"forward time\" and \"reverse time\" temporal operators are supported."
   );
 
-  if (st) st->addSymbol(ctl_help);
+  symbol_table::addGlobal(ctl_help);
 
-  CTL_engine::ProcGen = em->findEngineType("ProcessGeneration");
+  CTL_engine::ProcGen = engtype::findEngineType("ProcessGeneration");
   DCASSERT(CTL_engine::ProcGen);
-
-  //
-  // Declare function variables
-  //
-
-  static msr_func* the_EX_si = 0;
-  static msr_func* the_EY_si = 0;
-  static msr_func* the_EF_si = 0;
-  static msr_func* the_EP_si = 0;
-  static msr_func* the_EU_si = 0;
-  static msr_func* the_ES_si = 0;
-  static msr_func* the_EG_si = 0;
-  static msr_func* the_EH_si = 0;
-  static msr_func* the_AX_si = 0;
-  static msr_func* the_AY_si = 0;
-  static msr_func* the_AF_si = 0;
-  static msr_func* the_AP_si = 0;
-  static msr_func* the_AU_si = 0;
-  static msr_func* the_AS_si = 0;
-  static msr_func* the_AG_si = 0;
-  static msr_func* the_AH_si = 0;
-  static msr_func* the_AEF_si = 0;
-  static msr_func* the_num_paths = 0;
-  static msr_func* the_states = 0;
-
-  static msr_func* the_And_trace_si = 0;
-  static msr_func* the_EX_trace_si = 0;
-  static msr_func* the_EF_trace_si = 0;
-  static msr_func* the_EG_trace_si = 0;
-  static msr_func* the_EU_trace_si = 0;
-  static msr_func* the_traces = 0;
 
   //
   // Initialize functions
   //
-  if (!the_EX_si)     the_EX_si     = new EX_si;
-  if (!the_EY_si)     the_EY_si     = new EY_si;
-  if (!the_EF_si)     the_EF_si     = new EF_si;
-  if (!the_EP_si)     the_EP_si     = new EP_si;
-  if (!the_EU_si)     the_EU_si     = new EU_si;
-  if (!the_ES_si)     the_ES_si     = new ES_si;
-  if (!the_EG_si)     the_EG_si     = new EG_si;
-  if (!the_EH_si)     the_EH_si     = new EH_si;
-  if (!the_AX_si)     the_AX_si     = new AX_si;
-  if (!the_AY_si)     the_AY_si     = new AY_si;
-  if (!the_AF_si)     the_AF_si     = new AF_si;
-  if (!the_AP_si)     the_AP_si     = new AP_si;
-  if (!the_AU_si)     the_AU_si     = new AU_si;
-  if (!the_AS_si)     the_AS_si     = new AS_si;
-  if (!the_AG_si)     the_AG_si     = new AG_si;
-  if (!the_AH_si)     the_AH_si     = new AH_si;
-  if (!the_AEF_si)    the_AEF_si    = new AEF_si;
-  if (!the_num_paths) the_num_paths = new num_paths;
-  if (!the_states)    the_states    = new states;
+  msr_func* the_EX_si     = new EX_si;
+  msr_func* the_EY_si     = new EY_si;
+  msr_func* the_EF_si     = new EF_si;
+  msr_func* the_EP_si     = new EP_si;
+  msr_func* the_EU_si     = new EU_si;
+  msr_func* the_ES_si     = new ES_si;
+  msr_func* the_EG_si     = new EG_si;
+  msr_func* the_EH_si     = new EH_si;
+  msr_func* the_AX_si     = new AX_si;
+  msr_func* the_AY_si     = new AY_si;
+  msr_func* the_AF_si     = new AF_si;
+  msr_func* the_AP_si     = new AP_si;
+  msr_func* the_AU_si     = new AU_si;
+  msr_func* the_AS_si     = new AS_si;
+  msr_func* the_AG_si     = new AG_si;
+  msr_func* the_AH_si     = new AH_si;
+  msr_func* the_AEF_si    = new AEF_si;
+  msr_func* the_num_paths = new num_paths;
+  msr_func* the_states    = new states;
 
-  if (!the_And_trace_si)        the_And_trace_si = new And_trace_si;
-  if (!the_EX_trace_si)         the_EX_trace_si  = new EX_trace_si;
-  if (!the_EF_trace_si)         the_EF_trace_si  = new EF_trace_si;
-  if (!the_EG_trace_si)         the_EG_trace_si  = new EG_trace_si;
-  if (!the_EU_trace_si)         the_EU_trace_si  = new EU_trace_si;
-  if (!the_traces)              the_traces       = new traces;
+  msr_func* the_And_trace_si = new And_trace_si;
+  msr_func* the_EX_trace_si  = new EX_trace_si;
+  msr_func* the_EF_trace_si  = new EF_trace_si;
+  msr_func* the_EG_trace_si  = new EG_trace_si;
+  msr_func* the_EU_trace_si  = new EU_trace_si;
+  msr_func* the_traces       = new traces;
 
   //
   // Add functions to help topic
@@ -1560,35 +1526,33 @@ bool init_ctlmsrs::execute()
   //
   // Add functions to measure table
   //
-  CML.Append(the_EX_si);
-  CML.Append(the_EY_si);
-  CML.Append(the_EF_si);
-  CML.Append(the_EP_si);
-  CML.Append(the_EU_si);
-  CML.Append(the_ES_si);
-  CML.Append(the_EG_si);
-  CML.Append(the_EH_si);
+  symbol_table::addToAllModels(the_EX_si);
+  symbol_table::addToAllModels(the_EY_si);
+  symbol_table::addToAllModels(the_EF_si);
+  symbol_table::addToAllModels(the_EP_si);
+  symbol_table::addToAllModels(the_EU_si);
+  symbol_table::addToAllModels(the_ES_si);
+  symbol_table::addToAllModels(the_EG_si);
+  symbol_table::addToAllModels(the_EH_si);
 
-  CML.Append(the_AX_si);
-  CML.Append(the_AY_si);
-  CML.Append(the_AF_si);
-  CML.Append(the_AP_si);
-  CML.Append(the_AU_si);
-  CML.Append(the_AS_si);
-  CML.Append(the_AG_si);
-  CML.Append(the_AH_si);
+  symbol_table::addToAllModels(the_AX_si);
+  symbol_table::addToAllModels(the_AY_si);
+  symbol_table::addToAllModels(the_AF_si);
+  symbol_table::addToAllModels(the_AP_si);
+  symbol_table::addToAllModels(the_AU_si);
+  symbol_table::addToAllModels(the_AS_si);
+  symbol_table::addToAllModels(the_AG_si);
+  symbol_table::addToAllModels(the_AH_si);
 
-  CML.Append(the_AEF_si);
-  CML.Append(the_num_paths);
+  symbol_table::addToAllModels(the_AEF_si);
+  symbol_table::addToAllModels(the_num_paths);
 
-  CML.Append(the_states);
+  symbol_table::addToAllModels(the_states);
 
-  CML.Append(the_And_trace_si);
-  CML.Append(the_EX_trace_si);
-  CML.Append(the_EF_trace_si);
-  CML.Append(the_EG_trace_si);
-  CML.Append(the_EU_trace_si);
-  CML.Append(the_traces);
-
-  return true;
+  symbol_table::addToAllModels(the_And_trace_si);
+  symbol_table::addToAllModels(the_EX_trace_si);
+  symbol_table::addToAllModels(the_EF_trace_si);
+  symbol_table::addToAllModels(the_EG_trace_si);
+  symbol_table::addToAllModels(the_EU_trace_si);
+  symbol_table::addToAllModels(the_traces);
 }

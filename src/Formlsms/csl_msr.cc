@@ -1,8 +1,10 @@
 
-#include "csl_msr.h"
-#include "../ExprLib/startup.h"
+#include "../Utils/initializer.h"
+
+#include "../ExprLib/symb_tab.h"
 #include "../ExprLib/engine.h"
 #include "../ExprLib/measures.h"
+
 #include "stoch_llm.h"
 
 #include "../Modules/biginttype.h"
@@ -441,65 +443,61 @@ void TU_func::Compute(traverse_data &x, expr** pass, int np)
 // *                                                                *
 // ******************************************************************
 
-class init_cslmsrs : public startup {
-  public:
-    init_cslmsrs();
-    virtual bool execute();
+class init_cslmsrs : public initializer {
+    public:
+        init_cslmsrs();
+    protected:
+        virtual void execute();
 };
-init_cslmsrs the_cslmsr_startup;
+static init_cslmsrs the_cslmsr_initializer;
 
-init_cslmsrs::init_cslmsrs() : startup("init_cslmsrs")
+init_cslmsrs::init_cslmsrs() : initializer(__FILE__, 2, 4)
 {
-  usesResource("em");
-  usesResource("stochtypes");
-  usesResource("statesettype");
-  usesResource("statevects");
-  usesResource("procgen");
-  buildsResource("CML");
-  buildsResource("engtypes");
+  builds_resource(0, "CML");
+  builds_resource(1, "engtypes");
+  needs_resource(2, "stochtypes");
+  needs_resource(3, "statesettype");
+  needs_resource(4, "statevects");
+  needs_resource(5, "procgen");
 }
 
-bool init_cslmsrs::execute()
+void init_cslmsrs::execute()
 {
-  if (0==em) return false;
-
   // Initialize engines
 
-  CSL_engine::PU = MakeEngineType(em,
+  CSL_engine::PU = MakeEngineType(
       "PUalgorithm",
       "Algorithm for computation of PU formulas in CSL/PCTL.",
       engtype::FunctionCall
   );
 
-  CSL_engine::TU_generator = MakeEngineType(em,
+  CSL_engine::TU_generator = MakeEngineType(
       "TUgenerator",
       "Generates the distribution for TU formulas in CSL/PCTL.",
       engtype::FunctionCall
   );
 
-  CSL_engine::ProcGen = em->findEngineType("ProcessGeneration");
+  CSL_engine::ProcGen = engtype::findEngineType("ProcessGeneration");
   DCASSERT(CSL_engine::ProcGen);
 
   // Add functions
   const type* phint  = type::find(false, false, PHASE, "int");
   const type* phreal = type::find(false, false, PHASE, "real");
 
-  CML.Append(new PF_func );
-  CML.Append(new PU_func );
+  symbol_table::addToAllModels(new PF_func );
+  symbol_table::addToAllModels(new PU_func );
 
   if (phint) {
-    CML.Append(new TF_func(phint, "phi_TF", false));
-    CML.Append(new TF_func(phint, "phi_TF", true ));
-    CML.Append(new TU_func(phint, "phi_TU", false));
-    CML.Append(new TU_func(phint, "phi_TU", true ));
+    symbol_table::addToAllModels(new TF_func(phint, "phi_TF", false));
+    symbol_table::addToAllModels(new TF_func(phint, "phi_TF", true ));
+    symbol_table::addToAllModels(new TU_func(phint, "phi_TU", false));
+    symbol_table::addToAllModels(new TU_func(phint, "phi_TU", true ));
   }
   if (phreal) {
-    CML.Append(new TF_func(phreal, "phr_TF", false));
-    CML.Append(new TF_func(phreal, "phr_TF", true ));
-    CML.Append(new TU_func(phreal, "phr_TU", false));
-    CML.Append(new TU_func(phreal, "phr_TU", true ));
+    symbol_table::addToAllModels(new TF_func(phreal, "phr_TF", false));
+    symbol_table::addToAllModels(new TF_func(phreal, "phr_TF", true ));
+    symbol_table::addToAllModels(new TU_func(phreal, "phr_TU", false));
+    symbol_table::addToAllModels(new TU_func(phreal, "phr_TU", true ));
   }
-
-  return true;
 }
 
