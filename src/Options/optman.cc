@@ -1,6 +1,7 @@
 
 #include "../include/defines.h"
 #include "../Utils/splay.h"
+#include "../Utils/ordarray.h"
 #include "../Utils/strings.h"
 #include "../Utils/textfmt.h"
 
@@ -25,17 +26,13 @@ option_manager* option_manager::_global = nullptr;
 option_manager::option_manager()
 {
     optlist = new splayOfShared(16, 0);
-    sortedOptions = nullptr;
-    numOptions = 0;
+    optarray = nullptr;
 }
 
 option_manager::~option_manager()
 {
     delete optlist;
-    for (unsigned i=0; i<numOptions; i++) {
-        Delete(sortedOptions[i]);
-    }
-    delete[] sortedOptions;
+    delete optarray;
 }
 
 bool option_manager::Print(std::ostream &s, int width) const
@@ -46,14 +43,16 @@ bool option_manager::Print(std::ostream &s, int width) const
 
 void option_manager::DoneAddingOptions()
 {
-    DCASSERT(!sortedOptions);
-    numOptions = optlist->numElements();
-    sortedOptions = new option*[numOptions];
-    copy_traversal <option> T(sortedOptions, numOptions);
-    optlist->traverse(T);
-    delete optlist;
-    optlist = nullptr;
-    for (unsigned i=0; i<numOptions; i++) sortedOptions[i]->Finish();
+    if (optlist) {
+        optarray = new orderedShared (*optlist);
+        delete optlist;
+        optlist = nullptr;
+        for (unsigned i=0; i<optarray->numElements(); i++) {
+            option* o = dynamic_cast <option*> (optarray->get(i));
+            DCASSERT(o);
+            o->Finish();
+        }
+    }
 }
 
 option* option_manager::FindOption(const char* name) const
@@ -65,56 +64,51 @@ option* option_manager::FindOption(const char* name) const
         return find;
     }
 
-    DCASSERT(sortedOptions);
-    // binary search
-    unsigned low = 0;
-    unsigned high = numOptions;
-    while (low < high) {
-        unsigned mid = (low+high)/2;
-        int cmp = sortedOptions[mid]->Compare(&CS);
-        if (0==cmp) return sortedOptions[mid];
-        if (cmp>0) {
-            high = mid;
-        } else {
-            low = mid+1;
-        }
+    if (optarray) {
+        option* find = smart_cast <option*> (optarray->find(&CS));
+        return find;
     }
+
     // not found
     return nullptr;
 }
 
 unsigned option_manager::NumOptions() const
 {
-    return numOptions;
+    if (optarray) return optarray->numElements();
+    if (optlist)  return optlist->numElements();
+    return 0;
 }
 
 option* option_manager::GetOptionNumber(unsigned i) const
 {
-    if (i>=numOptions) return nullptr;
-    if (!sortedOptions) return nullptr;
-    return sortedOptions[i];
+    if (i>=NumOptions()) return nullptr;
+    if (!optarray) return nullptr;
+    return dynamic_cast <option*> (optarray->get(i));
 }
 
 void option_manager::DocumentOptions(doc_formatter &df,
         const char* keyword) const
 {
-    DCASSERT(sortedOptions);
-    for (unsigned i=0; i<numOptions; i++) {
-        if (sortedOptions[i]->isApropos(df, keyword)) {
+    DCASSERT(optarray);
+    for (unsigned i=0; i<optarray->numElements(); i++) {
+        const option* o = dynamic_cast <option*> (optarray->get(i));
+        if (o->isApropos(df, keyword)) {
             df.Out() << "\n";
-            sortedOptions[i]->PrintDocs(df, keyword);
+            o->PrintDocs(df, keyword);
         }
     }
 }
 
 void option_manager::ListOptions(doc_formatter &df) const
 {
-    DCASSERT(sortedOptions);
-    for (unsigned i=0; i<numOptions; i++) {
+    DCASSERT(optarray);
+    for (unsigned i=0; i<optarray->numElements(); i++) {
+        const option* o = dynamic_cast <option*> (optarray->get(i));
 #ifndef DEVELOPMENT_CODE
-        if (sortedOptions[i]->IsUndocumented())  continue;
+        if (o->IsUndocumented())  continue;
 #endif
-        sortedOptions[i]->ShowCurrent(df.Out());
+        o->ShowCurrent(df.Out());
         df.Out() << "\n";
     }
 }
@@ -165,7 +159,6 @@ option* option_manager::addChecklistOption(const char* name, const char* doc)
 
 option* option_manager::addOption(option *o)
 {
-    DCASSERT(!sortedOptions);
     DCASSERT(optlist);
     optlist->insert(o);
     return o;

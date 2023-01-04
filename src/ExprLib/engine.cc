@@ -1,6 +1,7 @@
 
 #include "engine.h"
 #include "../Utils/splay.h"
+#include "../Utils/ordarray.h"
 #include "../Utils/initializer.h"
 #include "../Options/options.h"
 #include "../Options/optman.h"
@@ -30,12 +31,13 @@ engine_watcher::engine_watcher(engtype* et)
 {
     ET = et;
     DCASSERT(ET);
+    DCASSERT(ET->EngList);
 }
 
 void engine_watcher::notify(const option* opt)
 {
-    CHECK_RANGE(0, selected, ET->numEngines);
-    ET->selected_engine = ET->engineList[selected];
+    DCASSERT(selected < ET->EngList->numElements());
+    ET->selected_engine = smart_cast <engine*> (ET->EngList->get(selected));
 }
 
 // ********************************************************
@@ -172,7 +174,7 @@ option_manager* engine::internalOpts()
 // *             traversal to build  groups of measures             *
 // ******************************************************************
 
-class build_groups_traversal : public splayOfShared::tree_traversal {
+class build_groups_traversal : public shared_visitor {
         set_of_measures** groups;
         unsigned numgroups;
     public:
@@ -213,17 +215,16 @@ engtype::engtype(const char* n, const char* d, calling_form f)
     finalized = false;
     is_blocked_engine = false;
 
-    EngTree = 0;
-    engineList = 0;
-    numEngines = 0;
+    EngTree = nullptr;
+    EngList = nullptr;
 
-    selected_engine = 0;
+    selected_engine = nullptr;
 }
 
 engtype::~engtype()
 {
     killEngTree();
-    delete[] engineList;
+    delete EngList;
 }
 
 void engtype::registerEngine(engine* e)
@@ -265,18 +266,15 @@ void engtype::finalizeRegistry(option_manager* om)
     //
     // Convert engines into an ordered array
     //
-    numEngines = EngTree->numElements();
-    DCASSERT(numEngines > 0);
-    engineList = new engine*[numEngines];
-    copy_traversal <engine> T(engineList, numEngines);
-    EngTree->traverse(T);
+    EngList = new orderedShared(*EngTree);
     killEngTree();
-
     finalized = true;
 
     if (!om) return;    // Can't build an option
-    if (numEngines < 2) {
-        if (!engineList[0]->hasOptions()) return;
+    if (EngList->numElements() < 2) {
+        engine* item0 = dynamic_cast <engine*> (EngList->get(0));
+        DCASSERT(item0);
+        if (!item0->hasOptions()) return;
     }
 
     //
@@ -284,14 +282,16 @@ void engtype::finalizeRegistry(option_manager* om)
     //
 
     engine_watcher* EW = new engine_watcher(this);
-    option* ro = om->addRadioOption(Name(), Documentation(), numEngines, EW->Link());
+    option* ro = om->addRadioOption(Name(), Documentation(),
+        EngList->numElements(), EW->Link());
     ro->registerWatcher(EW);
-    for (unsigned i=0; i<numEngines; i++) {
-        DCASSERT(engineList[i]);
-        if (engineList[i] == selected_engine) {
+    for (unsigned i=0; i<EngList->numElements(); i++) {
+        engine* item = dynamic_cast <engine*> (EngList->get(i));
+        DCASSERT(item);
+        if (item == selected_engine) {
             EW->Link() = i;
         }
-        engineList[i]->addButtonToOption(ro, i);
+        item->addButtonToOption(ro, i);
     }
 }
 

@@ -141,4 +141,15 @@ inline void Nullify(SHARED* &ptr)
     ptr = 0;
 }
 
+// ******************************************************************
+// *                                                                *
+// *                      shared_visitor class                      *
+// *                                                                *
+// ******************************************************************
+
+class shared_visitor {
+    public:
+        virtual void visit(shared_object* obj) = 0;
+};
+
 #endif

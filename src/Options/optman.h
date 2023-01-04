@@ -9,6 +9,7 @@ class doc_formatter;   // defined in streams.h
 class option;
 class shared_string;
 class splayOfShared;
+class orderedShared;
 
 // **************************************************************************
 // *                        option_manager interface                        *
@@ -159,8 +160,7 @@ class option_manager : public shared_object {
 
     private:
         splayOfShared *optlist;
-        option** sortedOptions;
-        unsigned numOptions;
+        orderedShared *optarray;
 
         static option_manager* _global;
 };

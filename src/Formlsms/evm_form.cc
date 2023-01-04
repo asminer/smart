@@ -1,20 +1,17 @@
 
-#include "evm_form.h"
 #include "../Options/options.h"
 #include "../Options/optman.h"
 
 #include "../Utils/init_opts.h"
-#include "../ExprLib/startup.h"
 
-#include "../ExprLib/exprman.h"
 #include "../ExprLib/formalism.h"
 #include "../ExprLib/casting.h"
 #include "../ExprLib/values.h"
-
 #include "../ExprLib/sets.h"
 #include "../ExprLib/mod_def.h"
 #include "../ExprLib/mod_vars.h"
 #include "../ExprLib/dd_front.h"
+
 #include "dsde_hlm.h"
 
 #include "../Utils/splay.h"
@@ -63,7 +60,7 @@ public:
   }
   */
 
-  void Compile(const exprman* em);
+  void Compile();
 };
 
 // **************************************************************************
@@ -101,10 +98,10 @@ int assign_entry::Compare(const shared_object* o) const
     return SIGN(SafeID(lhs) - SafeID(a->lhs));
 }
 
-void assign_entry::Compile(const exprman* em)
+void assign_entry::Compile()
 {
   DCASSERT(0==firing);
-  firing = MakeVarAssign(em, lhs, rhs);
+  firing = MakeVarAssign(lhs, rhs);
 }
 
 // **************************************************************************
@@ -322,7 +319,7 @@ void evm_event::Finalize(outputStream &ds)
     guards = 0;
   }
   if (ng > 1) {
-    setEnabling(em->makeAssocOp(location::NOWHERE(), exprman::aop_and, guards, 0, ng));
+    setEnabling(assoc_op::makeExpr(location::NOWHERE(), assoc_op::aop_and, guards, 0, ng));
   } else {
     if (1==ng) {
       setEnabling(guards[0]);
@@ -342,11 +339,11 @@ void evm_event::Finalize(outputStream &ds)
   for (unsigned i=0; i<na; i++) {
     assign_entry* a = smart_cast <assign_entry*> (build_data->modlist->getElement(i));
     DCASSERT(a);
-    a->Compile(em);
+    a->Compile();
     nextlist[i] = a->getFiring();
   }
   if (na > 1) {
-    setNextstate(em->makeAssocOp(location::NOWHERE(), exprman::aop_semi, nextlist, 0, na));
+    setNextstate(assoc_op::makeExpr(location::NOWHERE(), assoc_op::aop_semi, nextlist, 0, na));
   } else {
     if (1==na) setNextstate(nextlist[0]);
     delete[] nextlist;
@@ -1252,25 +1249,24 @@ void evm_assert::Compute(traverse_data &x, expr** pass, int np)
 // *                                                                *
 // ******************************************************************
 
-// TBD: work on killing these
-class old_init_evmform : public startup {
+class init_evmform : public initializer {
     public:
-        old_init_evmform();
-        virtual bool execute();
+        init_evmform();
+    protected:
+        virtual void execute();
 };
-old_init_evmform the_old_evmform_startup;
+static init_evmform the_evmform_initializer;
 
-old_init_evmform::old_init_evmform() : startup("init_evmform")
+init_evmform::init_evmform() : initializer(__FILE__, 1, 3)
 {
-    usesResource("em");
-    usesResource("CML");
-    buildsResource("formalisms");
+    builds_resource(0, "evm");
+    needs_resource(1, "Warning");
+    needs_resource(2, "Debug");
+    needs_resource(3, "CML");
 }
 
-bool old_init_evmform::execute()
+void init_evmform::execute()
 {
-    if (0==em) return false;
-
     //
     // Set up types.
     //
@@ -1287,51 +1283,34 @@ bool old_init_evmform::execute()
     evm_def::intvar_type = t_intvar;
     evm_def::event_type = t_event;
 
+    // Set up and register formalisms
+    formalism* evm = new evm_formalism(
+            "evm",
+            "Event & Variable Model",
+            "The event & variable formalism allows manipulation of integer state variables by events.  Event enabling expressions and assignment of state variables by events are specified by hand via the appropriate function calls."
+    );
+    if (type::registerNew(evm) != evm) {
+        internal_error E(__FILE__, __LINE__);
+        E << "evm type already exists?";
+        return;
+    }
 
-  // Set up and register formalisms
-  const char* longdocs = "The event & variable formalism allows manipulation of integer state variables by events.  Event enabling expressions and assignment of state variables by events are specified by hand via the appropriate function calls.";
+    //
+    // fill model symbol table
+    //
+    symbol_table* evmsyms = new symbol_table;
+    evmsyms->addSymbol(  new evm_eval     );
+    evmsyms->addSymbol(  new evm_range    );
+    evmsyms->addSymbol(  new evm_enabled  );
+    evmsyms->addSymbol(  new evm_assign   );
+    evmsyms->addSymbol(  new evm_init     );
+    evmsyms->addSymbol(  new evm_hide     );
+    evmsyms->addSymbol(  new evm_assert   );
+    Add_DSDE_varfuncs(evm_def::intvar_type, evmsyms);
+    Add_DSDE_eventfuncs(evm_def::event_type, evmsyms);
+    evm->setFunctions(evmsyms);
+    evm->addCommonFuncs();
 
-  formalism* evm = new evm_formalism("evm", "Event & Variable Model", longdocs);
-  if (type::registerNew(evm) != evm) {
-    internal_error E(__FILE__, __LINE__);
-    E << "evm type already exists";
-  }
-
-  // fill symbol table
-  symbol_table* evmsyms = new symbol_table;
-  evmsyms->addSymbol(  new evm_eval     );
-  evmsyms->addSymbol(  new evm_range    );
-  evmsyms->addSymbol(  new evm_enabled  );
-  evmsyms->addSymbol(  new evm_assign   );
-  evmsyms->addSymbol(  new evm_init     );
-  evmsyms->addSymbol(  new evm_hide     );
-  evmsyms->addSymbol(  new evm_assert   );
-  Add_DSDE_varfuncs(evm_def::intvar_type, evmsyms);
-  Add_DSDE_eventfuncs(evm_def::event_type, evmsyms);
-  evm->setFunctions(evmsyms);
-  evm->addCommonFuncs(CML);
-  return true;
-}
-
-// ******************************************************************
-
-class init_evmform : public initializer {
-    public:
-        init_evmform();
-    protected:
-        virtual void execute();
-};
-static init_evmform the_evmform_initializer;
-
-init_evmform::init_evmform() : initializer("evm_form.cc", 1, 2)
-{
-    builds_resource(0, "evm_form.cc");
-    needs_resource(1, "Warning");
-    needs_resource(2, "Debug");
-}
-
-void init_evmform::execute()
-{
     //
     // Option defaults
     //

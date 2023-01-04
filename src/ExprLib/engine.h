@@ -15,6 +15,7 @@
 #include "functions.h"
 
 class splayOfShared;
+class orderedShared;
 
 class engtype;
 class measure;
@@ -378,8 +379,9 @@ class engtype : public shared_string {
         // pre-finalization
         splayOfShared* EngTree;
         // post-finalize
-        engine** engineList;
-        unsigned numEngines;
+        orderedShared* EngList;
+        // engine** engineList;
+        // unsigned numEngines;
         //
         engine* selected_engine;
 

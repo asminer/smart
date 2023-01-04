@@ -1,5 +1,4 @@
 
-#include "fsm_form.h"
 #include "rss_enum.h"
 #include "rgr_grlib.h"
 #include "enum_hlm.h"
@@ -10,8 +9,6 @@
 #include "../Utils/init_opts.h"
 #include "../Utils/splay.h"
 
-#include "../ExprLib/startup.h"
-#include "../ExprLib/exprman.h"
 #include "../ExprLib/formalism.h"
 #include "../ExprLib/sets.h"
 #include "../ExprLib/mod_def.h"
@@ -564,19 +561,6 @@ bool old_init_fsms::execute()
 {
   if (0==em) return false;
 
-  // Set up and register formalisms
-  const char* longdocs = "The finite state machine formalism fsm allows for direct specification of a finite state machine. States of the finite state machine are declared, and transitions between states are specified \"by hand\".";
-
-  formalism* fsm = new fsm_formalism("fsm", "Finite state machine", longdocs);
-  if (type::registerNew(fsm) != fsm) {
-    internal_error E(__FILE__, __LINE__);
-    E << "fsm type already exists?";
-    return false;
-  }
-
-  // set up and register state type
-  simple_type* t_state = type::registerNew(new void_type("state", "Discrete state", "State of a model (finite state machine or Markov chain)"));
-  type::allowSetsOf(t_state);
 
   // Grab functions into a symbol table
   symbol_table* mcsyms = new symbol_table();
@@ -603,18 +587,37 @@ class init_fsms : public initializer {
 };
 static init_fsms the_fsm_initializer;
 
-init_fsms::init_fsms() : initializer("fsm_form.cc", 1, 2)
+init_fsms::init_fsms() : initializer(__FILE__, 1, 3)
 {
-    builds_resource(0, "fsm_form.cc");
+    builds_resource(0, "fsm");
     needs_resource(1, "Warning");
     needs_resource(2, "Debug");
-    // Not sure about these
-    // needs_resource(4, "em");     // for types
-    // needs_resource(5, "CML");    // common measures
+    needs_resource(3, "CML");
 }
 
 void init_fsms::execute()
 {
+    //
+    // Types
+    //
+    simple_type* t_state = type::registerNew(new void_type("state", "Discrete state", "State of a model (finite state machine or Markov chain)"));
+    type::allowSetsOf(t_state);
+
+    //
+    // Register formalism
+    //
+    formalism* fsm = new fsm_formalism(
+        "fsm",
+        "Finite state machine",
+        "The finite state machine formalism fsm allows for direct specification of a finite state machine. States of the finite state machine are declared, and transitions between states are specified \"by hand\"."
+    );
+    if (type::registerNew(fsm) != fsm) {
+        internal_error E(__FILE__, __LINE__);
+        E << "fsm type already exists?";
+        return;
+    }
+
+
     //
     // Set up options
     //

@@ -259,7 +259,7 @@ private:
   bool SameParams() const;
   void SaveParams();
 
-protected:
+public:
     /*
      * Model (definition) construction errors
      */

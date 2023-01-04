@@ -5,7 +5,7 @@
 // **********************************************************************
 
 // Traversal to copy from the global, "all models" table into a formalism
-class copy_into_formalism : public splayOfShared::tree_traversal {
+class copy_into_formalism : public shared_visitor {
         formalism &F;
     public:
         copy_into_formalism(formalism &f);
@@ -14,6 +14,7 @@ class copy_into_formalism : public splayOfShared::tree_traversal {
 
 copy_into_formalism::copy_into_formalism(formalism &f) : F(f)
 {
+    DCASSERT(F.symb_tree);
 }
 
 void copy_into_formalism::visit(shared_object* item)
@@ -22,27 +23,26 @@ void copy_into_formalism::visit(shared_object* item)
     if (!mf) return;
     switch (mf->getEngClass()) {
         case msr_func::CTL:
-            if (!F.includeCTL()) return;
+            if (!F.include_ctl) return;
             break;
 
         case msr_func::Stochastic:
-            if (!F.includeStochastic()) return;
+            if (!F.include_stoch) return;
             break;
 
         case msr_func::CSL:
-            if (!F.includeCTL()) return;
-            if (!F.includeStochastic()) return;
+            if (!F.include_ctl) return;
+            if (!F.include_stoch) return;
             break;
 
         case msr_func::DCP:
-            if (!F.includeDCP()) return;
+            if (!F.include_dcp) return;
             break;
 
         default:
             break;
     }; // end switch
-    DCASSERT(F.funcs);
-    F.funcs->addSymbol(mf);
+    F.symb_tree->addSymbol(mf);
 }
 
 // **********************************************************************
@@ -50,21 +50,31 @@ void copy_into_formalism::visit(shared_object* item)
 formalism::formalism(const char* n, const char* sd, const char* ld)
  : simple_type(n, sd, ld)
 {
-    funcs = nullptr;
-    idents = nullptr;
     setFormalism();
+    include_ctl = false;
+    include_stoch = false;
+    include_dcp = false;
+
+    symb_tree = new symbol_table;
+    symb_list = nullptr;
 }
 
 formalism::~formalism()
 {
-    delete funcs;
-    delete idents;
+    delete symb_tree;
+    delete symb_list;
+
+    // Should we delete the individual symbols?
 }
 
-void formalism::addCommonFuncs()
+void formalism::finish()
 {
     copy_into_formalism T(*this);
     symbol_table::allModelsTable().traverse(T);
+
+    symb_list = new orderedArray <symbol> (symb_tree->getTable());
+    delete symb_tree;
+    symb_tree = nullptr;
 }
 
 bool formalism::isLegalMeasureType(const type* mtype) const
@@ -75,11 +85,11 @@ bool formalism::isLegalMeasureType(const type* mtype) const
     if (mtype->matches("int"))      return 1;
     if (mtype->matches("real"))     return 1;
     if (mtype->matches("bigint"))   return 1;
-    if (includeCTL()) {
+    if (include_ctl) {
         if (mtype->matches("stateset")) return 1;
         if (mtype->matches("trace")) return 1;
     }
-    if (includeStochastic()) {
+    if (include_stoch) {
         if (mtype->matches("ph int"))     return 1;
         if (mtype->matches("ph real"))    return 1;
         if (mtype->matches("statedist"))  return 1;
@@ -88,17 +98,3 @@ bool formalism::isLegalMeasureType(const type* mtype) const
     return 0;
 }
 
-bool formalism::includeCTL() const
-{
-    return false;
-}
-
-bool formalism::includeStochastic() const
-{
-    return false;
-}
-
-bool formalism::includeDCP() const
-{
-    return false;
-}

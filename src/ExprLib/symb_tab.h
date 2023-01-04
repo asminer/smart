@@ -29,7 +29,7 @@ class symbol_table {
         bool removeSymbol(symbol* s);
 
         /// Traverse the symbol table.
-        inline void traverse(splayOfShared::tree_traversal &t) const {
+        inline void traverse(shared_visitor &t) const {
             table.traverse(t);
         }
 
@@ -53,6 +53,9 @@ class symbol_table {
 //        void copyToArray(const symbol** list);
 
  //       void documentSymbols(doc_formatter &df, const char* keyword);
+
+        const splayOfShared& getTable() const { return table; }
+
 
         /// The "global" symbol table.
         static inline symbol_table& global() {

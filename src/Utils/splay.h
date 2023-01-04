@@ -1,8 +1,9 @@
 #ifndef SPLAY_H
 #define SPLAY_H
 
-#include "../include/defines.h"
 #include "../include/shared.h"
+
+class orderedShared;
 
 /**
     Splay tree or list of shared objects.
@@ -12,22 +13,6 @@
     list when there are few enough items.
 */
 class splayOfShared {
-    public:
-        /**
-            To traverse the tree,
-            derive a class from this one,
-            and override the visit() method.
-        */
-        class tree_traversal {
-            public:
-                tree_traversal();
-                virtual ~tree_traversal();
-                /**
-                    Visit the given item.
-                        @param  item    Pointer to the item
-                */
-                virtual void visit(shared_object* item) = 0;
-        };
     public:
         /** Constructor.
             Create a new, empty list/tree.
@@ -50,14 +35,16 @@ class splayOfShared {
         void deleteAndClear();
 
         inline unsigned numElements() const { return num_elements; }
+        /*
         inline shared_object* getElement(unsigned i) const {
             return (i<num_elements) ? item[i] : nullptr;
         }
+        */
 
         /** Traverse the elements, in order.
                 @param  t   How to visit each item.
         */
-        void traverse(tree_traversal &t) const;
+        void traverse(shared_visitor &t) const;
 
         /** Find element.
                 @param  key  Item to search for.
@@ -221,8 +208,9 @@ class splayOfShared {
         bool is_list;
 };
 
+/*
 template <class SHARED>
-class copy_traversal : public splayOfShared::tree_traversal {
+class copy_traversal : public shared_visitor {
         SHARED** array;
         unsigned length;
         unsigned slot;
@@ -237,5 +225,6 @@ class copy_traversal : public splayOfShared::tree_traversal {
             array[slot++] = dynamic_cast <SHARED*> (item);
         }
 };
+*/
 
 #endif

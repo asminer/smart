@@ -5,14 +5,6 @@ unsigned* splayOfShared::stack = nullptr;
 unsigned  splayOfShared::stack_top = 0;
 unsigned  splayOfShared::stack_size = 0;
 
-splayOfShared::tree_traversal::tree_traversal()
-{
-}
-
-splayOfShared::tree_traversal::~tree_traversal()
-{
-}
-
 splayOfShared::splayOfShared(unsigned l2t, unsigned t2l)
 {
     list2tree = l2t;
@@ -42,7 +34,7 @@ void splayOfShared::deleteAndClear()
     is_list = (list2tree > 0);
 }
 
-void splayOfShared::traverse(tree_traversal &t) const
+void splayOfShared::traverse(shared_visitor &t) const
 {
     if (!root) return;
     unsigned i = root;

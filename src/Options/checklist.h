@@ -5,6 +5,7 @@
 #include "opt_enum.h"
 #include "options.h"
 #include "../Utils/splay.h"
+#include "../Utils/ordarray.h"
 
 #include <iostream>
 #include <fstream>
@@ -92,9 +93,8 @@ public:
 // **************************************************************************
 
 class checklist_opt : public option {
-    splayOfShared* itemlist;
-    checklist_enum** possible;
-    unsigned numpossible;
+    splayOfShared *itemlist;
+    orderedArray <checklist_enum> *itemarray;
 public:
     checklist_opt(const char* n, const char* d);
     virtual ~checklist_opt();

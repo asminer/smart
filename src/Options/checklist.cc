@@ -134,9 +134,8 @@ bool checkall::IsChecked() const
 checklist_opt::checklist_opt(const char* n, const char* d)
 : option(Checklist, n, d)
 {
-    possible = nullptr;
-    numpossible = 0;
     itemlist = new splayOfShared (10, 0);
+    itemarray = nullptr;
 
     itemlist->insert(
         new checkall("ALL", "Alias for all possible items", this)
@@ -146,18 +145,20 @@ checklist_opt::checklist_opt(const char* n, const char* d)
 checklist_opt::~checklist_opt()
 {
     delete itemlist;
-    delete[] possible;
+    delete itemarray;
 }
 
 unsigned checklist_opt:: NumConstants() const
 {
-    return numpossible;
+    if (itemarray) return itemarray->numElements();
+    if (itemlist)  return itemlist->numElements();
+    return 0;
 }
 
 option_enum* checklist_opt::GetConstant(unsigned i) const
 {
-    if (i>=numpossible) return nullptr;
-    return possible[i];
+    if (itemarray) return itemarray->get(i);
+    return nullptr;
 }
 
 void checklist_opt::ShowHeader(std::ostream &s) const
@@ -168,11 +169,17 @@ void checklist_opt::ShowHeader(std::ostream &s) const
 void checklist_opt::ShowCurrent(std::ostream &s) const
 {
     s << *this << " {";
-    bool printed = false;
-    for (unsigned i=0; i<numpossible; i++) if (possible[i]->IsChecked()) {
-        if (printed) s << ", ";
-        s << possible[i]->Name();
-        printed = true;
+    if (itemarray) {
+        bool printed = false;
+        for (unsigned i=0; i<itemarray->numElements(); i++) {
+            const checklist_enum* c = itemarray->get(i);
+            if (!c) continue;
+            if (!c->IsChecked()) continue;
+
+            if (printed) s << ", ";
+            c->Print(s);
+            printed = true;
+        }
     }
     s << "}";
 }
@@ -184,60 +191,54 @@ option_enum* checklist_opt::FindConstant(const char* name) const
 {
     const_string CS(name);
     if (itemlist) {
-        option_enum* find = smart_cast <option_enum*> (itemlist->find(&CS));
-        return find;
+        return smart_cast <option_enum*> (itemlist->find(&CS));
     }
 
-    // binary search
-    unsigned low = 0;
-    unsigned high = numpossible;
-    while (low < high) {
-        unsigned mid = (low+high)/2;
-        int cmp = possible[mid]->Compare(&CS);
-        if (0==cmp) return possible[mid];
-        if (cmp>0) {
-            high = mid;
-        } else {
-            low = mid+1;
-        }
+    if (itemarray) {
+        return itemarray->find(&CS);
     }
-    // not found
+
     return nullptr;
 }
 
 void checklist_opt::ShowRange(doc_formatter &df) const
 {
+    DCASSERT(itemarray);
     df.Out() << "Legal values to be set or unset:";
-    unsigned i;
     unsigned maxenum = 0;
-    for (i=0; i<numpossible; i++)  {
-        unsigned l = strlen(possible[i]->Name());
+    for (unsigned i=0; i<itemarray->numElements(); i++)  {
+        const checklist_enum* c = itemarray->get(i);
+        if (!c) continue;
+        unsigned l = strlen(c->Name());
         maxenum = MAX(maxenum, l);
     }
     df.begin_description(maxenum);
-    for (i=0; i<numpossible; i++) {
-        df.item(possible[i]->Name());
-        df.Out() << possible[i]->Documentation();
+    for (unsigned i=0; i<itemarray->numElements(); i++) {
+        const checklist_enum* c = itemarray->get(i);
+        if (!c) continue;
+        df.item(c->Name());
+        df.Out() << c->Documentation();
     }
     df.end_description();
 }
 
 void checklist_opt::Finish()
 {
-    if (!itemlist) return;
-    numpossible = itemlist->numElements();
-    possible = new checklist_enum* [numpossible];
-    copy_traversal<checklist_enum> T(possible, numpossible);
-    itemlist->traverse(T);
-    delete itemlist;
-    itemlist = nullptr;
+    if (itemlist) {
+        itemarray = new orderedArray<checklist_enum> (*itemlist);
+        delete itemlist;
+        itemlist = nullptr;
+    }
 }
 
 bool checklist_opt::isApropos(const doc_formatter &df, const char* keyword) const
 {
     if (df.Matches(Name(), keyword))   return true;
-    for (unsigned i=0; i<numpossible; i++) {
-        if (df.Matches(possible[i]->Name(), keyword))  return true;
+    if (!itemarray) return false;
+    for (unsigned i=0; i<itemarray->numElements(); i++) {
+        const checklist_enum* c = itemarray->get(i);
+        if (!c) continue;
+        if (df.Matches(c->Name(), keyword))  return true;
     }
     return false;
 }

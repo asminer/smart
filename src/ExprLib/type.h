@@ -8,6 +8,7 @@
 
 class result;
 class splayOfShared;
+class orderedShared;
 
 // class io_environ;
 
@@ -178,6 +179,14 @@ class type : public shared_string {
         static simple_type* registerNew(simple_type* t);
 
         /**
+            Finalize the type registry.
+         */
+        static void finalizeRegistry();
+
+        static unsigned numRegistered();
+        static const simple_type* getRegistered(unsigned i);
+
+        /**
             Find a simple type.
             These are single-word type names with no modifiers.
                 @param  tname   type name
@@ -219,12 +228,6 @@ class type : public shared_string {
         */
         static void allowSetsOf(simple_type* t);
 
-        //
-        // TBD: might want to redesign these methods used for documentation
-        //
-        static unsigned numRegistered();
-        static const simple_type* getRegistered(unsigned i);
-
     protected:
         inline void setVoid()               { is_void = true; }
         inline void setFormalism()          { is_formalism = true; }
@@ -258,7 +261,8 @@ class type : public shared_string {
         bool printable;
         bool is_formalism;
 
-        static splayOfShared* allSimple;
+        static splayOfShared* reg_tree;
+        static orderedShared* reg_list;
 };
 
 // ******************************************************************

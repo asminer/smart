@@ -53,6 +53,7 @@ smart_SOURCES = \
   Utils/init_opts.cc \
   Utils/library.cc \
   Utils/splay.cc \
+  Utils/ordarray.cc \
   Utils/env.cc \
   \
   Options/optman.cc \
@@ -191,6 +192,7 @@ icp_SOURCES = \
   Utils/init_opts.cc \
   Utils/library.cc \
   Utils/splay.cc \
+  Utils/ordarray.cc \
   Utils/env.cc \
   \
   Options/optman.cc \
@@ -275,6 +277,7 @@ lextest_SOURCES = \
   Utils/initializer.cc \
   Utils/init_opts.cc \
   Utils/splay.cc \
+  Utils/ordarray.cc \
   \
   Options/optman.cc \
   Options/options.cc \

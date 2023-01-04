@@ -5,6 +5,7 @@
 #include "../Options/options.h"
 #include "../Utils/initializer.h"
 #include "../Utils/splay.h"
+#include "../Utils/ordarray.h"
 
 #include <sstream>
 
@@ -225,7 +226,8 @@ const char* type::int_comma;
 const char* type::real_comma;
 const char* type::pos_infinity_string;
 const char* type::neg_infinity_string;
-splayOfShared* type::allSimple;
+splayOfShared* type::reg_tree;
+orderedShared* type::reg_list;
 const type* type::null;
 
 type::type(const char* n) : shared_string(n)
@@ -430,19 +432,45 @@ modifier type::findModifier(const char* name)
 
 simple_type* type::registerNew(simple_type* t)
 {
-    DCASSERT(allSimple);
-    simple_type* tnew = smart_cast <simple_type*> (allSimple->insert(t));
+    DCASSERT(reg_tree);
+    simple_type* tnew = smart_cast <simple_type*> (reg_tree->insert(t));
     DCASSERT(tnew);
     if (tnew != t) Delete(t);
     return tnew;
 }
 
+void type::finalizeRegistry()
+{
+    if (reg_tree) {
+        reg_list = new orderedShared( *reg_tree );
+        delete reg_tree;
+        reg_tree = nullptr;
+    }
+}
+
+unsigned type::numRegistered()
+{
+    DCASSERT(reg_list);
+    return reg_list->numElements();
+}
+
+const simple_type* type::getRegistered(unsigned i)
+{
+    DCASSERT(reg_list);
+    return dynamic_cast<simple_type*> (reg_list->get(i));
+}
+
 simple_type* type::find(const char* tname)
 {
     static const_string S;
-    DCASSERT(allSimple);
     S.setStr(tname);
-    return smart_cast <simple_type*> (allSimple->find(&S));
+    if (reg_list) {
+        return smart_cast <simple_type*> (reg_list->find(&S));
+    }
+    if (reg_tree) {
+        return smart_cast <simple_type*> (reg_tree->find(&S));
+    }
+    return nullptr;
 }
 
 const type* type::find(bool set, bool proc, modifier mod, const char* tn)
@@ -492,18 +520,6 @@ void type::allowSetsOf(simple_type* t)
     std::stringstream ss;
     ss << '{' << *t << '}';
     new set_type(ss.str(), t);
-}
-
-unsigned type::numRegistered()
-{
-    DCASSERT(allSimple);
-    return allSimple->numElements();
-}
-
-const simple_type* type::getRegistered(unsigned i)
-{
-    DCASSERT(allSimple);
-    return dynamic_cast<simple_type*> (allSimple->getElement(i));
 }
 
 // ******************************************************************
@@ -888,7 +904,8 @@ void type_initializer::execute()
     type::pos_infinity_string = "infinity";
 //  type::pos_infinity_string = "+infinity";
     type::neg_infinity_string = "-infinity";
-    type::allSimple = new splayOfShared(0, 0);
+    type::reg_tree = new splayOfShared(0, 0);
+    type::reg_list = nullptr;
 
     real_type::index_precision = 1e-5;
 

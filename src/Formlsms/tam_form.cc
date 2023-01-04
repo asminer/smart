@@ -1448,13 +1448,16 @@ bool old_init_tamform::execute()
   simple_type* t_tile = type::registerNew(new void_type("tile", "Tile", "Tile type in a tile assembly model."));
   t_tile->setPrintable();
   type::allowSetsOf(t_tile);
+  tam_def::tile_type = t_tile;
 
   simple_type* t_glue = type::registerNew(new void_type("glue", "Glue", "Glue type in a tile assembly model."));
   t_glue->setPrintable();
   type::allowSetsOf(t_glue);
+  tam_def::glue_type = t_glue;
 
   simple_type* t_border = type::registerNew(new void_type("border", "Border", "Border type in a tile assembly model."));
   t_border->setPrintable();
+  tam_def::border_type = t_border;
 
 
   // Set up and register formalism
