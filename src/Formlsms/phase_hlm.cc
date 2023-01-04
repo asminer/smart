@@ -4,10 +4,7 @@
 #include "phase_hlm.h"
 
 #include "../ExprLib/mod_vars.h"
-#include "../ExprLib/exprman.h"
 #include "../ExprLib/engine.h"
-
-// #include "../include/heap.h"
 
 #include "stoch_llm.h"
 
