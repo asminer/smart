@@ -112,7 +112,7 @@ void temporal_unary::TraverseOperand(traverse_data &x) const
 
     const formalism* model_type = getModelType(x);
     function* pot = dynamic_cast<function*>(
-            model_type->findFunction("potential")
+            model_type->findSymbol("potential")
     );
     traverse_data xx(traverse_data::Substitute);
     xx.parent = pot;
@@ -256,13 +256,13 @@ void temporal_F::Traverse(traverse_data &x)
   switch(texpr->GetOpCode()) {
   case unary_op::opcode::uop_forall:
     // AF
-    tfunc = dynamic_cast<function*>(model_type->findFunction("AF"));
+    tfunc = dynamic_cast<function*>(model_type->findSymbol("AF"));
     break;
   case unary_op::opcode::uop_exists:
     // EF
     tfunc = (traverse_data::TemporalStateSet == x.which)
-      ? dynamic_cast<function*>(model_type->findFunction("EF"))
-      : dynamic_cast<function*>(model_type->findFunction("EF_trace"));
+      ? dynamic_cast<function*>(model_type->findSymbol("EF"))
+      : dynamic_cast<function*>(model_type->findSymbol("EF_trace"));
     break;
   default:
     break;
@@ -333,13 +333,13 @@ void temporal_G::Traverse(traverse_data &x)
   switch(texpr->GetOpCode()) {
   case unary_op::opcode::uop_forall:
     // AG
-    tfunc = dynamic_cast<function*>(model_type->findFunction("AG"));
+    tfunc = dynamic_cast<function*>(model_type->findSymbol("AG"));
     break;
   case unary_op::opcode::uop_exists:
     // EG
     tfunc = (traverse_data::TemporalStateSet == x.which)
-      ? dynamic_cast<function*>(model_type->findFunction("EG"))
-      : dynamic_cast<function*>(model_type->findFunction("EG_trace"));
+      ? dynamic_cast<function*>(model_type->findSymbol("EG"))
+      : dynamic_cast<function*>(model_type->findSymbol("EG_trace"));
     break;
   default:
     break;
@@ -410,13 +410,13 @@ void temporal_X::Traverse(traverse_data &x)
   switch(texpr->GetOpCode()) {
   case unary_op::opcode::uop_forall:
     // AX
-    tfunc = dynamic_cast<function*>(model_type->findFunction("AX"));
+    tfunc = dynamic_cast<function*>(model_type->findSymbol("AX"));
     break;
   case unary_op::opcode::uop_exists:
     // EX
     tfunc = (traverse_data::TemporalStateSet == x.which)
-      ? dynamic_cast<function*>(model_type->findFunction("EX"))
-      : dynamic_cast<function*>(model_type->findFunction("EX_trace"));
+      ? dynamic_cast<function*>(model_type->findSymbol("EX"))
+      : dynamic_cast<function*>(model_type->findSymbol("EX_trace"));
     break;
   default:
     break;
@@ -512,13 +512,13 @@ void temporal_U::Traverse(traverse_data &x)
   switch(texpr->GetOpCode()) {
   case unary_op::opcode::uop_forall:
     // AU
-    tfunc = dynamic_cast<function*>(model_type->findFunction("AU"));
+    tfunc = dynamic_cast<function*>(model_type->findSymbol("AU"));
     break;
   case unary_op::opcode::uop_exists:
     // EU
     tfunc = (traverse_data::TemporalStateSet == x.which)
-      ? dynamic_cast<function*>(model_type->findFunction("EU"))
-      : dynamic_cast<function*>(model_type->findFunction("EU_trace"));
+      ? dynamic_cast<function*>(model_type->findSymbol("EU"))
+      : dynamic_cast<function*>(model_type->findSymbol("EU_trace"));
     break;
   default:
     break;
@@ -555,7 +555,7 @@ void temporal_U::TraverseOperand(traverse_data &x, expr* p) const
     pass[1] = p;
 
     const formalism* model_type = getModelType(x);
-    function* pot = dynamic_cast<function*>(model_type->findFunction("potential"));
+    function* pot = dynamic_cast<function*>(model_type->findSymbol("potential"));
     traverse_data xx(traverse_data::Substitute);
     xx.parent = pot;
     xx.model = x.model;
@@ -672,7 +672,7 @@ void temporal_and::Traverse(traverse_data &x)
   }
 
   const formalism* model_type = getModelType(x);
-  function* tfunc = dynamic_cast<function*>(model_type->findFunction("And_trace"));
+  function* tfunc = dynamic_cast<function*>(model_type->findSymbol("And_trace"));
 
   const expr* oldp = x.parent;
   traverse_data::traversal_type oldwhich = x.which;
@@ -705,7 +705,7 @@ void temporal_and::TraverseOperand(traverse_data &x, expr* p) const
     pass[1] = p;
 
     const formalism* model_type = getModelType(x);
-    function* pot = dynamic_cast<function*>(model_type->findFunction("potential"));
+    function* pot = dynamic_cast<function*>(model_type->findSymbol("potential"));
     traverse_data xx(traverse_data::Substitute);
     xx.parent = pot;
     xx.model = x.model;

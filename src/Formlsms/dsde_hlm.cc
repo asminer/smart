@@ -3,6 +3,8 @@
 
 #include "../ExprLib/sets.h"
 #include "../ExprLib/symb_tab.h"
+#include "../ExprLib/formalism.h"
+
 #include "../include/heap.h"
 
 #include "../Utils/init_opts.h"
@@ -1338,13 +1340,15 @@ void init_dsde::execute()
 // *                                                                        *
 // **************************************************************************
 
-void Add_DSDE_varfuncs(const type* svt, symbol_table* syms) {
-	syms->addSymbol(new dsde_part1(svt));
-	syms->addSymbol(new dsde_part2(svt));
-	syms->addSymbol(new dsde_part3(svt));
+void Add_DSDE_varfuncs(const type* svt, formalism* f)
+{
+	f->addSymbol(new dsde_part1(svt));
+	f->addSymbol(new dsde_part2(svt));
+	f->addSymbol(new dsde_part3(svt));
 }
 
-void Add_DSDE_eventfuncs(const type* evt, symbol_table* syms) {
-	syms->addSymbol(new dsde_priolevel(evt));
-	syms->addSymbol(new dsde_priolist(evt));
+void Add_DSDE_eventfuncs(const type* evt, formalism* f)
+{
+	f->addSymbol(new dsde_priolevel(evt));
+	f->addSymbol(new dsde_priolist(evt));
 }

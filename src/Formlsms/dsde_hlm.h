@@ -7,6 +7,8 @@
 #include "../ExprLib/mod_inst.h"
 #include "../_IntSets/intset.h"
 
+class formalism;
+
 #include <vector>
 // **************************************************************************
 // *                                                                        *
@@ -535,8 +537,8 @@ protected:
 // **************************************************************************
 
 class symbol_table;
-void Add_DSDE_varfuncs(const type* svt, symbol_table* syms);
-void Add_DSDE_eventfuncs(const type* evt, symbol_table* syms);
+void Add_DSDE_varfuncs(const type* svt, formalism* f);
+void Add_DSDE_eventfuncs(const type* evt, formalism* f);
 
 
 #endif

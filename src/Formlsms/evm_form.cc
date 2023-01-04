@@ -106,6 +106,41 @@ void assign_entry::Compile()
 
 // **************************************************************************
 // *                                                                        *
+// *                       assign_entry_visitor class                       *
+// *                                                                        *
+// **************************************************************************
+
+class assign_entry_visitor : public shared_visitor {
+        expr** list;
+        unsigned size;
+        unsigned i;
+    public:
+        assign_entry_visitor(expr** L, unsigned s) {
+            list = L;
+            size = s;
+            i=0;
+        }
+        virtual void visit(shared_object* item) {
+            if (i>=size) return;
+            assign_entry* a = dynamic_cast <assign_entry*> (item);
+            DCASSERT(a);
+            a->Compile();
+            list[i++] = a->getFiring();
+        }
+        expr* combine() {
+            if (i>1) {
+                return assoc_op::makeExpr(location::NOWHERE(),
+                    assoc_op::aop_semi, list, nullptr, i
+                );
+            }
+            expr* ans = i ? list[0] : nullptr;
+            delete[] list;
+            return ans;
+        }
+};
+
+// **************************************************************************
+// *                                                                        *
 // *                            evm_intvar class                            *
 // *                                                                        *
 // **************************************************************************
@@ -308,49 +343,47 @@ bool evm_event::setAssignment(assign_entry* &tmp, expr* rhs)
 
 void evm_event::Finalize(outputStream &ds)
 {
-  // First, traverse "guards" to build enabling expression
-  int ng;
-  expr** guards;
-  if (build_data->guards) {
-    ng = build_data->guards->Length();
-    guards = build_data->guards->CopyAndClear();
-  } else {
-    ng = 0;
-    guards = 0;
-  }
-  if (ng > 1) {
-    setEnabling(assoc_op::makeExpr(location::NOWHERE(), assoc_op::aop_and, guards, 0, ng));
-  } else {
-    if (1==ng) {
-      setEnabling(guards[0]);
+    // Traverse "guards" to build enabling expression
+    int ng;
+    expr** guards;
+    if (build_data->guards) {
+        ng = build_data->guards->Length();
+        guards = build_data->guards->CopyAndClear();
     } else {
-      result always_enabled;
-      always_enabled.setBool(true);
-      setEnabling(
-        new value(location::NOWHERE(), type::find("bool"), always_enabled)
-      );
+        ng = 0;
+        guards = 0;
     }
-    delete[] guards;
-  }
+    if (ng > 1) {
+        setEnabling(
+            assoc_op::makeExpr(
+                location::NOWHERE(), assoc_op::aop_and, guards, 0, ng
+            )
+        );
+    } else {
+        if (1==ng) {
+            setEnabling(guards[0]);
+        } else {
+            result r_true;
+            r_true.setBool(true);
+            setEnabling(
+                new value(location::NOWHERE(), type::find("bool"), r_true)
+            );
+        }
+        delete[] guards;
+    }
 
-  // Traverse assignment list to build overall next-state
-  unsigned na = (build_data->modlist) ? build_data->modlist->numElements() : 0;
-  expr** nextlist = na ? new expr*[na] : 0;
-  for (unsigned i=0; i<na; i++) {
-    assign_entry* a = smart_cast <assign_entry*> (build_data->modlist->getElement(i));
-    DCASSERT(a);
-    a->Compile();
-    nextlist[i] = a->getFiring();
-  }
-  if (na > 1) {
-    setNextstate(assoc_op::makeExpr(location::NOWHERE(), assoc_op::aop_semi, nextlist, 0, na));
-  } else {
-    if (1==na) setNextstate(nextlist[0]);
-    delete[] nextlist;
-  }
+    // Traverse modlist to build next-state expression
+    if (build_data->modlist) {
+        unsigned na = build_data->modlist->numElements();
+        expr** nextlist = na ? new expr*[na] : nullptr;
+        assign_entry_visitor v(nextlist, na);
+        build_data->modlist->traverse(v);
+        setNextstate(v.combine());
+    }
 
-  delete build_data;
-  build_data = 0;
+    // cleanup
+    delete build_data;
+    build_data = nullptr;
 }
 
 // **************************************************************************
@@ -1298,18 +1331,16 @@ void init_evmform::execute()
     //
     // fill model symbol table
     //
-    symbol_table* evmsyms = new symbol_table;
-    evmsyms->addSymbol(  new evm_eval     );
-    evmsyms->addSymbol(  new evm_range    );
-    evmsyms->addSymbol(  new evm_enabled  );
-    evmsyms->addSymbol(  new evm_assign   );
-    evmsyms->addSymbol(  new evm_init     );
-    evmsyms->addSymbol(  new evm_hide     );
-    evmsyms->addSymbol(  new evm_assert   );
-    Add_DSDE_varfuncs(evm_def::intvar_type, evmsyms);
-    Add_DSDE_eventfuncs(evm_def::event_type, evmsyms);
-    evm->setFunctions(evmsyms);
-    evm->addCommonFuncs();
+    evm->addSymbol(  new evm_eval     );
+    evm->addSymbol(  new evm_range    );
+    evm->addSymbol(  new evm_enabled  );
+    evm->addSymbol(  new evm_assign   );
+    evm->addSymbol(  new evm_init     );
+    evm->addSymbol(  new evm_hide     );
+    evm->addSymbol(  new evm_assert   );
+    Add_DSDE_varfuncs(evm_def::intvar_type, evm);
+    Add_DSDE_eventfuncs(evm_def::event_type, evm);
+    evm->finish();
 
     //
     // Option defaults
