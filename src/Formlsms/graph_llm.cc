@@ -3,8 +3,6 @@
 #include "../Options/options.h"
 #include "../Options/optman.h"
 #include "../Utils/init_opts.h"
-#include "../ExprLib/startup.h" // soon...
-#include "../ExprLib/exprman.h"
 #include "../ExprLib/mod_vars.h"
 #include "../Modules/biginttype.h"
 
@@ -27,7 +25,6 @@ const char* MAX_ARC_DISPLAY_OPTION = "MaxArcDisplay";
 
 reporting_msg graph_lldsm::reachgraph::ctl_report;
 reporting_msg graph_lldsm::reachgraph::numpaths_report;
-exprman* graph_lldsm::reachgraph::em = 0;
 
 // ******************************************************************
 // *                                                                *
@@ -290,29 +287,6 @@ stateset* graph_lldsm::reachgraph::incompatibleOperand(const char* op) const
 // *                         Initialization                         *
 // *                                                                *
 // *                                                                *
-// ******************************************************************
-
-class old_init_graphllm : public startup {
-  public:
-    old_init_graphllm();
-    virtual bool execute();
-};
-old_init_graphllm the_graphllm_startup;
-
-old_init_graphllm::old_init_graphllm() : startup("init_graphllm")
-{
-  usesResource("em");
-}
-
-bool old_init_graphllm::execute()
-{
-  if (0==em) return false;
-
-  graph_lldsm::reachgraph::em = em;
-
-  return true;
-}
-
 // ******************************************************************
 
 class init_graphllm : public initializer {

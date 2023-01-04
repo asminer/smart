@@ -3,7 +3,6 @@
 #define PROC_MARKOV_H
 
 #include "stoch_llm.h"
-#include "../ExprLib/exprman.h"
 
 #include "../_GraphLib/graphlib.h"
 #include "../_Timer/timerlib.h"

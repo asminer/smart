@@ -9,10 +9,8 @@
 #include "../Utils/library.h"
 #include "../Utils/init_opts.h"
 
-// #include "../ExprLib/startup.h"
 #include "../ExprLib/mod_inst.h"
 #include "../ExprLib/mod_vars.h"
-#include "../ExprLib/exprman.h"
 
 // External libs
 #include "../_MCLib/mclib.h"

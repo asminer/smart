@@ -19,6 +19,26 @@
 #include "../_LSLib/lslib.h"
 
 // **************************************************************************
+
+class fsm_index_visitor : public shared_visitor {
+        long* indexes;
+        unsigned size;
+        unsigned i;
+    public:
+        fsm_index_visitor(long* ndx, unsigned n) {
+            indexes = ndx;
+            size = n;
+            i = 0;
+        }
+        virtual void visit(shared_object* item) {
+            if (i>=size) return;
+            model_enum_value* st = dynamic_cast <model_enum_value*> (item);
+            DCASSERT(st);
+            indexes[i++] = st->GetIndex();
+        }
+};
+
+// **************************************************************************
 // *                                                                        *
 // *                             fsm_def  class                             *
 // *                                                                        *
@@ -42,7 +62,6 @@ class fsm_def : public model_def {
   static warning_msg no_init;
   static warning_msg dup_arc;
   friend class init_fsms;
-  friend class old_init_fsms;
 public:
   fsm_def(const location &W, const type* t, char*n,
       formal_param **pl, int np);
@@ -185,53 +204,47 @@ void fsm_def::InitModel()
 
 void fsm_def::FinalizeModel(outputStream &ds)
 {
-  model_enum* mcstate = new model_enum(0, current, statelist);
-  statelist = 0;
-  state_count = 0;
+    model_enum* mcstate = new model_enum(0, current, statelist);
+    statelist = nullptr;
+    state_count = 0;
 
-  if (error) {
-    Delete(mcstate);
-    delete mygr;
-    mygr = 0;
-    ConstructionError();
-    return;
-  }
-
-  LS_Vector init;
-  init.f_value = 0;
-  init.d_value = 0;
-  init.size = initial->numElements();
-  if (init.size) {
-    model_enum_value** init_data = new model_enum_value*[init.size];
-    copy_traversal <model_enum_value> T(init_data, init.size);
-    initial->traverse(T);
-    long* foo = new long[init.size];
-    for (unsigned i=0; i<init.size; i++) {
-      DCASSERT(init_data[i]);
-      foo[i] = init_data[i]->GetIndex();
+    if (error) {
+        Delete(mcstate);
+        delete mygr;
+        mygr = 0;
+        ConstructionError();
+        return;
     }
-    init.index = foo;
-    delete[] init_data;
-  } else {
-    init.index = 0;
-    if (StartWarning(no_init)) {
-      no_init << "Empty set of initial states";
-      DoneWarning(no_init);
-    }
-  }
-  delete initial;
-  initial = 0;
 
-  enum_reachset* rss = new enum_reachset(mcstate);
-  grlib_reachgraph* rgr = new grlib_reachgraph(mygr);
-  rgr->setInitial(init);
-  graph_lldsm* foo = new graph_lldsm(lldsm::FSM);
-  foo->setRSS(rss);
-  foo->setRGR(rgr);
-  hldsm* bar = MakeEnumeratedModel(foo);
-  foo->dumpDot(ds);
-  ConstructionSuccess(bar);
-  mygr = 0;
+    LS_Vector init;
+    init.f_value = nullptr;
+    init.d_value = nullptr;
+    init.size = initial->numElements();
+    if (init.size) {
+        long* ndx = new long[init.size];
+        init.index = ndx;
+        fsm_index_visitor v(ndx, init.size);
+        initial->traverse(v);
+    } else {
+        init.index = nullptr;
+        if (StartWarning(no_init)) {
+            no_init << "Empty set of initial states";
+            DoneWarning(no_init);
+        }
+    }
+    delete initial;
+    initial = nullptr;
+
+    enum_reachset* rss = new enum_reachset(mcstate);
+    grlib_reachgraph* rgr = new grlib_reachgraph(mygr);
+    rgr->setInitial(init);
+    graph_lldsm* foo = new graph_lldsm(lldsm::FSM);
+    foo->setRSS(rss);
+    foo->setRGR(rgr);
+    hldsm* bar = MakeEnumeratedModel(foo);
+    foo->dumpDot(ds);
+    ConstructionSuccess(bar);
+    mygr = nullptr;
 }
 
 
@@ -543,42 +556,6 @@ void fsm_lib::printVersion(std::ostream &s) const
 // *                                                                *
 // ******************************************************************
 
-class old_init_fsms : public startup {
-  public:
-    old_init_fsms();
-    virtual bool execute();
-};
-old_init_fsms the_fsm_startup;
-
-old_init_fsms::old_init_fsms() : startup("init_fsms")
-{
-  usesResource("em");
-  usesResource("CML");
-  buildsResource("formalisms");
-}
-
-bool old_init_fsms::execute()
-{
-  if (0==em) return false;
-
-
-  // Grab functions into a symbol table
-  symbol_table* mcsyms = new symbol_table();
-  mcsyms->addSymbol( new fsm_init       );
-  mcsyms->addSymbol( new fsm_arcs       );
-  mcsyms->addSymbol( new fsm_instate    );
-  mcsyms->addSymbol( new fsm_absorbing  );
-  mcsyms->addSymbol( new fsm_deadlocked );
-
-  // Set the symbol table
-  fsm->setFunctions(mcsyms);
-  fsm->addCommonFuncs(CML);
-
-  return true;
-}
-
-// ******************************************************************
-
 class init_fsms : public initializer {
     public:
         init_fsms();
@@ -617,6 +594,15 @@ void init_fsms::execute()
         return;
     }
 
+    //
+    // Add symbols to formalism, and finish it
+    //
+    fsm->addSymbol( new fsm_init       );
+    fsm->addSymbol( new fsm_arcs       );
+    fsm->addSymbol( new fsm_instate    );
+    fsm->addSymbol( new fsm_absorbing  );
+    fsm->addSymbol( new fsm_deadlocked );
+    fsm->finish();
 
     //
     // Set up options

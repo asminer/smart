@@ -1,5 +1,4 @@
 
-#include "mc_form.h"
 #include "rss_enum.h"
 #include "proc_mclib.h"
 #include "enum_hlm.h"
@@ -9,8 +8,6 @@
 #include "../Utils/init_opts.h"
 #include "../Utils/splay.h"
 
-#include "../ExprLib/startup.h" // soon...
-#include "../ExprLib/exprman.h"
 #include "../ExprLib/formalism.h"
 #include "../ExprLib/sets.h"
 #include "../ExprLib/mod_def.h"
@@ -54,14 +51,39 @@ class state_weight : public shared_object {
             DCASSERT(0);
         }
 
-        /*
-  inline int Compare(const model_enum_value* s) {
-    return state->GetIndex() - s->GetIndex();
-  }
-  inline int Compare(const state_weight* sw) {
-    return sw ? Compare(sw->state) : Compare((const model_enum_value*)0);
-  }
-  */
+        class visitor : public shared_visitor {
+                long* indexes;
+                float* weights;
+                double  total;
+                unsigned size;
+                unsigned i;
+                bool first_pass;
+            public:
+                visitor(long* ndx, float* w, unsigned n) {
+                    indexes = ndx;
+                    weights = w;
+                    size = n;
+                    total = 0.0;
+                    i = 0;
+                    first_pass = true;
+                }
+                virtual void visit(shared_object* item) {
+                    if (i>=size) return;
+                    state_weight *s = dynamic_cast <state_weight*> (item);
+                    DCASSERT(s);
+                    if (first_pass) {
+                        total += s->weight;
+                    } else {
+                        weights[i] = s->weight / total;
+                        indexes[i] = s->state->GetIndex();
+                    }
+                    ++i;
+                }
+                inline void secondPass() {
+                    first_pass = false;
+                    i=0;
+                }
+        };
 };
 
 // **************************************************************************
@@ -89,7 +111,6 @@ class markov_def : public model_def {
   static warning_msg dup_init;
   static warning_msg no_init;
   static warning_msg dup_arc;
-  friend class old_init_mcform;
   friend class init_mcform;
 public:
   markov_def(const location &W, const type* t, bool d, char*n,
@@ -230,86 +251,64 @@ void markov_def::InitModel()
 
 void markov_def::FinalizeModel(outputStream &ds)
 {
-  model_enum* mcstate = new model_enum(0, current, statelist);
-  statelist = 0;
-  state_count = 0;
+    model_enum* mcstate = new model_enum(0, current, statelist);
+    statelist = nullptr;
+    state_count = 0;
 
-  if (error) {
-    Delete(mcstate);
-    delete mymc;
-    mymc = 0;
-    ConstructionError();
-    return;
-  }
-
-  DCASSERT(mcstate);
-
-  //
-  // build initial distribution
-  //
-  state_weight** init_data;
-  unsigned size = initial->numElements();
-  if (size) {
-    init_data = new state_weight*[size];
-    copy_traversal <state_weight> T(init_data, size);
-    initial->traverse(T);
-  } else {
-    init_data = 0;
-    if (StartWarning(no_init)) {
-      no_init << "Empty initial distribution";
-      DoneWarning(no_init);
+    if (error) {
+        Delete(mcstate);
+        delete mymc;
+        mymc = nullptr;
+        ConstructionError();
+        return;
     }
-  }
-  delete initial;
-  initial = 0;
 
-  double total = 0;
-  for (long i=0; i<size; i++) {
-    DCASSERT(init_data[i]);
-    total += init_data[i]->weight;
-  }
-  for (long i=0; i<size; i++) {
-    DCASSERT(total > 0);
-    init_data[i]->weight /= total;
-  }
-  long* indexes = new long[size];
-  float* probs = new float[size];
-  for (long i=0; i<size; i++) {
-    indexes[i] = init_data[i]->state->GetIndex();
-    probs[i] = init_data[i]->weight;
-    delete init_data[i];
-  }
-  delete[] init_data;
+    DCASSERT(mcstate);
 
-  LS_Vector init;
-  init.size = size;
-  init.index = indexes;
-  init.f_value = probs;
-  init.d_value = 0;
+    //
+    // build initial distribution
+    //
+    unsigned size = initial->numElements();
+    long* indexes = size ? new long[size] : nullptr;
+    float* probs = size ? new float[size] : nullptr;
+    state_weight::visitor v(indexes, probs, size);
+    initial->traverse(v);   // calculate total weights
+    v.secondPass();
+    initial->traverse(v);   // get probabilities
 
-  //
-  // Build reachable states
-  //
-  enum_reachset* rss = new enum_reachset(mcstate);
+    //
+    // Copy into format for linear solvers
+    //
+    LS_Vector init;
+    init.size = size;
+    init.index = indexes;
+    init.f_value = probs;
+    init.d_value = nullptr;
 
-  //
-  // Build process
-  //
-  mclib_process* proc = new mclib_process(isDiscrete(), mymc);
 
-  //
-  // Package everything
-  //
-  stochastic_lldsm* foo = new stochastic_lldsm(
-    isDiscrete() ? lldsm::DTMC : lldsm::CTMC
-  );
+    //
+    // Build reachable states
+    //
+    enum_reachset* rss = new enum_reachset(mcstate);
 
-  foo->setRSS(rss);
-  foo->setPROC(init, proc);
-  hldsm* bar = MakeEnumeratedModel(foo);
-  foo->dumpDot(ds);
-  ConstructionSuccess(bar);
-  mymc = 0;
+    //
+    // Build process
+    //
+    mclib_process* proc = new mclib_process(isDiscrete(), mymc);
+
+    //
+    // Package everything
+    //
+    stochastic_lldsm* foo = new stochastic_lldsm(
+        isDiscrete() ? lldsm::DTMC : lldsm::CTMC
+    );
+
+    foo->setRSS(rss);
+    foo->setPROC(init, proc);
+    hldsm* bar = MakeEnumeratedModel(foo);
+    foo->dumpDot(ds);
+    ConstructionSuccess(bar);
+    mymc = nullptr;
 }
 
 
@@ -685,96 +684,6 @@ void mc_tta::Compute(traverse_data &x, expr** pass, int np)
 // *                                                                *
 // ******************************************************************
 
-class old_init_mcform : public startup {
-  public:
-    old_init_mcform();
-    virtual bool execute();
-  private:
-    void FillSymbolTable(bool disc, formalism* mc);
-};
-old_init_mcform the_mcform_startup;
-
-old_init_mcform::old_init_mcform() : startup("init_mcform")
-{
-  usesResource("em");
-  usesResource("CML");
-  buildsResource("formalisms");
-}
-
-bool old_init_mcform::execute()
-{
-  if (0==em) return false;
-
-  // Set up and register formalisms
-  const char* longdocs = "The Markov chain formalisms dtmc and ctmc allow for direct specification of a discrete-time or continuous-time Markov chain. The two formalisms are nearly identical; the primary difference is that self-loops in a ctmc are ignored. States of the Markov chain are declared, and transition rates / probabilities are specified \"by hand\".";
-
-  formalism* dtmc = new markov_formalism("dtmc",
-      "Discrete-time Markov chain", longdocs, true);
-  formalism* ctmc = new markov_formalism("ctmc",
-      "Continuous-time Markov chain", longdocs, false);
-
-  if (type::registerNew(dtmc) != dtmc) {
-    internal_error E(__FILE__, __LINE__);
-    E << "dtmc type already exists?";
-    return false;
-  }
-  if (type::registerNew(ctmc) != ctmc) {
-    internal_error E(__FILE__, __LINE__);
-    E << "ctmc type already exists?";
-    return false;
-  }
-
-  // set up and register state type
-  simple_type* t_state = type::registerNew(new void_type("state", "Discrete state", "State of a model (finite state machine or Markov chain)"));
-  type::allowSetsOf(t_state);
-
-  // fill symbol tables
-  FillSymbolTable(true,   dtmc);
-  FillSymbolTable(false,  ctmc);
-
-  return true;
-}
-
-void old_init_mcform::FillSymbolTable(bool disc, formalism* mc)
-{
-  // Build functions if necessary
-  static symbol*  init = 0;
-  static symbol*  arcs = 0;
-  static symbol*  instate = 0;
-  static symbol*  transient = 0;
-  static symbol*  absorbing = 0;
-  static symbol*  dTTA = 0;
-  static symbol*  cTTA = 0;
-
-  if (!init)      init = new mc_init;
-  if (!arcs)      arcs = new mc_arcs;
-  if (!instate)   instate = new mc_instate;
-  if (!transient) transient = new mc_transient;
-  if (!absorbing) absorbing = new mc_absorbing;
-
-  // Grab functions into a symbol table
-  symbol_table* mcsyms = new symbol_table();
-  mcsyms->addSymbol(  init      );
-  mcsyms->addSymbol(  arcs      );
-  mcsyms->addSymbol(  instate   );
-  mcsyms->addSymbol(  transient );
-  mcsyms->addSymbol(  absorbing );
-
-  if (disc) {
-    if (!dTTA)  dTTA = new mc_tta(true);
-    mcsyms->addSymbol(  dTTA    );
-  } else {
-    if (!cTTA)  cTTA = new mc_tta(false);
-    mcsyms->addSymbol(  cTTA    );
-  }
-
-  // Set the symbol table
-  mc->setFunctions(mcsyms);
-  mc->addCommonFuncs(CML);
-}
-
-// ******************************************************************
-
 class init_mcform : public initializer {
     public:
         init_mcform();
@@ -782,16 +691,73 @@ class init_mcform : public initializer {
 };
 static init_mcform the_mcform_initializer;
 
-init_mcform::init_mcform() : initializer("mc_form.cc", 1, 2)
+init_mcform::init_mcform() : initializer("mc_form.cc", 1, 3)
 {
     builds_resource(0, "mc_form.cc");
     needs_resource(1, "Warning");
     needs_resource(2, "Debug");
+    needs_resource(3, "CML");
 }
 
 void init_mcform::execute()
 {
+    //
+    // Register formalisms and state type
+    //
+    const char* longdocs = "The Markov chain formalisms dtmc and ctmc allow for direct specification of a discrete-time or continuous-time Markov chain. The two formalisms are nearly identical; the primary difference is that self-loops in a ctmc are ignored. States of the Markov chain are declared, and transition rates / probabilities are specified \"by hand\".";
+
+    formalism* dtmc = new markov_formalism("dtmc",
+        "Discrete-time Markov chain", longdocs, true);
+    formalism* ctmc = new markov_formalism("ctmc",
+        "Continuous-time Markov chain", longdocs, false);
+    simple_type* t_state = type::registerNew(new void_type("state", "Discrete state", "State of a model (finite state machine or Markov chain)"));
+    type::allowSetsOf(t_state);
+
+    if (type::registerNew(dtmc) != dtmc) {
+        internal_error E(__FILE__, __LINE__);
+        E << "dtmc type already exists?";
+        return;
+    }
+    if (type::registerNew(ctmc) != ctmc) {
+        internal_error E(__FILE__, __LINE__);
+        E << "ctmc type already exists?";
+        return;
+    }
+
+    //
+    // Build model functions for both discrete & continuous
+    //
+    symbol*  init       = new mc_init;
+    symbol*  arcs       = new mc_arcs;
+    symbol*  instate    = new mc_instate;
+    symbol*  transient  = new mc_transient;
+    symbol*  absorbing  = new mc_absorbing;
+
+    //
+    // Add symbols to dtmc model
+    //
+    dtmc->addSymbol(    init                );
+    dtmc->addSymbol(    arcs                );
+    dtmc->addSymbol(    instate             );
+    dtmc->addSymbol(    transient           );
+    dtmc->addSymbol(    absorbing           );
+    dtmc->addSymbol(    new mc_tta(true)    );
+    dtmc->finish();
+
+    //
+    // Add symbols to ctmc model
+    //
+    ctmc->addSymbol(    init                );
+    ctmc->addSymbol(    arcs                );
+    ctmc->addSymbol(    instate             );
+    ctmc->addSymbol(    transient           );
+    ctmc->addSymbol(    absorbing           );
+    ctmc->addSymbol(    new mc_tta(false)   );
+    ctmc->finish();
+
+    //
     // Set up options
+    //
     initialize_msg(markov_def::dup_init,
         "mc_dup_init",
         "For duplicatation of initial probabilities in Markov chain models",

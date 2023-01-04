@@ -190,7 +190,7 @@ protected:
 // ******************************************************************
 
 /** Model variables that are really enumerated values for a state variable.
- For instance, declared "states" in a Markov chain.
+    For instance, declared "states" in a Markov chain.
  */
 class model_enum_value: public model_var {
 protected:
@@ -223,7 +223,7 @@ public:
 // ******************************************************************
 
 /** Model state variables that are one of an enumerated set.
- For instance, the state of a Markov chain.
+    For instance, the state of a Markov chain.
  */
 class model_enum: public model_statevar {
 private:
