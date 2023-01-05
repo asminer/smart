@@ -457,17 +457,20 @@ public:
 
   // Used for ordering events.
   inline int Compare(long i, long j) const {
-    CHECK_RANGE(0, i, num_events);
-    CHECK_RANGE(0, j, num_events);
-    int jmi = event_data[j]->getPriorityLevel()
-            - event_data[i]->getPriorityLevel();
-    if (jmi) return jmi;
-    // same priority, now put immediate first.
-    jmi = event_data[j]->actsLikeImmediate()
-        - event_data[i]->actsLikeImmediate();
-    if (jmi) return jmi;
-    // priority and immediate-ness are equal; keep original order
-    return event_data[i]->getID() - event_data[j]->getID();
+        CHECK_RANGE(0, i, num_events);
+        CHECK_RANGE(0, j, num_events);
+        int jmi = event_data[j]->getPriorityLevel()
+                - event_data[i]->getPriorityLevel();
+        if (jmi) return jmi;
+        // same priority, now put immediate first.
+        jmi = event_data[j]->actsLikeImmediate()
+            - event_data[i]->actsLikeImmediate();
+        if (jmi) return jmi;
+        // priority and immediate-ness are equal; keep original order
+
+        return SIGN(
+            long(event_data[i]->getID()) - long(event_data[j]->getID())
+        );
   };
   // Swap events
   inline void Swap(long i, long j) {

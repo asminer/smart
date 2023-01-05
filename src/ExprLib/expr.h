@@ -229,7 +229,7 @@ class expr : public shared_object {
             typelist* at, const model_def* mt);
 
     public:
-        inline int getID() const { return IDnum; }
+        inline unsigned getID() const { return IDnum; }
 
         inline bool OK() const { return state >= 0; }
         inline bool hadNull() const { return -1 == state; }
@@ -861,9 +861,9 @@ class expr : public shared_object {
         /// Helpful for compiling, and for returning construction errors.
         char state;
         /// Unique identifier, for quick comparison of expression equality.
-        int IDnum;
+        unsigned IDnum;
         /// Static member used to set the identifiers
-        static int global_IDnum;
+        static unsigned global_IDnum;
 
         friend class expr_initializer;
 };

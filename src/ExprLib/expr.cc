@@ -110,7 +110,7 @@ bool traverse_data::Print(std::ostream &s) const
 // ******************************************************************
 
 const type* expr::STMT = nullptr;
-int expr::global_IDnum = 0;
+unsigned expr::global_IDnum = 0;
 debugging_msg expr::expr_debug;
 debugging_msg expr::waitlist_debug;
 debugging_msg expr::model_debug;
@@ -169,12 +169,11 @@ expr::~expr()
 
 void expr::Init(const location &W, const type* st, typelist* at, const model_def* mt)
 {
-  global_IDnum++;
-  if (global_IDnum < 0) {
+  IDnum = ++global_IDnum;
+  if (!IDnum) {
     internal_error E(__FILE__, __LINE__, W);
     E << "Too many expressions, global ID overflow";
   }
-  IDnum = global_IDnum;
   where = W;
 
   simple = st;

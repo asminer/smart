@@ -84,9 +84,13 @@ void place_sv::Affix()
 
 // **************************************************************************
 // *                                                                        *
+// *                                                                        *
 // *                            arc_entry  class                            *
 // *                                                                        *
+// *                                                                        *
 // **************************************************************************
+
+class transition;
 
 /// Each transition maintains a collection of these.
 class arc_entry : public shared_object {
@@ -103,8 +107,8 @@ class arc_entry : public shared_object {
     List <expr> *inhibits;
 
     // after we are "Compiled"
-    expr* enabling;
-    expr* firing;
+    // expr* enabling;
+    // expr* firing;
 
     bool is_compiled;
 public:
@@ -128,9 +132,9 @@ public:
     }
 
     inline void setPlace(model_var* p) {
-        DCASSERT(0==input);
-        DCASSERT(0==output);
-        DCASSERT(0==inhibit);
+        DCASSERT(!input);
+        DCASSERT(!output);
+        DCASSERT(!inhibit);
         place = Share(p);
     }
 
@@ -138,126 +142,35 @@ public:
     inline bool addOutput(expr* x)  { return addWhere(x, output, outputs); }
     inline bool addInhibit(expr* x) { return addWhere(x, inhibit, inhibits); }
 
-    inline bool hasEnabling() const { return enabling;  }
-    inline bool hasFiring() const   { return firing;  }
+    // inline bool hasEnabling() const { return enabling;  }
+    // inline bool hasFiring() const   { return firing;  }
 
-    inline expr* getEnabling() const  { return enabling;  }
-    inline expr* getFiring() const    { return firing;  }
+    // inline expr* getEnabling() const  { return enabling;  }
+    // inline expr* getFiring() const    { return firing;  }
 
-    void Compile();
-    void WriteDotArc(outputStream &ds, void* tname) const;
+    void Compile(transition &t);
+    void WriteDotArc(outputStream &ds, const symbol &tname) const;
 protected:
     // true iff there was a duplicate
     bool addWhere(expr* x, expr* &a, List <expr>* & as);
     expr* makeSum(List <expr>* &x);
 
 public:
-    // class visitor : public shared_visitor {
-    // };
+    class visitor : public shared_visitor {
+            outputStream &dotStream;
+            transition &trans;
+        public:
+            visitor(outputStream &ds, transition &t)
+                : dotStream(ds), trans(t) { }
+            virtual void visit(shared_object* item);
+    };
 };
 
 // **************************************************************************
-// *                           arc_entry  methods                           *
-// **************************************************************************
-
-arc_entry::arc_entry()
-{
-  place = 0;
-  input = output = inhibit = 0;
-  inputs = outputs = inhibits = 0;
-  enabling = firing = 0;
-  is_compiled = false;
-}
-
-arc_entry::~arc_entry()
-{
-  is_compiled = false;
-  Delete(input);
-  Delete(output);
-  Delete(inhibit);
-  Delete(place);
-}
-
-void arc_entry::Compile()
-{
-  if (is_compiled) return;
-  is_compiled = true;
-  // build expressions as necessary for input, output, inhibit lists.
-  if (inputs) {
-    DCASSERT(0==input);
-    input = makeSum(inputs);
-  }
-  if (outputs) {
-    DCASSERT(0==output);
-    output = makeSum(outputs);
-  }
-  if (inhibits) {
-    DCASSERT(0==inhibit);
-    inhibit = makeSum(inhibits);
-  }
-
-  if (input || inhibit)
-    enabling = MakeBleVltB(Share(input), Share(place), Share(inhibit));
-  if (input || output)
-    firing = MakeVarUpdate(Share(place), Share(input), Share(output));
-}
-
-void arc_entry::WriteDotArc(outputStream &ds, void* t) const
-{
-  if (!ds.isActive()) return;
-  if (input) {
-    ds << "\tp" << place << " -> t" << t;
-    ds << " [label=\"";
-    input->Print(ds.stream());
-    ds << "\"]\n";
-  }
-  if (output) {
-    ds << "\tt" << t << " -> p" << place;
-    ds << " [label=\"";
-    output->Print(ds.stream());
-    ds << "\"]\n";
-  }
-  if (inhibit) {
-    ds << "\tp" << place << " -> t" << t;
-    ds << " [label=\"";
-    inhibit->Print(ds.stream());
-    ds << "\", arrowhead=odot]\n";
-  }
-}
-
-bool arc_entry::addWhere(expr* x, expr* &a, List <expr>* & as)
-{
-  DCASSERT(!is_compiled);
-  if (0==x) return false;
-  if (0==as && 0==a) {
-    a = x;
-    return false;
-  }
-  // definitely duplicate
-  if (0==as) as = new List <expr>;
-  if (a) {
-    as->Append(a);
-    a = 0;
-  }
-  as->Append(x);
-  return true;
-}
-
-expr* arc_entry::makeSum(List <expr> * &x)
-{
-  DCASSERT(x);
-  int nargs = x->Length();
-  DCASSERT(nargs > 1);
-  expr** args = 0;
-  args = x->CopyAndClear();
-  delete x;
-  x = 0;
-  return assoc_op::makeExpr(location::NOWHERE(), assoc_op::aop_plus, args, 0, nargs);
-}
-
-// **************************************************************************
+// *                                                                        *
 // *                                                                        *
 // *                            transition class                            *
+// *                                                                        *
 // *                                                                        *
 // **************************************************************************
 
@@ -266,103 +179,241 @@ expr* arc_entry::makeSum(List <expr> * &x)
     goes away.
 */
 class transition : public model_event {
-  /// Data used during model construction
-  struct extra_info {
-    /// arcs touching this transition
-    splayOfShared *arclist;
-    /// guard expressions
-    List <expr>* guards;
+    /// Data used during model construction
+    struct extra_info {
+        /// arcs touching this transition
+        splayOfShared *arclist;
+        /// guard expressions
+        List <expr>* guards;
 
-  public:
-    extra_info();
-    ~extra_info();
-  };
-  /// 0 after model is finalized.
-  extra_info* build_data;
-  /// True is the model has been compiled.
-  bool is_compiled;
-  /// List of enabling expressions
-  std::vector<expr*> enablings;
-  /// List of enabling expressions
-  std::vector<expr*> firings;
-  /// Ignored enabling expressions
-  std::vector<bool> ignore_enabling;
-  /// Ignored firing expressions
-  std::vector<bool> ignore_firing;
-  /// Is transition disabled
-  bool is_disabled;
+    public:
+        extra_info();
+        ~extra_info();
+    };
+    /// 0 after model is finalized.
+    extra_info* build_data;
+    /// True is the model has been compiled.
+    bool is_compiled;
+    /// List of enabling expressions
+    std::vector<expr*> enablings;
+    /// List of enabling expressions
+    std::vector<expr*> firings;
+    /// Ignored enabling expressions
+    std::vector<bool> ignore_enabling;
+    /// Ignored firing expressions
+    std::vector<bool> ignore_firing;
+    /// Is transition disabled
+    bool is_disabled;
 public:
-  transition(const symbol* wrapper, const model_instance* p);
+    transition(const symbol* wrapper, const model_instance* p);
 
-  /// Returns true iff there was a duplicate arc.
-  bool addInput(arc_entry* &tmp, expr* card);
-  /// Returns true iff there was a duplicate arc.
-  bool addOutput(arc_entry* &tmp, expr* card);
-  /// Returns true iff there was a duplicate arc.
-  bool addInhibit(arc_entry* &tmp, expr* card);
-  /// Returns true iff there was another guard expression.
-  bool addGuard(expr* guard);
-  /// Returns true iff this transition has any guard expressions.
-  bool hasGuards() const;
+    /// Returns true iff there was a duplicate arc.
+    bool addInput(arc_entry* &tmp, expr* card);
+    /// Returns true iff there was a duplicate arc.
+    bool addOutput(arc_entry* &tmp, expr* card);
+    /// Returns true iff there was a duplicate arc.
+    bool addInhibit(arc_entry* &tmp, expr* card);
+    /// Returns true iff there was another guard expression.
+    bool addGuard(expr* guard);
+    /// Returns true iff this transition has any guard expressions.
+    bool hasGuards() const;
 
-  /// Builds a list of enabling expressions, and a list of firing expressions.
-  void compile(outputStream &ds);
+    /// Builds a list of enabling expressions, and a list of firing expressions.
+    void compile(outputStream &ds);
 
-  /// Get the number of enabling expressions
-  int getNumEnablingExpr() const;
+    /// Get the number of enabling expressions
+    int getNumEnablingExpr() const;
 
-  /// Get the number of firing expressions
-  int getNumFiringExpr() const;
+    /// Get the number of firing expressions
+    int getNumFiringExpr() const;
 
-  /// Get the i_th enabling expression
-  expr* getEnablingExpr(int i) const;
+    /// Get the i_th enabling expression
+    expr* getEnablingExpr(int i) const;
 
-  /// Get the i_th firing expression
-  expr* getFiringExpr(int i) const;
+    /// Get the i_th firing expression
+    expr* getFiringExpr(int i) const;
 
-  /// Is the i_th enabling expression enabled.
-  bool isEnablingEnabled(int i);
+    /// Is the i_th enabling expression enabled.
+    bool isEnablingEnabled(int i);
 
-  /// Is the i_th firing expression enabled.
-  bool isFiringEnabled(int i);
+    /// Is the i_th firing expression enabled.
+    bool isFiringEnabled(int i);
 
-  /// Mark the i_th enabling expression so that it is
-  /// not included in the compiled enabling expression.
-  void ignoreEnablingExpr(int i);
+    /// Mark the i_th enabling expression so that it is
+    /// not included in the compiled enabling expression.
+    void ignoreEnablingExpr(int i);
 
-  /// Mark the i_th firing expression so that it is
-  /// not included in the compiled firing expression.
-  void ignoreFiringExpr(int i);
+    /// Mark the i_th firing expression so that it is
+    /// not included in the compiled firing expression.
+    void ignoreFiringExpr(int i);
 
-  /// Disable this transition by disabling all enabling and firing conditions
-  /// and by adding a transition guard that will always evaluate to false.
-  void disable();
+    /// Disable this transition by disabling all enabling and firing conditions
+    /// and by adding a transition guard that will always evaluate to false.
+    void disable();
 
-  /// Is this transition disabled
-  bool isDisabled() const { return is_disabled; }
+    /// Is this transition disabled
+    bool isDisabled() const { return is_disabled; }
 
-  /// Builds the enabling and firing expressions.
-  /// Transition cannot be modified once finalized.
-  void Finalize(outputStream &ds);
+    /// Builds the enabling and firing expressions.
+    /// Transition cannot be modified once finalized.
+    void Finalize(outputStream &ds);
+
+    //
+    // The next two methods are called by arc_entry when
+    // "compiling" the transition
+    //
+    inline void addEnabling(expr* e)
+    {
+        if (e) {
+            enablings.push_back(e);
+            ignore_enabling.push_back(false);
+        }
+    }
+    inline void addFiring(expr* f)
+    {
+        if (f) {
+            firings.push_back(f);
+            ignore_firing.push_back(false);
+        }
+    }
 
 protected:
-  inline arc_entry* UniqueInsert(arc_entry* &tmp) {
-    DCASSERT(tmp);
-    DCASSERT(build_data);
-    if (!build_data->arclist) {
-      build_data->arclist = new splayOfShared (16, 0);
-    }
-    arc_entry* find = dynamic_cast <arc_entry*> (
+    inline arc_entry* UniqueInsert(arc_entry* &tmp) {
+        DCASSERT(tmp);
+        DCASSERT(build_data);
+        if (!build_data->arclist) {
+            build_data->arclist = new splayOfShared (16, 0);
+        }
+        arc_entry* find = dynamic_cast <arc_entry*> (
             build_data->arclist->insert(tmp)
-    );
-    if (find == tmp) tmp = nullptr;
-    DCASSERT(find);
-    return find;
-  }
+        );
+        if (find == tmp) tmp = nullptr;
+        DCASSERT(find);
+        return find;
+    }
 };
 
 // **************************************************************************
+// *                                                                        *
+// *                           arc_entry  methods                           *
+// *                                                                        *
+// **************************************************************************
+
+arc_entry::arc_entry()
+{
+    place = nullptr;
+    input = output = inhibit = nullptr;
+    inputs = outputs = inhibits = nullptr;
+    // enabling = firing = nullptr;
+    is_compiled = false;
+}
+
+arc_entry::~arc_entry()
+{
+    is_compiled = false;
+    Delete(input);
+    Delete(output);
+    Delete(inhibit);
+    Delete(place);
+}
+
+void arc_entry::Compile(transition &t)
+{
+    if (is_compiled) return;
+    is_compiled = true;
+    // build expressions as necessary for input, output, inhibit lists.
+    if (inputs) {
+        DCASSERT(!input);
+        input = makeSum(inputs);
+    }
+    if (outputs) {
+        DCASSERT(!output);
+        output = makeSum(outputs);
+    }
+    if (inhibits) {
+        DCASSERT(!inhibit);
+        inhibit = makeSum(inhibits);
+    }
+
+    if (input || inhibit) {
+        t.addEnabling(
+            MakeBleVltB(Share(input), Share(place), Share(inhibit))
+        );
+    }
+    if (input || output) {
+        t.addFiring(
+            MakeVarUpdate(Share(place), Share(input), Share(output))
+        );
+    }
+}
+
+void arc_entry::WriteDotArc(outputStream &ds, const symbol &t) const
+{
+    if (!ds.isActive()) return;
+    DCASSERT(place);
+    if (input) {
+        ds << "\tp" << place->getID() << " -> t" << t.getID();
+        ds << " [label=\"";
+        input->Print(ds.stream());
+        ds << "\"]\n";
+    }
+    if (output) {
+        ds << "\tt" << t.getID() << " -> p" << place->getID();
+        ds << " [label=\"";
+        output->Print(ds.stream());
+        ds << "\"]\n";
+    }
+    if (inhibit) {
+        ds << "\tp" << place->getID() << " -> t" << t.getID();
+        ds << " [label=\"";
+        inhibit->Print(ds.stream());
+        ds << "\", arrowhead=odot]\n";
+    }
+}
+
+bool arc_entry::addWhere(expr* x, expr* &a, List <expr>* & as)
+{
+    DCASSERT(!is_compiled);
+    if (nullptr==x) return false;
+    if (nullptr==as && nullptr==a) {
+        a = x;
+        return false;
+    }
+    // definitely duplicate
+    if (nullptr==as) as = new List <expr>;
+    if (a) {
+        as->Append(a);
+        a = nullptr;
+    }
+    as->Append(x);
+    return true;
+}
+
+expr* arc_entry::makeSum(List <expr> * &x)
+{
+    DCASSERT(x);
+    int nargs = x->Length();
+    DCASSERT(nargs > 1);
+    expr** args = x->CopyAndClear();
+    delete x;
+    x = nullptr;
+    return assoc_op::makeExpr(location::NOWHERE(), assoc_op::aop_plus,
+            args, nullptr, nargs);
+}
+
+void arc_entry::visitor::visit(shared_object* item)
+{
+      arc_entry* a = dynamic_cast <arc_entry*> (item);
+      DCASSERT(a);
+      a->Compile(trans);
+      a->WriteDotArc(dotStream, trans);
+}
+
+
+// **************************************************************************
+// *                                                                        *
 // *                           transition methods                           *
+// *                                                                        *
 // **************************************************************************
 
 transition::extra_info::extra_info()
@@ -448,33 +499,17 @@ void transition::disable()
 
 void transition::compile(outputStream &ds)
 {
-  if (is_disabled) return;
-  if (is_compiled) return;
-  is_compiled = true;
+    if (is_disabled) return;
+    if (is_compiled) return;
+    is_compiled = true;
 
-  ds << "\tt" << this;
-  ds << " [shape=box, label=\"" << Name() << "\"];\n";
-  DCASSERT(build_data);
-  if (build_data->arclist) {
-    for (unsigned i=0; i<build_data->arclist->numElements(); i++) {
-      arc_entry* a = dynamic_cast <arc_entry*> (build_data->arclist->getElement(i));
-      DCASSERT(a);
-      a->Compile();
-      a->WriteDotArc(ds, this);
-    } // for i
-    for (unsigned i=0; i<build_data->arclist->numElements(); i++) {
-      arc_entry* a = dynamic_cast <arc_entry*> (build_data->arclist->getElement(i));
-      DCASSERT(a);
-      if (a->getEnabling()) {
-        enablings.push_back(a->getEnabling());
-        ignore_enabling.push_back(false);
-      }
-      if (a->getFiring()) {
-        firings.push_back(a->getFiring());
-        ignore_firing.push_back(false);
-      }
-    } // for i
-  }
+    ds << "\tt" << getID();
+    ds << " [shape=box, label=\"" << Name() << "\"];\n";
+    DCASSERT(build_data);
+    if (build_data->arclist) {
+        arc_entry::visitor v(ds, *this);
+        build_data->arclist->traverse(v);
+    }
 }
 
 
@@ -1510,7 +1545,8 @@ void petri_def::FinalizeModel(outputStream &ds)
     ds << "digraph pn {\n";
     for (int i=0; i<num_places; i++) {
         model_statevar* p = smart_cast <model_statevar*> (parray[i]);
-        ds << "\tp" << p;
+        DCASSERT(p);
+        ds << "\tp" << p->getID();
         ds << " [shape=circle, label=\"" << p->Name() << "\"];\n";
     }
   }
