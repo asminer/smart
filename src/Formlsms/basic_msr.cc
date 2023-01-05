@@ -1,6 +1,7 @@
 
 #include "../Utils/initializer.h"
 
+#include "../ExprLib/formalism.h"
 #include "../ExprLib/engine.h"
 #include "../ExprLib/mod_def.h"
 #include "../ExprLib/measures.h"
@@ -1520,9 +1521,9 @@ void init_basicmsrs::execute()
 }
 
 
-void Add_MCC_varfuncs(const type* svt, symbol_table* syms)
+void Add_MCC_varfuncs(const type* svt, formalism* f)
 {
-    syms->addSymbol(  new run_for_MCC_UPPERBOUNDS_si(svt) );
+    f->addSymbol(  new run_for_MCC_UPPERBOUNDS_si(svt) );
 }
 
 #if 0

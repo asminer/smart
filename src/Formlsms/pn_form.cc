@@ -8,8 +8,6 @@
 #include "../Utils/init_opts.h"
 #include "../Utils/splay.h"
 
-#include "../ExprLib/startup.h"
-#include "../ExprLib/exprman.h"
 #include "../ExprLib/formalism.h"
 #include "../ExprLib/sets.h"
 #include "../ExprLib/intervals.h"
@@ -18,6 +16,7 @@
 #include "../ExprLib/dd_front.h"
 #include "../ExprLib/measures.h"
 #include "../ExprLib/values.h"
+#include "../ExprLib/casting.h"
 
 #include "../Formlsms/dsde_hlm.h"
 #include "../Formlsms/rss_meddly.h"
@@ -91,77 +90,70 @@ void place_sv::Affix()
 
 /// Each transition maintains a collection of these.
 class arc_entry : public shared_object {
-  model_var* place;
+    model_var* place;
 
-  // for single arcs
-  expr* input;
-  expr* output;
-  expr* inhibit;
+    // for single arcs
+    expr* input;
+    expr* output;
+    expr* inhibit;
 
-  // for multiple arcs
-  List <expr> *inputs;
-  List <expr> *outputs;
-  List <expr> *inhibits;
+    // for multiple arcs
+    List <expr> *inputs;
+    List <expr> *outputs;
+    List <expr> *inhibits;
 
-  // after we are "Compiled"
-  expr* enabling;
-  expr* firing;
+    // after we are "Compiled"
+    expr* enabling;
+    expr* firing;
 
-  bool is_compiled;
+    bool is_compiled;
 public:
-  arc_entry();
+    arc_entry();
 protected:
-  virtual ~arc_entry();
+    virtual ~arc_entry();
 
 public:
 
-  virtual bool Print(std::ostream &s, int width=0) const {
-      return false;
-  }
+    virtual bool Print(std::ostream &s, int width=0) const {
+        return false;
+    }
 
-  virtual int Compare(const shared_object* o) const {
-      const arc_entry* e = dynamic_cast <const arc_entry*> (o);
-      if (e) {
-          return SIGN(SafeID(place) - SafeID(e->place));
-      }
-      const model_var* p = dynamic_cast <const model_var*> (o);
-      return SIGN(SafeID(place) - SafeID(p));
-  }
+    virtual int Compare(const shared_object* o) const {
+        const arc_entry* e = dynamic_cast <const arc_entry*> (o);
+        if (e) {
+            return SIGN(SafeID(place) - SafeID(e->place));
+        }
+        const model_var* p = dynamic_cast <const model_var*> (o);
+        return SIGN(SafeID(place) - SafeID(p));
+    }
 
-  /*
-  inline int Compare(const model_var* p) const {
-    return SIGN(SafeID(place) - SafeID(p));
-  }
-  inline int Compare(const arc_entry* x) const {
-    DCASSERT(x);
-    return Compare(x->place);
-  }
-  */
+    inline void setPlace(model_var* p) {
+        DCASSERT(0==input);
+        DCASSERT(0==output);
+        DCASSERT(0==inhibit);
+        place = Share(p);
+    }
 
+    inline bool addInput(expr* x)   { return addWhere(x, input, inputs); }
+    inline bool addOutput(expr* x)  { return addWhere(x, output, outputs); }
+    inline bool addInhibit(expr* x) { return addWhere(x, inhibit, inhibits); }
 
-  inline void setPlace(model_var* p) {
-    DCASSERT(0==input);
-    DCASSERT(0==output);
-    DCASSERT(0==inhibit);
-    place = Share(p);
-  }
+    inline bool hasEnabling() const { return enabling;  }
+    inline bool hasFiring() const   { return firing;  }
 
-  inline bool addInput(expr* x)   { return addWhere(x, input, inputs); }
-  inline bool addOutput(expr* x)  { return addWhere(x, output, outputs); }
-  inline bool addInhibit(expr* x) { return addWhere(x, inhibit, inhibits); }
+    inline expr* getEnabling() const  { return enabling;  }
+    inline expr* getFiring() const    { return firing;  }
 
-  inline bool hasEnabling() const { return enabling;  }
-  inline bool hasFiring() const   { return firing;  }
-
-  inline expr* getEnabling() const  { return enabling;  }
-  inline expr* getFiring() const    { return firing;  }
-
-  void Compile(const exprman* em);
-  void WriteDotArc(outputStream &ds, void* tname) const;
+    void Compile();
+    void WriteDotArc(outputStream &ds, void* tname) const;
 protected:
-  // true iff there was a duplicate
-  bool addWhere(expr* x, expr* &a, List <expr>* & as);
-  expr* makeSum(const exprman* em, List <expr>* &x);
+    // true iff there was a duplicate
+    bool addWhere(expr* x, expr* &a, List <expr>* & as);
+    expr* makeSum(List <expr>* &x);
+
+public:
+    // class visitor : public shared_visitor {
+    // };
 };
 
 // **************************************************************************
@@ -186,28 +178,28 @@ arc_entry::~arc_entry()
   Delete(place);
 }
 
-void arc_entry::Compile(const exprman* em)
+void arc_entry::Compile()
 {
   if (is_compiled) return;
   is_compiled = true;
   // build expressions as necessary for input, output, inhibit lists.
   if (inputs) {
     DCASSERT(0==input);
-    input = makeSum(em, inputs);
+    input = makeSum(inputs);
   }
   if (outputs) {
     DCASSERT(0==output);
-    output = makeSum(em, outputs);
+    output = makeSum(outputs);
   }
   if (inhibits) {
     DCASSERT(0==inhibit);
-    inhibit = makeSum(em, inhibits);
+    inhibit = makeSum(inhibits);
   }
 
   if (input || inhibit)
-    enabling = MakeBleVltB(em, Share(input), Share(place), Share(inhibit));
+    enabling = MakeBleVltB(Share(input), Share(place), Share(inhibit));
   if (input || output)
-    firing = MakeVarUpdate(em, Share(place), Share(input), Share(output));
+    firing = MakeVarUpdate(Share(place), Share(input), Share(output));
 }
 
 void arc_entry::WriteDotArc(outputStream &ds, void* t) const
@@ -251,7 +243,7 @@ bool arc_entry::addWhere(expr* x, expr* &a, List <expr>* & as)
   return true;
 }
 
-expr* arc_entry::makeSum(const exprman* em, List <expr> * &x)
+expr* arc_entry::makeSum(List <expr> * &x)
 {
   DCASSERT(x);
   int nargs = x->Length();
@@ -260,7 +252,7 @@ expr* arc_entry::makeSum(const exprman* em, List <expr> * &x)
   args = x->CopyAndClear();
   delete x;
   x = 0;
-  return em->makeAssocOp(location::NOWHERE(), exprman::aop_plus, args, 0, nargs);
+  return assoc_op::makeExpr(location::NOWHERE(), assoc_op::aop_plus, args, 0, nargs);
 }
 
 // **************************************************************************
@@ -357,10 +349,13 @@ protected:
   inline arc_entry* UniqueInsert(arc_entry* &tmp) {
     DCASSERT(tmp);
     DCASSERT(build_data);
-    if (0==build_data->arclist)
+    if (!build_data->arclist) {
       build_data->arclist = new splayOfShared (16, 0);
-    arc_entry* find = dynamic_cast <arc_entry*> (build_data->arclist->insert(tmp));
-    if (find == tmp) tmp = 0;
+    }
+    arc_entry* find = dynamic_cast <arc_entry*> (
+            build_data->arclist->insert(tmp)
+    );
+    if (find == tmp) tmp = nullptr;
     DCASSERT(find);
     return find;
   }
@@ -440,7 +435,7 @@ bool transition::isFiringEnabled(int i) { return !isDisabled() && !ignore_firing
 void transition::ignoreEnablingExpr(int i) { ignore_enabling[i] = true; }
 void transition::ignoreFiringExpr(int i) { ignore_firing[i] = true; }
 
-expr* makeBoolExpr(const exprman* em, bool v) {
+expr* makeBoolExpr(bool v) {
   result* bool_result = new result;
   bool_result->setBool(v);
   return new value(location::NOWHERE(), type::find("bool"), *bool_result);
@@ -464,7 +459,7 @@ void transition::compile(outputStream &ds)
     for (unsigned i=0; i<build_data->arclist->numElements(); i++) {
       arc_entry* a = dynamic_cast <arc_entry*> (build_data->arclist->getElement(i));
       DCASSERT(a);
-      a->Compile(em);
+      a->Compile();
       a->WriteDotArc(ds, this);
     } // for i
     for (unsigned i=0; i<build_data->arclist->numElements(); i++) {
@@ -488,7 +483,7 @@ void transition::Finalize(outputStream &ds)
   if (!is_compiled) compile(ds);
 
   //   if (isDisabled()) {
-  //     expr* disabling_guard = makeBoolExpr(em, false);
+  //     expr* disabling_guard = makeBoolExpr(false);
   //     addGuard(disabling_guard);
   //   }
 
@@ -549,7 +544,7 @@ void transition::Finalize(outputStream &ds)
       expr* compiled_enabling =
         (eptr == 1)
         ? enablist[0]
-        : em->makeAssocOp(location::NOWHERE(), exprman::aop_and, enablist, 0, eptr);
+        : assoc_op::makeExpr(location::NOWHERE(), assoc_op::aop_and, enablist, 0, eptr);
       setEnabling(compiled_enabling);
       if (eptr < 2) delete[] enablist;
     }
@@ -557,7 +552,7 @@ void transition::Finalize(outputStream &ds)
       expr* compiled_firing =
         (fptr == 1)
         ? firelist[0]
-        : em->makeAssocOp(location::NOWHERE(), exprman::aop_semi, firelist, 0, fptr);
+        : assoc_op::makeExpr(location::NOWHERE(), assoc_op::aop_semi, firelist, 0, fptr);
       setNextstate(compiled_firing);
       if (fptr < 2) delete[] firelist;
     }
@@ -1941,7 +1936,7 @@ int pn_arcs::Typecheck(expr** pass, int np) const
   if (np<2)    return NotEnoughParams(np);
 
   if ((0==pass[0]) || (pass[0]->NumComponents() > 1)
-       || !em->isPromotable(pass[0]->Type(), type::find("model")))
+       || !typeconv::isPromotable(pass[0]->Type(), type::find("model")))
   return BadParam(0, np);
 
   for (int i=1; i<np; i++) {
@@ -1956,7 +1951,7 @@ int pn_arcs::Typecheck(expr** pass, int np) const
     // check cardinality, if it is there
     if (pass[i]->NumComponents()==2) continue;
 
-    if (!em->isPromotable(pass[i]->Type(2), type::find(false, true, DETERM, "int")))
+    if (!typeconv::isPromotable(pass[i]->Type(2), type::find(false, true, DETERM, "int")))
       return BadParam(i, np);
   } // for i
   return 0;
@@ -1969,7 +1964,9 @@ int pn_arcs::Promote(expr** pass, int np) const
     // check cardinality, if it is there
     if (pass[i]->NumComponents()==2) continue;
     expr* card = Share(pass[i]->GetComponent(2));
-    expr* picard = em->promote(card, type::find(false, true, DETERM, "int"));
+    expr* picard = typeconv::castExpr(true, location::NOWHERE(),
+            type::find(false, true, DETERM, "int"), card
+    );
     if (card == picard) {
       Delete(picard);
       continue;
@@ -1978,7 +1975,7 @@ int pn_arcs::Promote(expr** pass, int np) const
     newagg[0] = Share(pass[i]->GetComponent(0));
     newagg[1] = Share(pass[i]->GetComponent(1));
     newagg[2] = picard;
-    expr* newpass = em->makeAssocOp(pass[i]->Where(), exprman::aop_colon, newagg, 0, 3);
+    expr* newpass = assoc_op::makeExpr(pass[i]->Where(), assoc_op::aop_colon, newagg, 0, 3);
     Delete(pass[i]);
     pass[i] = newpass;
   } // for i
@@ -2075,7 +2072,7 @@ int pn_inhibit::Typecheck(expr** pass, int np) const
   if (np<2)    return NotEnoughParams(np);
 
   if ((0==pass[0]) || (pass[0]->NumComponents() > 1)
-       || !em->isPromotable(pass[0]->Type(), type::find("model")))
+       || !typeconv::isPromotable(pass[0]->Type(), type::find("model")))
           return BadParam(0, np);
 
   for (int i=1; i<np; i++) {
@@ -2089,7 +2086,7 @@ int pn_inhibit::Typecheck(expr** pass, int np) const
     // check cardinality, if it is there
     if (pass[i]->NumComponents()==2) continue;
 
-    if (!em->isPromotable(pass[i]->Type(2), type::find(false, true, DETERM, "int")))
+    if (!typeconv::isPromotable(pass[i]->Type(2), type::find(false, true, DETERM, "int")))
       return BadParam(i, np);
   } // for i
   return 0;
@@ -2102,7 +2099,9 @@ int pn_inhibit::Promote(expr** pass, int np) const
     // check cardinality, if it is there
     if (pass[i]->NumComponents()==2) continue;
     expr* card = Share(pass[i]->GetComponent(2));
-    expr* picard = em->promote(card, type::find(false, true, DETERM, "int"));
+    expr* picard = typeconv::castExpr(true, location::NOWHERE(),
+            type::find(false, true, DETERM, "int"), card
+    );
     if (card == picard) {
       Delete(picard);
       continue;
@@ -2111,7 +2110,7 @@ int pn_inhibit::Promote(expr** pass, int np) const
     newagg[0] = Share(pass[i]->GetComponent(0));
     newagg[1] = Share(pass[i]->GetComponent(1));
     newagg[2] = picard;
-    expr* newpass = em->makeAssocOp(pass[i]->Where(), exprman::aop_colon, newagg, 0, 3);
+    expr* newpass = assoc_op::makeExpr(pass[i]->Where(), assoc_op::aop_colon, newagg, 0, 3);
     Delete(pass[i]);
     pass[i] = newpass;
   } // for i
@@ -2242,7 +2241,7 @@ int pn_firing::Typecheck(expr** pass, int np) const
   if (np<2)    return NotEnoughParams(np);
 
   if ((0==pass[0]) || (pass[0]->NumComponents() > 1)
-       || !em->isPromotable(pass[0]->Type(), type::find("model")))
+       || !typeconv::isPromotable(pass[0]->Type(), type::find("model")))
           return BadParam(0, np);
 
   for (int i=1; i<np; i++) {
@@ -2739,80 +2738,6 @@ void pn_transitions::Compute(traverse_data &x, expr** pass, int np)
 // *                                                                *
 // ******************************************************************
 
-class old_init_pnform : public startup {
-  public:
-    old_init_pnform();
-    virtual bool execute();
-};
-old_init_pnform the_pnform_startup;
-
-old_init_pnform::old_init_pnform() : startup("init_pnform")
-{
-  usesResource("em");
-  usesResource("CML");
-  buildsResource("formalisms");
-}
-
-bool old_init_pnform::execute()
-{
-  if (0==em) return false;
-
-    //
-    // Misc. static vars
-    //
-    result one(1L);
-    petri_def::ONE = new value(location::NOWHERE(), type::find(false, true, DETERM, "int"), one);
-
-
-  // Set up and register formalisms
-  const char* longdocs = "The Petri net formalism allows high-level description of a model as a Petri net.  The places and transitions are declared, and connections between the two (e.g., input, output, and inhibitor arcs) and other features (e.g., transition guards) are specified via the appropriate function calls.";
-
-  formalism* pn = new petri_formalism("pn", "Petri net", longdocs);
-  if (type::registerNew(pn) != pn) {
-    internal_error E(__FILE__, __LINE__);
-    E << "pn type already exists?";
-    return false;
-  }
-
-  // set up and register place types
-  simple_type* t_place  = type::registerNew(new void_type("place", "Petri net place", "Place of a Petri net, can hold a non-negative number of tokens."));
-  t_place->setPrintable();
-  type::allowSetsOf(t_place);
-
-  // set up and register trans types
-  simple_type* t_trans  = type::registerNew(new void_type("trans", "Petri net transition", "Transition of a Petri net, can move tokens."));
-  t_trans->setPrintable();
-  type::allowSetsOf(t_trans);
-
-  // fill symbol table
-  symbol_table* pnsyms = new symbol_table;
-  pnsyms->addSymbol(  new pn_init     );
-  pnsyms->addSymbol(  new pn_bound    );
-  pnsyms->addSymbol(  new pn_arcs     );
-  pnsyms->addSymbol(  new pn_inhibit  );
-  pnsyms->addSymbol(  new pn_guard    );
-  pnsyms->addSymbol(  new pn_firing   );
-  pnsyms->addSymbol(  new pn_weight   );
-  pnsyms->addSymbol(  new pn_weight2  );
-  pnsyms->addSymbol(  new pn_assert   );
-  pnsyms->addSymbol(  new pn_hide     );
-  pnsyms->addSymbol(  new pn_tk       );
-  pnsyms->addSymbol(  new pn_rate     );
-  pnsyms->addSymbol(  new pn_enabled  );
-  pnsyms->addSymbol(  new pn_places(t_place->getSetOfThis())        );
-  pnsyms->addSymbol(  new pn_transitions(t_trans->getSetOfThis())   );
-  Add_DSDE_varfuncs(petri_def::place_type, pnsyms);
-  Add_DSDE_eventfuncs(petri_def::trans_type, pnsyms);
-  Add_MCC_varfuncs(petri_def::place_type, pnsyms);
-
-  pn->setFunctions(pnsyms);
-  pn->addCommonFuncs(CML);
-
-  return true;
-}
-
-// ******************************************************************
-
 class init_pnform : public initializer {
     public:
         init_pnform();
@@ -2821,17 +2746,68 @@ class init_pnform : public initializer {
 };
 static init_pnform the_pnform_initializer;
 
-init_pnform::init_pnform() : initializer("pn_form.cc", 1, 3)
+init_pnform::init_pnform() : initializer("pn_form.cc", 1, 4)
 {
     builds_resource(0, "pn_form.cc");
     needs_resource(1, "OM");
     needs_resource(2, "Warning");
     needs_resource(3, "Debug");
+    needs_resource(4, "CML");
 }
 
 void init_pnform::execute()
 {
-    // formalism and type registrations here
+    //
+    // Misc. static vars
+    //
+    result one(1L);
+    petri_def::ONE = new value(location::NOWHERE(), type::find(false, true, DETERM, "int"), one);
+
+    //
+    // Set up and register formalisms
+    //
+    formalism* pn = new petri_formalism("pn", "Petri net",
+        "The Petri net formalism allows high-level description of a model as a Petri net.  The places and transitions are declared, and connections between the two (e.g., input, output, and inhibitor arcs) and other features (e.g., transition guards) are specified via the appropriate function calls."
+    );
+    if (type::registerNew(pn) != pn) {
+        internal_error E(__FILE__, __LINE__);
+        E << "pn type already exists?";
+        return;
+    }
+
+    //
+    // Set up and register place, trans types
+    //
+    simple_type* t_place  = type::registerNew(new void_type("place", "Petri net place", "Place of a Petri net, can hold a non-negative number of tokens."));
+    t_place->setPrintable();
+    type::allowSetsOf(t_place);
+
+    simple_type* t_trans  = type::registerNew(new void_type("trans", "Petri net transition", "Transition of a Petri net, can move tokens."));
+    t_trans->setPrintable();
+    type::allowSetsOf(t_trans);
+
+    //
+    // PN functions
+    //
+    pn->addSymbol(  new pn_init     );
+    pn->addSymbol(  new pn_bound    );
+    pn->addSymbol(  new pn_arcs     );
+    pn->addSymbol(  new pn_inhibit  );
+    pn->addSymbol(  new pn_guard    );
+    pn->addSymbol(  new pn_firing   );
+    pn->addSymbol(  new pn_weight   );
+    pn->addSymbol(  new pn_weight2  );
+    pn->addSymbol(  new pn_assert   );
+    pn->addSymbol(  new pn_hide     );
+    pn->addSymbol(  new pn_tk       );
+    pn->addSymbol(  new pn_rate     );
+    pn->addSymbol(  new pn_enabled  );
+    pn->addSymbol(  new pn_places(t_place->getSetOfThis())        );
+    pn->addSymbol(  new pn_transitions(t_trans->getSetOfThis())   );
+    Add_DSDE_varfuncs(petri_def::place_type, pn);
+    Add_DSDE_eventfuncs(petri_def::trans_type, pn);
+    Add_MCC_varfuncs(petri_def::place_type, pn);
+    pn->finish();
 
     //
     // Warning messages

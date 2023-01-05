@@ -24,8 +24,8 @@ protected:
 };
 
 
-class symbol_table;
-void Add_MCC_varfuncs(const type* svt, symbol_table* syms);
+class formalism;
+void Add_MCC_varfuncs(const type* svt, formalism* syms);
 
 
 #endif
