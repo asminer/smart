@@ -2,7 +2,6 @@
 #include "rgr_grlib.h"
 #include "rss_indx.h"
 
-#include "../ExprLib/exprman.h"
 #include "../ExprLib/engine.h"
 #include "../include/heap.h"
 #include "../Modules/expl_ssets.h"

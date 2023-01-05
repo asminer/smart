@@ -1,7 +1,6 @@
 
 #include <cstdio>
 #include "rss_expl.h"
-#include "../ExprLib/exprman.h"
 #include "../ExprLib/mod_vars.h"
 
 // For ordering states

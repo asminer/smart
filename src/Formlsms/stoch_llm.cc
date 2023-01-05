@@ -1,8 +1,6 @@
 
 #include "stoch_llm.h"
 #include "../Options/options.h"
-#include "../ExprLib/startup.h"
-#include "../ExprLib/exprman.h"
 #include "../ExprLib/mod_vars.h"
 #include "../Modules/biginttype.h"
 
@@ -89,8 +87,6 @@ statedist* stochastic_lldsm::getInitialDistribution() const
 // *               stochastic_lldsm::process  methods               *
 // *                                                                *
 // ******************************************************************
-
-exprman* stochastic_lldsm::process::em = 0;
 
 stochastic_lldsm::process::process()
 {
@@ -222,34 +218,4 @@ void stochastic_lldsm::process::showError(const char* s)
     E << s;
 }
 
-
-// ******************************************************************
-// *                                                                *
-// *                                                                *
-// *                         Initialization                         *
-// *                                                                *
-// *                                                                *
-// ******************************************************************
-
-class init_stochllm : public startup {
-  public:
-    init_stochllm();
-    virtual bool execute();
-};
-init_stochllm the_stochllm_startup;
-
-init_stochllm::init_stochllm() : startup("init_stochllm")
-{
-  usesResource("em");
-}
-
-bool init_stochllm::execute()
-{
-  if (0==em) return false;
-
-  stochastic_lldsm::process::em = em;
-
-  // TBD - any options go here
-  return true;
-}
 

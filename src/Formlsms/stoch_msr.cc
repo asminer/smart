@@ -1,12 +1,14 @@
 
-#include "stoch_msr.h"
-#include "stoch_llm.h"
-#include "../ExprLib/startup.h"
+#include "../Utils/initializer.h"
+
+#include "../ExprLib/symb_tab.h"
 #include "../ExprLib/engine.h"
 #include "../ExprLib/measures.h"
+
 #include "../Modules/statevects.h"
 
 #include "basic_msr.h"
+#include "stoch_llm.h"
 
 // *****************************************************************
 // *                           init_dist                           *
@@ -448,18 +450,14 @@ probacc_si::probacc_si() : baseacc_si("prob_acc", type::find(false, true, DETERM
 // *                                Helpers                                *
 // *************************************************************************
 
-engtype* MakeUnordered(exprman* em, const char* n, const char* d)
+inline engtype* MakeUnordered(const char* n, const char* d)
 {
-  engtype* et = new unordered_engtype(n, d);
-  CHECK_RETURN( em->registerEngineType(et), true );
-  return et;
+    return engtype::registerEngineType(new unordered_engtype(n, d));
 }
 
-engtype* MakeTimeOrdered(exprman* em, const char* n, const char* d)
+engtype* MakeTimeOrdered(const char* n, const char* d)
 {
-  engtype* et = new time_engtype(n, d);
-  CHECK_RETURN( em->registerEngineType(et), true );
-  return et;
+    return engtype::registerEngineType(new time_engtype(n, d));
 }
 
 // ******************************************************************
@@ -470,57 +468,59 @@ engtype* MakeTimeOrdered(exprman* em, const char* n, const char* d)
 // *                                                                *
 // ******************************************************************
 
-class init_stochmsrs : public startup {
-  public:
-    init_stochmsrs();
-    virtual bool execute();
+class init_stochmsrs : public initializer {
+    public:
+        init_stochmsrs();
+    protected:
+        virtual void execute();
 };
-init_stochmsrs the_stochmsr_initiailzer;
+static init_stochmsrs the_stochmsr_initiailzer;
 
-init_stochmsrs::init_stochmsrs() : startup("init_stochmsrs")
+init_stochmsrs::init_stochmsrs() : initializer(__FILE__, 2, 2)
 {
-  usesResource("em");
-  usesResource("st");
-  usesResource("statevects");
-  usesResource("biginttype");
-  buildsResource("CML");
-  buildsResource("engtypes");
+  builds_resource(0, "CML");
+  builds_resource(1, "engtypes");
+  needs_resource(2, "statevects");
+  needs_resource(3, "biginttype");
 }
 
-bool init_stochmsrs::execute()
+void init_stochmsrs::execute()
 {
-  // Initialize engines
-  stoch_msr::SteadyStateAverage = MakeUnordered(em,
-      "SteadyStateAverage",
-      "Method to use for computing steady-state averages or steady-state probabilities within models"
-  );
+    //
+    // Initialize engines
+    //
+    stoch_msr::SteadyStateAverage = MakeUnordered(
+        "SteadyStateAverage",
+        "Method to use for computing steady-state averages or steady-state probabilities within models"
+    );
 
-  stoch_msr::TransientAverage = MakeTimeOrdered(em,
-      "TransientAverage",
-      "Method to use for computing transient averages or transient probabilities within models"
-  );
+    stoch_msr::TransientAverage = MakeTimeOrdered(
+        "TransientAverage",
+        "Method to use for computing transient averages or transient probabilities within models"
+    );
 
-  stoch_msr::SteadyStateAccumulated = MakeTimeOrdered(em,
-      "SteadyStateAccumulated",
-      "Method to use for computing infinitely accumulated averages within models"
-  );
+    stoch_msr::SteadyStateAccumulated = MakeTimeOrdered(
+        "SteadyStateAccumulated",
+        "Method to use for computing infinitely accumulated averages within models"
+    );
 
-  stoch_msr::TransientAccumulated = MakeTimeOrdered(em,
-      "TransientAccumulated",
-      "Method to use for computing finitely accumulated averages within models"
-  );
+    stoch_msr::TransientAccumulated = MakeTimeOrdered(
+        "TransientAccumulated",
+        "Method to use for computing finitely accumulated averages within models"
+    );
 
-  CML.Append(new init_dist_si);
-  CML.Append(new distss_si);
-  CML.Append(new avgss_si);
-  CML.Append(new probss_si);
-  CML.Append(new distat_si);
-  CML.Append(new avgat_si);
-  CML.Append(new probat_si);
-  CML.Append(new probacc_si);
-  CML.Append(new avgacc_si);
-
-  return true;
+    //
+    // Add measures to common measure list
+    //
+    symbol_table::addToAllModels(   new init_dist_si    );
+    symbol_table::addToAllModels(   new distss_si       );
+    symbol_table::addToAllModels(   new avgss_si        );
+    symbol_table::addToAllModels(   new probss_si       );
+    symbol_table::addToAllModels(   new distat_si       );
+    symbol_table::addToAllModels(   new avgat_si        );
+    symbol_table::addToAllModels(   new probat_si       );
+    symbol_table::addToAllModels(   new probacc_si      );
+    symbol_table::addToAllModels(   new avgacc_si       );
 }
 
 
