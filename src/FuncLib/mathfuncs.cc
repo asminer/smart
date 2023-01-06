@@ -5,7 +5,6 @@
 #include "../Utils/initializer.h"
 
 #include "../ExprLib/symb_tab.h"
-#include "../ExprLib/exprman.h"
 #include "../ExprLib/intervals.h"
 
 #include <math.h>

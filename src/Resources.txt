@@ -1,0 +1,11 @@
+
+Important resource names and what they mean
+
+Name          Description
+==========    ==================================================
+CML           Common Measure List
+
+              For measures/functions that are common to many
+              different formalisms.
+
+

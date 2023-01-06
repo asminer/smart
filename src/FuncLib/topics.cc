@@ -4,14 +4,17 @@
 #include "../include/defines.h"
 #include "../include/heap.h"
 
-#include "../ExprLib/startup.h"
-#include "../ExprLib/exprman.h"
+#include "../Utils/textfmt.h"
+#include "../Utils/initializer.h"
+
 #include "../ExprLib/help.h"
 #include "../ExprLib/formalism.h"
 #include "../ExprLib/functions.h"
 #include "../ExprLib/symb_tab.h"
-
-#include "../Utils/textfmt.h"
+#include "../ExprLib/casting.h"
+#include "../ExprLib/binary.h"
+#include "../ExprLib/trinary.h"
+#include "../ExprLib/assoc.h"
 
 #include "../Options/optman.h"
 
@@ -20,10 +23,11 @@
 // ******************************************************************
 
 class topic_topics : public help_topic {
-  const symbol_table* st;
+  const symbol_table &st;
 public:
-  topic_topics(const symbol_table* s)
-   : help_topic("topics", "Shows all available help topics (this list!)") { st = s; }
+  topic_topics(const symbol_table &s)
+   : help_topic("topics", "Shows all available help topics (this list!)"), st(s)
+  { }
   virtual void PrintDocs(doc_formatter &df, const char*) const;
 };
 
@@ -33,9 +37,9 @@ void topic_topics::PrintDocs(doc_formatter &df, const char*) const
   PrintHeader(df.Out());
   df.end_heading();
 
-  long num_names = st->NumNames();
+  long num_names = st.numNames();
   const symbol** list = new const symbol*[num_names];
-  st->CopyToArray(list);
+  st.CopyToArray(list);
 
   // get the longest topic name
   int maxname = 0;
@@ -200,7 +204,7 @@ void topic_promotions::PrintDocs(doc_formatter &df, const char*) const
     int plength = 0;
     for (unsigned j=0; j<type::numRegistered(); j++) {
       const type* to = type::getRegistered(j);
-      int d = em->getPromoteDistance(from, to);
+      int d = typeconv::getPromoteDistance(from, to);
       if (d <= 0) continue;
       parray[plength].set(j, d);
       plength++;
@@ -262,8 +266,8 @@ void topic_casting::PrintDocs(doc_formatter &df, const char*) const
     for (unsigned j=0; j<type::numRegistered(); j++) {
       const type* to = type::getRegistered(j);
       DCASSERT(to);
-      if (em->isPromotable(from, to))   continue;
-      if (!em->isCastable(from, to))    continue;
+      if (typeconv::isPromotable(from, to))   continue;
+      if (!typeconv::isCastable(from, to))    continue;
 
       df.Out() << "from " << *from;
       df.Out() << " to " << *to << "\n";
@@ -295,56 +299,56 @@ void topic_operators::PrintDocs(doc_formatter &df, const char*) const
   df.Out() << "The following unary operators may be used when constructing expressions in Smart:\n\n";
 
   df.begin_description(2);
-  df.item(em->getOp(exprman::uop_not));
-  df.Out() << em->documentOp(exprman::uop_not);
-  df.item(em->getOp(exprman::uop_neg));
-  df.Out() << em->documentOp(exprman::uop_neg);
+  df.item(unary_op::getOp(unary_op::uop_not));
+  df.Out() << unary_op::documentOp(unary_op::uop_not);
+  df.item(unary_op::getOp(unary_op::uop_neg));
+  df.Out() << unary_op::documentOp(unary_op::uop_neg);
   df.end_description();
 
   df.Out() << "\nThe following binary operators may be used when constructing expressions in Smart:\n\n";
 
   df.begin_description(2);
-  df.item(em->getOp(0, exprman::aop_plus));
-  df.Out() << em->documentOp(0, exprman::aop_plus);
-  df.item(em->getOp(1, exprman::aop_plus));
-  df.Out() << em->documentOp(1, exprman::aop_plus);
-  df.item(em->getOp(0, exprman::aop_times));
-  df.Out() << em->documentOp(0, exprman::aop_times);
-  df.item(em->getOp(1, exprman::aop_times));
-  df.Out() << em->documentOp(1, exprman::aop_times);
-  df.item(em->getOp(exprman::bop_mod));
-  df.Out() << em->documentOp(exprman::bop_mod);
-  df.item(em->getOp(exprman::bop_diff));
-  df.Out() << em->documentOp(exprman::bop_diff);
+  df.item(assoc_op::getOp(0, assoc_op::aop_plus));
+  df.Out() << assoc_op::documentOp(0, assoc_op::aop_plus);
+  df.item(assoc_op::getOp(1, assoc_op::aop_plus));
+  df.Out() << assoc_op::documentOp(1, assoc_op::aop_plus);
+  df.item(assoc_op::getOp(0, assoc_op::aop_times));
+  df.Out() << assoc_op::documentOp(0, assoc_op::aop_times);
+  df.item(assoc_op::getOp(1, assoc_op::aop_times));
+  df.Out() << assoc_op::documentOp(1, assoc_op::aop_times);
+  df.item(binary_op::getOp(binary_op::bop_mod));
+  df.Out() << binary_op::documentOp(binary_op::bop_mod);
+  df.item(binary_op::getOp(binary_op::bop_diff));
+  df.Out() << binary_op::documentOp(binary_op::bop_diff);
   df.end_description();
   df.Out() << "\n";
   df.begin_description(2);
-  df.item(em->getOp(0, exprman::aop_or));
-  df.Out() << em->documentOp(0, exprman::aop_or);
-  df.item(em->getOp(0, exprman::aop_and));
-  df.Out() << em->documentOp(0, exprman::aop_and);
-  df.item(em->getOp(exprman::bop_implies));
-  df.Out() << em->documentOp(exprman::bop_implies);
+  df.item(assoc_op::getOp(0, assoc_op::aop_or));
+  df.Out() << assoc_op::documentOp(0, assoc_op::aop_or);
+  df.item(assoc_op::getOp(0, assoc_op::aop_and));
+  df.Out() << assoc_op::documentOp(0, assoc_op::aop_and);
+  df.item(binary_op::getOp(binary_op::bop_implies));
+  df.Out() << binary_op::documentOp(binary_op::bop_implies);
   df.end_description();
   df.Out() << "\n";
   df.begin_description(2);
-  df.item(em->getOp(exprman::bop_equals));
-  df.Out() << em->documentOp(exprman::bop_equals);
-  df.item(em->getOp(exprman::bop_nequal));
-  df.Out() << em->documentOp(exprman::bop_nequal);
-  df.item(em->getOp(exprman::bop_gt));
-  df.Out() << em->documentOp(exprman::bop_gt);
-  df.item(em->getOp(exprman::bop_ge));
-  df.Out() << em->documentOp(exprman::bop_ge);
-  df.item(em->getOp(exprman::bop_lt));
-  df.Out() << em->documentOp(exprman::bop_lt);
-  df.item(em->getOp(exprman::bop_le));
-  df.Out() << em->documentOp(exprman::bop_le);
+  df.item(binary_op::getOp(binary_op::bop_equals));
+  df.Out() << binary_op::documentOp(binary_op::bop_equals);
+  df.item(binary_op::getOp(binary_op::bop_nequal));
+  df.Out() << binary_op::documentOp(binary_op::bop_nequal);
+  df.item(binary_op::getOp(binary_op::bop_gt));
+  df.Out() << binary_op::documentOp(binary_op::bop_gt);
+  df.item(binary_op::getOp(binary_op::bop_ge));
+  df.Out() << binary_op::documentOp(binary_op::bop_ge);
+  df.item(binary_op::getOp(binary_op::bop_lt));
+  df.Out() << binary_op::documentOp(binary_op::bop_lt);
+  df.item(binary_op::getOp(binary_op::bop_le));
+  df.Out() << binary_op::documentOp(binary_op::bop_le);
   df.end_description();
   df.Out() << "\n";
   df.begin_description(2);
-  df.item(em->getOp(0, exprman::aop_semi));
-  df.Out() << em->documentOp(0, exprman::aop_semi);
+  df.item(assoc_op::getOp(0, assoc_op::aop_semi));
+  df.Out() << assoc_op::documentOp(0, assoc_op::aop_semi);
   df.end_description();
 
   df.Out() << "\nSee the help topic for an operator name for details about that operator.\n\n";
@@ -392,9 +396,7 @@ void topic_options::PrintDocs(doc_formatter &df, const char*) const
   df.Out() << "# SelectAlgorithm SUPER_FANCY {\n#~~~~MagicNumber 42\n#~~~~UseAwesomeness true\n# }";
   df.end_indent();
   df.Out() << "The online help can be used to display details about available options.   The following top-level options are available (shown with their current settings):\n\n";
-  DCASSERT(em);
-  DCASSERT(em->OptMan());
-  em->OptMan()->ListOptions(df);
+  option_manager::global().ListOptions(df);
 
   df.end_indent();
 }
@@ -404,20 +406,20 @@ void topic_options::PrintDocs(doc_formatter &df, const char*) const
 // ******************************************************************
 
 class topic_unaryop : public help_topic {
-  exprman::unary_opcode op;
+  unary_op::opcode op;
 public:
-  topic_unaryop(exprman::unary_opcode u);
+  topic_unaryop(unary_op::opcode u);
   virtual void PrintDocs(doc_formatter &df, const char*) const;
 };
 
-topic_unaryop::topic_unaryop(exprman::unary_opcode u)
+topic_unaryop::topic_unaryop(unary_op::opcode u)
  : help_topic()
 {
   op = u;
   std::stringstream foo;
-  foo << "unary " << em->getOp(op);
+  foo << "unary " << unary_op::getOp(op);
   setName(foo.str());
-  setSummary(em->documentOp(op));
+  setSummary(unary_op::documentOp(op));
 }
 
 
@@ -428,18 +430,18 @@ void topic_unaryop::PrintDocs(doc_formatter &df, const char*) const
   df.end_heading();
   df.begin_indent();
 
-  df.Out() << "Operator " << em->getOp(op) << " is used for ";
-  df.Out() << em->documentOp(op);
+  df.Out() << "Operator " << unary_op::getOp(op) << " is used for ";
+  df.Out() << unary_op::documentOp(op);
   df.Out() << ".  It may be used on the following types of expressions:\n";
 
   df.begin_description(18);
   for (unsigned i=0; i<type::numRegistered(); i++) {
     const type* t = type::getRegistered(i);
     DCASSERT(t);
-    const type* u = em->getTypeOf(op, t);
+    const type* u = unary_op::getTypeOf(op, t);
     if (0==u)  continue;
     std::stringstream foo;
-    foo << em->getOp(op) << " " << *t;
+    foo << unary_op::getOp(op) << " " << *t;
     df.item(foo.str().c_str());
     df.Out() << "has type " << *u << "\n";
     foo.str("");
@@ -453,20 +455,20 @@ void topic_unaryop::PrintDocs(doc_formatter &df, const char*) const
 // ******************************************************************
 
 class topic_binaryop : public help_topic {
-  exprman::binary_opcode op;
+  binary_op::opcode op;
 public:
-  topic_binaryop(exprman::binary_opcode b);
+  topic_binaryop(binary_op::opcode b);
   virtual void PrintDocs(doc_formatter &df, const char*) const;
 };
 
-topic_binaryop::topic_binaryop(exprman::binary_opcode b)
+topic_binaryop::topic_binaryop(binary_op::opcode b)
  : help_topic()
 {
   op = b;
   std::stringstream foo;
-  foo << "binary " << em->getOp(op);
+  foo << "binary " << binary_op::getOp(op);
   setName(foo.str());
-  setSummary(em->documentOp(op));
+  setSummary(binary_op::documentOp(op));
 }
 
 void topic_binaryop::PrintDocs(doc_formatter &df, const char*) const
@@ -476,8 +478,8 @@ void topic_binaryop::PrintDocs(doc_formatter &df, const char*) const
   df.end_heading();
   df.begin_indent();
 
-  df.Out() << "Operator " << em->getOp(op) << " is used for ";
-  df.Out() << em->documentOp(op);
+  df.Out() << "Operator " << binary_op::getOp(op) << " is used for ";
+  df.Out() << binary_op::documentOp(op);
   df.Out() << ".  It may be used on the following types of expressions:\n";
 
   df.begin_description(35);
@@ -487,11 +489,11 @@ void topic_binaryop::PrintDocs(doc_formatter &df, const char*) const
     for (unsigned j=0; j<type::numRegistered(); j++) {
       const type* u = type::getRegistered(j);
       DCASSERT(u);
-      const type* v = em->getTypeOf(t, op, u);
+      const type* v = binary_op::getTypeOf(t, op, u);
       if (0==v)  continue;
       std::stringstream foo;
       foo << *t << " ";
-      foo << em->getOp(op) << " " << *u;
+      foo << binary_op::getOp(op) << " " << *u;
       df.item(foo.str().c_str());
       df.Out() << "has type " << *v << "\n";
       foo.str("");
@@ -506,20 +508,20 @@ void topic_binaryop::PrintDocs(doc_formatter &df, const char*) const
 // ******************************************************************
 
 class topic_trinaryop : public help_topic {
-  exprman::trinary_opcode op;
+  trinary_op::opcode op;
 public:
-  topic_trinaryop(exprman::trinary_opcode b);
+  topic_trinaryop(trinary_op::opcode b);
   virtual void PrintDocs(doc_formatter &df, const char*) const;
 };
 
-topic_trinaryop::topic_trinaryop(exprman::trinary_opcode b)
+topic_trinaryop::topic_trinaryop(trinary_op::opcode b)
  : help_topic()
 {
   op = b;
   std::stringstream foo;
-  foo << "trinary " << em->getFirst(op) << " " << em->getSecond(op);
+  foo << "trinary " << trinary_op::getFirst(op) << " " << trinary_op::getSecond(op);
   setName(foo.str());
-  setSummary(em->documentOp(op));
+  setSummary(trinary_op::documentOp(op));
 }
 
 void topic_trinaryop::PrintDocs(doc_formatter &df, const char*) const
@@ -529,9 +531,9 @@ void topic_trinaryop::PrintDocs(doc_formatter &df, const char*) const
   df.end_heading();
   df.begin_indent();
 
-  df.Out() << "Operator " << em->getFirst(op) << " ";
-  df.Out() << em->getSecond(op) << " is used for ";
-  df.Out() << em->documentOp(op);
+  df.Out() << "Operator " << trinary_op::getFirst(op) << " ";
+  df.Out() << trinary_op::getSecond(op) << " is used for ";
+  df.Out() << trinary_op::documentOp(op);
   df.Out() << ".  It may be used on the following types of expressions:\n";
 
   df.begin_description(35);
@@ -544,11 +546,11 @@ void topic_trinaryop::PrintDocs(doc_formatter &df, const char*) const
       for (unsigned k=0; k<type::numRegistered(); k++) {
         const type* v = type::getRegistered(k);
         DCASSERT(v);
-        const type* w = em->getTypeOf(op, t, u, v);
+        const type* w = trinary_op::getTypeOf(op, t, u, v);
         if (0==w)  continue;
         std::stringstream foo;
-        foo << *t << " " << em->getFirst(op) << " ";
-        foo << *u << " " << em->getSecond(op) << " ";
+        foo << *t << " " << trinary_op::getFirst(op) << " ";
+        foo << *u << " " << trinary_op::getSecond(op) << " ";
         foo << *v;
         df.item(foo.str().c_str());
         df.Out() << "has type " << *w << "\n";
@@ -566,21 +568,21 @@ void topic_trinaryop::PrintDocs(doc_formatter &df, const char*) const
 
 class topic_assocop : public help_topic {
   bool flipped;
-  exprman::assoc_opcode op;
+  assoc_op::opcode op;
 public:
-  topic_assocop(bool f, exprman::assoc_opcode b);
+  topic_assocop(bool f, assoc_op::opcode b);
   virtual void PrintDocs(doc_formatter &df, const char*) const;
 };
 
-topic_assocop::topic_assocop(bool f, exprman::assoc_opcode b)
+topic_assocop::topic_assocop(bool f, assoc_op::opcode b)
  : help_topic()
 {
   op = b;
   flipped = f;
   std::stringstream foo;
-  foo << "binary " << em->getOp(flipped, op);
+  foo << "binary " << assoc_op::getOp(flipped, op);
   setName(foo.str());
-  setSummary(em->documentOp(flipped, op));
+  setSummary(assoc_op::documentOp(flipped, op));
 }
 
 void topic_assocop::PrintDocs(doc_formatter &df, const char*) const
@@ -590,8 +592,8 @@ void topic_assocop::PrintDocs(doc_formatter &df, const char*) const
   df.end_heading();
   df.begin_indent();
 
-  df.Out() << "Operator " << em->getOp(flipped, op) << " is used for ";
-  df.Out() << em->documentOp(flipped, op);
+  df.Out() << "Operator " << assoc_op::getOp(flipped, op) << " is used for ";
+  df.Out() << assoc_op::documentOp(flipped, op);
   df.Out() << ".  It may be used on the following types of expressions:\n";
 
   df.begin_description(35);
@@ -601,11 +603,11 @@ void topic_assocop::PrintDocs(doc_formatter &df, const char*) const
     for (unsigned j=0; j<type::numRegistered(); j++) {
       const type* u = type::getRegistered(j);
       DCASSERT(u);
-      const type* v = em->getTypeOf(t, flipped, op, u);
+      const type* v = assoc_op::getTypeOf(t, flipped, op, u);
       if (0==v)  continue;
       std::stringstream foo;
       foo << *t << " ";
-      foo << em->getOp(flipped, op) << " " << *u;
+      foo << assoc_op::getOp(flipped, op) << " " << *u;
       df.item(foo.str().c_str());
       df.Out() << "has type " << *v << "\n";
       foo.str("");
@@ -776,80 +778,86 @@ void topic_models::PrintDocs(doc_formatter &df, const char*) const
 // *                                                                *
 // ******************************************************************
 
-class init_helpfuncs : public startup {
-  public:
-    init_helpfuncs();
-    virtual bool execute();
+class init_helpfuncs : public initializer {
+    public:
+        init_helpfuncs();
+    protected:
+        virtual void execute();
 };
-init_helpfuncs the_helpfunc_startup;
+static init_helpfuncs the_helpfunc_initializer;
 
-init_helpfuncs::init_helpfuncs() : startup("init_helpfuncs")
+init_helpfuncs::init_helpfuncs() : initializer(__FILE__, 1, 2)
 {
-  usesResource("em");
-  usesResource("st");
-  usesResource("types");
-  usesResource("formalisms");
+    builds_resource(0, "helpfuncs");
+    needs_resource(1, "types");
+    needs_resource(2, "formalisms");
+    // TBD
 }
 
-bool init_helpfuncs::execute()
+void init_helpfuncs::execute()
 {
-  if (0==st || 0==em)  return false;
 
-  st->AddSymbol(new help_group(
+  symbol_table::addGlobal(new help_group(
     "#include",
     "Preprocessor directive to include files",
     "A source file can include other source files using the #include preprocessing directive, as in C.  An #include directive is ignored if it causes a circular dependency."
   ));
 
-  st->AddSymbol(new help_group(
+  symbol_table::addGlobal(new help_group(
     "comments",
     "Preprocessor rules for comments",
     "Source files can contain C and C++ style comments, which are stripped by the lexer.  The rules are:\n  (1) Characters on a line following \"//\" are ignored.\n  (2) Characters between \"/*\" and \"*/\" are ignored."
   ));
 
-  st->AddSymbol(new help_group(
+  symbol_table::addGlobal(new help_group(
     "functions",
     "Function call rules",
     "Built-in and user functions can be called using the usual, C-style syntax.  When functions are overloaded, Smart determines which function to call by summing the promotion distance (see the help topic on promotions) from the passed parameter to the formal parameter. Smart will also promote a function if necessary, by adding the modifier rand and/or proc to every formal parameter and to the return type of the function.  For instance, the definition:\n \t rand real mydist := sqrt(uniform(0, 1));\n is legal because the function\n \t real sqrt(real x)\n is automatically promoted to the form\n \t rand real sqrt(rand real x)."
   ));
 
-  st->AddSymbol(  new topic_topics(st)                          );
-  st->AddSymbol(  new topic_types                               );
-  st->AddSymbol(  new topic_promotions                          );
-  st->AddSymbol(  new topic_casting                             );
-  st->AddSymbol(  new topic_operators                           );
-  st->AddSymbol(  new topic_options                             );
+  symbol_table::addGlobal(  new topic_topics(symbol_table::global())      );
+  symbol_table::addGlobal(  new topic_types                               );
+  symbol_table::addGlobal(  new topic_promotions                          );
+  symbol_table::addGlobal(  new topic_casting                             );
+  symbol_table::addGlobal(  new topic_operators                           );
+  symbol_table::addGlobal(  new topic_options                             );
 
-  st->AddSymbol(  new topic_unaryop(exprman::uop_not)           );
-  st->AddSymbol(  new topic_unaryop(exprman::uop_neg)           );
+  symbol_table::addGlobal(  new topic_unaryop(unary_op::uop_not)          );
+  symbol_table::addGlobal(  new topic_unaryop(unary_op::uop_neg)          );
 
-  st->AddSymbol(  new topic_binaryop(exprman::bop_implies)      );
-  st->AddSymbol(  new topic_binaryop(exprman::bop_mod)          );
-  st->AddSymbol(  new topic_binaryop(exprman::bop_diff)         );
-  st->AddSymbol(  new topic_binaryop(exprman::bop_equals)       );
-  st->AddSymbol(  new topic_binaryop(exprman::bop_nequal)       );
-  st->AddSymbol(  new topic_binaryop(exprman::bop_gt)           );
-  st->AddSymbol(  new topic_binaryop(exprman::bop_ge)           );
-  st->AddSymbol(  new topic_binaryop(exprman::bop_lt)           );
-  st->AddSymbol(  new topic_binaryop(exprman::bop_le)           );
+  symbol_table::addGlobal(  new topic_binaryop(binary_op::bop_implies)    );
+  symbol_table::addGlobal(  new topic_binaryop(binary_op::bop_mod)        );
+  symbol_table::addGlobal(  new topic_binaryop(binary_op::bop_diff)       );
+  symbol_table::addGlobal(  new topic_binaryop(binary_op::bop_equals)     );
+  symbol_table::addGlobal(  new topic_binaryop(binary_op::bop_nequal)     );
+  symbol_table::addGlobal(  new topic_binaryop(binary_op::bop_gt)         );
+  symbol_table::addGlobal(  new topic_binaryop(binary_op::bop_ge)         );
+  symbol_table::addGlobal(  new topic_binaryop(binary_op::bop_lt)         );
+  symbol_table::addGlobal(  new topic_binaryop(binary_op::bop_le)         );
 
-  st->AddSymbol(  new topic_trinaryop(exprman::top_interval)    );
+  symbol_table::addGlobal(  new topic_trinaryop(trinary_op::top_interval) );
 
-  st->AddSymbol(  new topic_assocop(false, exprman::aop_and)    );
-  st->AddSymbol(  new topic_assocop(false, exprman::aop_or)     );
-  st->AddSymbol(  new topic_assocop(false, exprman::aop_plus)   );
-  st->AddSymbol(  new topic_assocop(true , exprman::aop_plus)   );
-  st->AddSymbol(  new topic_assocop(false, exprman::aop_times)  );
-  st->AddSymbol(  new topic_assocop(true , exprman::aop_times)  );
+  symbol_table::addGlobal(  new topic_assocop(false, assoc_op::aop_and)   );
+  symbol_table::addGlobal(  new topic_assocop(false, assoc_op::aop_or)    );
+  symbol_table::addGlobal(  new topic_assocop(false, assoc_op::aop_plus)  );
+  symbol_table::addGlobal(  new topic_assocop(true , assoc_op::aop_plus)  );
+  symbol_table::addGlobal(  new topic_assocop(false, assoc_op::aop_times) );
+  symbol_table::addGlobal(  new topic_assocop(true , assoc_op::aop_times) );
 
-  st->AddSymbol(  new topic_assocop(false, exprman::aop_semi)   );
-  st->AddSymbol(  new topic_assocop(false, exprman::aop_union)  );
+  symbol_table::addGlobal(  new topic_assocop(false, assoc_op::aop_semi)  );
+  symbol_table::addGlobal(  new topic_assocop(false, assoc_op::aop_union) );
 
-  st->AddSymbol(  new topic_models                              );
+  symbol_table::addGlobal(  new topic_models                              );
 
   //
   // Automatically add help topics for formalisms or simple types
   // (neat trick!)
+  //
+
+  //
+  // TBD: NEATER TRICK:
+  //    when a type/formalism is registered,
+  //    automatically add the help topic for it
   //
   for (unsigned i=0; i<type::numRegistered(); i++) {
     const type* t = type::getRegistered(i);
@@ -860,13 +868,11 @@ bool init_helpfuncs::execute()
     if (t->isAFormalism()) {
       const formalism* ft = smart_cast <const formalism*> (t);
       DCASSERT(ft);
-      st->AddSymbol(  new topic_formalism(ft)       );
+      symbol_table::addGlobal(  new topic_formalism(ft)       );
     } else {
-      st->AddSymbol(  new topic_simpletype(t->getBaseType())       );
+      symbol_table::addGlobal(  new topic_simpletype(t->getBaseType())       );
     }
   }
-
-  return true;
 }
 
 

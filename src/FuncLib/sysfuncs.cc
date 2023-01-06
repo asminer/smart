@@ -11,8 +11,6 @@
 #include "../Utils/initializer.h"
 #include "../Utils/env.h"
 
-#include "../ExprLib/startup.h"
-#include "../ExprLib/exprman.h"
 #include "../ExprLib/functions.h"
 #include "../ExprLib/help.h"
 #include "../ExprLib/symb_tab.h"
@@ -27,7 +25,7 @@
 /**
     Prints documentation for matching help topics.
 */
-class helpTopicTraversal : public splayOfShared::tree_traversal {
+class helpTopicTraversal : public shared_visitor {
         doc_formatter &df;
         const char* keyword;
     public:
@@ -141,7 +139,7 @@ public:
 /*
  * Traversal to copy matching items into another splay tree.
  */
-class copy_matching : public splayOfShared::tree_traversal {
+class copy_matching : public shared_visitor {
         doc_formatter &df;
         const char* keyword;
         splayOfShared &doctree;
@@ -195,7 +193,7 @@ void copy_matching::visit(shared_object* item)
 /*
  * Traversal to document all help_objects
  */
-class docuversal : public splayOfShared::tree_traversal {
+class docuversal : public shared_visitor {
         doc_formatter &df;
         const char* keyword;
     public:
@@ -300,7 +298,7 @@ void help_base::HelpFuncs(const char* search)
         const formalism* ft = smart_cast <const formalism*> (t);
         DCASSERT(ft);
         T.changeFormalism(ft);
-        ft->traverseFuncs(T);
+        ft->traverseSymbols(T);
     }
 
     // Print documentation for what we collected

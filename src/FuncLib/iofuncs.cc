@@ -7,7 +7,6 @@
 
 #include "../ExprLib/functions.h"
 #include "../ExprLib/symb_tab.h"
-#include "../ExprLib/exprman.h"
 
 #include <iostream>
 #include <fstream>

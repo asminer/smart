@@ -4,10 +4,11 @@
 #include "../Utils/initializer.h"
 #include "../Utils/strings.h"
 
+#include "../ExprLib/bogus.h"
+#include "../ExprLib/casting.h"
 #include "../ExprLib/intervals.h"
 #include "../ExprLib/functions.h"
 #include "../ExprLib/symb_tab.h"
-#include "../ExprLib/exprman.h"
 #include "../ExprLib/mod_inst.h"
 
 // ******************************************************************
@@ -181,7 +182,7 @@ int is_null::Traverse(traverse_data &x, expr** pass, int np)
     case traverse_data::Typecheck:
         if (np<1)  return NotEnoughParams(np);
         if (np>1)  return TooManyParams(np);
-        if (em->isError(pass[0]) || em->isDefault(pass[0]))
+        if (bogus_expr::isError(pass[0]) || bogus_expr::isDefault(pass[0]))
             return BadParam(0, np);
         return 0;
 
@@ -227,7 +228,7 @@ int compute::Traverse(traverse_data &x, expr** pass, int np)
     case traverse_data::Typecheck:
         if (np<1)  return NotEnoughParams(np);
         if (np>1)  return TooManyParams(np);
-        if (em->isError(pass[0]) || em->isDefault(pass[0]))
+        if (bogus_expr::isError(pass[0]) || bogus_expr::isDefault(pass[0]))
             return BadParam(0, np);
         return 0;
 
@@ -247,7 +248,7 @@ public:
   virtual int Traverse(traverse_data &x, expr** pass, int np);
   const type* ReturnType(expr** pass, int np) const;
   int Typecheck(expr** pass, int np) const;
-  int PromoteParams(expr** pass, int np) const;
+  int PromoteParams(const location& W, expr** pass, int np) const;
   int Substitute(traverse_data &x, expr** pass, int np) const;
   inline const type* ArgType(expr* arg) const {
     if (0==arg)  return type::null;
@@ -292,7 +293,7 @@ int cond_ci::Traverse(traverse_data &x, expr** pass, int np)
         return Typecheck(pass, np);
 
     case traverse_data::Promote:
-        return PromoteParams(pass, np);
+        return PromoteParams(location::INTERNALLY(), pass, np);
 
     case traverse_data::Substitute:
         return Substitute(x, pass, np);
@@ -320,7 +321,7 @@ const type* cond_ci::ReturnType(expr** pass, int np) const
   const type* t0 = ArgType(pass[0]);
   const type* t1 = ArgType(pass[1]);
   const type* t2 = ArgType(pass[2]);
-  const type* ret = em->getLeastCommonType(t1, t2);
+  const type* ret = typeconv::getLeastCommonType(t1, t2);
   modifier m0 = GetModifier(t0);
   modifier m12 = GetModifier(ret);
   if (m0 != m12)  m12 = RAND;
@@ -339,23 +340,23 @@ int cond_ci::Typecheck(expr** pass, int np) const
   if (np>3)   return TooManyParams(np);
   const type* args = ReturnType(pass, np);
   const type* test = args ? args->changeBaseType(type::find("bool")) : 0;
-  int d0 = em->getPromoteDistance(ArgType(pass[0]), test);
+  int d0 = typeconv::getPromoteDistance(ArgType(pass[0]), test);
   if (d0 < 0)  return BadParam(0, np);
-  int d1 = em->getPromoteDistance(ArgType(pass[1]), args);
+  int d1 = typeconv::getPromoteDistance(ArgType(pass[1]), args);
   if (d1 < 0)  return BadParam(1, np);
-  int d2 = em->getPromoteDistance(ArgType(pass[2]), args);
+  int d2 = typeconv::getPromoteDistance(ArgType(pass[2]), args);
   if (d2 < 0)  return BadParam(2, np);
   return d0 + d1 + d2;
 }
 
-int cond_ci::PromoteParams(expr** pass, int np) const
+int cond_ci::PromoteParams(const location& W, expr** pass, int np) const
 {
   const type* args = ReturnType(pass, np);
 
   // const type* test = args ? args->changeBaseType(type::find("bool")) : 0;
   // pass[0] = em->promote(pass[0], test);  // Don't think we need to!
-  pass[1] = em->promote(pass[1], args);
-  pass[2] = em->promote(pass[2], args);
+  pass[1] = typeconv::castExpr(true, W, args, pass[1]);
+  pass[2] = typeconv::castExpr(true, W, args, pass[2]);
 
   const model_def* mt1 = pass[1] ? pass[1]->GetModelType() : 0;
   const model_def* mt2 = pass[2] ? pass[2]->GetModelType() : 0;
@@ -422,7 +423,7 @@ public:
   virtual int Traverse(traverse_data &x, expr** pass, int np);
   const type* ReturnType(expr** pass, int np) const;
   int Typecheck(expr** pass, int np) const;
-  int PromoteParams(expr** pass, int np) const;
+  int PromoteParams(const location& W, expr** pass, int np) const;
   int Substitute(traverse_data &x, expr** pass, int np) const;
 };
 
@@ -469,7 +470,7 @@ int case_ci::Traverse(traverse_data &x, expr** pass, int np)
         return Typecheck(pass, np);
 
     case traverse_data::Promote:
-        return PromoteParams(pass, np);
+        return PromoteParams(location::INTERNALLY(), pass, np);
 
     case traverse_data::Substitute:
         return Substitute(x, pass, np);
@@ -483,13 +484,13 @@ const type* case_ci::ReturnType(expr** pass, int np) const
 {
   if (np < 2)  return 0;
   // Get "selector" type, must be some kind of INT...
-  const type* t = em->SafeType(pass[0]);
+  const type* t = expr::SafeType(pass[0]);
 
   bool rand = DETERM != GetModifier(t);
   bool proc = HasProc(t);
 
   // Get default return type, ANY
-  const type* rettype = em->SafeType(pass[1]);
+  const type* rettype = expr::SafeType(pass[1]);
 
   // The remaining arguments are INT : ANY,
   // as long as the entire collection of "ANY" has
@@ -497,10 +498,10 @@ const type* case_ci::ReturnType(expr** pass, int np) const
   for (int i=2; i<np; i++) {
     if (0==pass[i])  continue; // we can deal with null.
     DCASSERT(pass[i]->NumComponents() == 2);
-    t = em->SafeType(pass[i], 0);
+    t = pass[i]->Type(0);
     DCASSERT(type::matches(t, "null") || type::matches(t, "int"));
-    t = em->SafeType(pass[i], 1);
-    rettype = em->getLeastCommonType(rettype, t);
+    t = pass[i]->Type(1);
+    rettype = typeconv::getLeastCommonType(rettype, t);
   }
   rand |= DETERM != GetModifier(rettype);
   proc |= HasProc(rettype);
@@ -543,10 +544,10 @@ int case_ci::Typecheck(expr** pass, int np) const
   for (int i=2; i<np; i++) {
     if (0==pass[i])  continue; // we can deal with null.
     if (pass[i]->NumComponents() != 2)  return BadParam(i, np);
-    t = em->SafeType(pass[i], 0);
+    t = pass[i]->Type(0);
     if (!type::matches(t, "null") && !type::matches(t, "int")) return BadParam(i, np);
-    t = em->SafeType(pass[i], 1);
-    rettype = em->getLeastCommonType(rettype, t);
+    t = pass[i]->Type(1);
+    rettype = typeconv::getLeastCommonType(rettype, t);
     if (0 == rettype)  return BadParam(i, np);
   }
   rand |= DETERM != GetModifier(rettype);
@@ -556,31 +557,34 @@ int case_ci::Typecheck(expr** pass, int np) const
   if (proc)  rettype = ProcifyType(rettype);
 
   // Ok, this is a valid function call, let's determine the total score
-  t = em->SafeType(pass[0]);
-  int score = em->getPromoteDistance(t, ApplyPM(rettype, type::find("int")));
+  t = expr::SafeType(pass[0]);
+  int score = typeconv::getPromoteDistance(t, ApplyPM(rettype, type::find("int")));
   DCASSERT(score >= 0);
 
-  int pd = em->getPromoteDistance(em->SafeType(pass[1]), rettype);
+  int pd = typeconv::getPromoteDistance(expr::SafeType(pass[1]), rettype);
   DCASSERT(pd >= 0);
   score += pd;
 
   for (int i=2; i<np; i++) {
-    pd = em->getPromoteDistance(em->SafeType(pass[i], 0), type::find("int"));
+    const type* t0 = pass[i] ? pass[i]->Type(0) : type::null;
+    const type* t1 = pass[i] ? pass[i]->Type(1) : type::null;
+
+    pd = typeconv::getPromoteDistance(t0, type::find("int"));
     DCASSERT(pd>=0);
     score += pd;
-    pd = em->getPromoteDistance(em->SafeType(pass[i], 1), rettype);
+    pd = typeconv::getPromoteDistance(t1, rettype);
     DCASSERT(pd>=0);
     score += pd;
   }
   return score;
 }
 
-int case_ci::PromoteParams(expr** pass, int np) const
+int case_ci::PromoteParams(const location& W, expr** pass, int np) const
 {
   const type* rettype = ReturnType(pass, np);
 
-  pass[0] = em->promote(pass[0], ApplyPM(rettype, type::find("int")));
-  pass[1] = em->promote(pass[1], rettype);
+  pass[0] = typeconv::castExpr(true, W, ApplyPM(rettype, type::find("int")), pass[0]);
+  pass[1] = typeconv::castExpr(true, W, rettype, pass[1]);
 
   const model_def* mt = pass[1] ? pass[1]->GetModelType() : 0;
 
@@ -590,7 +594,7 @@ int case_ci::PromoteParams(expr** pass, int np) const
   t->SetItem(1, rettype);
   symbol* foo = MakeFormalParam(t, 0);
   for (int i=2; i<np; i++) {
-    pass[i] = em->promote(pass[i], false, false, foo);
+    pass[i] = typeconv::promoteExpr(pass[i], false, false, foo);
     expr* val = pass[i]->GetComponent(1);
     const model_def* val_mt = val ? val->GetModelType() : 0;
     if (mt != val_mt)  return Promote_MTMismatch;
