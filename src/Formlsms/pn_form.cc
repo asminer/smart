@@ -2782,9 +2782,9 @@ class init_pnform : public initializer {
 };
 static init_pnform the_pnform_initializer;
 
-init_pnform::init_pnform() : initializer("pn_form.cc", 1, 4)
+init_pnform::init_pnform() : initializer(__FILE__, 1, 4)
 {
-    builds_resource(0, "pn_form.cc");
+    builds_resource(0, "pn");
     needs_resource(1, "OM");
     needs_resource(2, "Warning");
     needs_resource(3, "Debug");

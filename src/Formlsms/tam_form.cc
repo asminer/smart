@@ -1,16 +1,13 @@
 
-#include "evm_form.h"
 #include "../Options/options.h"
 #include "../Utils/init_opts.h"
 
-#include "../ExprLib/startup.h"
-#include "../ExprLib/exprman.h"
 #include "../ExprLib/formalism.h"
-
 #include "../ExprLib/sets.h"
 #include "../ExprLib/mod_def.h"
 #include "../ExprLib/mod_vars.h"
 #include "../ExprLib/dd_front.h"
+
 #include "dsde_hlm.h"
 
 // **************************************************************************
@@ -973,12 +970,12 @@ void tam_def::FinalizeModel(outputStream &ds)
         pass[4] = Share(s);
         pass[5] = Share(w);
         eventlist[eindx]->setEnabling(
-          em->makeFunctionCall(b_where, &the_tam_canput, pass, 6)
+          expr::makeFunctionCall(b_where, &the_tam_canput, pass, 6)
         );
 
         // build next-state
         eventlist[eindx]->setNextstate(
-          MakeVarAssign(em, Share(curr), t)
+          MakeVarAssign(Share(curr), t)
         );
 
         // firing style
@@ -1426,82 +1423,6 @@ void tam_export::Compute(traverse_data &x, expr** pass, int np)
 // *                                                                *
 // ******************************************************************
 
-class old_init_tamform : public startup {
-  public:
-    old_init_tamform();
-    virtual bool execute();
-};
-old_init_tamform the_tamform_startup;
-
-old_init_tamform::old_init_tamform() : startup("init_tamform")
-{
-  usesResource("em");
-  usesResource("CML");
-  buildsResource("formalisms");
-}
-
-bool old_init_tamform::execute()
-{
-  if (0==em) return false;
-
-  // types for TAMs
-  simple_type* t_tile = type::registerNew(new void_type("tile", "Tile", "Tile type in a tile assembly model."));
-  t_tile->setPrintable();
-  type::allowSetsOf(t_tile);
-  tam_def::tile_type = t_tile;
-
-  simple_type* t_glue = type::registerNew(new void_type("glue", "Glue", "Glue type in a tile assembly model."));
-  t_glue->setPrintable();
-  type::allowSetsOf(t_glue);
-  tam_def::glue_type = t_glue;
-
-  simple_type* t_border = type::registerNew(new void_type("border", "Border", "Border type in a tile assembly model."));
-  t_border->setPrintable();
-  tam_def::border_type = t_border;
-
-
-  // Set up and register formalism
-  const char* longdocs = "The tile assembly model formalism allows definition of tile types that are automatically assembled onto a finite board.  Model definition requires declaration and definition of the tile types and specification of the board size and initial configuration, via the appropriate function calls.";
-
-  formalism* tam = new tam_formalism("tam", "Tile assembly Model", longdocs);
-  if (type::registerNew(tam) != tam) {
-    internal_error E(__FILE__, __LINE__);
-    E << "tam type already exists?";
-    return false;
-  }
-
-  // fill symbol table
-  symbol_table* tamsyms = new symbol_table;
-  tamsyms->addSymbol(  new tam_strength );
-  tamsyms->addSymbol(  new tam_tiledef  );
-  tamsyms->addSymbol(  new tam_board    );
-  tamsyms->addSymbol(  new tam_init     );
-  tamsyms->addSymbol(  new tam_prio     );
-  tamsyms->addSymbol(  new tam_export   );
-  tam->setFunctions(tamsyms);
-  tam->addCommonFuncs(CML);
-
-  // fill identifier table
-  symbol_table* tamids = new symbol_table;
-  tamids->addSymbol(
-    new tam_border(tam_def::border_type, strdup("north"), tam_def::NORTH)
-  );
-  tamids->addSymbol(
-    new tam_border(tam_def::border_type, strdup("south"), tam_def::SOUTH)
-  );
-  tamids->addSymbol(
-    new tam_border(tam_def::border_type, strdup("east"), tam_def::EAST)
-  );
-  tamids->addSymbol(
-    new tam_border(tam_def::border_type, strdup("west"), tam_def::WEST)
-  );
-  tam->setIdentifiers(tamids);
-
-  return true;
-}
-
-// ******************************************************************
-
 class init_tamform : public initializer {
     public:
         init_tamform();
@@ -1510,15 +1431,75 @@ class init_tamform : public initializer {
 };
 static init_tamform the_tamform_initializer;
 
-init_tamform::init_tamform() : initializer("tam_form.cc", 1, 2)
+init_tamform::init_tamform() : initializer(__FILE__, 1, 3)
 {
-    builds_resource(0, "tam_form.cc");
+    builds_resource(0, "tam");
     needs_resource(1, "Warning");
     needs_resource(2, "Debug");
+    needs_resource(3, "CML");
 }
 
 void init_tamform::execute()
 {
+    //
+    // build types for TAMs
+    //
+
+    simple_type* t_tile = type::registerNew(new void_type("tile", "Tile", "Tile type in a tile assembly model."));
+    t_tile->setPrintable();
+    type::allowSetsOf(t_tile);
+    tam_def::tile_type = t_tile;
+
+    simple_type* t_glue = type::registerNew(new void_type("glue", "Glue", "Glue type in a tile assembly model."));
+    t_glue->setPrintable();
+    type::allowSetsOf(t_glue);
+    tam_def::glue_type = t_glue;
+
+    simple_type* t_border = type::registerNew(new void_type("border", "Border", "Border type in a tile assembly model."));
+    t_border->setPrintable();
+    tam_def::border_type = t_border;
+
+
+    //
+    // Build and register formalism
+    //
+
+    formalism* tam = new tam_formalism(
+        "tam",
+        "Tile assembly Model",
+        "The tile assembly model formalism allows definition of tile types that are automatically assembled onto a finite board.  Model definition requires declaration and definition of the tile types and specification of the board size and initial configuration, via the appropriate function calls."
+    );
+    if (type::registerNew(tam) != tam) {
+        internal_error E(__FILE__, __LINE__);
+        E << "tam type already exists?";
+        return;
+    }
+
+    //
+    // Add functions/symbols to model
+    //
+
+    tam->addSymbol(  new tam_strength );
+    tam->addSymbol(  new tam_tiledef  );
+    tam->addSymbol(  new tam_board    );
+    tam->addSymbol(  new tam_init     );
+    tam->addSymbol(  new tam_prio     );
+    tam->addSymbol(  new tam_export   );
+
+    tam->addSymbol(
+        new tam_border(tam_def::border_type, strdup("north"), tam_def::NORTH)
+    );
+    tam->addSymbol(
+        new tam_border(tam_def::border_type, strdup("south"), tam_def::SOUTH)
+    );
+    tam->addSymbol(
+        new tam_border(tam_def::border_type, strdup("east"), tam_def::EAST)
+    );
+    tam->addSymbol(
+        new tam_border(tam_def::border_type, strdup("west"), tam_def::WEST)
+    );
+    tam->finish();
+
     //
     // Warning messages
     //
