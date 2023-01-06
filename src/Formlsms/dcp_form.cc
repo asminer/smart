@@ -147,7 +147,6 @@ public:
   virtual bool canDeclareType(const type* vartype) const;
   virtual bool canAssignType(const type* vartype) const;
   virtual bool isLegalMeasureType(const type* mtype) const;
-  virtual bool includeDCP() const { return true; }
 };
 
 
@@ -158,6 +157,7 @@ public:
 dcp_form::dcp_form(const char* n, const char* sd, const char* ld)
  : formalism(n, sd, ld)
 {
+    includeDCP();
 }
 
 model_def* dcp_form::makeNewModel(const location &W, char* name,

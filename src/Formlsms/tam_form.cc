@@ -1019,7 +1019,6 @@ public:
 
   virtual bool canDeclareType(const type* vartype) const;
   virtual bool canAssignType(const type* vartype) const;
-  virtual bool includeCTL() const { return true; }
 };
 
 // ******************************************************************
@@ -1030,6 +1029,7 @@ tam_formalism
 ::tam_formalism(const char* n, const char* sd, const char* ld)
  : formalism(n, sd, ld)
 {
+    includeCTL();
 }
 
 model_def* tam_formalism::makeNewModel(const location &W, char* name,

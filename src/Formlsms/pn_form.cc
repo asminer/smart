@@ -1709,9 +1709,6 @@ public:
 
   virtual bool canDeclareType(const type* vartype) const;
   virtual bool canAssignType(const type* vartype) const;
-
-  virtual bool includeCTL() const { return true; }
-  virtual bool includeStochastic() const { return true; }
 };
 
 // ******************************************************************
@@ -1723,6 +1720,8 @@ petri_formalism
 ::petri_formalism(const char* n, const char* sd, const char* ld)
  : formalism(n, sd, ld)
 {
+    includeCTL();
+    includeStochastic();
 }
 
 model_def* petri_formalism::makeNewModel(const location &W, char* name,

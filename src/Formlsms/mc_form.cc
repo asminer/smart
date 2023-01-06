@@ -328,9 +328,6 @@ public:
 
   virtual bool canDeclareType(const type* vartype) const;
   virtual bool canAssignType(const type* vartype) const;
-
-  virtual bool includeCTL() const { return true; }
-  virtual bool includeStochastic() const { return true; }
 };
 
 // ******************************************************************
@@ -343,6 +340,8 @@ markov_formalism
  : formalism(n, sd, ld)
 {
   discrete = d;
+  includeCTL();
+  includeStochastic();
 }
 
 model_def* markov_formalism::makeNewModel(const location &W, char* name,
