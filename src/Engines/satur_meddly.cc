@@ -1,17 +1,14 @@
 
 #include "../Modules/glue_meddly.h"
 
-#include "satur_meddly.h"
-
 #include "gen_meddly.h"
 
 #include "../Utils/sigman.h"
+#include "../Utils/initializer.h"
 
 #include "../Options/options.h"
 #include "../Options/optman.h"
 
-#include "../ExprLib/startup.h"
-#include "../ExprLib/exprman.h"
 #include "../ExprLib/engine.h"
 #include "../ExprLib/sets.h"
 
@@ -2381,93 +2378,94 @@ void meddly_nextall::generateRSS(meddly_varoption &x, timer &w)
 // *                                                                *
 // ******************************************************************
 
-class init_saturmeddly : public startup {
-  public:
-    init_saturmeddly();
-    virtual bool execute();
+class init_saturmeddly : public initializer {
+    public:
+        init_saturmeddly();
+    protected:
+        virtual void execute();
 };
-init_saturmeddly the_saturmeddly_startup;
+static init_saturmeddly the_saturmeddly_initializer;
 
-init_saturmeddly::init_saturmeddly() : startup("init_saturmeddly")
+init_saturmeddly::init_saturmeddly() : initializer(__FILE__, 1, 1)
 {
-  usesResource("em");
-  usesResource("meddlyprocgen");
+    builds_resource(0, "satur_meddly");
+    needs_resource(1, "meddlyprocgen");
 }
 
-bool init_saturmeddly::execute()
+void init_saturmeddly::execute()
 {
-  if (0==em) return false;
+    //
+    // Engines
+    //
 
-  RegisterEngine(em,
-    "MeddlyProcessGeneration",
-    "SATURATION",
-    "The Saturation algorithm, as implemented in Meddly",
-    &the_meddly_saturation
-  );
+    RegisterEngine(
+        "MeddlyProcessGeneration",
+        "SATURATION",
+        "The Saturation algorithm, as implemented in Meddly",
+        &the_meddly_saturation
+    );
 
-  RegisterEngine(em,
-    "MeddlyProcessGeneration",
-    "OTF_SATURATION",
-    "The On-the-fly Saturation algorithm, as implemented in Meddly",
-    &the_meddly_otfsat
-  );
+    RegisterEngine(
+        "MeddlyProcessGeneration",
+        "OTF_SATURATION",
+        "The On-the-fly Saturation algorithm, as implemented in Meddly",
+        &the_meddly_otfsat
+    );
 
-  RegisterEngine(em,
-   "MeddlyProcessGeneration",
-   "OTF_IMPLICIT_SATURATION",
-   "The On-the-fly-implicit Saturation algorithm, as implemented in Meddly",
-    &the_meddly_otfimplsat
-   );
+    RegisterEngine(
+        "MeddlyProcessGeneration",
+        "OTF_IMPLICIT_SATURATION",
+        "The On-the-fly-implicit Saturation algorithm, as implemented in Meddly",
+        &the_meddly_otfimplsat
+    );
 
+    RegisterEngine(
+        "MeddlyProcessGeneration",
+        "TRADITIONAL",
+        "A traditional iterative algorithm, as implemented in Meddly",
+        &the_meddly_traditional
+    );
 
-  RegisterEngine(em,
-    "MeddlyProcessGeneration",
-    "TRADITIONAL",
-    "A traditional iterative algorithm, as implemented in Meddly",
-    &the_meddly_traditional
-  );
+    RegisterEngine(
+        "MeddlyProcessGeneration",
+        "FRONTIER",
+        "A traditional iterative algorithm using frontier set construction",
+        &the_meddly_frontier
+    );
 
-  RegisterEngine(em,
-    "MeddlyProcessGeneration",
-    "FRONTIER",
-    "A traditional iterative algorithm using frontier set construction",
-    &the_meddly_frontier
-  );
+    RegisterEngine(
+        "MeddlyProcessGeneration",
+        "NEXT_ALL",
+        "An iterative algorithm that unions the post-image of all reachable states",
+        &the_meddly_nextall
+    );
 
-  RegisterEngine(em,
-    "MeddlyProcessGeneration",
-    "NEXT_ALL",
-    "An iterative algorithm that unions the post-image of all reachable states",
-    &the_meddly_nextall
-  );
+    //
+    // Options
+    //
 
-  // Options
-
-  meddly_implicitgen::order_policy = meddly_implicitgen::ORDER_LOW_TO_HIGH;
-  if (em->OptMan()) {
-    option* meo = em->OptMan()->addRadioOption(
-      "MeddlyEventOrder",
-      "Order to add events to the next state function, for implicit generation algorithms using Meddly.",
-      3, meddly_implicitgen::order_policy
+    meddly_implicitgen::order_policy = meddly_implicitgen::ORDER_LOW_TO_HIGH;
+    option_manager& OM = option_manager::global();
+    option* meo = OM.addRadioOption(
+        "MeddlyEventOrder",
+        "Order to add events to the next state function, for implicit generation algorithms using Meddly.",
+        3, meddly_implicitgen::order_policy
     );
     DCASSERT(meo);
     meo->addRadioButton(
-      "HIGH_TO_LOW",
-      "Events whose group dependencies are higher are processed first",
-      meddly_implicitgen::ORDER_HIGH_TO_LOW
+        "HIGH_TO_LOW",
+        "Events whose group dependencies are higher are processed first",
+        meddly_implicitgen::ORDER_HIGH_TO_LOW
     );
     meo->addRadioButton(
-      "LOW_TO_HIGH",
-      "Events whose group dependencies are lower are processed first",
-      meddly_implicitgen::ORDER_LOW_TO_HIGH
+        "LOW_TO_HIGH",
+        "Events whose group dependencies are lower are processed first",
+        meddly_implicitgen::ORDER_LOW_TO_HIGH
     );
     meo->addRadioButton(
-      "MODEL",
-      "Events are processed in order of declaration in the model",
-      meddly_implicitgen::ORDER_MODEL
+        "MODEL",
+        "Events are processed in order of declaration in the model",
+        meddly_implicitgen::ORDER_MODEL
     );
-  }
-
-  return true;
 }
 

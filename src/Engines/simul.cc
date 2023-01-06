@@ -1,6 +1,4 @@
 
-#include "simul.h"
-
 // External libs
 #include "../_SimLib/sim.h"
 #include "../_RngLib/rng.h"
@@ -12,8 +10,6 @@
 #include "../Utils/library.h"
 #include "../Utils/init_opts.h"
 
-#include "../ExprLib/startup.h"
-#include "../ExprLib/exprman.h"
 #include "../ExprLib/engine.h"
 
 // #define DEBUG
@@ -363,41 +359,6 @@ void seed_watcher::notify(const option* opt)
 // *                                                                *
 // ******************************************************************
 
-class old_init_simul : public startup {
-  public:
-    old_init_simul();
-    virtual bool execute();
-};
-old_init_simul the_simul_startup;
-
-old_init_simul::old_init_simul() : startup("init_simul")
-{
-  usesResource("em");
-  usesResource("engtypes");
-}
-
-bool old_init_simul::execute()
-{
-  //
-  // Simulation options
-  //
-  if (0==em) return false;
-
-  //
-  // Add engines
-  //
-  RegisterEngine(em,
-    "AvgRandReal",
-    "MONTE_CARLO",
-    "Average determined using Monte-Carlo simulation.",
-    &the_sim_rr_avg
-  );
-
-  return true;
-}
-
-// ******************************************************************
-
 class init_simul : public initializer {
     public:
         init_simul();
@@ -406,10 +367,11 @@ class init_simul : public initializer {
 };
 static init_simul the_simul_initializer;
 
-init_simul::init_simul() : initializer("simul.cc", 1, 1)
+init_simul::init_simul() : initializer("simul.cc", 1, 2)
 {
     builds_resource(0, "simul.cc");
     needs_resource(1, "Report");
+    needs_resource(2, "engtypes");
 }
 
 void init_simul::execute()
@@ -500,6 +462,16 @@ void init_simul::execute()
         "Re-set the random number generator state based on the given seed value.",
         sw->Link(), 0, LONG_MAX
     )->registerWatcher(sw);
+
+    //
+    // Add engines
+    //
+    RegisterEngine(
+        "AvgRandReal",
+        "MONTE_CARLO",
+        "Average determined using Monte-Carlo simulation.",
+        &the_sim_rr_avg
+    );
 }
 
 

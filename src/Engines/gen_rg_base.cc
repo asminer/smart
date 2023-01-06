@@ -6,9 +6,7 @@
 
 #include "../Utils/init_opts.h"
 
-#include "../ExprLib/startup.h"
 #include "../ExprLib/engine.h"
-#include "../ExprLib/exprman.h"
 #include "../ExprLib/mod_inst.h"
 
 #include "../_Timer/timerlib.h"
@@ -96,7 +94,7 @@ bool process_generator
     }
     report << "\t" << w.elapsed_seconds();
     report << " seconds required for finalization\n";
-    if (p) p->reportMemUsage(em, "\t");
+    if (p) p->reportMemUsage("\t");
     return true;
   }
   return false;
@@ -110,45 +108,6 @@ bool process_generator
 // *                                                                *
 // ******************************************************************
 
-class old_init_procgen : public startup {
-  public:
-    old_init_procgen();
-    virtual bool execute();
-};
-old_init_procgen the_procgen_startup;
-
-old_init_procgen::old_init_procgen() : startup("init_procgen")
-{
-  usesResource("em");
-  buildsResource("procgen");
-  buildsResource("engtypes");
-}
-
-bool old_init_procgen::execute()
-{
-  if (0==em)  return false;
-
-  engtype* ProcessGeneration = MakeEngineType(em,
-      "ProcessGeneration",
-      "Algorithm to use to generate the underlying process",
-      engtype::Model
-  );
-  engine* ExplicitProcessGeneration = new engine(
-      "EXPLICIT",
-      "Explicit process generation"
-  );
-  RegisterEngine(ProcessGeneration, ExplicitProcessGeneration);
-  engine* ExplicitProcessGenerationCOV = new engine(
-      "EXPLICITCOV",
-      "Explicit process generation"
-  );
-  RegisterEngine(ProcessGeneration, ExplicitProcessGenerationCOV);
-
-  return true;
-}
-
-// ******************************************************************
-
 class init_procgen : public initializer {
     public:
         init_procgen();
@@ -157,15 +116,38 @@ class init_procgen : public initializer {
 };
 static init_procgen the_procgen_initializer;
 
-init_procgen::init_procgen() : initializer("gen_rg_base.cc", 1, 2)
+init_procgen::init_procgen() : initializer(__FILE__, 2, 2)
 {
-    builds_resource(0, "gen_rg_base.cc");
-    needs_resource(1, "Debug");
-    needs_resource(2, "Report");
+    builds_resource(0, "procgen");
+    builds_resource(1, "engtypes");
+    needs_resource(2, "Debug");
+    needs_resource(3, "Report");
 }
 
 void init_procgen::execute()
 {
+    //
+    // Engines and engine types
+    //
+    engtype* ProcessGeneration = MakeEngineType(
+        "ProcessGeneration",
+        "Algorithm to use to generate the underlying process",
+        engtype::Model
+    );
+    engine* ExplicitProcessGeneration = new engine(
+        "EXPLICIT",
+        "Explicit process generation"
+    );
+    RegisterEngine(ProcessGeneration, ExplicitProcessGeneration);
+    engine* ExplicitProcessGenerationCOV = new engine(
+        "EXPLICITCOV",
+        "Explicit process generation"
+    );
+    RegisterEngine(ProcessGeneration, ExplicitProcessGenerationCOV);
+
+    //
+    // Options
+    //
     initialize_msg(process_generator::report,
         "procgen",
         "When set, process generation performance is reported.",

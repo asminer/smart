@@ -2781,13 +2781,12 @@ class init_pnform : public initializer {
 };
 static init_pnform the_pnform_initializer;
 
-init_pnform::init_pnform() : initializer(__FILE__, 1, 4)
+init_pnform::init_pnform() : initializer(__FILE__, 1, 3)
 {
     builds_resource(0, "pn");
-    needs_resource(1, "OM");
-    needs_resource(2, "Warning");
-    needs_resource(3, "Debug");
-    needs_resource(4, "CML");
+    needs_resource(1, "Warning");
+    needs_resource(2, "Debug");
+    needs_resource(3, "CML");
 }
 
 void init_pnform::execute()
@@ -2931,34 +2930,32 @@ void init_pnform::execute()
     // Other options
     //
     petri_hlm::MarkingStyle = petri_hlm::SPARSE;
-    option_manager* om = dynamic_cast<option_manager*> (get_object(1, "OM"));
-    if (om) {
-        option* sty = om->addRadioOption(
-            "PNMarkingStyle",
-            "How to display a Petri net marking",
-            4, petri_hlm::MarkingStyle
-        );
-        DCASSERT(sty);
-        sty->addRadioButton(
-            "INDEXED",
-            "Format is [p1:1, p2:0, p3:2, p4:0, p5:0, p6:1]",
-            petri_hlm::INDEXED
-        );
-        sty->addRadioButton(
-            "SAFE",
-            "Format is [p1, p3:2, p6]",
-            petri_hlm::SAFE
-        );
-        sty->addRadioButton(
-            "SPARSE",
-            "Format is [p1:1, p3:2, p6:1]",
-            petri_hlm::SPARSE
-        );
-        sty->addRadioButton(
-            "VECTOR",
-            "Format is [1, 0, 2, 0, 0, 1]",
-            petri_hlm::VECTOR
-        );
-    }
+    option_manager &om = option_manager::global();
+    option* sty = om.addRadioOption(
+        "PNMarkingStyle",
+        "How to display a Petri net marking",
+        4, petri_hlm::MarkingStyle
+    );
+    DCASSERT(sty);
+    sty->addRadioButton(
+        "INDEXED",
+        "Format is [p1:1, p2:0, p3:2, p4:0, p5:0, p6:1]",
+        petri_hlm::INDEXED
+    );
+    sty->addRadioButton(
+        "SAFE",
+        "Format is [p1, p3:2, p6]",
+        petri_hlm::SAFE
+    );
+    sty->addRadioButton(
+        "SPARSE",
+        "Format is [p1:1, p3:2, p6:1]",
+        petri_hlm::SPARSE
+    );
+    sty->addRadioButton(
+        "VECTOR",
+        "Format is [1, 0, 2, 0, 0, 1]",
+        petri_hlm::VECTOR
+    );
 }
 

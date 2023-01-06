@@ -4461,11 +4461,10 @@ class init_genmeddly : public initializer {
 };
 static init_genmeddly the_genmeddly_initializer;
 
-init_genmeddly::init_genmeddly() : initializer(__FILE__, 1, 2)
+init_genmeddly::init_genmeddly() : initializer(__FILE__, 1, 1)
 {
     builds_resource(0, "meddlyprocgen");
-    needs_resource(1, "OM");
-    needs_resource(2, "engtypes");
+    needs_resource(1, "engtypes");
 }
 
 void init_genmeddly::execute()

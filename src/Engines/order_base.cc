@@ -1,7 +1,6 @@
 
 #include "order_base.h"
 
-#include "../ExprLib/startup.h"
 #include "../ExprLib/engine.h"
 #include "../Formlsms/dsde_hlm.h"
 
@@ -124,120 +123,6 @@ double heuristic_varorder::alphaParameter = -1.0;
 // *                                                                *
 // ******************************************************************
 
-class old_init_static_varorder : public startup {
-public:
-  old_init_static_varorder();
-  virtual bool execute();
-};
-old_init_static_varorder the_static_varorder_startup;
-
-old_init_static_varorder::old_init_static_varorder() : startup("init_static_varorder")
-{
-  usesResource("em");
-  buildsResource("varorders");
-  buildsResource("engtypes");
-}
-
-bool old_init_static_varorder::execute()
-{
-  if (0==em)  return false;
-
-  MakeEngineType(em,
-                 "VariableOrdering",
-                 "Algorithm to use to determine the (static) variable order for a high-level model",
-                 engtype::Model
-                 );
-
-  RegisterEngine(em,
-                 "VariableOrdering",
-                 "USER_DEFINED",
-                 "Variable order is determined by calls to partition() in the model",
-                 &the_user_varorder
-                 );
-
-  RegisterEngine(em,
-                 "VariableOrdering",
-                 "FORCE000",
-                 "Variable order is determined by calls to partition() in the model",
-                 &the_force_000_varorder
-                 );
-
-  RegisterEngine(em,
-                 "VariableOrdering",
-                 "FORCE025",
-                 "Variable order is determined by calls to partition() in the model",
-                 &the_force_025_varorder
-                 );
-
-  RegisterEngine(em,
-                 "VariableOrdering",
-                 "FORCE050",
-                 "Variable order is determined by calls to partition() in the model",
-                 &the_force_050_varorder
-                 );
-
-  RegisterEngine(em,
-                 "VariableOrdering",
-                 "FORCE0625",
-                 "Variable order is determined by calls to partition() in the model",
-                 &the_force_0625_varorder
-                 );
-
-  RegisterEngine(em,
-                 "VariableOrdering",
-                 "FORCE075",
-                 "Variable order is determined by calls to partition() in the model",
-                 &the_force_075_varorder
-                 );
-
-  RegisterEngine(em,
-                 "VariableOrdering",
-                 "FORCE0875",
-                 "Variable order is determined by calls to partition() in the model",
-                 &the_force_0875_varorder
-                 );
-
-  RegisterEngine(em,
-                 "VariableOrdering",
-                 "FORCE100",
-                 "Variable order is determined by calls to partition() in the model",
-                 &the_force_100_varorder
-                 );
-
-
-  // BEGIN EXPERIMENTAL DOUBLE RETRIEVAL TEST CODE HERE:
-
-  engine* variable_engine = RegisterEngine(em,
-                                           "VariableOrdering",
-                                           "FORCEPARAM",
-                                           "Variable order is determined by calls to partition() in the model",
-                                           &the_force_param
-                                           );
-  //
-  variable_engine->internalOpts()->addRealOption(
-                                            "SosSotAlpha",
-                                            "Weight given to sum of spans vs. sum of tops.",
-                                            heuristic_varorder::alphaParameter,
-                                            true, true, 0.0,
-                                            true, true, 1.0
-                             );
-
-
-  // END EXPERIMENTAL DOUBLE RETRIEVAL TEST CODE HERE:
-
-
-  RegisterEngine(em,
-                 "VariableOrdering",
-                 "NOACK",
-                 "Variable order is determined by calls to partition() in the model",
-                 &the_noack_varorder
-                 );
-
-  return true;
-}
-
-// ******************************************************************
-
 class init_static_varorder : public initializer {
     public:
         init_static_varorder();
@@ -247,11 +132,13 @@ class init_static_varorder : public initializer {
 static init_static_varorder the_static_varorder_initializer;
 
 init_static_varorder::init_static_varorder()
-    : initializer("order_base.cc", 1, 2)
+    : initializer("order_base.cc", 3, 2)
 {
     builds_resource(0, "order_base.cc");
-    needs_resource(1, "Report");
-    needs_resource(2, "Debug");
+    builds_resource(1, "varorders");
+    builds_resource(2, "engtypes");
+    needs_resource(3, "Report");
+    needs_resource(4, "Debug");
 }
 
 void init_static_varorder::execute()
@@ -270,6 +157,101 @@ void init_static_varorder::execute()
         "When set, static variable ordering heuristic details are displayed.",
         get_object(2, "Debug")
     );
+
+    //
+    // Initialize engine types, engines
+    //
+    MakeEngineType(
+        "VariableOrdering",
+        "Algorithm to use to determine the (static) variable order for a high-level model",
+        engtype::Model
+    );
+
+    RegisterEngine(
+        "VariableOrdering",
+        "USER_DEFINED",
+        "Variable order is determined by calls to partition() in the model",
+        &the_user_varorder
+    );
+
+    RegisterEngine(
+        "VariableOrdering",
+        "FORCE000",
+        "Variable order is determined by calls to partition() in the model",
+        &the_force_000_varorder
+    );
+
+    RegisterEngine(
+        "VariableOrdering",
+        "FORCE025",
+        "Variable order is determined by calls to partition() in the model",
+        &the_force_025_varorder
+    );
+
+    RegisterEngine(
+        "VariableOrdering",
+        "FORCE050",
+        "Variable order is determined by calls to partition() in the model",
+        &the_force_050_varorder
+    );
+
+    RegisterEngine(
+        "VariableOrdering",
+        "FORCE0625",
+        "Variable order is determined by calls to partition() in the model",
+        &the_force_0625_varorder
+    );
+
+    RegisterEngine(
+        "VariableOrdering",
+        "FORCE075",
+        "Variable order is determined by calls to partition() in the model",
+        &the_force_075_varorder
+    );
+
+    RegisterEngine(
+        "VariableOrdering",
+        "FORCE0875",
+        "Variable order is determined by calls to partition() in the model",
+        &the_force_0875_varorder
+    );
+
+    RegisterEngine(
+        "VariableOrdering",
+        "FORCE100",
+        "Variable order is determined by calls to partition() in the model",
+        &the_force_100_varorder
+    );
+
+
+    // BEGIN EXPERIMENTAL DOUBLE RETRIEVAL TEST CODE HERE:
+
+    engine* variable_engine = RegisterEngine(
+        "VariableOrdering",
+        "FORCEPARAM",
+        "Variable order is determined by calls to partition() in the model",
+        &the_force_param
+    );
+    //
+    variable_engine->internalOpts()->addRealOption(
+        "SosSotAlpha",
+        "Weight given to sum of spans vs. sum of tops.",
+        heuristic_varorder::alphaParameter,
+        true, true, 0.0,
+        true, true, 1.0
+    );
+
+
+    // END EXPERIMENTAL DOUBLE RETRIEVAL TEST CODE HERE:
+
+
+    RegisterEngine(
+        "VariableOrdering",
+        "NOACK",
+        "Variable order is determined by calls to partition() in the model",
+        &the_noack_varorder
+    );
+
 }
 
 
