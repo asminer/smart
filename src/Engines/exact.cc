@@ -1,12 +1,8 @@
 
-#include "exact.h"
-
 #include "../Options/options.h"
 
 #include "../Utils/init_opts.h"
 
-#include "../ExprLib/startup.h"
-#include "../ExprLib/exprman.h"
 #include "../ExprLib/engine.h"
 #include "../ExprLib/mod_inst.h"
 #include "../ExprLib/mod_vars.h"
@@ -983,41 +979,6 @@ void exact_ph_analyze::RunEngine(hldsm* foo, result &fls)
 // *                                                                *
 // ******************************************************************
 
-class old_init_exactengines : public startup {
-  public:
-    old_init_exactengines();
-    virtual bool execute();
-};
-old_init_exactengines the_exactengine_startup;
-
-old_init_exactengines::old_init_exactengines() : startup("init_exactengines")
-{
-  usesResource("em");
-  usesResource("engtypes");
-}
-
-bool old_init_exactengines::execute()
-{
-  if (0==em)  return false;
-
-  const char* exact = "EXACT";
-  const char* desc = "Exact analysis of underlying stochastic process";
-
-  RegisterEngine(em, "SteadyStateAverage", exact, desc, &the_mcex_steady);
-  RegisterEngine(em, "TransientAverage", exact, desc, &the_mcex_trans);
-  RegisterEngine(em, "SteadyStateAccumulated", exact, desc, &the_mcex_infacc);
-  RegisterEngine(em, "TransientAccumulated", exact, desc, &the_mcex_acc);
-
-  RegisterEngine(em, "AvgPh", exact, desc, &the_exact_ph_avg);
-  RegisterEngine(em, "VarPh", exact, desc, &the_exact_ph_var);
-
-  exact_mcmsr::ProcessGeneration = em->findEngineType("ProcessGeneration");
-
-  return true;
-}
-
-// ******************************************************************
-
 class init_exactengines : public initializer {
     public:
         init_exactengines();
@@ -1026,15 +987,41 @@ class init_exactengines : public initializer {
 };
 static init_exactengines the_exactengine_initializer;
 
-init_exactengines::init_exactengines() : initializer("exact.cc", 1, 2)
+init_exactengines::init_exactengines() : initializer(__FILE__, 1, 3)
 {
-    builds_resource(0, "exact.cc");
+    builds_resource(0, "exact_engines");
     needs_resource(1, "Debug");
     needs_resource(2, "Report");
+    needs_resource(3, "engtypes");
 }
 
 void init_exactengines::execute()
 {
+    //
+    // Static vars
+    //
+    exact_mcmsr::ProcessGeneration =
+        engtype::findEngineType("ProcessGeneration");
+
+
+    //
+    // Register engines
+    //
+    const char* exact = "EXACT";
+    const char* desc = "Exact analysis of underlying stochastic process";
+
+    RegisterEngine("SteadyStateAverage", exact, desc, &the_mcex_steady);
+    RegisterEngine("TransientAverage", exact, desc, &the_mcex_trans);
+    RegisterEngine("SteadyStateAccumulated", exact, desc, &the_mcex_infacc);
+    RegisterEngine("TransientAccumulated", exact, desc, &the_mcex_acc);
+
+    RegisterEngine("AvgPh", exact, desc, &the_exact_ph_avg);
+    RegisterEngine("VarPh", exact, desc, &the_exact_ph_var);
+
+
+    //
+    // Debug and Report options
+    //
     initialize_msg(exact_mcmsr::eng_debug,
         "exact_solver",
         "When set, diagnostic messages are displayed regarding Markov chain exact solution engines.",

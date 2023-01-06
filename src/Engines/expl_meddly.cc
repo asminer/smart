@@ -4,11 +4,11 @@
 #undef CHECK_RANGE
 
 #include "gen_meddly.h"
-#include "expl_meddly.h"
+
+#include "../Utils/initializer.h"
 
 #include "../Options/options.h"
 #include "../Options/optman.h"
-#include "../ExprLib/startup.h"
 
 // Modules
 #include "../Modules/glue_meddly.h"
@@ -3297,88 +3297,84 @@ void meddly_explgen::generateMC(dsde_hlm &hm, meddly_reachset* rss)
 // *                                                                *
 // ******************************************************************
 
-class init_explmeddly : public startup {
-  public:
-    init_explmeddly();
-    virtual bool execute();
+class init_explmeddly : public initializer {
+    public:
+        init_explmeddly();
+    protected:
+        virtual void execute();
 };
-init_explmeddly the_explmeddly_startup;
+static init_explmeddly the_explmeddly_initializer;
 
-init_explmeddly::init_explmeddly() : startup("init_explmeddly")
+init_explmeddly::init_explmeddly() : initializer(__FILE__, 1, 1)
 {
-  usesResource("em");
-  usesResource("meddlyprocgen");
+    builds_resource(0, "explmeddly");
+    needs_resource(1, "meddlyprocgen");
 }
 
-bool init_explmeddly::execute()
+void init_explmeddly::execute()
 {
-  if (0==em) return false;
+    engine* expl_eng = RegisterEngine(
+        "MeddlyProcessGeneration",
+        "EXPLICIT",
+        "Explicit generation using MDDs.  States are added to the MDD in batches to improve efficiency.",
+        &the_meddly_explgen
+    );
+    option_manager* subopts = expl_eng->internalOpts();
+    DCASSERT(subopts);
 
-  engine* expl_eng = RegisterEngine(em,
-    "MeddlyProcessGeneration",
-    "EXPLICIT",
-    "Explicit generation using MDDs.  States are added to the MDD in batches to improve efficiency.",
-    &the_meddly_explgen
-  );
-  option_manager* subopts = expl_eng->internalOpts();
-  DCASSERT(subopts);
+    /* Initialize batch size option */
+    meddly_explgen::batch_size = 1024;
+    subopts->addIntOption(
+        "BatchAddSize",
+        "Maximum batch size for adding states or edges",
+        meddly_explgen::batch_size,
+        1, 1000000
+    );
 
+    /* Initialize batch removal option */
+    meddly_explgen::batch_removal = true;
+    subopts->addBoolOption(
+        "UseBatchRemoval",
+        "Should unexplored states be processed in batch?  If false, then they are processed one at a time.",
+        meddly_explgen::batch_removal
+    );
 
-  /* Initialize batch size option */
-  meddly_explgen::batch_size = 1024;
-  subopts->addIntOption(
-      "BatchAddSize",
-      "Maximum batch size for adding states or edges",
-      meddly_explgen::batch_size,
-      1, 1000000
-  );
+    /* Initialize MaximizeBatchRefills option */
+    meddly_explgen::maximize_batch_refills = false;
+    subopts->addBoolOption(
+        "MaximizeBatchRefills",
+        "For batch removal of unexplored states, should we try to refill the batches as much as possible; otherwise, we take a more relaxed approach.",
+        meddly_explgen::maximize_batch_refills
+    );
 
-  /* Initialize batch removal option */
-  meddly_explgen::batch_removal = true;
-  subopts->addBoolOption(
-      "UseBatchRemoval",
-      "Should unexplored states be processed in batch?  If false, then they are processed one at a time.",
-      meddly_explgen::batch_removal
-  );
+    /* Initialize LevelChange option */
+    meddly_explgen::level_change = 1000000;
+    subopts->addIntOption(
+        "LevelChange",
+        "Force process edges to be accumulated whenever the source state changes at this level or above.  Use 0 for constant accumulations, #levels for no accumulations except at the end.  Notes: (1) we are still limited by the batch size; see option BatchAddSize. (2) this may not be supported for all variations of explicit Meddly generation.",
+        meddly_explgen::level_change,
+        0, 1000000
+    );
 
-  /* Initialize MaximizeBatchRefills option */
-  meddly_explgen::maximize_batch_refills = false;
-  subopts->addBoolOption(
-      "MaximizeBatchRefills",
-      "For batch removal of unexplored states, should we try to refill the batches as much as possible; otherwise, we take a more relaxed approach.",
-      meddly_explgen::maximize_batch_refills
-  );
-
-  /* Initialize LevelChange option */
-  meddly_explgen::level_change = 1000000;
-  subopts->addIntOption(
-      "LevelChange",
-      "Force process edges to be accumulated whenever the source state changes at this level or above.  Use 0 for constant accumulations, #levels for no accumulations except at the end.  Notes: (1) we are still limited by the batch size; see option BatchAddSize. (2) this may not be supported for all variations of explicit Meddly generation.",
-      meddly_explgen::level_change,
-      0, 1000000
-  );
-
-  /* Initialize matrix style option */
-  meddly_explgen::matrix_style = meddly_explgen::IRMXD;
-  option* sty = subopts->addRadioOption(
-      "MatrixStyle",
-      "Data structure to use for matrix for underlying process",
-      meddly_explgen::NUM_MX_STYLES, meddly_explgen::matrix_style
-  );
+    /* Initialize matrix style option */
+    meddly_explgen::matrix_style = meddly_explgen::IRMXD;
+    option* sty = subopts->addRadioOption(
+        "MatrixStyle",
+        "Data structure to use for matrix for underlying process",
+        meddly_explgen::NUM_MX_STYLES, meddly_explgen::matrix_style
+    );
 
 
 #ifdef ENABLE_CMDS
-  sty->addRadioButton(
-    "CMD", "Canonical Matrix Diagram (from 2001 paper)", meddly_explgen::CMD
-  );
+    sty->addRadioButton(
+        "CMD", "Canonical Matrix Diagram (from 2001 paper)", meddly_explgen::CMD
+    );
 #endif
-  sty->addRadioButton(
-    "IRMXD", "Identity-reduced matrix diagram", meddly_explgen::IRMXD
-  );
-  sty->addRadioButton(
-    "QRMXD", "Quasi-reduced matrix diagram", meddly_explgen::QRMXD
-  );
-
-  return true;
+    sty->addRadioButton(
+        "IRMXD", "Identity-reduced matrix diagram", meddly_explgen::IRMXD
+    );
+    sty->addRadioButton(
+        "QRMXD", "Quasi-reduced matrix diagram", meddly_explgen::QRMXD
+    );
 }
 

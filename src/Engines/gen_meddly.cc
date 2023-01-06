@@ -1,10 +1,11 @@
 
 #include "gen_meddly.h"
 
+#include "../Utils/initializer.h"
+
 #include "../Options/options.h"
 #include "../Options/optman.h"
 
-#include "../ExprLib/startup.h"
 #include "../Modules/glue_meddly.h"
 #include "../Modules/expl_states.h"
 #include "../Formlsms/dsde_hlm.h"
@@ -372,8 +373,8 @@ class bounded_varoption : public meddly_varoption {
 protected:
   meddly_encoder* mtmxd_wrap;
 public:
-  bounded_varoption(meddly_reachset &x, const dsde_hlm &p, const exprman* em,
-    const meddly_procgen &pg);
+  bounded_varoption(meddly_reachset &x, const dsde_hlm &p,
+          const meddly_procgen &pg);
 
   virtual ~bounded_varoption();
 
@@ -391,8 +392,8 @@ protected: // in the following, dd is an mxd edge.
   void buildNoChange(const model_event &e, dd_edge &dd);
 
 private:
-  void checkBounds(const exprman* em);
-  int  initDomain(const exprman* em);
+  void checkBounds();
+  int  initDomain();
   void initEncoders(int maxbound, const meddly_procgen &pg);
 
 };
@@ -405,14 +406,14 @@ private:
 
 bounded_varoption
 ::bounded_varoption(meddly_reachset &x, const dsde_hlm &p,
-  const exprman* em, const meddly_procgen &pg) : meddly_varoption(x, p)
+    const meddly_procgen &pg) : meddly_varoption(x, p)
 {
   minterm = 0;
   minprim = 0;
   mtmxd_wrap = 0;
 
-  checkBounds(em);
-  int maxbounds = initDomain(em);
+  checkBounds();
+  int maxbounds = initDomain();
   initEncoders(maxbounds, pg);
 }
 
@@ -669,7 +670,7 @@ void bounded_varoption::buildNoChange(const model_event &e, dd_edge &dd)
 
 
 
-void bounded_varoption::checkBounds(const exprman* em)
+void bounded_varoption::checkBounds()
 {
   //
   // Check that all state variables are bounded
@@ -701,7 +702,7 @@ void bounded_varoption::checkBounds(const exprman* em)
   } // for i
 }
 
-int bounded_varoption::initDomain(const exprman* em)
+int bounded_varoption::initDomain()
 {
   //
   // Build the domain
@@ -2337,7 +2338,7 @@ private:
   int* tmpLevels;   // array of size num_levels+1
 public:
   substate_varoption(meddly_reachset &x, const dsde_hlm &p,
-    const exprman* em, const meddly_procgen &pg);
+    const meddly_procgen &pg);
   virtual ~substate_varoption();
   virtual void initializeVars();
   virtual void initializeEvents(debugging_msg &d);
@@ -2354,7 +2355,7 @@ public:
   virtual substate_colls* getSubstateStorage() { return colls; }
 
 private:
-  void initDomain(const exprman* em);
+  void initDomain();
   void initEncoders(const meddly_procgen &pg);
   static deplist* getExprDeps(expr *x, int numlevels);
   static void clearList(deplist* &L);
@@ -2622,7 +2623,7 @@ void substate_varoption::deplist::expandLists()
 
 substate_varoption
 ::substate_varoption(meddly_reachset &x, const dsde_hlm &p,
-  const exprman* em, const meddly_procgen &pg)
+  const meddly_procgen &pg)
 : meddly_varoption(x, p), td(traverse_data::Compute)
 {
   colls = 0;
@@ -2637,7 +2638,7 @@ substate_varoption
   td.next_state = tdnext;
   from_minterm = 0;
   to_minterm = 0;
-  initDomain(em);
+  initDomain();
   initEncoders(pg);
   tmpLevels = 0;
 }
@@ -2744,9 +2745,6 @@ satotf_opname::otf_relation* substate_varoption::buildNSF_OTF(debugging_msg &deb
 {
   using namespace MEDDLY;
 
-  exprman* em = getExpressionManager();
-  DCASSERT(em);
-
   std::vector<satotf_opname::event*> otf_events;
 
   //
@@ -2808,7 +2806,7 @@ satotf_opname::otf_relation* substate_varoption::buildNSF_OTF(debugging_msg &deb
         for (expr_node* t = ptr->termlist; t; t=t->next, ti++) {
           terms[ti] = Share(t->term);
         }
-        chunk = em->makeAssocOp(location::NOWHERE(), exprman::aop_and, terms, 0, length);
+        chunk = assoc_op::makeExpr(location::NOWHERE(), assoc_op::aop_and, terms, 0, length);
       }
 
       // build list of variables this piece depends on
@@ -2854,7 +2852,7 @@ satotf_opname::otf_relation* substate_varoption::buildNSF_OTF(debugging_msg &deb
         for (expr_node* t = ptr->termlist; t; t=t->next, ti++) {
           terms[ti] = Share(t->term);
         }
-        chunk = em->makeAssocOp(location::NOWHERE(), exprman::aop_semi, terms, 0, length);
+        chunk = assoc_op::makeExpr(location::NOWHERE(), assoc_op::aop_semi, terms, 0, length);
       }
 
       // build list of variables this piece depends on
@@ -2892,8 +2890,6 @@ satotf_opname::otf_relation* substate_varoption::buildNSF_OTF(debugging_msg &deb
 satimpl_opname::implicit_relation* substate_varoption::buildNSF_IMPLICIT(debugging_msg &debug)
 {
   using namespace MEDDLY;
-  // exprman* em = getExpressionManager();
-  // DCASSERT(em);
   substate_colls* c_pass = this->getSubstateStorage();
 
   satimpl_opname::implicit_relation* T = new satimpl_opname::implicit_relation(ms.getMddForest(), ms.getMddForest(), ms.getMddForest());
@@ -2976,8 +2972,6 @@ satimpl_opname::implicit_relation* substate_varoption::buildNSF_IMPLICIT(debuggi
 sathyb_opname::hybrid_relation* substate_varoption::buildNSF_HYBRID(debugging_msg &debug)
 {
    using namespace MEDDLY;
-  exprman* em = getExpressionManager();
-  DCASSERT(em);
   substate_colls* c_pass = this->getSubstateStorage();
 
   // int max_node_count = 10;
@@ -3070,7 +3064,7 @@ sathyb_opname::hybrid_relation* substate_varoption::buildNSF_HYBRID(debugging_ms
         for (expr_node* t = ptr->termlist; t; t=t->next, ti++) {
           terms[ti] = Share(t->term);
         }
-        chunk = em->makeAssocOp(location::NOWHERE(), exprman::aop_semi, terms, 0, length);
+        chunk = assoc_op::makeExpr(location::NOWHERE(), assoc_op::aop_semi, terms, 0, length);
 
       // build list of variables this piece depends on
       int nv = ptr->countDeps();
@@ -3143,7 +3137,7 @@ sathyb_opname::hybrid_relation* substate_varoption::buildNSF_HYBRID(debugging_ms
         for (expr_node* t = ptr->termlist; t; t=t->next, ti++) {
           terms[ti] = Share(t->term);
         }
-        chunk = em->makeAssocOp(location::NOWHERE(), exprman::aop_and, terms, 0, length);
+        chunk = assoc_op::makeExpr(location::NOWHERE(), assoc_op::aop_and, terms, 0, length);
         if (chunk==0) continue;
 
         // build list of variables this piece depends on
@@ -3331,8 +3325,6 @@ int getIndexOf(substate_colls* c_pass, int level, int tokens)
 MEDDLY::dd_edge substate_varoption::buildPotentialDeadlockStates_IMPLICIT(debugging_msg &debug)
 {
   using namespace MEDDLY;
-  // exprman* em = getExpressionManager();
-  // DCASSERT(em);
   substate_colls* c_pass = this->getSubstateStorage();
   DCASSERT(c_pass);
   forest* qrmdd = getMddForest();
@@ -3535,8 +3527,6 @@ MEDDLY::dd_edge substate_varoption::buildPotentialDeadlockStates_IMPLICIT(debugg
 MEDDLY::dd_edge substate_varoption::buildPotentialDeadlockStates_IMPLICIT(debugging_msg &debug)
 {
   using namespace MEDDLY;
-  exprman* em = getExpressionManager();
-  DCASSERT(em);
   substate_colls* c_pass = this->getSubstateStorage();
   DCASSERT(c_pass);
   forest* mdd = getMddForest();
@@ -3647,7 +3637,7 @@ MEDDLY::dd_edge substate_varoption::buildPotentialDeadlockStates_IMPLICIT(debugg
 
 
 
-void substate_varoption::initDomain(const exprman* em)
+void substate_varoption::initDomain()
 {
   //
   // Build the domain
@@ -4202,7 +4192,7 @@ void substate_varoption::show_substates(std::ostream &s)
 class pregen_varoption : public substate_varoption {
 public:
   pregen_varoption(meddly_reachset &x, const dsde_hlm &p,
-    const exprman* em, const meddly_procgen &pg);
+    const meddly_procgen &pg);
 
   virtual void updateEvents(debugging_msg &d, bool* cl);
 
@@ -4217,8 +4207,8 @@ public:
 
 pregen_varoption
 ::pregen_varoption(meddly_reachset &x, const dsde_hlm &p,
-  const exprman* em, const meddly_procgen &pg)
-: substate_varoption(x, p, em, pg)
+  const meddly_procgen &pg)
+: substate_varoption(x, p, pg)
 {
 }
 
@@ -4273,7 +4263,7 @@ bool pregen_varoption::hasChangedLevels(const dd_edge &s, bool* cl)
 class onthefly_varoption : public substate_varoption {
 public:
   onthefly_varoption(meddly_reachset &x, const dsde_hlm &p,
-    const exprman* em, const meddly_procgen &pg);
+    const meddly_procgen &pg);
 
   virtual void updateEvents(debugging_msg &d, bool* cl);
 
@@ -4288,8 +4278,8 @@ public:
 
 onthefly_varoption
 ::onthefly_varoption(meddly_reachset &x, const dsde_hlm &p,
-  const exprman* em, const meddly_procgen &pg)
- : substate_varoption(x, p, em, pg)
+  const meddly_procgen &pg)
+ : substate_varoption(x, p, pg)
 {
 }
 
@@ -4312,7 +4302,7 @@ bool onthefly_varoption::hasChangedLevels(const dd_edge &s, bool* cl)
 class ontheflyimplicit_varoption : public substate_varoption {
 public:
   ontheflyimplicit_varoption(meddly_reachset &x, const dsde_hlm &p,
-                             const exprman* em, const meddly_procgen &pg);
+                             const meddly_procgen &pg);
 
   virtual void updateEvents(debugging_msg &d, bool* cl);
 
@@ -4327,8 +4317,8 @@ public:
 
 ontheflyimplicit_varoption
 ::ontheflyimplicit_varoption(meddly_reachset &x, const dsde_hlm &p,
-                             const exprman* em, const meddly_procgen &pg)
-: substate_varoption(x, p, em, pg)
+                             const meddly_procgen &pg)
+: substate_varoption(x, p, pg)
 {
 }
 
@@ -4367,7 +4357,7 @@ meddly_procgen::~meddly_procgen()
 meddly_varoption*
 meddly_procgen::makeBounded(const dsde_hlm &m, meddly_reachset &ms) const
 {
-  bounded_varoption *mvo = new bounded_varoption(ms, m, em, *this);
+  bounded_varoption *mvo = new bounded_varoption(ms, m, *this);
   if (!mvo->wasBuiltOK()) {
     delete mvo;
     return 0;
@@ -4386,7 +4376,7 @@ meddly_procgen::makeExpanding(const dsde_hlm &m, meddly_reachset &ms) const
 meddly_varoption*
 meddly_procgen::makeOnTheFly(const dsde_hlm &m, meddly_reachset &ms) const
 {
-  onthefly_varoption *mvo = new onthefly_varoption(ms, m, em, *this);
+  onthefly_varoption *mvo = new onthefly_varoption(ms, m, *this);
   if (!mvo->wasBuiltOK()) {
     delete mvo;
     return 0;
@@ -4398,7 +4388,7 @@ meddly_procgen::makeOnTheFly(const dsde_hlm &m, meddly_reachset &ms) const
 meddly_varoption*
 meddly_procgen::makePregen(const dsde_hlm &m, meddly_reachset &ms) const
 {
-  pregen_varoption *mvo = new pregen_varoption(ms, m, em, *this);
+  pregen_varoption *mvo = new pregen_varoption(ms, m, *this);
   if (!mvo->wasBuiltOK()) {
     delete mvo;
     return 0;
@@ -4458,146 +4448,144 @@ meddly_procgen::buildRSSPolicies() const
 // *                                                                *
 // ******************************************************************
 
-class init_genmeddly : public startup {
-  public:
-    init_genmeddly();
-    virtual bool execute();
+class init_genmeddly : public initializer {
+    public:
+        init_genmeddly();
 
-  private:
-    unsigned numNDPButtons();
-    void addNDPButtons(option* o);
+    protected:
+        virtual void execute();
+
+    private:
+        unsigned numNDPButtons();
+        void addNDPButtons(option* o);
 };
-init_genmeddly the_genmeddly_startup;
+static init_genmeddly the_genmeddly_initializer;
 
-init_genmeddly::init_genmeddly() : startup("init_genmeddly")
+init_genmeddly::init_genmeddly() : initializer(__FILE__, 1, 2)
 {
-  usesResource("em");
-  usesResource("engtypes");
-  buildsResource("meddlyprocgen");
+    builds_resource(0, "meddlyprocgen");
+    needs_resource(1, "OM");
+    needs_resource(2, "engtypes");
 }
 
-bool init_genmeddly::execute()
+void init_genmeddly::execute()
 {
-  if (0==em) return false;
+    engtype* rsgen = MakeEngineType(
+        "MeddlyProcessGeneration",
+        "The algorithm to use to generate the underlying process, with Meddly",
+        engtype::Model
+    );
+    engine* meddlygen = MakeRedirectionEngine(
+        "MEDDLY",
+        "Generate and store the underlying process using MDDs with Meddly; for details see option MeddlyProcessGeneration",
+        rsgen
+    );
+    RegisterEngine("ProcessGeneration", meddlygen);
 
-  engtype* rsgen = MakeEngineType(em,
-    "MeddlyProcessGeneration",
-    "The algorithm to use to generate the underlying process, with Meddly",
-    engtype::Model
-  );
-  engine* meddlygen = MakeRedirectionEngine(
-    "MEDDLY",
-    "Generate and store the underlying process using MDDs with Meddly; for details see option MeddlyProcessGeneration",
-    rsgen
-  );
-  RegisterEngine(em, "ProcessGeneration", meddlygen);
+    //
+    // Option defaults
+    meddly_procgen::proc_storage = meddly_procgen::MTMXD;
+    meddly_procgen::edge_style = meddly_procgen::POTENTIAL;
+    meddly_procgen::var_type = meddly_procgen::BOUNDED;
+    meddly_procgen::nsf_ndp = meddly_procgen::PESSIMISTIC;
+    meddly_procgen::rss_ndp = meddly_procgen::PESSIMISTIC;
+    meddly_varoption::vars_named = false;
 
-  //
-  // Option defaults
-  meddly_procgen::proc_storage = meddly_procgen::MTMXD;
-  meddly_procgen::edge_style = meddly_procgen::POTENTIAL;
-  meddly_procgen::var_type = meddly_procgen::BOUNDED;
-  meddly_procgen::nsf_ndp = meddly_procgen::PESSIMISTIC;
-  meddly_procgen::rss_ndp = meddly_procgen::PESSIMISTIC;
-  meddly_varoption::vars_named = false;
+    // Build options
+    option_manager &OM = option_manager::global();
 
-  // Build options
-  if (em->OptMan()) {
     //
     // EVMxD vs MTMxD option
-    option* mps = em->OptMan()->addRadioOption(
-      "MeddlyProcessStorage",
-      "Type of forest to use for process storage, using Meddly",
-      2, meddly_procgen::proc_storage
+    option* mps = OM.addRadioOption(
+        "MeddlyProcessStorage",
+        "Type of forest to use for process storage, using Meddly",
+        2, meddly_procgen::proc_storage
     );
 
     mps->addRadioButton(
-      "MTMXD",
-      "Multi-terminal MDD for matrices",
-      meddly_procgen::MTMXD
+        "MTMXD",
+        "Multi-terminal MDD for matrices",
+        meddly_procgen::MTMXD
     );
     mps->addRadioButton(
-      "EVMXD",
-      "Edge-valued (using *) MDD for matrices",
-      meddly_procgen::EVMXD
+        "EVMXD",
+        "Edge-valued (using *) MDD for matrices",
+        meddly_procgen::EVMXD
     );
 
     //
     // potential vs. actual edge option
-    option* mpes = em->OptMan()->addRadioOption(
-      "MeddlyProcessEdgeStyle",
-      "Style for representing the underlying process, using Meddly",
-      2, meddly_procgen::edge_style
+    option* mpes = OM.addRadioOption(
+        "MeddlyProcessEdgeStyle",
+        "Style for representing the underlying process, using Meddly",
+        2, meddly_procgen::edge_style
     );
 
     mpes->addRadioButton(
-      "ACTUAL",
-      "Outgoing edges only for reachable states; unreachable states have no outgoing edges",
-      meddly_procgen::ACTUAL
+        "ACTUAL",
+        "Outgoing edges only for reachable states; unreachable states have no outgoing edges",
+        meddly_procgen::ACTUAL
     );
     mpes->addRadioButton(
-      "POTENTIAL",
-      "Unreachable states may have outgoing edges",
-      meddly_procgen::POTENTIAL
+        "POTENTIAL",
+        "Unreachable states may have outgoing edges",
+        meddly_procgen::POTENTIAL
     );
 
     //
     // variable type option
-    option* mvs = em->OptMan()->addRadioOption(
-      "MeddlyVariableStyle",
-      "Method for determining sizes of state variables, for Meddly-based process generation",
-      4, meddly_procgen::var_type
+    option* mvs = OM.addRadioOption(
+        "MeddlyVariableStyle",
+        "Method for determining sizes of state variables, for Meddly-based process generation",
+        4, meddly_procgen::var_type
     );
     mvs->addRadioButton(
-      "BOUNDED",
-      "All state variables have declared bounds",
-      meddly_procgen::BOUNDED
+        "BOUNDED",
+        "All state variables have declared bounds",
+        meddly_procgen::BOUNDED
     );
     mvs->addRadioButton(
-      "EXPANDING",
-      "State variable bounds are discovered during generation",
-      meddly_procgen::EXPANDING
+        "EXPANDING",
+        "State variable bounds are discovered during generation",
+        meddly_procgen::EXPANDING
     );
     mvs->addRadioButton(
-      "ON_THE_FLY",
-      "Local state spaces are discovered during generation",
-      meddly_procgen::ON_THE_FLY
+        "ON_THE_FLY",
+        "Local state spaces are discovered during generation",
+        meddly_procgen::ON_THE_FLY
     );
     mvs->addRadioButton(
-      "PREGEN",
-      "Local state spaces are generated in before generating reachability set",
-      meddly_procgen::PREGEN
+        "PREGEN",
+        "Local state spaces are generated in before generating reachability set",
+        meddly_procgen::PREGEN
     );
 
     //
     // Node deletion policy options
-
     addNDPButtons(
-      em->OptMan()->addRadioOption(
-        "MeddlyNSFNodeDeletion",
-        "Node deletion policy to use for next-state function forests in Meddly",
-        numNDPButtons(), meddly_procgen::nsf_ndp
-      )
+        OM.addRadioOption(
+            "MeddlyNSFNodeDeletion",
+            "Node deletion policy to use for next-state function forests in Meddly",
+            numNDPButtons(), meddly_procgen::nsf_ndp
+        )
     );
 
     addNDPButtons(
-      em->OptMan()->addRadioOption(
-        "MeddlyRSSNodeDeletion",
-        "Node deletion policy to use for reachable state space forests in Meddly",
-        numNDPButtons(), meddly_procgen::rss_ndp
-      )
+        OM.addRadioOption(
+            "MeddlyRSSNodeDeletion",
+            "Node deletion policy to use for reachable state space forests in Meddly",
+            numNDPButtons(), meddly_procgen::rss_ndp
+        )
     );
 
     //
     // Variable names
-    em->OptMan()->addBoolOption(
-      "MeddlyVarsAreNamed",
-      "Should the variables internal to MEDDLY be named appropriately.  If true, when MDDs and MxDs are displayed (typically for debugging), more useful information is shown for the level names.  Should be set to false for speed if possible.",
-      meddly_varoption::vars_named
+    OM.addBoolOption(
+        "MeddlyVarsAreNamed",
+        "Should the variables internal to MEDDLY be named appropriately.  If true, when MDDs and MxDs are displayed (typically for debugging), more useful information is shown for the level names.  Should be set to false for speed if possible.",
+        meddly_varoption::vars_named
     );
-  }
 
-  return true;
 }
 
 

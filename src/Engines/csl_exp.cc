@@ -1,9 +1,7 @@
 
-#include "csl_exp.h"
+#include "../Utils/initializer.h"
 
-#include "../ExprLib/startup.h"
 #include "../ExprLib/engine.h"
-#include "../ExprLib/exprman.h"
 #include "../ExprLib/mod_vars.h"
 
 #include "../Formlsms/stoch_llm.h"
@@ -39,7 +37,7 @@ protected:
       if (lldsm::Error == proc->Type()) throw Engine_Failed;
     } else {
       if (0==ProcessGeneration) {
-        ProcessGeneration = em->findEngineType("ProcessGeneration");
+        ProcessGeneration = engtype::findEngineType("ProcessGeneration");
       }
       if (0==ProcessGeneration) throw No_Engine;
       ProcessGeneration->runEngine(m, f);
@@ -198,7 +196,7 @@ protected:
   generateTU(result* pass, int np, traverse_data &x)
   {
     if (0==TUgen) {
-      TUgen = em->findEngineType("TUgenerator");
+      TUgen = engtype::findEngineType("TUgenerator");
     }
     if (!TUgen) throw No_Engine;
     TUgen->runEngine(pass, np, x);
@@ -353,25 +351,23 @@ void PU_expl_eng::RunEngine(result* pass, int np, traverse_data &x)
 // *                                                                *
 // ******************************************************************
 
-class init_cslengines : public startup {
-  public:
-    init_cslengines();
-    virtual bool execute();
+class init_cslengines : public initializer {
+    public:
+        init_cslengines();
+    protected:
+        virtual void execute();
 };
-init_cslengines the_cslengine_startup;
+static init_cslengines the_cslengine_initializer;
 
-init_cslengines::init_cslengines() : startup("init_cslengines")
+init_cslengines::init_cslengines() : initializer(__FILE__, 1, 1)
 {
-  usesResource("em");
-  usesResource("engtypes");
+    builds_resource(0, "csl_engines");
+    needs_resource(1, "engtypes");
 }
 
-bool init_cslengines::execute()
+void init_cslengines::execute()
 {
-  if (0==em) return false;
-
   RegisterEngine(
-      em,
       "TUgenerator",
       "process",
       "Use the underlying process to generate a TU distribution",
@@ -379,14 +375,11 @@ bool init_cslengines::execute()
   );
 
   RegisterEngine(
-      em,
       "PUalgorithm",
       "phase_tta",
       "Use a phase-type tta operation to compute PU",
       &the_PU_expl_eng
   );
-
-  return true;
 }
 
 

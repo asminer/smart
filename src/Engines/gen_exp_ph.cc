@@ -1,7 +1,8 @@
 
-#include "gen_exp_ph.h"
 #include "gen_rg_base.h"
-#include "../ExprLib/startup.h"
+
+#include "../Utils/initializer.h"
+
 #include "../ExprLib/mod_vars.h"
 
 // Formalisms and such
@@ -482,38 +483,37 @@ void phase_procgen::MCError(hldsm* m, const char* what, MCLib::error e) const
 // *                                                                *
 // ******************************************************************
 
-class init_phasegen : public startup {
-  public:
-    init_phasegen();
-    virtual bool execute();
+class init_phasegen : public initializer {
+    public:
+        init_phasegen();
+    protected:
+        virtual void execute();
 };
-init_phasegen the_phasegen_startup;
+static init_phasegen the_phasegen_initializer;
 
-init_phasegen::init_phasegen() : startup("init_phasegen")
+init_phasegen::init_phasegen() : initializer(__FILE__, 1, 1)
 {
-  usesResource("em");
-  usesResource("engtypes");
+    builds_resource(0, "phasegen");
+    needs_resource(1, "engtypes");
 }
 
-bool init_phasegen::execute()
+void init_phasegen::execute()
 {
-  if (0==em) return false;
+    // Initialize state library
+    const exp_state_lib* sl = InitExplicitStateStorage();
 
-  // Initialize state library
-  const exp_state_lib* sl = InitExplicitStateStorage();
-
-  // Register engines
-  RegisterSubengine(em,
-    "ProcessGeneration",
-    "EXPLICIT",
-    new phase_procgen(sl)
-  );
-//  Register Coverability engines
-  RegisterSubengine(em,
-    "ProcessGeneration",
-    "EXPLICITCOV",
-    new phase_procgen(sl)
-  );
-
-  return true;
+    // Register engines
+    RegisterSubengine(
+        "ProcessGeneration",
+        "EXPLICIT",
+        new phase_procgen(sl)
+    );
+    //  Register Coverability engines
+    /*
+    RegisterSubengine(
+        "ProcessGeneration",
+        "EXPLICITCOV",
+        new phase_procgen(sl)
+    );
+    */
 }

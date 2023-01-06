@@ -1,7 +1,6 @@
-#include "gen_exp_as.h"
 #include "gen_rg_base.h"
 
-#include "../ExprLib/startup.h"
+#include "../Utils/initializer.h"
 
 // Formalisms and such
 #include "../Formlsms/dsde_hlm.h"
@@ -1013,30 +1012,27 @@ void as_procgenCOV::generateMC(dsde_hlm* dsm, StateLib::state_db* tandb,
 // *                                                                *
 // ******************************************************************
 
-class init_asynchgen: public startup {
-public:
-	init_asynchgen();
-	virtual bool execute();
+class init_asynchgen: public initializer {
+    public:
+	    init_asynchgen();
+    protected:
+        virtual void execute();
 };
-init_asynchgen the_asynchgen_startup;
+static init_asynchgen the_asynchgen_initializer;
 
-init_asynchgen::init_asynchgen() :
-		startup("init_asynchgen") {
-	usesResource("em");
-	usesResource("engtypes");
+init_asynchgen::init_asynchgen() : initializer(__FILE__, 1, 1)
+{
+    builds_resource(0, "asynchgen");
+    needs_resource(1, "engtypes");
 }
 
-bool init_asynchgen::execute() {
-	if (0 == em)
-		return false;
-
+void init_asynchgen::execute()
+{
 	// Initialize state library
 	const exp_state_lib* sl = InitExplicitStateStorage();
 
 	// Register engines
-	RegisterSubengine(em, "ProcessGeneration", "EXPLICIT", new as_procgen(sl));
-//  Register Coverability engines
-	RegisterSubengine(em, "ProcessGeneration", "EXPLICITCOV",
-			new as_procgenCOV(sl));
-	return true;
+	RegisterSubengine("ProcessGeneration", "EXPLICIT", new as_procgen(sl));
+    //  Register Coverability engines
+	RegisterSubengine("ProcessGeneration", "EXPLICITCOV", new as_procgenCOV(sl));
 }
