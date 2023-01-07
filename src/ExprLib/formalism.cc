@@ -3,8 +3,10 @@
 #include "measures.h"
 
 // **********************************************************************
-
-// Traversal to copy from the global, "all models" table into a formalism
+//
+// Visitor to copy from the global, "all models" table into a formalism
+//
+// **********************************************************************
 class copy_into_formalism : public shared_visitor {
         formalism &F;
     public:
@@ -46,6 +48,56 @@ void copy_into_formalism::visit(shared_object* item)
 }
 
 // **********************************************************************
+//
+// Visitor for documenting identifiers / functions in a formalism
+//
+// **********************************************************************
+
+class doc_formlsm : public shared_visitor {
+        doc_formatter &df;
+        bool idents;
+        bool first;
+    public:
+        doc_formlsm(doc_formatter &_df) : df(_df) {}
+        virtual void visit(shared_object* item);
+        inline void showIdents() { first = true; idents = true; }
+        inline void showFuncs()  { first = true; idents = false; }
+        inline bool printed()    { return !first; }
+};
+
+void doc_formlsm::visit(shared_object* item)
+{
+    const symbol* chain = dynamic_cast <symbol*> (item);
+    for (; chain; chain=chain->Next()) {
+        const function* func = dynamic_cast <const function*> (chain);
+
+        if (idents) {
+            // Only show identifiers, not functions
+            if (func) continue;
+            if (first) {
+                df.Out() << "\nIdentifiers usable in this formalism:\n";
+                df.begin_indent();
+                first = false;
+            }
+            chain->PrintType(df.Out());
+            df.Out() << " " << chain->Name() << "\n";
+        } else {
+            // Only show functions, not identifiers
+            if (!func) continue;
+            if (first) {
+                df.Out() << "\nFunctions usable in this formalism:\n";
+                df.begin_indent();
+                first = false;
+            }
+            func->PrintHeader(df.Out(), true);
+            df.Out() << "\n";
+        }
+    } // for chain
+}
+
+// **********************************************************************
+// *                         formalism  methods                         *
+// **********************************************************************
 
 formalism::formalism(const char* n, const char* sd, const char* ld)
  : simple_type(n, sd, ld)
@@ -65,6 +117,33 @@ formalism::~formalism()
     delete symb_list;
 
     // Should we delete the individual symbols?
+}
+
+void formalism::printDocs(doc_formatter &df) const
+{
+    df.begin_indent();
+    df.Out() << longDocs();
+    df.Out() << "\n\nLegal variable types:";
+    df.begin_indent();
+    for (unsigned i=0; i<type::numRegistered(); i++) {
+        const type* t = type::getRegistered(i);
+        DCASSERT(t);
+        if (canDeclareType(t)) df.Out() << *t << "\n";
+    }
+    df.end_indent();
+
+    //
+    // Print formalism identifiers / functions
+    //
+    doc_formlsm V(df);
+    V.showIdents();
+    traverseSymbols(V);
+    if (V.printed()) df.end_indent();
+    V.showFuncs();
+    traverseSymbols(V);
+    if (V.printed()) df.end_indent();
+
+    df.end_indent();
 }
 
 void formalism::finish()

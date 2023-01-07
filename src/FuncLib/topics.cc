@@ -23,13 +23,52 @@
 // ******************************************************************
 
 class topic_topics : public help_topic {
-  const symbol_table &st;
+    const symbol_table &st;
 public:
-  topic_topics(const symbol_table &s)
-   : help_topic("topics", "Shows all available help topics (this list!)"), st(s)
-  { }
-  virtual void PrintDocs(doc_formatter &df, const char*) const;
+    topic_topics(const symbol_table &s);
+    virtual void PrintDocs(doc_formatter &df, const char*) const;
+
+    class visitor : public shared_visitor {
+            doc_formatter &df;
+            unsigned maxname;
+            bool firstpass;
+        public:
+            visitor(doc_formatter &d);
+            virtual void visit(shared_object* item);
+            inline unsigned getMaxName() const { return maxname; }
+            inline void secondPass() { firstpass = false; }
+    };
 };
+
+topic_topics::visitor::visitor(doc_formatter &d) : df(d)
+{
+    maxname = 0;
+    firstpass = true;
+}
+
+void topic_topics::visitor::visit(shared_object* item)
+{
+    const symbol* chain = dynamic_cast <symbol*> (item);
+    for (; chain; chain = chain->Next()) {
+        const help_topic* ht = dynamic_cast <const help_topic*> (chain);
+        if (!ht) continue;
+        if (firstpass) {
+            // Determine longest name
+            unsigned len = strlen(ht->Name());
+            maxname = MAX(maxname, len);
+        } else {
+            // Display documentation
+            df.item(ht->Name());
+            df.Out() << ht->Summary();
+        }
+    } // chain of symbols traversal
+}
+
+topic_topics::topic_topics(const symbol_table &s)
+    : help_topic("topics", "Shows all available help topics (this list!)"),
+      st(s)
+{
+}
 
 void topic_topics::PrintDocs(doc_formatter &df, const char*) const
 {
@@ -37,39 +76,20 @@ void topic_topics::PrintDocs(doc_formatter &df, const char*) const
   PrintHeader(df.Out());
   df.end_heading();
 
-  long num_names = st.numNames();
-  const symbol** list = new const symbol*[num_names];
-  st.CopyToArray(list);
-
-  // get the longest topic name
-  int maxname = 0;
-  for (long i=0; i<num_names; i++) {
-    const symbol* chain = list[i];
-    for (; chain; chain = chain->Next()) {
-      const help_topic* ht = dynamic_cast <const help_topic*> (chain);
-      if (0==ht) continue;
-      int len = strlen(ht->Name());
-      maxname = MAX(maxname, len);
-    }
-  }
+  visitor V(df);
+  // First pass: determine longest topic name
+  st.traverse(V);
 
   df.begin_indent();
   df.Out() << "The following help topics are available:\n\n";
-  df.begin_description(maxname);
+  df.begin_description(V.getMaxName());
 
-  for (long i=0; i<num_names; i++) {
-    const symbol* chain = list[i];
-    for (; chain; chain = chain->Next()) {
-      const help_topic* ht = dynamic_cast <const help_topic*> (chain);
-      if (0==ht) continue;
-      df.item(ht->Name());
-      df.Out() << ht->Summary();
-    }
-  }
+  // Second pass: display topics
+  V.secondPass();
+  st.traverse(V);
+
   df.end_description();
   df.end_indent();
-
-  delete[] list;
 }
 
 // ******************************************************************
@@ -618,110 +638,6 @@ void topic_assocop::PrintDocs(doc_formatter &df, const char*) const
 }
 
 // ******************************************************************
-// *                     topic_simpletype class                     *
-// ******************************************************************
-
-class topic_simpletype : public help_topic {
-  const simple_type* st;
-public:
-  topic_simpletype(const simple_type* t);
-  virtual void PrintDocs(doc_formatter &df, const char*) const;
-};
-
-topic_simpletype::topic_simpletype(const simple_type* t)
- : help_topic(t->getStr(), t->shortDocs())
-{
-  st = t;
-}
-
-void topic_simpletype::PrintDocs(doc_formatter &df, const char*) const
-{
-  df.begin_heading();
-  PrintHeader(df.Out());
-  df.end_heading();
-  df.begin_indent();
-  df.Out() << st->longDocs();
-  df.end_indent();
-}
-
-
-// ******************************************************************
-// *                     topic_formalism  class                     *
-// ******************************************************************
-
-class topic_formalism : public help_topic {
-  const formalism* ft;
-public:
-  topic_formalism(const formalism* t);
-  virtual void PrintDocs(doc_formatter &df, const char*) const;
-};
-
-topic_formalism::topic_formalism(const formalism* t)
- : help_topic(t->getStr(), t->shortDocs())
-{
-  ft = t;
-}
-
-void topic_formalism::PrintDocs(doc_formatter &df, const char*) const
-{
-  df.begin_heading();
-  PrintHeader(df.Out());
-  df.end_heading();
-  df.begin_indent();
-  df.Out() << ft->longDocs();
-  df.Out() << "\n\nLegal variable types:";
-  df.begin_indent();
-  for (unsigned i=0; i<type::numRegistered(); i++) {
-    const type* t = type::getRegistered(i);
-    DCASSERT(t);
-    if (ft->canDeclareType(t)) df.Out() << *t << "\n";
-  }
-  df.end_indent();
-
-  long num_names;
-  // Print formalism identifiers, if any
-  num_names = ft->numIdentNames();
-  if (num_names) {
-    df.Out() << "\nIdentifiers usable in this formalism:\n";
-    const symbol** list = new const symbol*[num_names];
-    ft->copyIdentsToArray(list);
-    df.begin_indent();
-    for (long i=0; i<num_names; i++) {
-      DCASSERT(list[i]);
-      list[i]->PrintType(df.Out());
-      df.Out() << " " << list[i]->Name() << "\n";
-    }
-    df.end_indent();
-    delete[] list;
-  } // if num_names
-
-  // Print formalism functions, if any
-  num_names = ft->numFuncNames();
-  if (num_names) {
-    df.Out() << "\nFunctions usable in this formalism:\n";
-
-    const symbol** list = new const symbol*[num_names];
-    ft->copyFuncsToArray(list);
-
-    df.begin_indent();
-    for (long i=0; i<num_names; i++) {
-      const symbol* chain = list[i];
-      for (; chain; chain = chain->Next()) {
-        const function* foo = dynamic_cast <const function*> (chain);
-        if (0==foo) continue;
-        foo->PrintHeader(df.Out(), true);
-        df.Out() << "\n";
-      }
-    }
-    df.end_indent();
-    delete[] list;
-  } // if num_names
-
-  df.end_indent();
-
-}
-
-// ******************************************************************
 // *                       topic_models class                       *
 // ******************************************************************
 
@@ -786,11 +702,9 @@ class init_helpfuncs : public initializer {
 };
 static init_helpfuncs the_helpfunc_initializer;
 
-init_helpfuncs::init_helpfuncs() : initializer(__FILE__, 1, 2)
+init_helpfuncs::init_helpfuncs() : initializer(__FILE__, 1, 0)
 {
     builds_resource(0, "helpfuncs");
-    needs_resource(1, "types");
-    needs_resource(2, "formalisms");
     // TBD
 }
 
@@ -848,31 +762,6 @@ void init_helpfuncs::execute()
   symbol_table::addGlobal(  new topic_assocop(false, assoc_op::aop_union) );
 
   symbol_table::addGlobal(  new topic_models                              );
-
-  //
-  // Automatically add help topics for formalisms or simple types
-  // (neat trick!)
-  //
-
-  //
-  // TBD: NEATER TRICK:
-  //    when a type/formalism is registered,
-  //    automatically add the help topic for it
-  //
-  for (unsigned i=0; i<type::numRegistered(); i++) {
-    const type* t = type::getRegistered(i);
-    if (t->getBaseType() != t) continue;
-    //
-    // t is a simple type
-    //
-    if (t->isAFormalism()) {
-      const formalism* ft = smart_cast <const formalism*> (t);
-      DCASSERT(ft);
-      symbol_table::addGlobal(  new topic_formalism(ft)       );
-    } else {
-      symbol_table::addGlobal(  new topic_simpletype(t->getBaseType())       );
-    }
-  }
 }
 
 

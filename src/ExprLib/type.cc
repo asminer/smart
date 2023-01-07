@@ -1,6 +1,8 @@
 
 #include "type.h"
 #include "result.h"
+#include "help.h"
+#include "symb_tab.h"
 #include "../Options/optman.h"
 #include "../Options/options.h"
 #include "../Utils/initializer.h"
@@ -8,6 +10,37 @@
 #include "../Utils/ordarray.h"
 
 #include <sstream>
+
+// ******************************************************************
+// *                                                                *
+// *                     topic_simpletype class                     *
+// *                                                                *
+// ******************************************************************
+
+class topic_simpletype : public help_topic {
+        const simple_type* st;
+    public:
+        topic_simpletype(const simple_type* t);
+        virtual void PrintDocs(doc_formatter &df, const char*) const;
+};
+
+// ******************************************************************
+// *                    topic_simpletype methods                    *
+// ******************************************************************
+
+topic_simpletype::topic_simpletype(const simple_type* t)
+    : help_topic(t->getStr(), t->shortDocs())
+{
+    st = t;
+}
+
+void topic_simpletype::PrintDocs(doc_formatter &df, const char*) const
+{
+    df.begin_heading();
+    PrintHeader(df.Out());
+    df.end_heading();
+    st->printDocs(df);
+}
 
 // ******************************************************************
 // *                                                                *
@@ -435,7 +468,13 @@ simple_type* type::registerNew(simple_type* t)
     DCASSERT(reg_tree);
     simple_type* tnew = smart_cast <simple_type*> (reg_tree->insert(t));
     DCASSERT(tnew);
-    if (tnew != t) Delete(t);
+    if (tnew != t) {
+        // Already registered
+        Delete(t);
+    } else {
+        // New; add a help topic
+        symbol_table::addGlobal(new topic_simpletype(t));
+    }
     return tnew;
 }
 
@@ -586,6 +625,13 @@ simple_type::simple_type(const char* n, const char* sd,
 
 simple_type::~simple_type()
 {
+}
+
+void simple_type::printDocs(doc_formatter &df) const
+{
+    df.begin_indent();
+    df.Out() << longDocs();
+    df.end_indent();
 }
 
 const type* simple_type::getSetOfThis() const

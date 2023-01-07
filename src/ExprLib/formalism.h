@@ -23,6 +23,8 @@ public:
     formalism(const char* n, const char* sd, const char* ld);
     virtual ~formalism();
 
+    virtual void printDocs(doc_formatter &df) const; // overrides simple_type
+
     // Formalism-specific symbols
     inline void addSymbol(symbol* s) {
         DCASSERT(symb_tree);
@@ -36,7 +38,6 @@ public:
         const_string C(n);
         return symb_list ? symb_list->find(&C) : nullptr;
     }
-
 
     //
     // Traverse both functions and identifiers

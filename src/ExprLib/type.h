@@ -4,6 +4,7 @@
 
 #include "../include/defines.h"
 #include "../Utils/strings.h"
+#include "../Utils/textfmt.h"
 #include <string.h>
 
 class result;
@@ -323,7 +324,7 @@ class simple_type : public type {
         // Documentation
         inline const char* shortDocs() const { return short_docs; }
         inline const char* longDocs() const { return long_docs; }
-
+        virtual void printDocs(doc_formatter &df) const;
 
         inline void setPhase(const type* t) {
             DCASSERT(!phase_this);
