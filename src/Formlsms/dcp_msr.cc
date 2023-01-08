@@ -1,8 +1,11 @@
 
 #include "dcp_msr.h"
-#include "../ExprLib/startup.h"
+
+#include "../Utils/initializer.h"
+
 #include "../ExprLib/measures.h"
 #include "../ExprLib/engine.h"
+#include "../ExprLib/symb_tab.h"
 
 // #define DEBUG_DCP
 
@@ -90,60 +93,57 @@ dcp_satisfiable::dcp_satisfiable(engtype *w)
 // *                                                                *
 // ******************************************************************
 
-class init_dcpmeasures : public startup {
-  public:
-    init_dcpmeasures();
-    virtual bool execute();
+class init_dcpmeasures : public initializer {
+    public:
+        init_dcpmeasures();
+    protected:
+        virtual void execute();
 };
-init_dcpmeasures the_dcpmeasure_startup;
+static init_dcpmeasures the_dcpmeasure_initializer;
 
-init_dcpmeasures::init_dcpmeasures() : startup("init_dcpmeasures")
+init_dcpmeasures::init_dcpmeasures() : initializer(__FILE__, 0, 2)
 {
-  usesResource("em");
-  buildsResource("CML");
-  buildsResource("engtypes");
+  builds_resource(0, "CML");
+  builds_resource(1, "engtypes");
 }
 
-bool init_dcpmeasures::execute()
+void init_dcpmeasures::execute()
 {
-  if (0==em) return false;
-
   // Add engine types
-  engtype* MaxExpr = MakeEngineType(em,
+  engtype* MaxExpr = MakeEngineType(
       "MaxExpr",
       "Algorithm to use to find the variable assignments to maximize an expression",
       engtype::Single
     );
 
-  engtype* MinExpr = MakeEngineType(em,
+  engtype* MinExpr = MakeEngineType(
       "MinExpr",
       "Algorithm to use to find the variable assignments to minimize an expression",
       engtype::Single
     );
 
-  engtype* SatExpr = MakeEngineType(em,
+  engtype* SatExpr = MakeEngineType(
       "SatExpr",
       "Algorithm to use to find variable assignments, if any, so that a given boolean expression evaluates to true",
       engtype::Single
     );
 
   // "state space" engines
-  MakeEngineType(em,
+  MakeEngineType(
       "ExplicitDCSolve",
       "Algorithm used to build explicit list of variable assignments that satisfy model constraints",
       engtype::Single
   );
 
-  MakeEngineType(em,
+  MakeEngineType(
       "ImplicitDCSolve",
       "Algorithm used to build implicit list of variable assignments that satisfy model constraints",
       engtype::Single
   );
 
   // Add functions
-  CML.Append( new dcp_maximize(MaxExpr) );
-  CML.Append( new dcp_minimize(MinExpr) );
-  CML.Append( new dcp_satisfiable(SatExpr)  );
-  return true;
+  symbol_table::addToAllModels( new dcp_maximize(MaxExpr) );
+  symbol_table::addToAllModels( new dcp_minimize(MinExpr) );
+  symbol_table::addToAllModels( new dcp_satisfiable(SatExpr)  );
 }
 

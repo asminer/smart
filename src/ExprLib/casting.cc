@@ -17,6 +17,7 @@
 general_conv* typeconv::general_list = nullptr;
 specific_conv* typeconv::promote_list = nullptr;
 specific_conv* typeconv::cast_list = nullptr;
+warning_msg typeconv::promote_arg;
 
 typeconv::typeconv()
 {

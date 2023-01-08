@@ -8,6 +8,8 @@
 // *                                                                *
 // ******************************************************************
 
+const trinary_op** trinary_op::registry = nullptr;
+
 trinary_op::trinary_op(opcode o)
 {
     code = o;
