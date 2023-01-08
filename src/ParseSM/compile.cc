@@ -8,14 +8,19 @@
 
 #include "../Utils/strings.h"
 #include "../Utils/init_opts.h"
-#include "../SymTabs/symtabs.h"
 
-#include "../ExprLib/exprman.h"
 #include "../ExprLib/values.h"
 #include "../ExprLib/symbols.h"
 #include "../ExprLib/functions.h"
 #include "../ExprLib/mod_def.h"
 #include "../ExprLib/formalism.h"
+#include "../ExprLib/symb_tab.h"
+#include "../ExprLib/bogus.h"
+#include "../ExprLib/unary.h"
+#include "../ExprLib/binary.h"
+#include "../ExprLib/trinary.h"
+#include "../ExprLib/assoc.h"
+#include "../ExprLib/casting.h"
 
 #include "../include/heap.h"
 #include "parse_sm.h"
@@ -90,7 +95,6 @@ class optstack {
    ===================================================================== */
 
 parse_module* pm;
-exprman* em;
 debugging_msg parser_debug;
 debugging_msg compiler_debug;
 
@@ -101,13 +105,10 @@ expr* ONE = 0;
 optstack Options;
 
 /// Current stack of for-loop iterators
-symbol_table* Iterators = 0;
+symbol* Iterators = nullptr;
 
 /// Symbol table of arrays.
 symbol_table* Arrays = 0;
-
-/// Symbol table of built-in functions, user-defined functions, and models.
-symbol_table* Funcs = 0;
 
 /// Symbol table of "constants", i.e., functions without parameters.
 symbol_table* Constants = 0;
@@ -130,7 +131,7 @@ symbol_table* ModelInternal = 0;
 /// External (visible) symbols for model under construction.
 HeapOfPointers <symbol> ModelExternal;
 
-inline bool WithinFor() { return (Iterators->NumSymbols()); }
+inline bool WithinFor() { return (Iterators); }
 
 inline bool WithinConverge() { return (converge_depth>0); }
 
@@ -153,6 +154,40 @@ inline int Compare(const symbol* a, const symbol* b)
   DCASSERT(a);
   DCASSERT(b);
   return strcmp(a->Name(), b->Name());
+}
+
+/* =====================================================================
+
+  Stack of iterators "symbol table"
+
+   ===================================================================== */
+
+// --------------------------------------------------------------
+int chainLength(symbol* list)
+{
+    int i;
+    for (i=0; list; list=list->Next()) i++;
+    return i;
+}
+
+// --------------------------------------------------------------
+void fillFromChain(symbol** indexes, int dim, symbol* list)
+{
+    int i = dim-1;
+    for (; list; list=list->Next()) {
+        CHECK_RANGE(0, i, dim);
+        indexes[i] = Share(list);
+        i--;
+    }
+}
+
+// --------------------------------------------------------------
+symbol* findInChain(symbol* list, const char* name)
+{
+    for (; list; list=list->Next()) {
+        if (0==strcmp(list->Name(), name)) return list;
+    }
+    return nullptr;
 }
 
 /* =====================================================================
@@ -486,43 +521,41 @@ expr* MakeStatementBlock(parser_list* stmts)
   expr** opnds = new expr*[length];
   CopyCircular(stmts, opnds, length);
   RecycleCircular(stmts);
-  return em->makeAssocOp(
-      Where(), exprman::aop_semi, opnds, 0, length
+  return assoc_op::makeExpr(
+      Where(), assoc_op::aop_semi, opnds, 0, length
   );
 }
 
 
 bool BadIteratorList(char* n, parser_list* list)
 {
-  // Check for matching dimensions
-  int length = CircularLength(list);
-  int dimension = Iterators->NumSymbols();
-  if (length != dimension) {
-    parse_error E;
-    E << "Dimension of array " << n << " does not match iterators";
-    DeleteCircular(list);
-    free(n);
-    return true;
-  }
-  // Check for matching iterator names
-  for (int i=0; i<dimension; i++) {
-    list = list->next;
-    symbol* nth = Iterators->GetItem(i);
-    DCASSERT(nth);
-    shared_string* forml = smart_cast <shared_string*> (list->data);
-    DCASSERT(forml);
-    if (strcmp(nth->Name(), forml->getStr())) {
-      parse_error E;
-      E << "Array " << n << " expecting index ";
-      E << nth->Name() << ", got " << forml->getStr();
-      DeleteCircular(list);
-      free(n);
-      return true;
+    // Check for matching dimensions
+    int length = CircularLength(list);
+    int dimension = chainLength(Iterators);
+    if (length != dimension) {
+        parse_error E;
+        E << "Dimension of array " << n << " does not match iterators";
+        DeleteCircular(list);
+        free(n);
+        return true;
     }
-  }
-  // iterator names match the ones in the list.
-  DeleteCircular(list);
-  return false;
+    // Check for matching iterator names
+    for (symbol* nth = Iterators; nth; nth=nth->Next()) {
+        list = list->next;
+        shared_string* forml = smart_cast <shared_string*> (list->data);
+        DCASSERT(forml);
+        if (strcmp(nth->Name(), forml->getStr())) {
+            parse_error E;
+            E << "Array " << n << " expecting index ";
+            E << nth->Name() << ", got " << forml->getStr();
+            DeleteCircular(list);
+            free(n);
+            return true;
+        }
+    }
+    // iterator names match the ones in the list.
+    DeleteCircular(list);
+    return false;
 }
 
 /* =====================================================================
@@ -690,7 +723,7 @@ void pos_paramarray::recycle(int len)
 // --------------------------------------------------------------
 parser_list* AppendStatement(parser_list* list, expr* s)
 {
-  if (0==s || em->isError(s))  return list;
+  if (bogus_expr::orNull(s))  return list;
 
   // Do we need to save the statement, or can we just execute it?
   if (!WithinBlock()) {
@@ -714,19 +747,19 @@ parser_list* AppendExpression(int behv, parser_list* list, expr* item)
         return AppendCircular(list, item);
 
     case 1:  // add, unless item is null or error
-        if ((item!= 0) && (! em->isError(item)))
-          return AppendCircular(list, item);
-        return list;
+        if (bogus_expr::orNull(item))
+          return list;
+        return AppendCircular(list, item);
 
     case 2:  // collapse on null or error.
         if (0==list)
           return AppendCircular(0, item);  // correct regardless
-        if ( (0==item) || em->isError(item) ) {
+        if (bogus_expr::orNull(item)) {
           // collapse the list
           DeleteCircular(list);
           return AppendCircular(0, item);
         }
-        if ( (0==list->data) || (em->isError((expr*)list->data)) ) {
+        if (bogus_expr::orNull((expr*)list->data)) {
           // list is already collapsed
           Delete(item);
           return list;
@@ -746,7 +779,7 @@ parser_list* AppendName(parser_list* list, char* ident)
 // --------------------------------------------------------------
 parser_list* AppendSymbol(parser_list* list, symbol* p, const char* kind)
 {
-  if (0==p || em->isError(p))  return list;
+  if (bogus_expr::orNull(p))  return list;
   // Check for duplicate names
   int length = CircularLength(list);
   parser_list* ptr = list;
@@ -799,7 +832,8 @@ expr* BuildForLoop(int count, parser_list* stmts)
   if (count>0) {
     iters = new symbol*[count];
     for (int d=count-1; d>=0; d--) {
-      iters[d] = Iterators->Pop();
+      iters[d] = Iterators;
+      Iterators = Iterators ? Iterators->Next() : nullptr;
     };
     // check for stack underflow
     if (0==iters[0]) {
@@ -817,7 +851,7 @@ expr* BuildForLoop(int count, parser_list* stmts)
   // Construct For Loop.
   return ShowNewStatement(
       "for loop:\n",
-      em->makeForLoop(Where(), iters, count, block)
+      expr::makeForLoop(Where(), iters, count, block)
   );
 }
 
@@ -833,7 +867,7 @@ expr* FinishConverge(parser_list* stmts)
   // Construct converge statement.
   return ShowNewStatement(
       "converge:\n",
-      em->makeConverge(Where(), block, (0==converge_depth))
+      expr::makeConverge(Where(), block, (0==converge_depth))
   );
 }
 
@@ -842,7 +876,7 @@ expr* BuildOptionStatement(option* o, expr* v)
 {
   return ShowNewStatement(
       "option statement:\n",
-      em->makeOptionStatement(Where(), o, v)
+      expr::makeOptionStatement(Where(), o, v)
   );
 }
 
@@ -869,7 +903,7 @@ expr* BuildOptionStatement(option* o, char* n)
   option_enum* oc = FindOptionConstant(o, n);
   expr* foo;
   if (oc) {
-    foo = em->makeOptionStatement(Where(), o, oc);
+    foo = expr::makeOptionStatement(Where(), o, oc);
   } else {
     foo = 0;
   }
@@ -886,7 +920,7 @@ expr* StartOptionBlock(option* o, char* n)
       parse_error E;
       E << "Nesting of option statements is too deep";
     }
-    foo = em->makeOptionStatement(Where(), o, oc);
+    foo = expr::makeOptionStatement(Where(), o, oc);
   } else {
     foo = 0;
   }
@@ -944,15 +978,15 @@ expr* BuildOptionStatement(option* o, bool check, parser_list* list)
 
   return ShowNewStatement(
     "option statement:\n",
-    em->makeOptionStatement(Where(), o, check, vlist, length)
+    expr::makeOptionStatement(Where(), o, check, vlist, length)
   );
 }
 
 // --------------------------------------------------------------
 expr* BuildExprStatement(expr *x)
 {
-  if (!em->isOrdinary(x))  return 0;
-  return em->makeExprStatement(Where(), x);
+  if (bogus_expr::orNull(x))  return 0;
+  return expr::makeExprStatement(Where(), x);
 }
 
 // --------------------------------------------------------------
@@ -974,7 +1008,7 @@ option* BuildOptionHeader(char* name)
   if (oc) {
     om = oc->readSettings();
   } else {
-    om = getGlobalOptionManager();
+    om = & option_manager::global();
   }
   answer = om ? om->FindOption(name) : 0;
 
@@ -990,16 +1024,17 @@ option* BuildOptionHeader(char* name)
 // --------------------------------------------------------------
 int AddIterator(symbol* i)
 {
-  if (!em->isOrdinary(i))  return 0;
-  symbol* find = Iterators->FindSymbol(i->Name());
-  if (find) {
-    parse_error E;
-    E << "Duplicate iterator named " << i->Name();
-    Delete(i);
-    return 0;
-  }
-  Iterators->AddSymbol(i);
-  return 1;
+    if (bogus_expr::orNull(i))  return 0;
+    if (findInChain(Iterators, i->Name())) {
+        parse_error E;
+        E << "Duplicate iterator named " << i->Name();
+        Delete(i);
+        return 0;
+    }
+    // Push i
+    i->LinkTo(Iterators);
+    Iterators = i;
+    return 1;
 }
 
 // --------------------------------------------------------------
@@ -1007,7 +1042,7 @@ expr* BuildFuncStmt(symbol* f, expr* r)
 {
   DCASSERT(function_under_construction==f);
   expr* foo = DefineUserFunction(
-    em, Where(), f, r, model_under_construction
+    Where(), f, r, model_under_construction
   );
   function_under_construction = 0;
   return ShowNewStatement("function statement:\n", foo);
@@ -1026,7 +1061,7 @@ bool IllegalModelVarName(char* ident, const char* what_am_i)
       return true;
     }
   }
-  if (ModelInternal) if (ModelInternal->FindSymbol(ident)) {
+  if (ModelInternal) if (ModelInternal->findSymbol(ident)) {
     parse_error E;
     E << "Duplicate identifier " << ident << " within model";
     free(ident);
@@ -1061,7 +1096,7 @@ expr* BuildMeasure(const type* typ, char* ident, expr* rhs)
 
   /* Initialize internal symbol table if necessary */
   if (0==ModelInternal) {
-    ModelInternal = MakeSymbolTable();
+    ModelInternal = new symbol_table;
   }
   symbol* wrap = 0;
 
@@ -1070,25 +1105,25 @@ expr* BuildMeasure(const type* typ, char* ident, expr* rhs)
     /* Special case - proc "constant" in a model;
        implement this as a function with 0 parameters */
     wrap = MakeUserConstFunc(
-        em, Where(), typ, ident, true
+        Where(), typ, ident, true
     );
-    ModelInternal->AddSymbol(wrap);
+    ModelInternal->addSymbol(wrap);
 
     return ShowNewStatement("const func statement:\n",
       DefineUserFunction(
-        em, Where(), wrap, rhs, model_under_construction
+        Where(), wrap, rhs, model_under_construction
       )
     );
 
   } else {
 
     /* Ordinary measure */
-    wrap = em->makeModelSymbol(Where(), typ, ident);
+    wrap = symbol::makeModelSymbol(Where(), typ, ident);
     ModelExternal.Insert(wrap);
-    ModelInternal->AddSymbol(wrap);
+    ModelInternal->addSymbol(wrap);
 
     return ShowNewStatement("measure assignment:\n",
-      em->makeModelMeasureAssign(
+      expr::makeModelMeasureAssign(
         Where(), model_under_construction, wrap, rhs
       )
     );
@@ -1098,7 +1133,7 @@ expr* BuildMeasure(const type* typ, char* ident, expr* rhs)
 // --------------------------------------------------------------
 expr* BuildVarStmt(const type* typ, char* id, expr* ret)
 {
-  if (em->isError(ret)) {
+  if (bogus_expr::isError(ret)) {
     free(id);
     return 0;
   }
@@ -1119,7 +1154,7 @@ expr* BuildVarStmt(const type* typ, char* id, expr* ret)
   symbol* find = 0;
   function* match = 0;
   // Check for functions / models with no parameters of this name
-  for (find = Funcs->FindSymbol(id); find; find = find->Next()) {
+  for (find = symbol_table::findGlobal(id); find; find = find->Next()) {
     function* f = smart_cast <function*> (find);
     if (0==f)    continue;
     int score = f->TypecheckParams(0, 0);
@@ -1141,7 +1176,7 @@ expr* BuildVarStmt(const type* typ, char* id, expr* ret)
   }
 
   // Check that the name is unique among constants
-  find = Constants->FindSymbol(id);
+  find = Constants->findSymbol(id);
   if (find) {
     free(id);
 
@@ -1154,19 +1189,19 @@ expr* BuildVarStmt(const type* typ, char* id, expr* ret)
   } else {
     // Make the symbol
     if (WithinConverge()) {
-      find = em->makeCvgVar(Where(), typ, id);
+      find = symbol::makeCvgVar(Where(), typ, id);
     } else {
-      find = em->makeConstant(Where(), typ, id, ret, 0);
+      find = symbol::makeConstant(Where(), typ, id, ret, 0);
     }
     // Add to symbol table
     if (0==find)  return 0;
-    Constants->AddSymbol(find);
+    Constants->addSymbol(find);
     ShowWhatWeBuilt("variable: ", find);
   }
 
   if (WithinConverge())
     return ShowNewStatement("assignment:\n",
-      em->makeCvgAssign(Where(), find, ret)
+      expr::makeCvgAssign(Where(), find, ret)
     );
 
   return 0;
@@ -1175,7 +1210,7 @@ expr* BuildVarStmt(const type* typ, char* id, expr* ret)
 // --------------------------------------------------------------
 expr* BuildGuessStmt(const type* typ, char* id, expr* ret)
 {
-  if (em->isError(ret)) {
+  if (bogus_expr::isError(ret)) {
     free(id);
     return 0;
   }
@@ -1187,7 +1222,7 @@ expr* BuildGuessStmt(const type* typ, char* id, expr* ret)
     return 0;
   }
   // check that this is not already defined
-  symbol* find = Constants->FindSymbol(id);
+  symbol* find = Constants->findSymbol(id);
   if (find) {
     free(id);
     if (find->isGuessed()) {
@@ -1196,14 +1231,14 @@ expr* BuildGuessStmt(const type* typ, char* id, expr* ret)
       return nullptr;
     }
   } else {
-    find = em->makeCvgVar(Where(), typ, id);
+    find = symbol::makeCvgVar(Where(), typ, id);
     if (0==find)  return 0;
-    Constants->AddSymbol(find);
+    Constants->addSymbol(find);
     ShowWhatWeBuilt("variable: ", find);
   }
 
   return ShowNewStatement("guess:\n",
-    em->makeCvgGuess(Where(), find, ret)
+    expr::makeCvgGuess(Where(), find, ret)
   );
 }
 
@@ -1212,18 +1247,18 @@ expr* BuildArrayStmt(symbol *a, expr *ret)
 {
   if (WithinModel())
     return ShowNewStatement("measure array assignment:\n",
-      em->makeModelMeasureArray(Where(),
+      symbol::makeModelMeasureArray(Where(),
         model_under_construction, a, ret)
     );
 
   if (WithinConverge())
     return ShowNewStatement("converge array assignment:\n",
-      em->makeArrayCvgAssign(Where(), a, ret)
+      expr::makeArrayCvgAssign(Where(), a, ret)
     );
 
   // ordinary array
   return ShowNewStatement("array assignment:\n",
-    em->makeArrayAssign(Where(), a, ret)
+    expr::makeArrayAssign(Where(), a, ret)
   );
 }
 
@@ -1242,7 +1277,7 @@ expr* BuildArrayGuess(symbol* a, expr* ret)
       Delete(ret);
       return 0;
     }
-    stmt = em->makeArrayCvgGuess(Where(), a, ret);
+    stmt = expr::makeArrayCvgGuess(Where(), a, ret);
   } else {
     parse_error E;
     E << "Guess for " << a->Name() << " outside converge";
@@ -1263,7 +1298,7 @@ expr* BuildArrayGuess(symbol* a, expr* ret)
 symbol* BuildIterator(const type* typ, char* n, expr* values)
 {
   return ShowWhatWeBuilt("iterator: ",
-    em->makeIterator(Where(), typ, n, values)
+    symbol::makeIterator(Where(), typ, n, values)
    );
 }
 
@@ -1280,7 +1315,7 @@ void DoneWithFunctionHeader()
 function* findFirstMatch(symbol_table* st, char* n, expr** pass, int nfp)
 {
   if (0==st) return 0;
-  for (symbol* find = st->FindSymbol(n); find; find = find->Next()) {
+  for (symbol* find = st->findSymbol(n); find; find = find->Next()) {
     function* f = smart_cast <function*> (find);
     if (0==f)    continue;
     int score = f->TypecheckParams(pass, nfp);
@@ -1311,8 +1346,6 @@ bool hasNamedParamConflicts(const char* n, symbol** fp, int np)
 {
   // Check *all* functions of this name, for function call
   // ambiguity when passing named parameters.
-  if (0==Funcs) return false;
-
   static int* scratch = 0;
   static int  scrsize = 0;
 
@@ -1324,7 +1357,7 @@ bool hasNamedParamConflicts(const char* n, symbol** fp, int np)
   }
 
   bool conflicts = false;
-  const symbol* findlist = Funcs->FindSymbol(n);
+  const symbol* findlist = symbol_table::findGlobal(n);
 
   //
   // Check for conflicts
@@ -1388,7 +1421,7 @@ symbol* BuildFunction(const type* typ, char* n, parser_list* list)
 
   // check for forward definitions, duplications, etc.
   function* match = findFirstMatch(
-    (model_under_construction) ? ModelInternal : Funcs, n, (expr**) fp, nfp
+    (model_under_construction) ? ModelInternal : &symbol_table::global(), n, (expr**) fp, nfp
   );
   if (match) {
     if (!match->HeadersMatch(typ, fp, nfp)) {
@@ -1396,13 +1429,13 @@ symbol* BuildFunction(const type* typ, char* n, parser_list* list)
       match = 0;
     }
     free(n);
-    ResetUserFunctionParams(em, Where(), match, fp, nfp);
+    ResetUserFunctionParams(Where(), match, fp, nfp);
     function_under_construction = match;
     return match;
   }
   if (model_under_construction) {
     // warn if we are hiding a "global" function
-    duplicationError(1, findFirstMatch(Funcs, n, (expr**) fp, nfp), "hides");
+    duplicationError(1, findFirstMatch(&symbol_table::global(), n, (expr**) fp, nfp), "hides");
   }
 
   //
@@ -1421,14 +1454,14 @@ symbol* BuildFunction(const type* typ, char* n, parser_list* list)
   // All clear; build the function
   //
   function_under_construction = MakeUserFunction(
-      em, Where(), typ, n, fp, nfp, model_under_construction
+      Where(), typ, n, fp, nfp, model_under_construction
   );
 
   if (model_under_construction) {
-    if (0==ModelInternal) ModelInternal = MakeSymbolTable();
-    ModelInternal->AddSymbol(function_under_construction);
+    if (0==ModelInternal) ModelInternal = new symbol_table;
+    ModelInternal->addSymbol(function_under_construction);
   } else {
-    Funcs->AddSymbol(function_under_construction);
+      symbol_table::addGlobal(function_under_construction);
   }
   return ShowWhatWeBuilt("function: ", function_under_construction);
 }
@@ -1450,20 +1483,19 @@ symbol* BuildMeasureArray(const type* typ, char* n, parser_list* list)
   if (BadIteratorList(n, list))  return 0;
 
   // Build a new array.  First, construct the iterator list.
-  int dim = Iterators->NumSymbols();
+  int dim = chainLength(Iterators);
   symbol** indexes = new symbol*[dim];
-  for (int i=0; i<dim; i++) {
-    indexes[i] = Share(Iterators->GetItem(i));
-  }
-  symbol* wrap = em->makeModelArray(
+  fillFromChain(indexes, dim, Iterators);
+
+  symbol* wrap = symbol::makeModelArray(
       Where(), typ, n, indexes, dim
   );
 
   // Add measure to symbol tables
   if (0==ModelInternal) {
-    ModelInternal = MakeSymbolTable();
+    ModelInternal = new symbol_table;
   }
-  ModelInternal->AddSymbol(wrap);
+  ModelInternal->addSymbol(wrap);
 
   ModelExternal.Insert(wrap);
 
@@ -1481,7 +1513,7 @@ symbol* BuildArray(const type* typ, char* n, parser_list* list)
   if (WithinModel())   return BuildMeasureArray(typ, n, list);
 
   // Check if the array already exists
-  symbol* find = Arrays->FindSymbol(n);
+  symbol* find = Arrays->findSymbol(n);
   if (find) {
     if (find->isDefined()) {
       parse_error E;
@@ -1501,13 +1533,11 @@ symbol* BuildArray(const type* typ, char* n, parser_list* list)
   }
 
   // Build a new array.  First, construct the iterator list.
-  int dim = Iterators->NumSymbols();
+  int dim = chainLength(Iterators);
   symbol** indexes = new symbol*[dim];
-  for (int i=0; i<dim; i++) {
-    indexes[i] = Share(Iterators->GetItem(i));
-  }
-  symbol* f = em->makeArray(Where(), typ, n, indexes, dim);
-  if (f) Arrays->AddSymbol(f);
+  fillFromChain(indexes, dim, Iterators);
+  symbol* f = symbol::makeArray(Where(), typ, n, indexes, dim);
+  if (f) Arrays->addSymbol(f);
   return ShowWhatWeBuilt("array: ", f);
 }
 
@@ -1521,7 +1551,7 @@ symbol* BuildFormal(const type* typ, char* name)
 // --------------------------------------------------------------
 symbol* BuildFormal(const type* typ, char* name, expr* deflt)
 {
-  return MakeFormalParam(em, Where(),
+  return MakeFormalParam(Where(),
                           typ, name, deflt, model_under_construction);
 }
 
@@ -1549,8 +1579,8 @@ void BuildModelStmt(symbol* m, parser_list* block)
     int ns = ModelExternal.Length();
     ModelExternal.Sort();
     symbol** visible = ModelExternal.MakeArray();
-    em->finishModelDef(model_under_construction, stmt_block, visible, ns);
-    Funcs->AddSymbol(m);
+    model_def::finishModelDef(model_under_construction, stmt_block, visible, ns);
+    symbol_table::addGlobal(m);
   } else {
     DeleteCircular(block);
     stmt_block = 0;
@@ -1599,7 +1629,7 @@ symbol* BuildModel(const type* typ, char* n, parser_list* list)
   symbol* find = 0;
   if (0==num_Formals) {
     // No parameters - check "constants"
-    find = Constants->FindSymbol(n);
+    find = Constants->findSymbol(n);
     if (find) {
       parse_error E;
       E << "Model declaration conflicts with existing identifier:";
@@ -1615,7 +1645,7 @@ symbol* BuildModel(const type* typ, char* n, parser_list* list)
 
   // Check functions and other models
   expr** pass = (expr**) Formals;
-  for (find = Funcs->FindSymbol(n); find; find = find->Next()) {
+  for (find = symbol_table::findGlobal(n); find; find = find->Next()) {
     function* f = smart_cast <function*> (find);
     DCASSERT(f);
     int score = f->TypecheckParams(pass, num_Formals);
@@ -1649,12 +1679,17 @@ symbol* BuildModel(const type* typ, char* n, parser_list* list)
   }
 
 
-  model_under_construction =
-    em->makeModel(Where(), typ, n, Formals, num_Formals);
-
-  if (0==model_under_construction) {
+  const formalism* fml = dynamic_cast <const formalism*> (typ);
+  if (fml) {
+    model_under_construction
+        = fml->makeNewModel(Where(), n, Formals, num_Formals);
+    DCASSERT(model_under_construction);
+  } else {
     parse_error E;
     E << "Couldn't make model of type " << *typ;
+    free(n);
+    // Should Delete each element?
+    delete[] Formals;
   }
 
   return (symbol*) model_under_construction;
@@ -1677,12 +1712,12 @@ expr* BuildModelVarStmt(const type* typ, parser_list* list)
 
   expr* stmt;
   if (WithinFor()) {
-    stmt = em->makeModelArrayDecs(
+    stmt = expr::makeModelArrayDecs(
         Where(), model_under_construction,
         typ, slist, numsyms
     );
   } else {
-    stmt = em->makeModelVarDecs(
+    stmt = expr::makeModelVarDecs(
         Where(), model_under_construction,
         typ, 0, slist, numsyms
     );
@@ -1704,11 +1739,11 @@ parser_list* AddModelVar(parser_list* varlist, char* ident)
     return varlist;
   }
 
-  symbol* ms = em->makeModelSymbol(Where(), 0, ident);
+  symbol* ms = symbol::makeModelSymbol(Where(), 0, ident);
   if (0==ModelInternal) {
-    ModelInternal = MakeSymbolTable();
+    ModelInternal = new symbol_table;
   }
-  ModelInternal->AddSymbol(ms);
+  ModelInternal->addSymbol(ms);
 
   return AppendCircular(varlist, ms);
 }
@@ -1735,19 +1770,17 @@ parser_list* AddModelArray(parser_list* varlist, char* ident, parser_list* index
   }
 
   // copy the iterator list.
-  int dim = Iterators->NumSymbols();
+  int dim = chainLength(Iterators);
   symbol** indexes = new symbol*[dim];
-  for (int i=0; i<dim; i++) {
-    indexes[i] = Share(Iterators->GetItem(i));
-  }
+  fillFromChain(indexes, dim, Iterators);
 
-  symbol* ms = em->makeModelArray(
+  symbol* ms = symbol::makeModelArray(
       Where(), 0, ident, indexes, dim
   );
   if (0==ModelInternal) {
-    ModelInternal = MakeSymbolTable();
+    ModelInternal = new symbol_table;
   }
-  ModelInternal->AddSymbol(ms);
+  ModelInternal->addSymbol(ms);
 
   return AppendCircular(varlist, ms);
 }
@@ -2000,63 +2033,63 @@ function* FindBest(symbol* f1, symbol* f2, symbol** pass,
   return best;
 }
 
-exprman::unary_opcode Int2Uop(int op)
+unary_op::opcode Int2Uop(int op)
 {
   switch (op) {
-    case NOT:       return exprman::uop_not;
-    case MINUS:     return exprman::uop_neg;
-    case FORALL:    return exprman::uop_forall;
-    case EXISTS:    return exprman::uop_exists;
-    case FUTURE:    return exprman::uop_future;
-    case GLOBALLY:  return exprman::uop_globally;
-    case NEXT:      return exprman::uop_next;
+    case NOT:       return unary_op::uop_not;
+    case MINUS:     return unary_op::uop_neg;
+    case FORALL:    return unary_op::uop_forall;
+    case EXISTS:    return unary_op::uop_exists;
+    case FUTURE:    return unary_op::uop_future;
+    case GLOBALLY:  return unary_op::uop_globally;
+    case NEXT:      return unary_op::uop_next;
   }
   internal_error E(__FILE__, __LINE__, Where());
   E << "Operator " << TokenName(op) << " not matched to any unary operator";
-  return exprman::uop_none;
+  return unary_op::uop_none;
 }
 
-exprman::binary_opcode Int2Bop(int op)
+binary_op::opcode Int2Bop(int op)
 {
   switch (op) {
-    case IMPLIES:   return exprman::bop_implies;
-    case MOD:       return exprman::bop_mod;
-    case SET_DIFF:  return exprman::bop_diff;
-    case EQUALS:    return exprman::bop_equals;
-    case NEQUAL:    return exprman::bop_nequal;
-    case GT:        return exprman::bop_gt;
-    case GE:        return exprman::bop_ge;
-    case LT:        return exprman::bop_lt;
-    case LE:        return exprman::bop_le;
-    case UNTIL:     return exprman::bop_until;
-    case TEMPORALAND:  return exprman::bop_and;
+    case IMPLIES:   return binary_op::bop_implies;
+    case MOD:       return binary_op::bop_mod;
+    case SET_DIFF:  return binary_op::bop_diff;
+    case EQUALS:    return binary_op::bop_equals;
+    case NEQUAL:    return binary_op::bop_nequal;
+    case GT:        return binary_op::bop_gt;
+    case GE:        return binary_op::bop_ge;
+    case LT:        return binary_op::bop_lt;
+    case LE:        return binary_op::bop_le;
+    case UNTIL:     return binary_op::bop_until;
+    case TEMPORALAND:  return binary_op::bop_and;
   }
   internal_error E(__FILE__, __LINE__, Where());
   E << "Operator " << TokenName(op) << " not matched to any binary operator";
-  return exprman::bop_none;
+  return binary_op::bop_none;
 }
 
-exprman::assoc_opcode Int2Aop(int op)
+assoc_op::opcode Int2Aop(int op)
 {
   switch (op) {
-    case AND:     return exprman::aop_and;
-    case OR:      return exprman::aop_or;
-    case PLUS:    return exprman::aop_plus;
-    case TIMES:   return exprman::aop_times;
-    case COLON:   return exprman::aop_colon;
-    case SEMI:    return exprman::aop_semi;
-    case COMMA:   return exprman::aop_union;
+    case AND:     return assoc_op::aop_and;
+    case OR:      return assoc_op::aop_or;
+    case PLUS:    return assoc_op::aop_plus;
+    case TIMES:   return assoc_op::aop_times;
+    case COLON:   return assoc_op::aop_colon;
+    case SEMI:    return assoc_op::aop_semi;
+    case COMMA:   return assoc_op::aop_union;
   }
   internal_error E(__FILE__, __LINE__, Where());
   E << "Operator " << TokenName(op)
     << " not matched to any associative operator";
-  return exprman::aop_none;
+  return assoc_op::aop_none;
 }
 
 // --------------------------------------------------------------
 expr* BuildElementSet(expr* elem)
 {
-  if (0==elem || em->isError(elem))  return elem;
+  if (bogus_expr::orNull(elem))  return elem;
   DCASSERT(elem->Type());
   const type* set_type = elem->Type()->getSetOfThis();
   if (0 == set_type) {
@@ -2065,10 +2098,10 @@ expr* BuildElementSet(expr* elem)
     elem->PrintType(E.stream());
     E << " are not allowed";
     Delete(elem);
-    return em->makeError();
+    return bogus_expr::makeError();
   }
   return ShowWhatWeBuilt("set element: ",
-    em->makeTypecast(Where(), set_type, elem)
+    typeconv::castExpr(true, Where(), set_type, elem)
   );
 }
 
@@ -2082,8 +2115,8 @@ expr* BuildInterval(expr* start, expr* stop)
 expr* BuildInterval(expr* start, expr* stop, expr* inc)
 {
   return ShowWhatWeBuilt("set interval: ",
-    em->makeTrinaryOp(Where(),
-      exprman::top_interval, start, stop, inc
+    trinary_op::makeExpr(Where(),
+      trinary_op::top_interval, start, stop, inc
     )
   );
 }
@@ -2126,7 +2159,7 @@ expr* BuildSummation(parser_list* list)
       flip[i] = false;
     }
     opnds[i] = Share(et->term);
-    if (em->isError(et->term))  has_error = true;
+    if (bogus_expr::isError(et->term))  has_error = true;
     if (has_error)    continue;
     if (0==i)         continue;
   } // for i
@@ -2137,12 +2170,12 @@ expr* BuildSummation(parser_list* list)
     delete[] opnds;
     delete[] flip;
     if (has_null)  return 0;
-    return em->makeError();
+    return bogus_expr::makeError();
   }
 
-  exprman::assoc_opcode aop = Int2Aop(oper);
+  assoc_op::opcode aop = Int2Aop(oper);
   return ShowWhatWeBuilt(0,
-      em->makeAssocOp(Where(), aop, opnds, flip, length)
+      assoc_op::makeExpr(Where(), aop, opnds, flip, length)
   );
 }
 
@@ -2184,7 +2217,7 @@ expr* BuildProduct(parser_list* list)
       flip[i] = false;
     }
     opnds[i] = Share(et->term);
-    if (em->isError(et->term))  has_error = true;
+    if (bogus_expr::isError(et->term))  has_error = true;
     if (has_error)    continue;
     if (0==i)         continue;
   } // for i
@@ -2195,12 +2228,12 @@ expr* BuildProduct(parser_list* list)
     delete[] opnds;
     delete[] flip;
     if (has_null)  return 0;
-    return em->makeError();
+    return bogus_expr::makeError();
   }
 
-  exprman::assoc_opcode aop = Int2Aop(oper);
+  assoc_op::opcode aop = Int2Aop(oper);
   return ShowWhatWeBuilt(0,
-      em->makeAssocOp(Where(), aop, opnds, flip, length)
+      assoc_op::makeExpr(Where(), aop, opnds, flip, length)
   );
 }
 
@@ -2219,25 +2252,23 @@ expr* BuildAssociative(int op, parser_list* list)
   expr** opnds = new expr*[length];
   CopyCircular(list, opnds, length);
   RecycleCircular(list);
-  exprman::assoc_opcode aop = Int2Aop(op);
+  assoc_op::opcode aop = Int2Aop(op);
 
   return ShowWhatWeBuilt(0,
-      em->makeAssocOp(Where(), aop, opnds, 0, length)
+      assoc_op::makeExpr(Where(), aop, opnds, 0, length)
   );
 }
 
 // --------------------------------------------------------------
 expr* BuildBinary(expr* left, int op, expr* right)
 {
-  exprman::binary_opcode bop = Int2Bop(op);
-  return em->makeBinaryOp(Where(), left, bop, right);
+  return binary_op::makeExpr(Where(), left, Int2Bop(op), right);
 }
 
 // --------------------------------------------------------------
 expr* BuildUnary(int op, expr* opnd)
 {
-  exprman::unary_opcode uop = Int2Uop(op);
-  return em->makeUnaryOp(Where(), uop, opnd);
+  return unary_op::makeExpr(Where(), Int2Uop(op), opnd);
 }
 
 // --------------------------------------------------------------
@@ -2249,7 +2280,7 @@ expr* BuildTypecast(const type* newtype, expr* opnd)
   }
 
   DCASSERT(newtype);
-  symbol* find = Funcs->FindSymbol(newtype->getStr());
+  symbol* find = symbol_table::findGlobal(newtype->getStr());
   function* best = find ? FindBest(find, 0, &opnd, 1, 0, false) : 0;
 
   if (best) {
@@ -2259,13 +2290,13 @@ expr* BuildTypecast(const type* newtype, expr* opnd)
     expr** pass = new expr*[1];
     pass[0] = opnd;
     return ShowWhatWeBuilt(0,
-      em->makeFunctionCall(Where(), best, pass, 1)
+      expr::makeFunctionCall(Where(), best, pass, 1)
     );
   } else {
     // Either no function exists, or no parameter match
     // Use an ordinary typecast
     return ShowWhatWeBuilt("typecast: ",
-      em->makeTypecast(Where(), newtype, opnd)
+      typeconv::castExpr(false, Where(), newtype, opnd)
     );
   }
 }
@@ -2285,7 +2316,7 @@ expr* MakeBoolConst(char* s)
   internal_error E(__FILE__, __LINE__, Where());
   E << "Bad boolean constant: " << s;
   free(s);
-  return em->makeError();
+  return bogus_expr::makeError();
 }
 
 // --------------------------------------------------------------
@@ -2339,15 +2370,15 @@ expr* MakeMCall(shared_object* mcall, char* m)
   model_call_data* mcd = dynamic_cast <model_call_data*> (mcall);
   if (0==mcd) {
     free(m);
-    return em->makeError();
+    return bogus_expr::makeError();
   }
 
   expr* foo = 0;
   if (mcd->model1) {
-    foo = em->makeMeasureCall(Where(),
+    foo = expr::makeMeasureCall(Where(),
       mcd->model1, mcd->pass, mcd->np, m);
   } else {
-    foo = em->makeMeasureCall(Where(), mcd->model2, m);
+    foo = expr::makeMeasureCall(Where(), mcd->model2, m);
   }
   free(m);
   Delete(mcall);
@@ -2358,7 +2389,7 @@ expr* MakeMCall(shared_object* mcall, char* m)
 expr* MakeAMCall(char* n, parser_list* ind, char* m)
 {
   symbol* find = 0;
-  if (n) find = Arrays->FindSymbol(n);
+  if (n) find = Arrays->findSymbol(n);
   if (0==find) {
     if (n) {
       parse_error E;
@@ -2367,7 +2398,7 @@ expr* MakeAMCall(char* n, parser_list* ind, char* m)
     free(n);
     DeleteCircular(ind);
     free(m);
-    return em->makeError();
+    return bogus_expr::makeError();
   }
   free(n);
 
@@ -2376,7 +2407,7 @@ expr* MakeAMCall(char* n, parser_list* ind, char* m)
   expr** i = new expr*[ni];
   CopyCircular(ind, i, ni);
   RecycleCircular(ind);
-  expr* foo = em->makeMeasureCall(Where(), find, i, ni, m);
+  expr* foo = expr::makeMeasureCall(Where(), find, i, ni, m);
   free(m);
   return ShowWhatWeBuilt(0, foo);
 }
@@ -2388,7 +2419,7 @@ expr* MakeMACall(shared_object* mcall, char* m, parser_list* ind)
   if (0==mcd) {
     free(m);
     DeleteCircular(ind);
-    return em->makeError();
+    return bogus_expr::makeError();
   }
   int length = CircularLength(ind);
   DCASSERT(length);
@@ -2397,10 +2428,10 @@ expr* MakeMACall(shared_object* mcall, char* m, parser_list* ind)
   RecycleCircular(ind);
   expr* foo = 0;
   if (mcd->model1) {
-    foo = em->makeMeasureCall(Where(),
+    foo = expr::makeMeasureCall(Where(),
       mcd->model1, mcd->pass, mcd->np, m, I, length);
   } else {
-    foo = em->makeMeasureCall(Where(),
+    foo = expr::makeMeasureCall(Where(),
       mcd->model2, m, I, length);
   }
   free(m);
@@ -2412,7 +2443,7 @@ expr* MakeMACall(shared_object* mcall, char* m, parser_list* ind)
 expr* MakeAMACall(char* n, parser_list* ind, char* m, parser_list* ind2)
 {
   symbol* find = 0;
-  if (n) find = Arrays->FindSymbol(n);
+  if (n) find = Arrays->findSymbol(n);
   if (0==find) {
     if (n) {
       parse_error E;
@@ -2421,7 +2452,7 @@ expr* MakeAMACall(char* n, parser_list* ind, char* m, parser_list* ind2)
     free(n);
     DeleteCircular(ind);
     free(m);
-    return em->makeError();
+    return bogus_expr::makeError();
   }
   free(n);
 
@@ -2437,7 +2468,7 @@ expr* MakeAMACall(char* n, parser_list* ind, char* m, parser_list* ind2)
   CopyCircular(ind2, j, nj);
   RecycleCircular(ind2);
 
-  expr* foo = em->makeMeasureCall(
+  expr* foo = expr::makeMeasureCall(
       Where(), find, i, ni, m, j, nj
   );
   free(m);
@@ -2456,14 +2487,14 @@ shared_object* MakeModelCallPP(char* n, parser_list* list)
   symbol* find;
   if (0==list) {
     // try vars of type "model" first...
-    find = Constants->FindSymbol(n);
+    find = Constants->findSymbol(n);
     if (find) {
       free(n);
       return new model_call_data(find);
     }
   }
 
-  find = Funcs->FindSymbol(n);
+  find = symbol_table::findGlobal(n);
   if (0==find) {
     parse_error E;
     E << "Unknown model " << n;
@@ -2493,7 +2524,7 @@ shared_object* MakeModelCallPP(char* n, parser_list* list)
   }
 
   // make sure this is a model!
-  model_def* parent = em->isAModelDef(best);
+  model_def* parent = dynamic_cast<model_def*>(best);
   if (0==parent) {
     parse_error E;
     if (0==length) {
@@ -2526,14 +2557,14 @@ shared_object* MakeModelCallNP(char* n, parser_list* list)
   symbol* find;
   if (0==list) {
     // try vars of type "model" first...
-    find = Constants->FindSymbol(n);
+    find = Constants->findSymbol(n);
     if (find) {
       free(n);
       return new model_call_data(find);
     }
   }
 
-  find = Funcs->FindSymbol(n);
+  find = symbol_table::findGlobal(n);
   if (0==find) {
     parse_error E;
     E << "Unknown model " << n;
@@ -2559,7 +2590,7 @@ shared_object* MakeModelCallNP(char* n, parser_list* list)
   //
   // make sure this is a model!
   //
-  model_def* parent = em->isAModelDef(best);
+  model_def* parent = dynamic_cast<model_def*>(best);
   if (0==parent) {
     parse_error E;
     if (0==npa.getLength()) {
@@ -2599,7 +2630,7 @@ expr* FindIdent(char* name)
   }
 
   // Check for loop iterators.
-  symbol* find = Iterators->FindSymbol(name);
+  symbol* find = findInChain(Iterators, name);
 
   // Check function formal parameters, if any
   if (!find) if (function_under_construction) {
@@ -2613,18 +2644,18 @@ expr* FindIdent(char* name)
 
   // Check model built-ins
   if (!find) if (ModelType) {
-    find = ModelType->findIdentifier(name);
+    find = ModelType->findSymbol(name);
   }
 
   // Check model variables
   if (!find) if (ModelInternal) {
-    find = ModelInternal->FindSymbol(name);
+    find = ModelInternal->findSymbol(name);
   }
 
   // Any others to check?
 
   // Check "constants"
-  if (!find) find = Constants->FindSymbol(name);
+  if (!find) find = Constants->findSymbol(name);
 
   if (find) {
     free(name);
@@ -2641,10 +2672,10 @@ expr* BuildArrayCall(char* n, parser_list* ind)
   symbol* find = 0;
   // Check model variables
   if (ModelInternal) {
-    find = ModelInternal->FindSymbol(n);
+    find = ModelInternal->findSymbol(n);
   }
   if (0==find) {
-    find = Arrays->FindSymbol(n);
+    find = Arrays->findSymbol(n);
   }
 
   if (0==find) {
@@ -2652,7 +2683,7 @@ expr* BuildArrayCall(char* n, parser_list* ind)
     E << "Unknown array " << n;
     free(n);
     DeleteCircular(ind);
-    return em->makeError();
+    return bogus_expr::makeError();
   }
   free(n);
   int length = CircularLength(ind);
@@ -2661,7 +2692,7 @@ expr* BuildArrayCall(char* n, parser_list* ind)
   CopyCircular(ind, pass, length);
   RecycleCircular(ind);
   return ShowWhatWeBuilt(0,
-    em->makeArrayCall(Where(), find, pass, length)
+    expr::makeArrayCall(Where(), find, pass, length)
   );
 }
 
@@ -2674,7 +2705,7 @@ expr* BuildFuncCallPP(char* n, parser_list* posparams)
     return 0;
   }
 
-  symbol* find = em->findFunction(ModelType, n);
+  symbol* find = ModelType ? ModelType->findSymbol(n) : nullptr;
   symbol* find2 = 0;
   bool first = 0;
   if (find) {
@@ -2683,8 +2714,8 @@ expr* BuildFuncCallPP(char* n, parser_list* posparams)
     posparams = PrependCircular(posparams, passmodel);
     first = 1;
   } else {
-    find = ModelInternal ? ModelInternal->FindSymbol(n) : 0;
-    find2 = Funcs->FindSymbol(n);
+    find = ModelInternal ? ModelInternal->findSymbol(n) : 0;
+    find2 = symbol_table::findGlobal(n);
   }
 
   if (0==find && 0==find2) {
@@ -2693,7 +2724,7 @@ expr* BuildFuncCallPP(char* n, parser_list* posparams)
     else            E << "Unknown identifier: " << n;
     free(n);
     DeleteCircular(posparams);
-    return em->makeError();
+    return bogus_expr::makeError();
   }
   free(n);
 
@@ -2712,10 +2743,10 @@ expr* BuildFuncCallPP(char* n, parser_list* posparams)
   if (0==best) {
     for (int i=0; i<length; i++)  Delete(pass[i]);
     delete[] pass;
-    return em->makeError();
+    return bogus_expr::makeError();
   }
   return ShowWhatWeBuilt(0,
-    em->makeFunctionCall(Where(), best, pass, length)
+    expr::makeFunctionCall(Where(), best, pass, length)
   );
 }
 
@@ -2730,7 +2761,7 @@ expr* BuildFuncCallNP(char* n, parser_list* namedparams)
 
   named_paramarray& npa = named_paramarray::theNamedList();
 
-  symbol* find = em->findFunction(ModelType, n);
+  symbol* find = ModelType ? ModelType->findSymbol(n) : nullptr;
   symbol* find2 = 0;
   if (find) {
     // we have a match within a model, add model to params
@@ -2739,8 +2770,8 @@ expr* BuildFuncCallNP(char* n, parser_list* namedparams)
     );
     namedparams = PrependCircular(namedparams, passmodel);
   } else {
-    find = ModelInternal ? ModelInternal->FindSymbol(n) : 0;
-    find2 = Funcs->FindSymbol(n);
+    find = ModelInternal ? ModelInternal->findSymbol(n) : 0;
+    find2 = symbol_table::findGlobal(n);
   }
 
   if (0==find && 0==find2) {
@@ -2749,7 +2780,7 @@ expr* BuildFuncCallNP(char* n, parser_list* namedparams)
     else              E << "Unknown identifier: " << n;
     free(n);
     DeleteCircular(namedparams);
-    return em->makeError();
+    return bogus_expr::makeError();
   }
   free(n);
 
@@ -2764,7 +2795,7 @@ expr* BuildFuncCallNP(char* n, parser_list* namedparams)
   function* best = FindBest(find, find2, npa.getList(), npa.getLength(), true);
   if (0==best) {
     npa.recycle();
-    return em->makeError();
+    return bogus_expr::makeError();
   }
 
   //
@@ -2779,14 +2810,14 @@ expr* BuildFuncCallNP(char* n, parser_list* namedparams)
 
   expr** posparams = ppa.Compactify(np);
   return ShowWhatWeBuilt(0,
-    em->makeFunctionCall(Where(), best, posparams, np)
+    expr::makeFunctionCall(Where(), best, posparams, np)
   );
 }
 
 // --------------------------------------------------------------
 expr*  Default()
 {
-  return em->makeDefault();
+  return bogus_expr::makeDefault();
 }
 
 // ******************************************************************
@@ -2838,55 +2869,41 @@ void compile_initializer::execute()
 
 void InitCompiler(parse_module* parent)
 {
-  pm = parent;
-  em = pm ? pm->em : 0;
+    pm = parent;
 
-  // Init symbol tables
-  Iterators = MakeSymbolTable();
-  Arrays = MakeSymbolTable();
-  Constants = MakeSymbolTable();
+    // Init symbol tables
+    Iterators = nullptr;
+    Arrays = new symbol_table;
+    Constants = new symbol_table;
 
-  // init globals and such here.
-  if (em) {
+    // init globals and such here.
     result one(1L);
     ONE = new value(location::NOWHERE(), type::find("int"), one);
 
     result dk;
     dk.setUnknown();
-    Constants->AddSymbol(
-      em->makeConstant(location::NOWHERE(), type::find("int"), strdup("DontKnow"),
+    Constants->addSymbol(
+      symbol::makeConstant(location::NOWHERE(), type::find("int"), strdup("DontKnow"),
           new value(location::NOWHERE(), type::find("int"), dk), 0
       )
     );
 
     result inf;
     inf.setInfinity(1);
-    Constants->AddSymbol(
-      em->makeConstant(location::NOWHERE(), type::find("int"), strdup("infinity"),
+    Constants->addSymbol(
+      symbol::makeConstant(location::NOWHERE(), type::find("int"), strdup("infinity"),
         new value(location::NOWHERE(), type::find("int"), inf), 0
       )
     );
-  } else {
-    // no em, we can't do much, but stay alive
-    ONE = 0;
-  }
 
-  // Compiler stats
-  list_depth = 0;
+    // Compiler stats
+    list_depth = 0;
 }
 
 int Compile(parse_module* parent)
 {
   DCASSERT(parent);
   pm = parent;
-  em = pm ? pm->em : 0;
-  DCASSERT(em);
-  Funcs = pm ? pm->GetBuiltins() : 0;
-  bool kill_builtins = false;
-  if (0==Funcs) {
-    Funcs = MakeSymbolTable();
-    kill_builtins = true;
-  }
 
   int ans = yyparse();
 
@@ -2896,9 +2913,6 @@ int Compile(parse_module* parent)
     compiler_debug.stop();
   }
 
-  if (kill_builtins) {
-    delete Funcs;
-  }
   return ans;
 }
 

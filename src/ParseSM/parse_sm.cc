@@ -1,16 +1,12 @@
 
 #include "lexer.h"
 #include "compile.h"
-#include "../ExprLib/exprman.h"
 #include "../Options/optman.h"
 #include "parse_sm.h"
 
 
-parse_module::parse_module(exprman* the_em)
+parse_module::parse_module()
 {
-  em = the_em;
-  builtins = 0;
-
   compiler_ready = false;
 
   lex_temporal_operators = true;
@@ -25,18 +21,17 @@ void parse_module::Initialize()
   InitCompiler(this);
 
   // Build option for CTL/LTL parsing
-  if (em->OptMan()) {
-    em->OptMan()->addBoolOption(
+  option_manager& OM = option_manager::global();
+  OM.addBoolOption(
       "ParseTemporalOperators",
       "Should the parser treat letters A, E, F, G, U, and X as temporal operators for CTL and LTL formulas?  If true, then these become reserved letters and may not appear in any identifier.",
       temporal_operator_option
     );
-    em->OptMan()->addBoolOption(
+  OM.addBoolOption(
       "MinimumTrace",
       "Whether to generate the minimum trace.",
       minimum_trace_option
     );
-  }
 
   compiler_ready = true;
 }
