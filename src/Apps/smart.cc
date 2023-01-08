@@ -34,12 +34,10 @@
 #include "../Utils/initializer.h"
 #include "../Utils/env.h"
 
-#include "../ExprLib/exprman.h"
-#include "../ExprLib/startup.h"
 #include "../ExprLib/functions.h"
 #include "../ExprLib/values.h"
+#include "../ExprLib/symb_tab.h"
 
-#include "../SymTabs/symtabs.h"
 #include "../ParseSM/parse_sm.h"
 
 #include "../include/revision.h"
@@ -103,46 +101,9 @@ const char* smart_init::getLongName()
 
 void smart_init::execute()
 {
-    set_object(0, "env", new environ(getVersionString(), env));
+    set_object(0, new environ(getVersionString(), env), "env");
 }
 
-
-// ============================================================
-/*
-class first_init : public startup {
-    public:
-        first_init(exprman* em, symbol_table* st, const char** env);
-        virtual bool execute();
-    private:
-        exprman* hold_em;
-        symbol_table* hold_st;
-};
-*/
-// ============================================================
-/*
-first_init::first_init(exprman* _em, symbol_table* _st, const char** _env)
-    : startup("first_init")
-{
-    buildsResource("em");
-    buildsResource("st");
-    buildsResource("env");
-    hold_em = _em;
-    hold_st = _st;
-    hold_env = _env;
-}
-
-bool first_init::execute()
-{
-    em = hold_em;
-    st = hold_st;
-    env = hold_env;
-
-    DCASSERT(em);
-    DCASSERT(st);
-    DCASSERT(env);
-    return true;
-}
-*/
 // ============================================================
 
 int Usage()
@@ -186,11 +147,9 @@ int Copyrights()
 }
 
 
-int CmdLineHelp(exprman* em, symbol_table* st, const char** argv, int argc)
+int CmdLineHelp(const char** argv, int argc)
 {
-  if (0==em) return 1;
-
-  symbol* help = st->FindSymbol("help");
+  symbol* help = symbol_table::findGlobal("help");
   if (0==help) {
     cmdline_error E;
     E << "No online help found\n";
@@ -226,8 +185,7 @@ int CmdLineHelp(exprman* em, symbol_table* st, const char** argv, int argc)
   return 0;
 }
 
-int process_args(parse_module& pm, exprman* em, symbol_table* st,
-  int argc, const char** argv)
+int process_args(parse_module& pm, int argc, const char** argv)
 {
   if (argc < 2)
     return Usage();
@@ -236,10 +194,9 @@ int process_args(parse_module& pm, exprman* em, symbol_table* st,
     return Copyrights();
 
   if (argv[1][0] == '-' && argv[1][1] == 'h' && argv[1][2] == 0)
-    return CmdLineHelp(em, st, argv+2, argc-2);
+    return CmdLineHelp(argv+2, argc-2);
 
   if (argv[1][0] == '-' && argv[1][1] == '?' && argv[1][2] == 0) {
-    if (0==em) return 1;
     cmdline_error E;
     E << "Help system is now -h\n";
     return 1;
@@ -250,47 +207,19 @@ int process_args(parse_module& pm, exprman* em, symbol_table* st,
 
 int main(int argc, const char** argv, const char** env)
 {
-  // io_environ myio;
-  // CatchSignals(&myio);
-
-  // Options
-  option_manager* om = getGlobalOptionManager();
-
-  // Expressions
-  exprman* em = Initialize_Expressions(om);
-
-  // Start the symbol table for builtin functions
-  symbol_table* st = MakeSymbolTable();
-
-  // Bootstrap startups, and run them
-  /*
-  first_init the_first_init(em, st, env);
-  if ( ! startup::executeAll() ) {
-    internal_error E(__FILE__, __LINE__);
-    E << "Deadlock in startups";
-    return -1;
-  }
-  */
-
   // Run initializers
   static smart_init the_smart_init(env);
   initializer::execute_all(false);
 
   // Parser initialization
-  parse_module pm(em);
-  pm.SetBuiltins(st);
+  parse_module pm;
   pm.Initialize();
 
-  // finalize expression manager
-  em->finalize();
+  // Done adding types
+  type::finalizeRegistry();
 
   // Process command line, start parser
-  int code = process_args(pm, em, st, argc, argv);
-
-  //
-  // Cleanup
-  //
-  destroyExpressionManager(em);
+  int code = process_args(pm, argc, argv);
 
   return code;
 }
