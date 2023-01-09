@@ -289,6 +289,40 @@ lextest_SOURCES = \
   Options/checklist.cc \
   Options/radio_opt.cc \
   \
+  ExprLib/engine.cc \
+  ExprLib/formalism.cc \
+  ExprLib/type.cc \
+  ExprLib/result.cc \
+  ExprLib/expr.cc \
+  ExprLib/bogus.cc \
+  ExprLib/values.cc \
+  ExprLib/symbols.cc \
+  ExprLib/symb_tab.cc \
+  ExprLib/help.cc \
+  ExprLib/iterators.cc \
+  ExprLib/arrays.cc \
+  ExprLib/stmts.cc \
+  ExprLib/forloops.cc \
+  ExprLib/functions.cc \
+  ExprLib/converge.cc \
+  ExprLib/sets.cc \
+  ExprLib/intervals.cc \
+  ExprLib/unary.cc \
+  ExprLib/casting.cc \
+  ExprLib/binary.cc \
+  ExprLib/trinary.cc \
+  ExprLib/assoc.cc \
+  ExprLib/ops_bool.cc \
+  ExprLib/ops_int.cc \
+  ExprLib/ops_real.cc \
+  ExprLib/ops_set.cc \
+  ExprLib/ops_misc.cc \
+  ExprLib/dd_front.cc \
+  ExprLib/mod_def.cc \
+  ExprLib/mod_vars.cc \
+  ExprLib/mod_inst.cc \
+  ExprLib/measures.cc \
+  \
   Lexer/tokens.cc \
   Lexer/lexer.cc \
   Lexer/lextest.cc
