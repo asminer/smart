@@ -1,7 +1,6 @@
 
 #include "../include/defines.h"
 #include "lexer.h"
-#include "../ExprLib/exprman.h"
 
 #include <string.h>
 #include <stdlib.h>
@@ -14,6 +13,8 @@
 #include "../Options/options.h"
 
 #include "../Utils/init_opts.h"
+
+#include "../ExprLib/type.h"
 
 // #define LEXER_DEBUG
 

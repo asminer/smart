@@ -1,14 +1,11 @@
 
 #include "lexer.h"
 #include "compile.h"
-#include "../ExprLib/exprman.h"
 #include "parse_icp.h"
 
 
-parse_module::parse_module(exprman* the_em)
+parse_module::parse_module()
 {
-  em = the_em;
-
   num_measures = 0;
   measure_names = 0;
   measure_calls = 0;

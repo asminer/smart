@@ -7,8 +7,6 @@
 #include "../Utils/init_opts.h"
 
 #include "../Options/options.h"
-#include "../ExprLib/startup.h"
-#include "../ExprLib/exprman.h"
 #include "../ExprLib/mod_vars.h"
 #include "../ExprLib/mod_inst.h"
 #include "../ExprLib/measures.h"
@@ -262,7 +260,7 @@ void icp_stategen::Generate_NE_rec(int k)
 // abstract base class for min, max, sat engines
 class icp_ss_analyzer : public subengine {
   static engtype* SSGen;
-  friend class old_init_dcpengines;
+  friend class init_dcpengines;
 public:
   icp_ss_analyzer();
   virtual bool AppliesToModelType(hldsm::model_type mt) const;
@@ -523,56 +521,6 @@ void icp_satisfiable::SolveExplicit(no_event_model* nem,
 // *                                                                *
 // ******************************************************************
 
-class old_init_dcpengines : public startup {
-  public:
-    old_init_dcpengines();
-    virtual bool execute();
-};
-old_init_dcpengines the_dcpengine_startup;
-
-old_init_dcpengines::old_init_dcpengines() : startup("init_dcpengines")
-{
-  usesResource("em");
-  usesResource("engtypes");
-}
-
-bool old_init_dcpengines::execute()
-{
-  if (0==em) return false;
-
-  // Register engines
-  icp_ss_analyzer::SSGen = em->findEngineType("ExplicitDCSolve");
-  DCASSERT(icp_ss_analyzer::SSGen);
-  RegisterEngine(
-    icp_ss_analyzer::SSGen,
-    "IN_ORDER",
-    "All possible assignments are checked, in order; valid ones are saved.",
-    &the_icp_stategen
-  );
-  RegisterEngine(em,
-      "MinExpr",
-      "EXPLICIT",
-      "Generates assignments satisfying constraints, explicitly, then checks them all for the minimum value of the expression",
-      &the_icp_minimize
-  );
-  RegisterEngine(em,
-      "MaxExpr",
-      "EXPLICIT",
-      "Generates assignments satisfying constraints, explicitly, then checks them all for the maximum value of the expression",
-      &the_icp_maximize
-  );
-  RegisterEngine(em,
-      "SatExpr",
-      "EXPLICIT",
-      "Generates assignments satisfying constraints, explicitly, then checks them all until the expression is satisfied",
-      &the_icp_satisfiable
-  );
-
-  return true;
-}
-
-// ******************************************************************
-
 class init_dcpengines : public initializer {
     public:
         init_dcpengines();
@@ -581,11 +529,12 @@ class init_dcpengines : public initializer {
 };
 static init_dcpengines the_dcpengine_initializer;
 
-init_dcpengines::init_dcpengines() : initializer("dcp_expl.cc", 1, 2)
+init_dcpengines::init_dcpengines() : initializer(__FILE__, 1, 3)
 {
     builds_resource(0, "dcp_expl.cc");
     needs_resource(1, "Report");
     needs_resource(2, "Debug");
+    needs_resource(3, "engtypes");
 }
 
 void init_dcpengines::execute()
@@ -604,4 +553,35 @@ void init_dcpengines::execute()
         "When set, explicit reachability set generation details are displayed.",
         get_object(2, "Debug")
     );
+
+    //
+    // Register engines
+    //
+    icp_ss_analyzer::SSGen = engtype::findEngineType("ExplicitDCSolve");
+    DCASSERT(icp_ss_analyzer::SSGen);
+    RegisterEngine(
+        icp_ss_analyzer::SSGen,
+        "IN_ORDER",
+        "All possible assignments are checked, in order; valid ones are saved.",
+        &the_icp_stategen
+    );
+    RegisterEngine(
+        "MinExpr",
+        "EXPLICIT",
+        "Generates assignments satisfying constraints, explicitly, then checks them all for the minimum value of the expression",
+        &the_icp_minimize
+    );
+    RegisterEngine(
+        "MaxExpr",
+        "EXPLICIT",
+        "Generates assignments satisfying constraints, explicitly, then checks them all for the maximum value of the expression",
+        &the_icp_maximize
+    );
+    RegisterEngine(
+        "SatExpr",
+        "EXPLICIT",
+        "Generates assignments satisfying constraints, explicitly, then checks them all until the expression is satisfied",
+        &the_icp_satisfiable
+    );
+
 }

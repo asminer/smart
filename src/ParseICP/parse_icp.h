@@ -10,20 +10,12 @@
 
 #include <stdio.h>
 
-/// Defined in ExprLib module.
-class exprman;
-
-/// Defined in Options module.
-class option_manager;
-
 class expr;
 
 /** Module for parsing ICP input files.
 */
 class parse_module {
 public:
-  exprman* em;
-
   bool compiler_ready;
 
 public:
@@ -32,7 +24,7 @@ public:
   expr** measure_calls;
 
 public:
-  parse_module(exprman* em);
+  parse_module();
 
   /** Initialize compiler.
       Call this after the environment is set, but before
@@ -74,54 +66,6 @@ public:
   void Finish();
 
   const location& where() const;
-public:
-  /*
-  inline option_manager* OptMan() { return em->OptMan(); }
-  inline const type* FindOWDType(const char* s) const {
-    DCASSERT(em);
-    return em->findOWDType(s);
-  }
-  inline modifier FindModif(const char* s) const {
-    DCASSERT(em);
-    return em->findModifier(s);
-  }
-  inline void newLine() {
-    DCASSERT(em);
-    DCASSERT(em->hasIO());
-    em->newLine();
-  }
-  inline bool startInternal(const char* file, int line) {
-    DCASSERT(em);
-    if (em->startInternal(file, line)) {
-      em->causedBy(where());
-      return true;
-    }
-    return false;
-  }
-  inline OutputStream& internal() {
-    DCASSERT(em);
-    DCASSERT(em->hasIO());
-    return em->internal();
-  }
-  inline bool startError() {
-    DCASSERT(em);
-    if (em->startError()) {
-      em->causedBy(where());
-      return true;
-    }
-    return false;
-  }
-  inline OutputStream& cerr() {
-    DCASSERT(em);
-    DCASSERT(em->hasIO());
-    return em->cerr();
-  }
-  inline void stopError() {
-    DCASSERT(em);
-    if (em->hasIO())
-      em->stopIO();
-  }
-  */
 };
 
 #endif

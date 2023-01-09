@@ -9,8 +9,6 @@
 
 #include "../Utils/init_opts.h"
 
-#include "../ExprLib/startup.h"
-#include "../ExprLib/exprman.h"
 #include "../ExprLib/mod_inst.h"
 #include "../ExprLib/mod_vars.h"
 #include "../ExprLib/measures.h"
@@ -268,7 +266,6 @@ protected:
   static unsigned combine_method;
   static const unsigned ACCUMULATE = 0;
   static const unsigned FOLD       = 1;
-  friend class old_init_dcpsymbolic;
   friend class init_dcpsymbolic;
 public:
   icp_symbgen();
@@ -588,7 +585,7 @@ shared_ddedge* icp_symbgen
 // abstract base class for min, max, sat engines
 class icp_mdd_analyzer : public subengine {
   static engtype* SSGen;
-  friend class old_init_dcpsymbolic;
+  friend class init_dcpsymbolic;
 public:
   icp_mdd_analyzer();
   virtual bool AppliesToModelType(hldsm::model_type mt) const;
@@ -964,78 +961,6 @@ void icp_mdd_sat
 // *                                                                *
 // ******************************************************************
 
-class old_init_dcpsymbolic : public startup {
-  public:
-    old_init_dcpsymbolic();
-    virtual bool execute();
-};
-old_init_dcpsymbolic the_dcpsymbolic_startup;
-
-old_init_dcpsymbolic::old_init_dcpsymbolic() : startup("init_dcpsymbolic")
-{
-  usesResource("em");
-  usesResource("engtypes");
-}
-
-bool old_init_dcpsymbolic::execute()
-{
-  if (0==em) return false;
-
-  // accumulate vs. fold option
-  icp_symbgen::combine_method = icp_symbgen::FOLD;
-
-  if (em->OptMan()) {
-    option* mccm = em->OptMan()->addRadioOption(
-      "MeddlyConstraintCombinationMethod",
-      "How to combine constraints when MEDDLY is used for ImplicitDCSolve",
-      2, icp_symbgen::combine_method
-    );
-    mccm->addRadioButton(
-      "ACCUMULATE",
-      "Combine MDDs in order",
-      icp_symbgen::ACCUMULATE
-    );
-    mccm->addRadioButton(
-      "FOLD",
-      "Pairwise combine small MDDs together; repeat",
-      icp_symbgen::FOLD
-    );
-  }
-
-  // Register engines
-  icp_mdd_analyzer::SSGen = em->findEngineType("ImplicitDCSolve");
-  DCASSERT(icp_mdd_analyzer::SSGen);
-  RegisterEngine(
-    icp_mdd_analyzer::SSGen,
-    "MEDDLY",
-    "Logical manipulation using Meddly.",
-    icp_symbgen::getInstance()
-  );
-
-  RegisterEngine(em,
-      "MinExpr",
-      "IMPLICIT",
-      "Builds constraints and expression implicitly (using MDDs), find minimim value in MDD",
-      icp_mdd_min::getInstance()
-  );
-  RegisterEngine(em,
-      "MaxExpr",
-      "IMPLICIT",
-      "Builds constraints and expression implicitly (using MDDs), find maximum value in MDD",
-      icp_mdd_max::getInstance()
-  );
-  RegisterEngine(em,
-      "SatExpr",
-      "IMPLICIT",
-      "Builds constraints and expression implicitly (using MDDs), check for satisfiability",
-      icp_mdd_sat::getInstance()
-  );
-
-  return true;
-}
-
-// ******************************************************************
-
 class init_dcpsymbolic : public initializer {
     public:
         init_dcpsymbolic();
@@ -1044,11 +969,12 @@ class init_dcpsymbolic : public initializer {
 };
 static init_dcpsymbolic the_dcpsymbolic_initializer;
 
-init_dcpsymbolic::init_dcpsymbolic() : initializer("dcp_symb.cc", 1, 2)
+init_dcpsymbolic::init_dcpsymbolic() : initializer(__FILE__, 1, 3)
 {
     builds_resource(0, "dcp_symb.cc");
     needs_resource(1, "Report");
     needs_resource(2, "Debug");
+    needs_resource(3, "engtypes");
 }
 
 void init_dcpsymbolic::execute()
@@ -1066,5 +992,60 @@ void init_dcpsymbolic::execute()
         "When set, implicit reachability set details are displayed.",
         get_object(2, "Debug")
     );
+
+    //
+    // accumulate vs. fold option
+    //
+    icp_symbgen::combine_method = icp_symbgen::FOLD;
+
+    option_manager &OM = option_manager::global();
+    option* mccm = OM.addRadioOption(
+        "MeddlyConstraintCombinationMethod",
+        "How to combine constraints when MEDDLY is used for ImplicitDCSolve",
+        2, icp_symbgen::combine_method
+    );
+    mccm->addRadioButton(
+        "ACCUMULATE",
+        "Combine MDDs in order",
+        icp_symbgen::ACCUMULATE
+    );
+    mccm->addRadioButton(
+        "FOLD",
+        "Pairwise combine small MDDs together; repeat",
+        icp_symbgen::FOLD
+    );
+
+    //
+    // Register engines
+    //
+    icp_mdd_analyzer::SSGen = engtype::findEngineType("ImplicitDCSolve");
+    DCASSERT(icp_mdd_analyzer::SSGen);
+    RegisterEngine(
+        icp_mdd_analyzer::SSGen,
+        "MEDDLY",
+        "Logical manipulation using Meddly.",
+        icp_symbgen::getInstance()
+    );
+
+    RegisterEngine(
+        "MinExpr",
+        "IMPLICIT",
+        "Builds constraints and expression implicitly (using MDDs), find minimim value in MDD",
+        icp_mdd_min::getInstance()
+    );
+    RegisterEngine(
+        "MaxExpr",
+        "IMPLICIT",
+        "Builds constraints and expression implicitly (using MDDs), find maximum value in MDD",
+        icp_mdd_max::getInstance()
+    );
+    RegisterEngine(
+        "SatExpr",
+        "IMPLICIT",
+        "Builds constraints and expression implicitly (using MDDs), check for satisfiability",
+        icp_mdd_sat::getInstance()
+    );
+
+
 }
 

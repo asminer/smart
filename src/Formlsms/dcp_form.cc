@@ -1,10 +1,13 @@
 
 #include "dcp_form.h"
-#include "../ExprLib/startup.h"
-#include "../ExprLib/exprman.h"
+
+#include "../Utils/initializer.h"
+
 #include "../ExprLib/formalism.h"
 #include "../ExprLib/mod_def.h"
 #include "../ExprLib/mod_vars.h"
+#include "../ExprLib/binary.h"
+
 #include "noevnt_hlm.h"
 
 // #define DEBUG_DCP
@@ -264,9 +267,9 @@ void dcp_unique::Compute(traverse_data &x, expr** pass, int np)
     for (int j=i+1; j<np; j++) {
       if (0==pass[j]) continue;
 
-      expr* vineqvj = em->makeBinaryOp(
+      expr* vineqvj = binary_op::makeExpr(
         x.parent ? x.parent->Where() : location::NOWHERE(),
-        Share(pass[i]), exprman::bop_nequal, Share(pass[j])
+        Share(pass[i]), binary_op::bop_nequal, Share(pass[j])
       );
       DCASSERT(vineqvj);
       mdl->AddConstraint(vineqvj);
@@ -282,37 +285,34 @@ void dcp_unique::Compute(traverse_data &x, expr** pass, int np)
 // *                                                                *
 // ******************************************************************
 
-class init_dcps : public startup {
-  public:
-    init_dcps();
-    virtual bool execute();
+class init_dcps : public initializer {
+    public:
+        init_dcps();
+    protected:
+        virtual void execute();
 };
-init_dcps the_dcp_startup;
+static init_dcps the_dcp_initializer;
 
-init_dcps::init_dcps() : startup("init_dcps")
+init_dcps::init_dcps() : initializer(__FILE__, 1, 1)
 {
-  usesResource("em");
-  usesResource("CML");
-  buildsResource("formalisms");
+    builds_resource(0, "formalisms");
+    needs_resource(1, "CML");
 }
 
-bool init_dcps::execute()
+void init_dcps::execute()
 {
-  if (0==em) return false;
-
-  // Set up and register formalism
-  formalism* dcp = new dcp_form("dcp", "discrete constraint program", "foobar");
-  if (type::registerNew(dcp) != dcp) {
-    internal_error E(__FILE__, __LINE__);
-    E << "dcp type exists already?";
-    return false;
-  }
-  symbol_table* dcpsyms = MakeSymbolTable();
-  dcpsyms->AddSymbol(  new dcp_constraint(dcp)  );
-  dcpsyms->AddSymbol(  new dcp_unique(dcp)      );
-  dcp->setFunctions(dcpsyms);
-  dcp->addCommonFuncs(CML);
-
-  return true;
+    // Set up and register formalism
+    formalism* dcp = new dcp_form("dcp",
+            "discrete constraint program",
+            "foobar"
+    );
+    if (type::registerNew(dcp) != dcp) {
+        internal_error E(__FILE__, __LINE__);
+        E << "dcp type exists already?";
+        return;
+    }
+    dcp->addSymbol(  new dcp_constraint(dcp)  );
+    dcp->addSymbol(  new dcp_unique(dcp)      );
+    dcp->finish();
 }
 
