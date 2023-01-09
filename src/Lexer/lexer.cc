@@ -752,8 +752,8 @@ void lexer::finish_attributed_token(token::type t)
 
 class lexer_init : public initializer {
     public:
-        lexer_init() : initializer("lexer.cc", 1, 1) {
-            builds_resource(0, "lexer.cc");
+        lexer_init() : initializer(__FILE__, 1, 1) {
+            builds_resource(0, "lexer");
             needs_resource(1, "Debug");
         }
     protected:
