@@ -125,10 +125,10 @@ int shared_string::Compare(const shared_object* o) const
     }
     const const_string *cs = dynamic_cast<const const_string*> (o);
     if (!cs) return 1;
-    if ( (!string) && (!s->getStr()) ) return 0;
+    if ( (!string) && (!cs->getStr()) ) return 0;
     if (!string) return -1;
-    if (!s->getStr()) return 1;
-    return strcmp(string, s->getStr());
+    if (!cs->getStr()) return 1;
+    return strcmp(string, cs->getStr());
 }
 
 // ******************************************************************

@@ -678,7 +678,7 @@ class ops_bool_init : public initializer {
 };
 static ops_bool_init the_ops_bool_initializer;
 
-ops_bool_init::ops_bool_init() : initializer(__FILE__, 0, 1)
+ops_bool_init::ops_bool_init() : initializer(__FILE__, 1, 0)
 {
     builds_resource(0, "ops_bool");
 }
