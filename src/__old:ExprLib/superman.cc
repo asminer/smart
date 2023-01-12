@@ -390,7 +390,7 @@ int superman::getNumTypes() const
 
 const type* superman::getTypeNumber(int i) const
 {
-  CHECK_RANGE(0, i, last_type);
+  CHECK_RANGE(__FILE__, __LINE__, 0, i, last_type);
   return reg_type[i];
 }
 #endif
@@ -1077,7 +1077,7 @@ engtype* superman::findEngineType(const char* n) const
   int high = num_ets;
   while (low < high) {
     int mid = (low + high)/2;
-    CHECK_RANGE(0, mid, num_ets);
+    CHECK_RANGE(__FILE__, __LINE__, 0, mid, num_ets);
     int cmp = ETList[mid]->Compare(n);
     if (0==cmp) return ETList[mid];
     if (cmp<0)  low  = mid+1;
@@ -1095,7 +1095,7 @@ int superman::getNumEngineTypes() const
 const engtype* superman::getEngineTypeNumber(int i) const
 {
   DCASSERT(ETList);
-  CHECK_RANGE(0, i, num_ets);
+  CHECK_RANGE(__FILE__, __LINE__, 0, i, num_ets);
   return ETList[i];
 }
 
