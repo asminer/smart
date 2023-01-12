@@ -1467,7 +1467,7 @@ class init_basicmsrs : public initializer {
 };
 static init_basicmsrs the_basicmsr_initializer;
 
-init_basicmsrs::init_basicmsrs() : initializer(__FILE__, 3, 1)
+init_basicmsrs::init_basicmsrs() : initializer(__FILE__, 1, 3)
 {
   builds_resource(0, "CML");
   needs_resource(1, "procgen");

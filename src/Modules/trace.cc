@@ -158,7 +158,7 @@ class init_trace : public initializer {
 };
 static init_trace the_trace_initializer;
 
-init_trace::init_trace() : initializer(__FILE__, 0, 1)
+init_trace::init_trace() : initializer(__FILE__, 1, 0)
 {
   builds_resource(0, "tracetype");
 }
