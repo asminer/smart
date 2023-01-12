@@ -433,7 +433,7 @@ public:
   */
   inline symbol* FindExternalSymbol(int slot) {
     DCASSERT(stab);
-    CHECK_RANGE(0, slot, num_symbols);
+    CHECK_RANGE(__FILE__, __LINE__, 0, slot, num_symbols);
     return stab[slot];
   }
 

@@ -35,7 +35,7 @@ public:
       bitptr += 8;
       byteptr++;
     }
-    CHECK_RANGE(0, bitptr, 8);
+    CHECK_RANGE(__FILE__, __LINE__, 0, bitptr, 8);
   };
 
   inline void Rewind() {

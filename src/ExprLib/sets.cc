@@ -110,7 +110,7 @@ int_ivlset::int_ivlset(long s, long e, long i)
 
 void int_ivlset::GetElement(long n, result &x) const
 {
- // CHECK_RANGE(0, n, Size());
+ // CHECK_RANGE(__FILE__, __LINE__, 0, n, Size());
  //Incorrect Range check; To be corrected
   x.setInt(start + n * inc);
 }
@@ -181,7 +181,7 @@ real_ivlset::real_ivlset(const type* rt, double s, double e, double i)
 
 void real_ivlset::GetElement(long n, result &x) const
 {
-  CHECK_RANGE(0, n, Size());
+  CHECK_RANGE(__FILE__, __LINE__, 0, n, Size());
   x.setReal(start + n * inc);
 }
 
@@ -281,7 +281,7 @@ objset::~objset()
 
 void objset::GetElement(long n, result &x) const
 {
-  CHECK_RANGE(0, n, Size());
+  CHECK_RANGE(__FILE__, __LINE__, 0, n, Size());
   x = values[n];
 }
 
@@ -292,7 +292,7 @@ long objset::IndexOf(const result &x) const
   while (low <= high) {
     long mid = (low+high)/2;
     long i = order[mid];
-    CHECK_RANGE(0, i, Size());
+    CHECK_RANGE(__FILE__, __LINE__, 0, i, Size());
     int cmp = item_type->compare(values[i], x);
     if (0==cmp)   return i;
     if (cmp < 0)  low = mid+1;
@@ -345,13 +345,13 @@ public:
     order = o;
   }
   inline int Compare(long i, long j) const {
-    CHECK_RANGE(0, i, size);
-    CHECK_RANGE(0, j, size);
+    CHECK_RANGE(__FILE__, __LINE__, 0, i, size);
+    CHECK_RANGE(__FILE__, __LINE__, 0, j, size);
     return valtype->compare(values[order[i]], values[order[j]]);
   }
   inline void Swap(long i, long j) {
-    CHECK_RANGE(0, i, size);
-    CHECK_RANGE(0, j, size);
+    CHECK_RANGE(__FILE__, __LINE__, 0, i, size);
+    CHECK_RANGE(__FILE__, __LINE__, 0, j, size);
     SWAP(order[i], order[j]);
   }
 };

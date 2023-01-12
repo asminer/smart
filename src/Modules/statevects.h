@@ -70,17 +70,17 @@ public:
   inline double readFull(long i) const {
     DCASSERT(0==indexes);
     DCASSERT(vect);
-    CHECK_RANGE(0, i, vectsize);
+    CHECK_RANGE(__FILE__, __LINE__, 0, i, vectsize);
     return vect[i];
   }
   inline long readSparseIndex(long z) const {
     DCASSERT(indexes);
-    CHECK_RANGE(0, z, vectsize);
+    CHECK_RANGE(__FILE__, __LINE__, 0, z, vectsize);
     return indexes[z];
   }
   inline double readSparseValue(long z) const {
     DCASSERT(vect);
-    CHECK_RANGE(0, z, vectsize);
+    CHECK_RANGE(__FILE__, __LINE__, 0, z, vectsize);
     return vect[z];
   }
   inline long size() const {

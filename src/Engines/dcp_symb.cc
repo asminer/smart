@@ -221,7 +221,7 @@ class icp_symbgen : public subengine {
           ~expritem();
           void reset(expr* x, List <symbol> &symlist);
           inline bool isBitSet(int b) const {
-            CHECK_RANGE(0, b, numvars);
+            CHECK_RANGE(__FILE__, __LINE__, 0, b, numvars);
             DCASSERT(deplist);
             return deplist[b];
           };
@@ -240,20 +240,20 @@ class icp_symbgen : public subengine {
         add(x, symlist);
       }
       inline bool isBitSet(long i, int b) const {
-        CHECK_RANGE(0, i, dused);
+        CHECK_RANGE(__FILE__, __LINE__, 0, i, dused);
         DCASSERT(data);
         DCASSERT(data[i]);
         return data[i]->isBitSet(b);
       };
       inline void swap(long i, long j) {
-        CHECK_RANGE(0, i, dused);
-        CHECK_RANGE(0, j, dused);
+        CHECK_RANGE(__FILE__, __LINE__, 0, i, dused);
+        CHECK_RANGE(__FILE__, __LINE__, 0, j, dused);
         DCASSERT(data);
         SWAP(data[i], data[j]);
       }
       inline int length() const { return dused; }
       inline expr* get(int i) {
-        CHECK_RANGE(0, i, dused);
+        CHECK_RANGE(__FILE__, __LINE__, 0, i, dused);
         DCASSERT(data[i]);
         return data[i]->getExpr();
       }
@@ -358,7 +358,7 @@ void icp_symbgen::constraint_sorter::expritem
   for (int j=symlist.Length()-1; j>=0; j--) {
     model_statevar* s = smart_cast <model_statevar*> (symlist.Item(j));
     DCASSERT(s);
-    CHECK_RANGE(0, s->GetIndex(), numvars);
+    CHECK_RANGE(__FILE__, __LINE__, 0, s->GetIndex(), numvars);
     deplist[s->GetIndex()] = true;
   }
 }
@@ -747,7 +747,7 @@ void icp_mdd_min
   for (int i=nem->NumVars()-1; i>=0; i--) {
     model_statevar* sv = nem->GetVar(i);
     int level = sv->GetIndex()+1;
-    CHECK_RANGE(1, level, nem->NumVars()+1);
+    CHECK_RANGE(__FILE__, __LINE__, 1, level, nem->NumVars()+1);
     sv->SetToValueNumber(minterm[level]);
   } // for i
 
@@ -859,7 +859,7 @@ void icp_mdd_max
   for (int i=nem->NumVars()-1; i>=0; i--) {
     model_statevar* sv = nem->GetVar(i);
     int level = sv->GetIndex()+1;
-    CHECK_RANGE(1, level, nem->NumVars()+1);
+    CHECK_RANGE(__FILE__, __LINE__, 1, level, nem->NumVars()+1);
     sv->SetToValueNumber(minterm[level]);
   } // for i
 
@@ -939,7 +939,7 @@ void icp_mdd_sat
   for (int i=nem->NumVars()-1; i>=0; i--) {
     model_statevar* sv = nem->GetVar(i);
     int level = sv->GetIndex()+1;
-    CHECK_RANGE(1, level, nem->NumVars()+1);
+    CHECK_RANGE(__FILE__, __LINE__, 1, level, nem->NumVars()+1);
     sv->SetToValueNumber(minterm[level]);
   } // for i
 

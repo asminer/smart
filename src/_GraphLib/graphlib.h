@@ -258,22 +258,22 @@ namespace GraphLib {
       inline long getNumClasses() const { return num_classes; }
 
       inline long sizeOfClass(long c) const {
-        CHECK_RANGE(0, c, num_classes);
+        CHECK_RANGE(__FILE__, __LINE__, 0, c, num_classes);
         return class_start[c+1] - class_start[c];
       }
 
       inline long firstNodeOfClass(long c) const {
-        CHECK_RANGE(0, c, num_classes);
+        CHECK_RANGE(__FILE__, __LINE__, 0, c, num_classes);
         return class_start[c];
       }
 
       inline long lastNodeOfClass(long c) const {
-        CHECK_RANGE(0, c, num_classes);
+        CHECK_RANGE(__FILE__, __LINE__, 0, c, num_classes);
         return class_start[c+1]-1;
       }
 
       inline bool isNodeInClass(long n, long c) const {
-        CHECK_RANGE(0, c, num_classes);
+        CHECK_RANGE(__FILE__, __LINE__, 0, c, num_classes);
         return (n >= class_start[c]) && (n<class_start[c+1]);
       }
 
@@ -511,15 +511,15 @@ namespace GraphLib {
       inline unsigned char EdgeBytes() const { return edge_bytes; }
 
       inline long RowPointer(long s) const {
-        CHECK_RANGE(0, s, num_nodes+1);
+        CHECK_RANGE(__FILE__, __LINE__, 0, s, num_nodes+1);
         return row_pointer[s];
       }
       inline long ColumnIndex(long e) const {
-        CHECK_RANGE(0, e, num_edges);
+        CHECK_RANGE(__FILE__, __LINE__, 0, e, num_edges);
         return column_index[e];
       }
       inline const void* Label(long e) const {
-        CHECK_RANGE(0, e, num_edges);
+        CHECK_RANGE(__FILE__, __LINE__, 0, e, num_edges);
         return label + e*edge_bytes;
       }
 
@@ -768,23 +768,23 @@ namespace GraphLib {
     protected:
       // Read-only access to internal storage
       inline long RowPointer(long s) const {
-        CHECK_RANGE(0, s, num_nodes+1);
+        CHECK_RANGE(__FILE__, __LINE__, 0, s, num_nodes+1);
         return row_pointer[s];
       }
       inline long ColumnIndex(long e) const {
-        CHECK_RANGE(0, e, num_edges);
+        CHECK_RANGE(__FILE__, __LINE__, 0, e, num_edges);
         return column_index[e];
       }
       inline long Next(long e) const {
-        CHECK_RANGE(0, e, num_edges);
+        CHECK_RANGE(__FILE__, __LINE__, 0, e, num_edges);
         return next[e];
       }
       inline const void* Label(long e) const {
-        CHECK_RANGE(0, e, num_edges);
+        CHECK_RANGE(__FILE__, __LINE__, 0, e, num_edges);
         return label + e*edge_size;
       }
       inline void* WriteLabel(long e) {
-        CHECK_RANGE(0, e, num_edges);
+        CHECK_RANGE(__FILE__, __LINE__, 0, e, num_edges);
         return label + e*edge_size;
       }
 

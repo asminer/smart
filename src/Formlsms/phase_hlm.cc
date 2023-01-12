@@ -381,7 +381,7 @@ double tta_dist::getOutgoingFromSource(long e, shared_state* t)
   if (num_states == source) {
     // vanishing initial state
     if (init_len) {
-      CHECK_RANGE(0, e, init_len);
+      CHECK_RANGE(__FILE__, __LINE__, 0, e, init_len);
       t->set(state_index, init_index[e]);
       uniqueify(t);
       return init_val[e];
@@ -395,7 +395,7 @@ double tta_dist::getOutgoingFromSource(long e, shared_state* t)
     t->set(state_index, source);
     return 1.0;
   }
-  CHECK_RANGE(0, e, out_alloc);
+  CHECK_RANGE(__FILE__, __LINE__, 0, e, out_alloc);
   t->set(state_index, to_states[e]);
   uniqueify(t);
   return weights[e];
@@ -2024,7 +2024,7 @@ bool phase_choice::isVanishingState(const shared_state* s) const
   if (0==ours)          return true;    // initial state
   if (ours > num_opnds) return false;   // accept or trap
   ours--;
-  CHECK_RANGE(0, ours, num_opnds);
+  CHECK_RANGE(__FILE__, __LINE__, 0, ours, num_opnds);
   return opnds[ours]->isVanishingState(s);
 }
 
@@ -2048,7 +2048,7 @@ long phase_choice::setSourceState(const shared_state* s)
     return 0;
   }
   int ours = source-1;
-  CHECK_RANGE(0, ours, num_opnds);
+  CHECK_RANGE(__FILE__, __LINE__, 0, ours, num_opnds);
   int arcs = opnds[ours]->setSourceState(s);
   return arcs;
 }
@@ -2069,7 +2069,7 @@ void phase_choice::getSourceState(shared_state* s) const
     return;
   }
   int ours = source-1;
-  CHECK_RANGE(0, ours, num_opnds);
+  CHECK_RANGE(__FILE__, __LINE__, 0, ours, num_opnds);
   for (int i=0; i<ours; i++)            opnds[i]->getAcceptingState(s);
   for (int i=ours+1; i<num_opnds; i++)  opnds[i]->getAcceptingState(s);
   opnds[ours]->getSourceState(s);
@@ -2090,7 +2090,7 @@ double phase_choice::getOutgoingFromSource(long e, shared_state* t)
     return 1.0;
   }
   int ours = source-1;
-  CHECK_RANGE(0, ours, num_opnds);
+  CHECK_RANGE(__FILE__, __LINE__, 0, ours, num_opnds);
   for (int i=0; i<ours; i++)           opnds[i]->getAcceptingState(t);
   for (int i=ours+1; i<num_opnds; i++) opnds[i]->getAcceptingState(t);
   double v = opnds[ours]->getOutgoingFromSource(e, t);

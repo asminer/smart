@@ -175,7 +175,7 @@ void fillFromChain(symbol** indexes, int dim, symbol* list)
 {
     int i = dim-1;
     for (; list; list=list->Next()) {
-        CHECK_RANGE(0, i, dim);
+        CHECK_RANGE(__FILE__, __LINE__, 0, i, dim);
         indexes[i] = Share(list);
         i--;
     }

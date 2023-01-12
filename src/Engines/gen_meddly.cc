@@ -59,7 +59,7 @@ minterm_pool::~minterm_pool()
 
 int* minterm_pool::allocMinterm()
 {
-  CHECK_RANGE(0, used, alloc);
+  CHECK_RANGE(__FILE__, __LINE__, 0, used, alloc);
   int* answer = new int[term_depth+2];
   answer[term_depth] = 1;
   answer[term_depth+1] = used;
@@ -265,7 +265,7 @@ void bounded_encoder
   DCASSERT(mv);
 
   int level = mv->GetPart();
-  CHECK_RANGE(1, level, 1+parent.getPartInfo().num_levels);
+  CHECK_RANGE(__FILE__, __LINE__, 1, level, 1+parent.getPartInfo().num_levels);
 
   int i = 0;
   FillTerms(mv, parent.getPartInfo().pointer[level], i, f);
@@ -294,7 +294,7 @@ void bounded_encoder
 {
   DCASSERT(sv);
   if (parent.getPartInfo().pointer[sv->GetPart()-1] >= p) {
-    CHECK_RANGE(0, i, maxbound);
+    CHECK_RANGE(__FILE__, __LINE__, 0, i, maxbound);
     terms[i] = lastcomputed;
     i++;
     return;
@@ -923,7 +923,7 @@ substate_encoder::copyWithDifferentForest(const char* n, forest* nf) const
 void substate_encoder::FillTerms(const model_statevar* sv, expr* f)
 {
   int level = sv->GetPart();
-  CHECK_RANGE(1, level, 1+parent.getPartInfo().num_levels);
+  CHECK_RANGE(__FILE__, __LINE__, 1, level, 1+parent.getPartInfo().num_levels);
 
   DCASSERT(parent.getPartInfo().pointer[0] == -1);
   // Number of state variables merged into the variable at level
@@ -3749,7 +3749,7 @@ substate_varoption::getExprDeps(expr* x, int numlevels)
     for (int i=0; i<SL.Length(); i++) {
       model_statevar* mv = dynamic_cast <model_statevar*> (SL.Item(i));
       if (0==mv) continue;
-      CHECK_RANGE(1, mv->GetPart(), numlevels+1);
+      CHECK_RANGE(__FILE__, __LINE__, 1, mv->GetPart(), numlevels+1);
       deps.addElement(mv->GetPart());
     } // for i
 

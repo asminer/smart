@@ -176,7 +176,7 @@ GraphLib::array_renumberer::~array_renumberer()
 
 long GraphLib::array_renumberer::new_number(long s) const
 {
-  CHECK_RANGE(0, s, length);
+  CHECK_RANGE(__FILE__, __LINE__, 0, s, length);
   return newnumber[s];
 }
 
@@ -305,7 +305,7 @@ GraphLib::general_classifier::~general_classifier()
 long GraphLib::general_classifier::classOfNode(long s) const
 {
   // TBD?
-  // CHECK_RANGE(0, s, getNumNodes());
+  // CHECK_RANGE(__FILE__, __LINE__, 0, s, getNumNodes());
   return class_of_node[s];
 }
 

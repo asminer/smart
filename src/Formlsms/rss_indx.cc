@@ -63,7 +63,7 @@ void indexed_reachset::setInitial(const LS_Vector &init)
   initial.removeAll();
   if (init.index) {
     for (long z=0; z<init.size; z++) {
-      CHECK_RANGE(0, init.index[z], num_states);
+      CHECK_RANGE(__FILE__, __LINE__, 0, init.index[z], num_states);
       initial.addElement(init.index[z]);
     }
   } else {
@@ -150,7 +150,7 @@ void indexed_reachset::indexed_iterator::setMap(long* m)
   map = m;
   invmap = new long[num_states];
   for (long i=0; i<num_states; i++) {
-    CHECK_RANGE(0, map[i], num_states);
+    CHECK_RANGE(__FILE__, __LINE__, 0, map[i], num_states);
     invmap[map[i]] = i;
   }
 }

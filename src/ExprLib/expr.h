@@ -241,23 +241,23 @@ class expr : public shared_object {
         inline bool isGuessed() const { return state >= 1; }
 
         inline void setGuessed() {
-            CHECK_RANGE(0, state, 1);
+            CHECK_RANGE(__FILE__, __LINE__, 0, state, 1);
             state = 1;
         }
         inline void setDefined() {
-            CHECK_RANGE(0, state, 2);
+            CHECK_RANGE(__FILE__, __LINE__, 0, state, 2);
             state = 2;
         }
         inline void setBlocked() {
-            CHECK_RANGE(0, state, 3);   // or 4?
+            CHECK_RANGE(__FILE__, __LINE__, 0, state, 3);   // or 4?
             state = 3;
         }
         inline void setReady() {
-            CHECK_RANGE(0, state, 4);
+            CHECK_RANGE(__FILE__, __LINE__, 0, state, 4);
             state = 4;
         }
         inline void setComputed() {
-            CHECK_RANGE(0, state, 5);
+            CHECK_RANGE(__FILE__, __LINE__, 0, state, 5);
             state = 5;
         }
 

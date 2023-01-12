@@ -77,14 +77,14 @@ class array : public symbol {
         inline int GetDimension() const { return dimension; }
 
         inline const type* GetIndexType(int i) const {
-            CHECK_RANGE(0, i, dimension);
+            CHECK_RANGE(__FILE__, __LINE__, 0, i, dimension);
             DCASSERT(index_list);
             DCASSERT(index_list[i]);
             return index_list[i]->Type();
         }
 
         inline const char* GetIndexName(int i) const {
-            CHECK_RANGE(0, i, dimension);
+            CHECK_RANGE(__FILE__, __LINE__, 0, i, dimension);
             DCASSERT(index_list);
             DCASSERT(index_list[i]);
             return index_list[i]->Name();

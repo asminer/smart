@@ -174,7 +174,7 @@ class lexer {
         // Put back a token
         inline void unconsume(const token &t) {
             ++tlp;
-            CHECK_RANGE(0, tlp, 5);
+            CHECK_RANGE(__FILE__, __LINE__, 0, tlp, 5);
             lookaheads[tlp] = t;
         }
 

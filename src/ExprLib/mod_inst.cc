@@ -214,7 +214,7 @@ void hldsm::partinfo::sort(model_statevar** vars)
   for (int i=0; i<num_vars; i++) {
     DCASSERT(vars[i]);
     int lvl = vars[i]->GetPart();
-    CHECK_RANGE(1, lvl, 1+num_levels);
+    CHECK_RANGE(__FILE__, __LINE__, 1, lvl, 1+num_levels);
     pointer[lvl]++;
   }
   // Accumulate
@@ -234,7 +234,7 @@ void hldsm::partinfo::sort(model_statevar** vars)
   for (int i=0; i<num_vars; i++) {
     DCASSERT(variable[i]);
     int lvl = variable[i]->GetPart();
-    CHECK_RANGE(1, lvl, num_levels+1);
+    CHECK_RANGE(__FILE__, __LINE__, 1, lvl, num_levels+1);
     pointer[lvl] = i;
 #ifdef DEVELOPMENT_CODE
     if (0==i) continue;
@@ -344,7 +344,7 @@ void model_instance::AcceptSymbolOwnership(symbol* a)
 void model_instance::AcceptExternalSymbol(int slot, symbol* s)
 {
   DCASSERT(state == Constructing);
-  CHECK_RANGE(0, slot, num_symbols);
+  CHECK_RANGE(__FILE__, __LINE__, 0, slot, num_symbols);
   DCASSERT(0 == stab[slot]);
   stab[slot] = s;
 }
@@ -386,7 +386,7 @@ void model_instance::GroupMeasure(measure* m)
   engtype* t = m->EngineType();
   DCASSERT(t);
   int et = t->getIndex();
-  CHECK_RANGE(0, et, num_groups);
+  CHECK_RANGE(__FILE__, __LINE__, 0, et, num_groups);
   if (0==mgroups[et])  return;  // no grouping
   mgroups[et]->addMeasure(m);
 }

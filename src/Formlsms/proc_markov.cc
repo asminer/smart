@@ -46,7 +46,7 @@ markov_process::~markov_process()
 const LS_Options& markov_process::getSolverOptions()
 {
   DCASSERT(lsopts);
-  CHECK_RANGE(0, solver, NUM_SOLVERS);
+  CHECK_RANGE(__FILE__, __LINE__, 0, solver, NUM_SOLVERS);
   // fix the option values that are not automatically linked
   lsopts[solver].use_relaxation = (lsopts[solver].relaxation != 1.0);
   return lsopts[solver];

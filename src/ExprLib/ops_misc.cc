@@ -299,7 +299,7 @@ aggregates::aggregates(const location &W, expr **x, int nc)
 
 expr* aggregates::GetComponent(int i)
 {
-  CHECK_RANGE(0, i, opnd_count);
+  CHECK_RANGE(__FILE__, __LINE__, 0, i, opnd_count);
   return operands[i];
 }
 
@@ -307,7 +307,7 @@ void aggregates::Compute(traverse_data &x)
 {
   DCASSERT(x.answer);
   int i = x.aggregate;
-  CHECK_RANGE(0, i, opnd_count);
+  CHECK_RANGE(__FILE__, __LINE__, 0, i, opnd_count);
   x.aggregate = 0;
   SafeCompute(operands[i], x);
   x.aggregate = i;  // just in case the caller needs it
@@ -316,7 +316,7 @@ void aggregates::Compute(traverse_data &x)
 void aggregates::Traverse(traverse_data &x)
 {
   int i = x.aggregate;
-  CHECK_RANGE(0, i, opnd_count);
+  CHECK_RANGE(__FILE__, __LINE__, 0, i, opnd_count);
   x.aggregate = 0;
   if (operands[i]) operands[i]->Traverse(x);
   x.aggregate = i;  // just in case the caller needs it

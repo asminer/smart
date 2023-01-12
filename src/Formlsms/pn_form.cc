@@ -571,7 +571,7 @@ void transition::Finalize(outputStream &ds)
     for (int i=0; i<num_guards; i++) {
       expr* tmp = build_data->guards->Item(i);
       DCASSERT(tmp);
-      CHECK_RANGE(0, eptr, num_enable);
+      CHECK_RANGE(__FILE__, __LINE__, 0, eptr, num_enable);
       enablist[eptr++] = tmp;
     }
 
@@ -722,7 +722,7 @@ double petri_hlm::GetInitialState(int n, shared_state* st) const
     const place_sv* pl = smart_cast <place_sv*> (state_data[i]);
     DCASSERT(pl);
     int ndx = pl->GetIndex();
-    CHECK_RANGE(0, ndx, st->getStateSize());
+    CHECK_RANGE(__FILE__, __LINE__, 0, ndx, st->getStateSize());
     st->set(ndx, pl->getInit());
   } // for i
   return 1.0;

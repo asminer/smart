@@ -46,7 +46,7 @@ public:
   inline int NumSlots() const { return num_symbols; }
   inline const symbol* GetSymbol(int slot) const {
     DCASSERT(mysymbols);
-    CHECK_RANGE(0, slot, num_symbols);
+    CHECK_RANGE(__FILE__, __LINE__, 0, slot, num_symbols);
     return mysymbols[slot];
   }
 

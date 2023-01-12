@@ -81,7 +81,7 @@ void no_event_model::Preprocess(expr** cl, int ncs)
       DCASSERT(s);
       max = MAX(max, s->GetIndex());
     }
-    CHECK_RANGE(0, max, num_vars);
+    CHECK_RANGE(__FILE__, __LINE__, 0, max, num_vars);
     clists[max]->Append(cl[i]);
   }
   for (int i=0; i<num_vars; i++)
@@ -96,7 +96,7 @@ void no_event_model::Preprocess(expr** cl, int ncs)
 
 bool no_event_model::SatisfiesConstraintsAt(int i)
 {
-  CHECK_RANGE(0, i, num_vars);
+  CHECK_RANGE(__FILE__, __LINE__, 0, i, num_vars);
   expr** clist = Constraints_By_Bottom[i];
   if (0==clist)  return true;
   for (int j=0; clist[j]; j++) {

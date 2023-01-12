@@ -265,7 +265,7 @@ model_enum::model_enum(const symbol* w, const model_instance* p, symbol* list) :
 		model_enum_value* data = dynamic_cast<model_enum_value*>(ptr);
 		DCASSERT(data);
 		int i = data->GetIndex();
-		CHECK_RANGE(0, i, num_values);DCASSERT(0==values[i]);
+		CHECK_RANGE(__FILE__, __LINE__, 0, i, num_values);DCASSERT(0==values[i]);
 		values[i] = data;
 	}
 }

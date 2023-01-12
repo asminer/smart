@@ -210,7 +210,7 @@ long splay_handle_db::InsertState(const int* s, int np)
     right[0] = -1;
     long key = states->AddState(s, np);
     root = num_states;
-    CHECK_RANGE(0, root, nodes_alloc);
+    CHECK_RANGE(__FILE__, __LINE__, 0, root, nodes_alloc);
     index2handle[root] = key;
     DCASSERT(0 == root);
     num_states++;
@@ -231,7 +231,7 @@ long splay_handle_db::InsertState(const int* s, int np)
   }
   long key = states->AddState(s, np);
   root = num_states;
-  CHECK_RANGE(0, root, nodes_alloc);
+  CHECK_RANGE(__FILE__, __LINE__, 0, root, nodes_alloc);
   index2handle[root] = key;
   num_states++;
   return root;

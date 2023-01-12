@@ -387,7 +387,7 @@ void initializer::cleanup()
 void initializer::builds_resource(unsigned slot, const char* res)
 {
     DCASSERT(init == state);
-    CHECK_RANGE(0, slot, max_built);
+    CHECK_RANGE(__FILE__, __LINE__, 0, slot, max_built);
     if (0==res) return;
 
     if (res_list[slot]) {
@@ -411,7 +411,7 @@ void initializer::builds_resource(unsigned slot, const char* res)
 void initializer::needs_resource(unsigned slot, const char* res)
 {
     DCASSERT(init == state);
-    CHECK_RANGE(max_built, slot, max_resources);
+    CHECK_RANGE(__FILE__, __LINE__, max_built, slot, max_resources);
     if (0==res) return;
 
     if (res_list[slot]) {
@@ -436,7 +436,7 @@ void initializer::needs_resource(unsigned slot, const char* res)
 
 void initializer::set_object(unsigned slot, shared_object* o, const char* name)
 {
-    CHECK_RANGE(0, slot, max_built);
+    CHECK_RANGE(__FILE__, __LINE__, 0, slot, max_built);
     DCASSERT(res_list[slot]);
     DCASSERT(!name || 0==strcmp(res_list[slot]->name, name));
     res_list[slot]->set_object(o);
@@ -444,7 +444,7 @@ void initializer::set_object(unsigned slot, shared_object* o, const char* name)
 
 shared_object* initializer::get_object(unsigned slot, const char* name)
 {
-    CHECK_RANGE(0, slot, max_resources);
+    CHECK_RANGE(__FILE__, __LINE__, 0, slot, max_resources);
     if (!res_list[slot]) return nullptr;
     DCASSERT(!name || 0==strcmp(res_list[slot]->name, name));
     return res_list[slot]->get_object();

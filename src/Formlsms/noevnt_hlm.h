@@ -37,7 +37,7 @@ public:
   inline int NumVars() const { return num_vars; }
   inline model_statevar* GetVar(int i) {
     DCASSERT(varlist);
-    CHECK_RANGE(0, i, num_vars);
+    CHECK_RANGE(__FILE__, __LINE__, 0, i, num_vars);
     return varlist[i];
   }
   bool SatisfiesConstraintsAt(int i);

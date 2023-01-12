@@ -190,7 +190,7 @@ void grlib_reachgraph
   for (long s=src.getSmallestAfter(-1); s>=0; s=src.getSmallestAfter(s)) {
     if (back.contains(s)) {
       // Push(s)
-      CHECK_RANGE(0, stack_top, 1+nb);
+      CHECK_RANGE(__FILE__, __LINE__, 0, stack_top, 1+nb);
       stack[stack_top++] = s;
     }
   } // for s
@@ -202,13 +202,13 @@ void grlib_reachgraph
   while (stack_top) {
     // Pop(visit)
     stack_top--;
-    CHECK_RANGE(0, stack_top, 1+nb);
+    CHECK_RANGE(__FILE__, __LINE__, 0, stack_top, 1+nb);
     long visit = stack[stack_top];
 
     // null pathcount: push again, and push "reachable" children
     if (0==shortpc[visit]) {
       // Push(visit)
-      CHECK_RANGE(0, stack_top, 1+nb);
+      CHECK_RANGE(__FILE__, __LINE__, 0, stack_top, 1+nb);
       stack[stack_top++] = visit;
 
       shortpc[visit] = VISITING;
@@ -219,7 +219,7 @@ void grlib_reachgraph
         if (!back.contains(next)) continue;
         if (0==shortpc[next]) {
           // Push(next)
-          CHECK_RANGE(0, stack_top, 1+nb);
+          CHECK_RANGE(__FILE__, __LINE__, 0, stack_top, 1+nb);
           stack[stack_top++] = next;
         } else {
           // already visited this state, check for graph cycle

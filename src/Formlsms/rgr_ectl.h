@@ -84,7 +84,7 @@ class ectl_reachgraph : public graph_lldsm::reachgraph {
         /// Increment obligations for state i
         inline void add_obligation(long i) {
           DCASSERT(obligations);
-          CHECK_RANGE(0, i, size);
+          CHECK_RANGE(__FILE__, __LINE__, 0, i, size);
           obligations[i]++;
         }
 
@@ -94,21 +94,21 @@ class ectl_reachgraph : public graph_lldsm::reachgraph {
         /// Decrement obligations for state i
         inline void remove_obligation(long i) {
           DCASSERT(obligations);
-          CHECK_RANGE(0, i, size);
+          CHECK_RANGE(__FILE__, __LINE__, 0, i, size);
           obligations[i]--;
         }
 
         /// Get current number of unmet obligations for state i
         inline long num_obligations(long i) const {
           DCASSERT(obligations);
-          CHECK_RANGE(0, i, size);
+          CHECK_RANGE(__FILE__, __LINE__, 0, i, size);
           return obligations[i];
         }
 
         /// Set obligations for state i
         inline void set_obligations(long i, int value) {
           DCASSERT(obligations);
-          CHECK_RANGE(0, i, size);
+          CHECK_RANGE(__FILE__, __LINE__, 0, i, size);
           obligations[i] = value;
         }
 

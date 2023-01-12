@@ -76,7 +76,7 @@ separate_colls::~separate_colls()
 long separate_colls::findSubstate(int k, const int* state, int size)
 {
   if (is_static) return -5;
-  CHECK_RANGE(1, k, num_levels+1);
+  CHECK_RANGE(__FILE__, __LINE__, 1, k, num_levels+1);
   DCASSERT(locals);
   DCASSERT(locals[k]);
   return locals[k]->FindState(state, size);
@@ -85,7 +85,7 @@ long separate_colls::findSubstate(int k, const int* state, int size)
 long separate_colls::addSubstate(int k, const int* state, int size)
 {
   if (is_static) return -5;
-  CHECK_RANGE(1, k, num_levels+1);
+  CHECK_RANGE(__FILE__, __LINE__, 1, k, num_levels+1);
   DCASSERT(locals);
   DCASSERT(locals[k]);
   return locals[k]->InsertState(state, size);
@@ -93,7 +93,7 @@ long separate_colls::addSubstate(int k, const int* state, int size)
 
 int separate_colls::getSubstate(int k, long i, int* state, int size) const
 {
-  CHECK_RANGE(1, k, num_levels+1);
+  CHECK_RANGE(__FILE__, __LINE__, 1, k, num_levels+1);
   DCASSERT(locals);
   DCASSERT(locals[k]);
   return locals[k]->GetStateKnown(i, state, size);
@@ -101,7 +101,7 @@ int separate_colls::getSubstate(int k, long i, int* state, int size) const
 
 long separate_colls::getMaxIndex(int k) const
 {
-  CHECK_RANGE(1, k, num_levels+1);
+  CHECK_RANGE(__FILE__, __LINE__, 1, k, num_levels+1);
   DCASSERT(locals);
   DCASSERT(locals[k]);
   return locals[k]->Size();
@@ -168,7 +168,7 @@ synchronized_colls::~synchronized_colls()
 long synchronized_colls::findSubstate(int k, const int* state, int size)
 {
   if (is_static) return -5;
-  CHECK_RANGE(1, k, num_levels+1);
+  CHECK_RANGE(__FILE__, __LINE__, 1, k, num_levels+1);
   DCASSERT(common);
   return common->FindState(state, size);
 }
@@ -176,21 +176,21 @@ long synchronized_colls::findSubstate(int k, const int* state, int size)
 long synchronized_colls::addSubstate(int k, const int* state, int size)
 {
   if (is_static) return -5;
-  CHECK_RANGE(1, k, num_levels+1);
+  CHECK_RANGE(__FILE__, __LINE__, 1, k, num_levels+1);
   DCASSERT(common);
   return common->InsertState(state, size);
 }
 
 int synchronized_colls::getSubstate(int k, long i, int* state, int size) const
 {
-  CHECK_RANGE(1, k, num_levels+1);
+  CHECK_RANGE(__FILE__, __LINE__, 1, k, num_levels+1);
   DCASSERT(common);
   return common->GetStateKnown(i, state, size);
 }
 
 long synchronized_colls::getMaxIndex(int k) const
 {
-  CHECK_RANGE(1, k, num_levels+1);
+  CHECK_RANGE(__FILE__, __LINE__, 1, k, num_levels+1);
   DCASSERT(common);
   return common->Size();
 }
@@ -278,7 +278,7 @@ unsynch_colls::~unsynch_colls()
 long unsynch_colls::findSubstate(int k, const int* state, int size)
 {
   if (is_static) return -5;
-  CHECK_RANGE(1, k, num_levels+1);
+  CHECK_RANGE(__FILE__, __LINE__, 1, k, num_levels+1);
   DCASSERT(common);
   long h = common->FindState(state, size);
   if (h<0) return h;
@@ -289,7 +289,7 @@ long unsynch_colls::findSubstate(int k, const int* state, int size)
 long unsynch_colls::addSubstate(int k, const int* state, int size)
 {
   if (is_static) return -5;
-  CHECK_RANGE(1, k, num_levels+1);
+  CHECK_RANGE(__FILE__, __LINE__, 1, k, num_levels+1);
   DCASSERT(common);
   long h = common->InsertState(state, size);
   if (h<0) return h;
@@ -303,7 +303,7 @@ long unsynch_colls::addSubstate(int k, const int* state, int size)
     s2i[k] = ns2i;
     s2i_alloc[k] = nalloc;
   }
-  CHECK_RANGE(0, h, s2i_alloc[k]);
+  CHECK_RANGE(__FILE__, __LINE__, 0, h, s2i_alloc[k]);
   DCASSERT(s2i[k]);
   if (s2i[k][h] >= 0) return s2i[k][h];
   // not yet in local list, add it
@@ -316,7 +316,7 @@ long unsynch_colls::addSubstate(int k, const int* state, int size)
     i2s[k] = ni2s;
     i2s_alloc[k] = nalloc;
   }
-  CHECK_RANGE(0, i2s_size[k], i2s_alloc[k]);
+  CHECK_RANGE(__FILE__, __LINE__, 0, i2s_size[k], i2s_alloc[k]);
   DCASSERT(i2s[k]);
   i2s[k][i2s_size[k]] = h;
   s2i[k][h] = i2s_size[k];
@@ -325,8 +325,8 @@ long unsynch_colls::addSubstate(int k, const int* state, int size)
 
 int unsynch_colls::getSubstate(int k, long i, int* state, int size) const
 {
-  CHECK_RANGE(1, k, num_levels+1);
-  CHECK_RANGE(0, i, i2s_size[k]);
+  CHECK_RANGE(__FILE__, __LINE__, 1, k, num_levels+1);
+  CHECK_RANGE(__FILE__, __LINE__, 0, i, i2s_size[k]);
   DCASSERT(i2s);
   long h = i2s[k][i];
   DCASSERT(common);
@@ -335,7 +335,7 @@ int unsynch_colls::getSubstate(int k, long i, int* state, int size) const
 
 long unsynch_colls::getMaxIndex(int k) const
 {
-  CHECK_RANGE(1, k, num_levels+1);
+  CHECK_RANGE(__FILE__, __LINE__, 1, k, num_levels+1);
   return i2s_size[k];
 }
 
@@ -575,8 +575,8 @@ public:
     return memcmp(full1->readState(), full2->readState(), full1->getStateSize() * sizeof(int));
   }
   inline void Swap(long i, long j) {
-    CHECK_RANGE(0, i, ss->Size());
-    CHECK_RANGE(0, j, ss->Size());
+    CHECK_RANGE(__FILE__, __LINE__, 0, i, ss->Size());
+    CHECK_RANGE(__FILE__, __LINE__, 0, j, ss->Size());
     long tmp = map[i];
     map[i] = map[j];
     map[j] = tmp;
@@ -633,8 +633,8 @@ public:
     return memcmp(full1->readState(), full2->readState(), full1->getStateSize() * sizeof(int));
   }
   inline void Swap(long i, long j) {
-    CHECK_RANGE(0, i, ss->Size());
-    CHECK_RANGE(0, j, ss->Size());
+    CHECK_RANGE(__FILE__, __LINE__, 0, i, ss->Size());
+    CHECK_RANGE(__FILE__, __LINE__, 0, j, ss->Size());
     long tmp = map[i];
     map[i] = map[j];
     map[j] = tmp;

@@ -334,12 +334,12 @@ public:
 
   inline int getNumEvents() const { return num_events; }
   inline const model_event* readEvent(int i) const {
-    CHECK_RANGE(0, i, num_events);
+    CHECK_RANGE(__FILE__, __LINE__, 0, i, num_events);
     DCASSERT(event_data);
     return event_data[i];
   }
   inline model_event* getEvent(int i) {
-    CHECK_RANGE(0, i, num_events);
+    CHECK_RANGE(__FILE__, __LINE__, 0, i, num_events);
     DCASSERT(event_data);
     return event_data[i];
   }
@@ -351,12 +351,12 @@ public:
   }
 
   inline const model_statevar* readStateVar(int i) const {
-    CHECK_RANGE(0, i, num_vars);
+    CHECK_RANGE(__FILE__, __LINE__, 0, i, num_vars);
     DCASSERT(state_data);
     return state_data[i];
   }
   inline model_statevar* getStateVar(int i) {
-    CHECK_RANGE(0, i, num_vars);
+    CHECK_RANGE(__FILE__, __LINE__, 0, i, num_vars);
     DCASSERT(state_data);
     return state_data[i];
   }
@@ -457,8 +457,8 @@ public:
 
   // Used for ordering events.
   inline int Compare(long i, long j) const {
-        CHECK_RANGE(0, i, num_events);
-        CHECK_RANGE(0, j, num_events);
+        CHECK_RANGE(__FILE__, __LINE__, 0, i, num_events);
+        CHECK_RANGE(__FILE__, __LINE__, 0, j, num_events);
         int jmi = event_data[j]->getPriorityLevel()
                 - event_data[i]->getPriorityLevel();
         if (jmi) return jmi;
@@ -474,8 +474,8 @@ public:
   };
   // Swap events
   inline void Swap(long i, long j) {
-    CHECK_RANGE(0, i, num_events);
-    CHECK_RANGE(0, j, num_events);
+    CHECK_RANGE(__FILE__, __LINE__, 0, i, num_events);
+    CHECK_RANGE(__FILE__, __LINE__, 0, j, num_events);
     if (i!=j) SWAP(event_data[i], event_data[j]);
   }
 

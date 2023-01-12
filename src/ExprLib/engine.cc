@@ -194,7 +194,7 @@ void build_groups_traversal::visit(shared_object* item)
     const engtype* et = dynamic_cast <const engtype*> (item);
     DCASSERT(et);
     const unsigned i = et->getIndex();
-    CHECK_RANGE(0, i, numgroups);
+    CHECK_RANGE(__FILE__, __LINE__, 0, i, numgroups);
     DCASSERT(nullptr == groups[i]);
     groups[i] = et->makeMeasureSet();
 }

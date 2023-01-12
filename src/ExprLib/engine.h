@@ -135,7 +135,7 @@ class engine : public shared_string {
             DCASSERT(children);
             int i = int(m->Type());
             if (i<0) return;
-            CHECK_RANGE(0, i, num_hlm_types);
+            CHECK_RANGE(__FILE__, __LINE__, 0, i, num_hlm_types);
             if (children[i]) {
                 DCASSERT(children[i]->AppliesToModelType(m->Type()));
                 children[i]->RunEngine(m, parm);
@@ -149,7 +149,7 @@ class engine : public shared_string {
             DCASSERT(children);
             int i = int(m->Type());
             if (i<0) return;
-            CHECK_RANGE(0, i, num_hlm_types);
+            CHECK_RANGE(__FILE__, __LINE__, 0, i, num_hlm_types);
             if (children[i]) {
                 DCASSERT(children[i]->AppliesToModelType(m->Type()));
                 children[i]->SolveMeasure(m, what);
@@ -163,7 +163,7 @@ class engine : public shared_string {
             DCASSERT(children);
             int i = int(m->Type());
             if (i<0) return;
-            CHECK_RANGE(0, i, num_hlm_types);
+            CHECK_RANGE(__FILE__, __LINE__, 0, i, num_hlm_types);
             if (children[i]) {
                 DCASSERT(children[i]->AppliesToModelType(m->Type()));
                 children[i]->SolveMeasures(m, list);
@@ -436,7 +436,7 @@ protected:
     virtual void BuildParams(traverse_data &x, expr** pass, int np) = 0;
 
     inline result& setParam(int i) {
-        CHECK_RANGE(0, i, formals.getLength());
+        CHECK_RANGE(__FILE__, __LINE__, 0, i, formals.getLength());
         return engpass[i];
     }
 };

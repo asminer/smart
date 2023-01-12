@@ -60,11 +60,11 @@ class indexed_reachset : public state_lldsm::reachset {
         virtual void copyState(shared_state* st, long ord) const = 0;
 
         inline long ord2index(long i) const {
-          CHECK_RANGE(0, i, num_states);
+          CHECK_RANGE(__FILE__, __LINE__, 0, i, num_states);
           return map ? map[i] : i;
         }
         inline long index2ord(long i) const {
-          CHECK_RANGE(0, i, num_states);
+          CHECK_RANGE(__FILE__, __LINE__, 0, i, num_states);
           return invmap ? invmap[i] : i;
         }
         inline long getI() const {

@@ -87,7 +87,7 @@ protected:
     long high = num_states;
     while (low < high) {
       long mid = (high+low)/2;
-      CHECK_RANGE(0, order[mid], nodes_alloc);
+      CHECK_RANGE(__FILE__, __LINE__, 0, order[mid], nodes_alloc);
       int cmp = states->CompareHF(index2handle[order[mid]], size, state);
       if (0==cmp) {
         return order[mid];
@@ -144,7 +144,7 @@ protected:
       sd++;
 #endif
       Push(child);
-      CHECK_RANGE(0, child, nodes_alloc);
+      CHECK_RANGE(__FILE__, __LINE__, 0, child, nodes_alloc);
       cmp = states->CompareHF(index2handle[child], size, state);
       if (0==cmp) {
 #ifdef DEBUG_PERFORMANCE

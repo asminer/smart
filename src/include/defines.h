@@ -70,6 +70,7 @@ const int OOmega=-10;
   #define MEM_TRACE_ON
   #define RANGE_CHECK_ON
   #define DCASSERTS_ON
+  #include <stdio.h>
 #endif
 
 
@@ -82,16 +83,18 @@ const int OOmega=-10;
 #endif
 
 // Also useful for debugging.
+inline void CHECK_RANGE(const char* fn, unsigned ln,
+        long min, long value, long max)
+{
 #ifdef RANGE_CHECK_ON
-  inline void CheckRange(int min, int value, int max)
-  {
-    assert(value<max);
-    assert(value>=min);
-  }
-  #define CHECK_RANGE(MIN, VALUE, MAX)  CheckRange(MIN, VALUE, MAX)
-#else
-  #define CHECK_RANGE(MIN, VALUE, MAX)
+    if (value >= max || value < min) {
+        fprintf(stderr, "Check range at %s line %u failed:\n", fn, ln);
+        fprintf(stderr, "    min: %ld\n    val: %ld\n    max: %ld\n",
+                min, value, max);
+        assert(0);
+    }
 #endif
+}
 
 // More debugging tricks
 #ifdef DEVELOPMENT_CODE

@@ -1882,7 +1882,7 @@ namespace MCLib {
         // 
         // Add to distribution
         //
-        CHECK_RANGE(0, time, opts.max_size);
+        CHECK_RANGE(__FILE__, __LINE__, 0, time, opts.max_size);
         opts.distro[time] = just_entered;
 
         //
@@ -2195,7 +2195,7 @@ void MCLib::Markov_chain::computeContinuousDistTTA(
     long dp_start = poisson.left_trunc();
     long dp_stop = MIN(1+poisson.right_trunc(), dtmc_tta.right_trunc());
     for (long s=dp_start; s<dp_stop; s++) {
-      CHECK_RANGE(0, s, opts.max_size);
+      CHECK_RANGE(__FILE__, __LINE__, 0, s, opts.max_size);
       opts.distprod[s] = poisson.f(s) * dtmc_tta.f(s+1);
     }
 
@@ -2203,7 +2203,7 @@ void MCLib::Markov_chain::computeContinuousDistTTA(
     // Now, sum those products.  Instead of simply looping in order,
     // we add the smallest elements first, frim the left and right ends.
     //
-    CHECK_RANGE(0, i, opts.max_size);
+    CHECK_RANGE(__FILE__, __LINE__, 0, i, opts.max_size);
     opts.distro[i] = 0;
     long left=dp_start;
     long right=dp_stop-1;

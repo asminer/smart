@@ -309,7 +309,7 @@ public:
 
   inline const tam_tile* getTile(int t) const {
     DCASSERT(tileset);
-    CHECK_RANGE(0, t, num_tiles);
+    CHECK_RANGE(__FILE__, __LINE__, 0, t, num_tiles);
     return tileset[t];
   }
 
@@ -586,8 +586,8 @@ protected:
   }
 
   inline long pos2index(long x, long y) const {
-    CHECK_RANGE(x_low, x, x_high+1);
-    CHECK_RANGE(y_low, y, y_high+1);
+    CHECK_RANGE(__FILE__, __LINE__, x_low, x, x_high+1);
+    CHECK_RANGE(__FILE__, __LINE__, y_low, y, y_high+1);
     return (y-y_low)*(x_high+1-x_low) + x-x_low;
   }
 
@@ -956,7 +956,7 @@ void tam_def::FinalizeModel(outputStream &ds)
         // build event
         snprintf(buffer, bufsize, "put(%s,%ld,%ld)", tileset[t]->Name(), x, y);
         char* en = strdup(buffer);
-        CHECK_RANGE(0, eindx, nev);
+        CHECK_RANGE(__FILE__, __LINE__, 0, eindx, nev);
         eventlist[eindx] = new model_event(b_where, 0, en, current);
 
         eventlist[eindx]->setPriorityLevel(prio);

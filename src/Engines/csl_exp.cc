@@ -223,8 +223,8 @@ protected:
         long ni = state()->get(0);
         if (ni >= newvecsize) return false; // must be trap or accept
         //fprintf(stderr, "Converting from %ld to %ld\n", index(), ni);
-        CHECK_RANGE(0, index(), oldvecsize);
-        CHECK_RANGE(0, ni, newvecsize);
+        CHECK_RANGE(__FILE__, __LINE__, 0, index(), oldvecsize);
+        CHECK_RANGE(__FILE__, __LINE__, 0, ni, newvecsize);
         newvec[ni] = oldvec[index()];
         return false;
       }

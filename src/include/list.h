@@ -45,11 +45,11 @@ public:
     return true;
   }
   inline void* Item(int n) {
-    CHECK_RANGE(0, n, last);
+    CHECK_RANGE(__FILE__, __LINE__, 0, n, last);
     return data[n];
   }
   inline const void* ReadItem(int n) const {
-    CHECK_RANGE(0, n, last);
+    CHECK_RANGE(__FILE__, __LINE__, 0, n, last);
     return data[n];
   }
   inline void Update(int n, void* x) {
@@ -156,7 +156,7 @@ public:
     return true;
   }
   inline DATA Item(int n) const {
-    CHECK_RANGE(0, n, last);
+    CHECK_RANGE(__FILE__, __LINE__, 0, n, last);
     return data[n];
   }
   inline void Clear() {

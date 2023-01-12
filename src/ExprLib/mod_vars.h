@@ -243,15 +243,15 @@ protected:
 	virtual ~model_enum();
 public:
 	inline const model_enum_value* GetValue(int n) const {
-		CHECK_RANGE(0, n, num_values);DCASSERT(values);
+		CHECK_RANGE(__FILE__, __LINE__, 0, n, num_values);DCASSERT(values);
 		return values[n];
 	}
 	inline model_enum_value* GetValue(int n) {
-		CHECK_RANGE(0, n, num_values);DCASSERT(values);
+		CHECK_RANGE(__FILE__, __LINE__, 0, n, num_values);DCASSERT(values);
 		return values[n];
 	}
 	inline const model_enum_value* ReadValue(int n) const {
-		CHECK_RANGE(0, n, num_values);DCASSERT(values);
+		CHECK_RANGE(__FILE__, __LINE__, 0, n, num_values);DCASSERT(values);
 		return values[n];
 	}
 	inline int NumValues() const {
@@ -270,11 +270,15 @@ public:
     }
 	// Required for sorting...
 	inline int Compare(long i, long j) const {
-		DCASSERT(indexes);CHECK_RANGE(0, i, num_values);CHECK_RANGE(0, j, num_values);
+		DCASSERT(indexes);
+        CHECK_RANGE(__FILE__, __LINE__, 0, i, num_values);
+        CHECK_RANGE(__FILE__, __LINE__, 0, j, num_values);
 		return strcmp(values[indexes[i]]->Name(), values[indexes[j]]->Name());
 	}
 	inline void Swap(long i, long j) const {
-		DCASSERT(indexes);CHECK_RANGE(0, i, num_values);CHECK_RANGE(0, j, num_values);
+		DCASSERT(indexes);
+        CHECK_RANGE(__FILE__, __LINE__, 0, i, num_values);
+        CHECK_RANGE(__FILE__, __LINE__, 0, j, num_values);
 		SWAP(indexes[i], indexes[j]);
 	}
 };
@@ -414,15 +418,15 @@ public:
 		return data;
 	}
 	inline int readSubstateSize(int i) const {
-		DCASSERT(substate_offset);CHECK_RANGE(1, i, 1+num_substates);
+		DCASSERT(substate_offset);CHECK_RANGE(__FILE__, __LINE__, 1, i, 1+num_substates);
 		return substate_offset[i - 1] - substate_offset[i];
 	}
 	inline const int* readSubstate(int i) const {
-		DCASSERT(data);DCASSERT(substate_offset);CHECK_RANGE(1, i, 1+num_substates);
+		DCASSERT(data);DCASSERT(substate_offset);CHECK_RANGE(__FILE__, __LINE__, 1, i, 1+num_substates);
 		return data + substate_offset[i];
 	}
 	inline int* writeSubstate(int i) {
-		DCASSERT(data);DCASSERT(substate_offset);CHECK_RANGE(1, i, 1+num_substates);
+		DCASSERT(data);DCASSERT(substate_offset);CHECK_RANGE(__FILE__, __LINE__, 1, i, 1+num_substates);
 		return data + substate_offset[i];
 	}
 
@@ -456,18 +460,18 @@ public:
 	/// Is the value for state variable i unknown?
 	inline bool unknown(int i) const {
 		if (0 == is_unknown)
-			return false;CHECK_RANGE(0, i, num_buckets);
+			return false;CHECK_RANGE(__FILE__, __LINE__, 0, i, num_buckets);
 		return is_unknown[i];
 	}
 	inline bool omega(int i) const {
 
 		if (0 == is_omega)
-			return false;CHECK_RANGE(0, i, num_buckets);
+			return false;CHECK_RANGE(__FILE__, __LINE__, 0, i, num_buckets);
 		return is_omega[i];
 	}
 	/// Get value for state variable i; must not be a list.
 	inline int get(int i) const {
-		DCASSERT(data);CHECK_RANGE(0, i, num_buckets);DCASSERT((0==is_unknown) || (false==is_unknown[i]));
+		DCASSERT(data);CHECK_RANGE(__FILE__, __LINE__, 0, i, num_buckets);DCASSERT((0==is_unknown) || (false==is_unknown[i]));
 		if (is_omega == 0) {
 
 			return data[i];
@@ -500,7 +504,7 @@ protected:
 public:
 	inline void set_omega(int i) {
 		printf("Omega is set%i\n", i);
-		CHECK_RANGE(0, i, num_buckets);
+		CHECK_RANGE(__FILE__, __LINE__, 0, i, num_buckets);
 		if (0 == is_omega) {
 			is_omega = new bool[num_buckets];
 			clear_omega();
@@ -523,7 +527,7 @@ public:
 	}
 	/// Set state variable i to be unknown
 	inline void set_unknown(int i) {
-		CHECK_RANGE(0, i, num_buckets);
+		CHECK_RANGE(__FILE__, __LINE__, 0, i, num_buckets);
 		if (0 == is_unknown) {
 			is_unknown = new bool[num_buckets];
 			clear_unknown();
@@ -536,9 +540,9 @@ public:
 		if (0 == is_unknown) {
 			is_unknown = new bool[num_buckets];
 			clear_unknown();
-		}CHECK_RANGE(1, k, 1+num_substates);
+		}CHECK_RANGE(__FILE__, __LINE__, 1, k, 1+num_substates);
 		for (int i = substate_offset[k]; i < substate_offset[k - 1]; i++) {
-			CHECK_RANGE(0, i, num_buckets);
+			CHECK_RANGE(__FILE__, __LINE__, 0, i, num_buckets);
 			is_unknown[i] = true;
 		}
 	}
@@ -546,16 +550,16 @@ public:
 	/// Set a substate to be known
 	inline void set_substate_known(int k) {
 		if (0 == is_unknown)
-			return;CHECK_RANGE(1, k, 1+num_substates);
+			return;CHECK_RANGE(__FILE__, __LINE__, 1, k, 1+num_substates);
 		for (int i = substate_offset[k]; i < substate_offset[k - 1]; i++) {
-			CHECK_RANGE(0, i, num_buckets);
+			CHECK_RANGE(__FILE__, __LINE__, 0, i, num_buckets);
 			is_unknown[i] = false;
 		}
 	}
 
 	/// Set value for state variable i; must not be a list.
 	inline void set(int i, int sv) {
-		DCASSERT(data);CHECK_RANGE(0, i, num_buckets);
+		DCASSERT(data);CHECK_RANGE(__FILE__, __LINE__, 0, i, num_buckets);
 		if (is_unknown)
 			is_unknown[i] = false;
 		if (0 == is_list) {

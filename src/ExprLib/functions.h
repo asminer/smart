@@ -77,7 +77,7 @@ public:
         @return The code for "parameter i is bad".
   */
   inline static int BadParam(int i, int np) {
-    CHECK_RANGE(0, i, np);
+    CHECK_RANGE(__FILE__, __LINE__, 0, i, np);
     return -i-1;
   }
 
@@ -276,7 +276,7 @@ public:
 
   /// Grab a parameter
   inline formal_param* getParam(int n) {
-    CHECK_RANGE(0, n, num_formal);
+    CHECK_RANGE(__FILE__, __LINE__, 0, n, num_formal);
     DCASSERT(formal);
     return formal[n];
   }

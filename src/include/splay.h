@@ -76,7 +76,7 @@ public:
   inline long NumElements() const { return num_elements; }
 
   inline DATA* GetItem(long n) const {
-    CHECK_RANGE(0, n, last_element);
+    CHECK_RANGE(__FILE__, __LINE__, 0, n, last_element);
     return item[n];
   };
 

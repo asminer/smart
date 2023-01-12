@@ -20,7 +20,7 @@ enum_reachset::enum_reachset(model_enum* ss)
   state_handle = new long[states->NumValues()];
   for (long j=0; j<states->NumValues(); j++) {
     const model_enum_value* st = states->ReadValue(j);
-    CHECK_RANGE(0, st->GetIndex(), states->NumValues());
+    CHECK_RANGE(__FILE__, __LINE__, 0, st->GetIndex(), states->NumValues());
     state_handle[st->GetIndex()] = j;
   }
 }
@@ -102,7 +102,7 @@ void enum_reachset::Renumber(const GraphLib::node_renumberer* Ren)
   // Rebuild state_handle array
   for (long j=0; j<states->NumValues(); j++) {
     const model_enum_value* st = states->ReadValue(j);
-    CHECK_RANGE(0, st->GetIndex(), states->NumValues());
+    CHECK_RANGE(__FILE__, __LINE__, 0, st->GetIndex(), states->NumValues());
     state_handle[st->GetIndex()] = j;
   }
 }

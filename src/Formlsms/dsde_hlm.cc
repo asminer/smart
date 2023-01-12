@@ -54,7 +54,9 @@ void model_event::buildDepList(expr* e, intset* ld, intset* vd) {
 		DCASSERT(s);
 		model_statevar* mv = dynamic_cast<model_statevar*>(s);
 		if (0 == mv)
-			continue; CHECK_RANGE(1, mv->GetPart(), ld->getSize()); CHECK_RANGE(0, mv->GetIndex(), vd->getSize());
+			continue;
+        CHECK_RANGE(__FILE__, __LINE__, 1, mv->GetPart(), ld->getSize());
+        CHECK_RANGE(__FILE__, __LINE__, 0, mv->GetIndex(), vd->getSize());
 		ld->addElement(mv->GetPart());
 		vd->addElement(mv->GetIndex());
 	}
@@ -790,7 +792,7 @@ void dsde_hlm::ProcessEvents() {
 					last_immed[pl] = e;
 				last_timed[pl] = e;
 				pl++;
-				CHECK_RANGE(0, pl, num_priolevels);
+				CHECK_RANGE(__FILE__, __LINE__, 0, pl, num_priolevels);
 				last_was_immed = event_data[e]->actsLikeImmediate();
 				if (!last_was_immed)
 					last_immed[pl] = e;
@@ -897,7 +899,7 @@ void dsde_def::PartitionVars(model_statevar** V, int nv) {
 		group[i] = 0;
 	for (int i = 0; i < nv; i++) {
 		int n = V[i]->GetPart() - min_g;
-		CHECK_RANGE(0, n, N);
+		CHECK_RANGE(__FILE__, __LINE__, 0, n, N);
 		V[i]->LinkTo(group[n]);
 		group[n] = V[i];
 	}  // for i

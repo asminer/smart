@@ -616,7 +616,7 @@ void fplist::clear()
 
 void fplist::build(int n, const type* t, const char* name)
 {
-  CHECK_RANGE(0, n, num_formal);
+  CHECK_RANGE(__FILE__, __LINE__, 0, n, num_formal);
   DCASSERT(t);
   DCASSERT(0==formal[n]);
   formal[n] = new formal_param(t, name);
@@ -632,7 +632,7 @@ void fplist::build(int n, const type* t, const char* name, expr* deflt)
 
 void fplist::build(int n, typelist* t, const char* name)
 {
-  CHECK_RANGE(0, n, num_formal);
+  CHECK_RANGE(__FILE__, __LINE__, 0, n, num_formal);
   DCASSERT(t);
 #ifdef DEVELOPMENT_CODE
   for (int a=0; a<t->Length(); a++) DCASSERT(t->GetItem(a));
@@ -676,14 +676,14 @@ void fplist::build(int n, const type* t, const char* name, double deflt)
 
 void fplist::hide(int n)
 {
-  CHECK_RANGE(0, n, num_formal);
+  CHECK_RANGE(__FILE__, __LINE__, 0, n, num_formal);
   DCASSERT(formal[n]);
   formal[n]->HideMe();
 }
 
 const type* fplist::getType(int n) const
 {
-  CHECK_RANGE(0, n, num_formal);
+  CHECK_RANGE(__FILE__, __LINE__, 0, n, num_formal);
   DCASSERT(formal[n]);
   return formal[n]->Type();
 }
@@ -696,7 +696,7 @@ bool fplist::isHidden(int fpnum) const
       fpnum += repeat_point;
     }
   }
-  CHECK_RANGE(0, fpnum, num_formal);
+  CHECK_RANGE(__FILE__, __LINE__, 0, fpnum, num_formal);
   if (formal[fpnum])  return formal[fpnum]->IsHidden();
   return false;
 }

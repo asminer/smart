@@ -172,7 +172,7 @@ long hash_index_db::InsertState(const int* s, int np)
     if (0==next) throw StateLib::error(StateLib::error::NoMemory);
     next_alloc = newsize;
   }
-  CHECK_RANGE(0, key, next_alloc);
+  CHECK_RANGE(__FILE__, __LINE__, 0, key, next_alloc);
   // make hash table space
   if (needToExpand()) {
     hash_bits++;
@@ -182,14 +182,14 @@ long hash_index_db::InsertState(const int* s, int np)
     // rehash everything, but we know there are no duplicates
     for (int i=0; i<num_states; i++) {
       unsigned long h = states->Hash(i, hash_bits);
-      CHECK_RANGE(0, h, size());
+      CHECK_RANGE(__FILE__, __LINE__, 0, h, size());
       next[i] = table[h];
       table[h] = i;
     }
   }
   // ok, hash key and see if there's a match
   unsigned long h = states->Hash(key, hash_bits);
-  CHECK_RANGE(0, h, size());
+  CHECK_RANGE(__FILE__, __LINE__, 0, h, size());
   if (move_to_front(table[h], key)) {
     // duplicate entry
     states->PopLast(key);
@@ -206,7 +206,7 @@ long hash_index_db::FindState(const int* s, int np)
 {
   long key = states->AddState(s, np);
   unsigned long h = states->Hash(key, hash_bits);
-  CHECK_RANGE(0, h, size());
+  CHECK_RANGE(__FILE__, __LINE__, 0, h, size());
   long ans = move_to_front(table[h], key) ? table[h] : -1;
   states->PopLast(key);
   return ans;

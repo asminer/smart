@@ -190,7 +190,7 @@ statevect::statevect(const stochastic_lldsm* p, LS_Vector &V,
           if (0==V.f_value[z]) continue;
         }
         long i = Ren ? Ren->new_number(V.index[z]) : V.index[z];
-        CHECK_RANGE(0, i, tsize);
+        CHECK_RANGE(__FILE__, __LINE__, 0, i, tsize);
         if (V.d_value)  vect[i] = V.d_value[z];
         else            vect[i] = V.f_value[z];
       }
@@ -202,13 +202,13 @@ statevect::statevect(const stochastic_lldsm* p, LS_Vector &V,
       if (V.d_value) {
         for (long i=0; i<V.size; i++) {
           long ii = Ren ? Ren->new_number(i) : i;
-          CHECK_RANGE(0, i, tsize);
+          CHECK_RANGE(__FILE__, __LINE__, 0, i, tsize);
           vect[ii] = V.d_value[i];
         }
       } else {
         for (long i=0; i<V.size; i++) {
           long ii = Ren ? Ren->new_number(i) : i;
-          CHECK_RANGE(0, i, tsize);
+          CHECK_RANGE(__FILE__, __LINE__, 0, i, tsize);
           vect[ii] = V.f_value[i];
         }
       }
@@ -285,7 +285,7 @@ void statevect::ExportTo(double *d) const
 
   if (indexes) {
     for (long z=0; z<vectsize; z++) {
-      CHECK_RANGE(0, indexes[z], num_states);
+      CHECK_RANGE(__FILE__, __LINE__, 0, indexes[z], num_states);
       d[indexes[z]] = vect[z];
     }
   } else {

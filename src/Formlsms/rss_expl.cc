@@ -153,7 +153,7 @@ void expl_reachset::Renumber(const GraphLib::node_renumberer* Ren)
     aux[i] = state_handle[i];
   }
   for (long i=state_collection->Size()-1; i>=0; i--) {
-    CHECK_RANGE(0, Ren->new_number(i), state_collection->Size());
+    CHECK_RANGE(__FILE__, __LINE__, 0, Ren->new_number(i), state_collection->Size());
     state_handle[Ren->new_number(i)] = aux[i];
   }
   delete[] aux;

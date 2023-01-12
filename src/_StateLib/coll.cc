@@ -62,7 +62,7 @@ void coll_base::EnlargeMem(long newsize)
 
 void coll_base::ReadInt(bitstream &s, char bits, int &x) const
 {
-  CHECK_RANGE(0, s.byteptr, memsize);
+  CHECK_RANGE(__FILE__, __LINE__, 0, s.byteptr, memsize);
   // read a fraction of a byte
   if (bits <= s.bitptr) {
     x = mem[s.byteptr] & ~(0xFE << s.bitptr);
@@ -96,7 +96,7 @@ void coll_base::ReadInt(bitstream &s, char bits, int &x) const
 
 void coll_base::WriteInt(bitstream &s, char bits, int x)
 {
-  CHECK_RANGE(0, s.byteptr, memsize);
+  CHECK_RANGE(__FILE__, __LINE__, 0, s.byteptr, memsize);
   // can we just stick to the first byte?
   if (bits <= s.bitptr) {
     x <<= (s.bitptr+1-bits);

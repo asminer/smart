@@ -1384,7 +1384,7 @@ int phase_mult_op::getPromoteDistance(expr** list, bool* flip, int N) const
   int phi = -1;
   bool has_proc;
   if (!checkArgs(list, N, phi, has_proc)) return -1;
-  CHECK_RANGE(0, phi, N);
+  CHECK_RANGE(__FILE__, __LINE__, 0, phi, N);
   const type* ph = list[phi]->Type();
   DCASSERT(ph);
   const type* con = ph->getBaseType();
@@ -1473,7 +1473,7 @@ assoc* phase_mult_op
   int phi = -1;
   bool has_proc;
   if (!checkArgs(list, N, phi, has_proc)) return killArgs(list, N);
-  CHECK_RANGE(0, phi, N);
+  CHECK_RANGE(__FILE__, __LINE__, 0, phi, N);
   const type* ph = list[phi]->Type();
   DCASSERT(ph);
   const type* con = ph->getBaseType();
@@ -1990,7 +1990,7 @@ void choose_rand::Compute(traverse_data &x, expr** pass, int np)
   for (i=0; i<np; i++) {
     if (u < probarray[i]) break;
   }
-  CHECK_RANGE(0, i, np);
+  CHECK_RANGE(__FILE__, __LINE__, 0, i, np);
 
   SafeCompute(pass[i], x);
 }
