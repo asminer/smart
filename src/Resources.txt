@@ -9,3 +9,7 @@ CML           Common Measure List.  For measures/functions that
 engtypes      Engine types
 
 formalisms    All formalism types (e.g., pn).
+
+types         Basic types and type registry.  Other built types
+              (strings, bigints, etc.) should require this.
+

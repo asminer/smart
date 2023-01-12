@@ -177,6 +177,11 @@ class initializer {
             Display, when there's an error
         */
         void show(error_msg &E) const;
+
+        /**
+            For debugging; convert state to its name.
+        */
+        const char* stateName() const;
 };
 
 #endif

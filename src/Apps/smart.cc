@@ -209,7 +209,7 @@ int main(int argc, const char** argv, const char** env)
 {
   // Run initializers
   static smart_init the_smart_init(env);
-  initializer::execute_all(false);
+  initializer::execute_all(true);
 
   // Parser initialization
   parse_module pm;

@@ -1276,9 +1276,10 @@ class init_statevects : public initializer {
 };
 static init_statevects the_statevect_initializer;
 
-init_statevects::init_statevects() : initializer(__FILE__, 1, 0)
+init_statevects::init_statevects() : initializer(__FILE__, 1, 1)
 {
     builds_resource(0, "statevects");
+    needs_resource(1, "types");
 }
 
 void init_statevects::execute()
