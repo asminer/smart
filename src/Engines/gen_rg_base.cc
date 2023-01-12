@@ -151,13 +151,13 @@ void init_procgen::execute()
     initialize_msg(process_generator::report,
         "procgen",
         "When set, process generation performance is reported.",
-        get_object(2, "Report")
+        get_object(3, "Report")
     );
 
     initialize_msg(process_generator::debug,
         "procgen",
         "When set, process generation details are displayed.",
-        get_object(1, "Debug")
+        get_object(2, "Debug")
     );
 
     /*

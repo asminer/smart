@@ -708,7 +708,7 @@ public:
 states::states()
 : CTL_engine(type::find("stateset"), "states", false, 2)
 {
-  SetFormal(1, type::find("temporal"), "formula");
+  SetFormal(1, type::find("temporal_formula"), "formula");
   SetDocumentation("Compute the stateset satisfying the given temporal formula.");
 }
 
@@ -1356,7 +1356,7 @@ traces::traces()
 : CTL_engine(type::find("trace"), "traces", false, 3)
 {
   SetFormal(1, type::find("stateset"), "initial_states");
-  SetFormal(2, type::find("temporal"), "formula");
+  SetFormal(2, type::find("temporal_formula"), "formula");
   SetDocumentation("Compute a trace verifying the given temporal formula.");
 }
 
@@ -1442,12 +1442,14 @@ class init_ctlmsrs : public initializer {
 };
 static init_ctlmsrs the_ctlmsr_initializer;
 
-init_ctlmsrs::init_ctlmsrs() : initializer(__FILE__, 1, 3)
+init_ctlmsrs::init_ctlmsrs() : initializer(__FILE__, 1, 5)
 {
   builds_resource(0, "CML");
-  needs_resource(1, "statesettype");
-  needs_resource(2, "biginttype");
+  needs_resource(1, "stateset");
+  needs_resource(2, "bigint");
   needs_resource(3, "procgen");
+  needs_resource(4, "temporal");
+  needs_resource(5, "trace");
 }
 
 void init_ctlmsrs::execute()

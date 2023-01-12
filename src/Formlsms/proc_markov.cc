@@ -263,7 +263,7 @@ class init_markovproc : public initializer {
 };
 static init_markovproc the_markovproc_startup;
 
-init_markovproc::init_markovproc() : initializer("proc_markov.cc", 1, 1)
+init_markovproc::init_markovproc() : initializer(__FILE__, 1, 1)
 {
     builds_resource(0, "proc_markov.cc");
     needs_resource(1, "Report");
@@ -274,13 +274,13 @@ void init_markovproc::execute()
     initialize_msg(markov_process::my_timer.report,
         "mc_finish",
         "When set, performance details for Markov chain finalization steps are reported.",
-        get_object(2, "Report")
+        get_object(1, "Report")
     );
 
     initialize_msg(markov_process::report,
         "mc_solve",
         "When set, Markov chain solution performance is reported.",
-        get_object(2, "Report")
+        get_object(1, "Report")
     );
 
     DCASSERT(!markov_process::lsopts);

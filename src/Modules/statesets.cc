@@ -826,9 +826,9 @@ static init_statesets the_stateset_initializer;
 
 init_statesets::init_statesets() : initializer(__FILE__, 1, 2)
 {
-    builds_resource(0, "statesets");
+    builds_resource(0, "stateset");
     needs_resource(1, "types");
-    needs_resource(2, "bigints");
+    needs_resource(2, "bigint");
 }
 
 void init_statesets::execute()

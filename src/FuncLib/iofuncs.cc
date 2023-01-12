@@ -708,10 +708,11 @@ class init_iofuncs : public initializer {
 };
 static init_iofuncs the_iofunc_initializer;
 
-init_iofuncs::init_iofuncs() : initializer(__FILE__, 1, 1)
+init_iofuncs::init_iofuncs() : initializer(__FILE__, 1, 2)
 {
     builds_resource(0, "funcs");
     needs_resource(1, "types");
+    needs_resource(2, "string");
 }
 
 void init_iofuncs::execute()

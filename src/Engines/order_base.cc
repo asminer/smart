@@ -149,13 +149,13 @@ void init_static_varorder::execute()
     initialize_msg(static_varorder::report,
         "varorder",
         "When set, static variable ordering heuristic performance is reported.",
-        get_object(1, "Report")
+        get_object(3, "Report")
     );
 
     initialize_msg(static_varorder::debug,
         "varorder",
         "When set, static variable ordering heuristic details are displayed.",
-        get_object(2, "Debug")
+        get_object(4, "Debug")
     );
 
     //

@@ -6,9 +6,16 @@ Name          Description
 CML           Common Measure List.  For measures/functions that
               are common to many different formalisms.
 
+bigint        Bigint type, functions, whatnot
+
 engtypes      Engine types
 
 formalisms    All formalism types (e.g., pn).
+
+
+stateset      The stateset type, functions, whatnot
+statevect     Everything in statevects.cc
+string        The string type, functions, whatnot
 
 types         Basic types and type registry.  Other built types
               (strings, bigints, etc.) should require this.

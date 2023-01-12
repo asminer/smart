@@ -652,11 +652,12 @@ class init_sysfuncs : public initializer {
 };
 static init_sysfuncs the_sysfunc_initializer;
 
-init_sysfuncs::init_sysfuncs() : initializer(__FILE__, 1, 2)
+init_sysfuncs::init_sysfuncs() : initializer(__FILE__, 1, 3)
 {
     builds_resource(0, "funcs");
     needs_resource(1, "types");
     needs_resource(2, "env");
+    needs_resource(3, "string");
 }
 
 void init_sysfuncs::execute()

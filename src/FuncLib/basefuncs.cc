@@ -625,10 +625,11 @@ class init_basefuncs : public initializer {
 };
 static init_basefuncs the_basefunc_initializer;
 
-init_basefuncs::init_basefuncs() : initializer(__FILE__, 1, 1)
+init_basefuncs::init_basefuncs() : initializer(__FILE__, 1, 2)
 {
     builds_resource(0, "funcs");
     needs_resource(1, "types");
+    needs_resource(2, "string");
 }
 
 void init_basefuncs::execute()

@@ -367,7 +367,7 @@ class init_simul : public initializer {
 };
 static init_simul the_simul_initializer;
 
-init_simul::init_simul() : initializer("simul.cc", 1, 2)
+init_simul::init_simul() : initializer(__FILE__, 1, 2)
 {
     builds_resource(0, "simul.cc");
     needs_resource(1, "Report");

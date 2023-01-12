@@ -690,7 +690,7 @@ class init_mcform : public initializer {
 };
 static init_mcform the_mcform_initializer;
 
-init_mcform::init_mcform() : initializer("mc_form.cc", 1, 3)
+init_mcform::init_mcform() : initializer(__FILE__, 1, 3)
 {
     builds_resource(0, "mc_form.cc");
     needs_resource(1, "Warning");

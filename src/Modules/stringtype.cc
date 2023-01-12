@@ -745,7 +745,7 @@ static init_strings the_string_initializer;
 
 init_strings::init_strings() : initializer(__FILE__, 1, 1)
 {
-    builds_resource(0, "stringtype");
+    builds_resource(0, "string");
     needs_resource(1, "types");
 }
 

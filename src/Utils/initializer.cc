@@ -442,11 +442,16 @@ void initializer::set_object(unsigned slot, shared_object* o, const char* name)
     res_list[slot]->set_object(o);
 }
 
-shared_object* initializer::get_object(unsigned slot, const char* name)
+shared_object* initializer::get_object(unsigned slot, const char* n)
 {
     CHECK_RANGE(__FILE__, __LINE__, 0, slot, max_resources);
     if (!res_list[slot]) return nullptr;
-    DCASSERT(!name || 0==strcmp(res_list[slot]->name, name));
+    if (n && strcmp(res_list[slot]->name, n)) {
+        internal_error E(__FILE__, __LINE__);
+        E << "Initializer " << name << " object/name mismatch.";
+        E.newLine();
+        E << "  slot " << slot << " name given " << n;
+    }
     return res_list[slot]->get_object();
 }
 
@@ -529,6 +534,7 @@ void initializer::show(error_msg &E) const
         E << res_list[i]->name;
         E.newLine();
     }
+    E << "wait count: " << wait_count;
     E.newLine('-');
 }
 
