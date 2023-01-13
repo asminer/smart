@@ -149,77 +149,80 @@ int Copyrights()
 
 int CmdLineHelp(const char** argv, int argc)
 {
-  symbol* help = symbol_table::findGlobal("help");
-  if (0==help) {
-    cmdline_error E;
-    E << "No online help found\n";
-    return 1;
-  }
-  if (help->Next()) {
-    cmdline_error E;
-    E << "Overloaded online help\n";
-    return 1;
-  }
-  function* hf = smart_cast<function*>(help);
-  DCASSERT(hf);
-  result keyword;
-  DCASSERT(type::find("string"));
-
-  traverse_data x(traverse_data::Compute);
-
-  if (0==argc) {
-    type::find("string")->assignFromString(keyword, "");
-    expr* foo = new value(location::NOWHERE(), type::find("string"), keyword);
-    hf->Compute(x, &foo, 1);
-    Delete(foo);
-  } else {
-    for (int i=0; i<argc; i++) {
-      type::find("string")->assignFromString(keyword, argv[i]);
-      expr* foo = new value(location::NOWHERE(), type::find("string"), keyword);
-      hf->Compute(x, &foo, 1);
-      Delete(foo);
+    symbol* help = symbol_table::findGlobal("help");
+    if (0==help) {
+        cmdline_error E;
+        E << "No online help found\n";
+        return 1;
     }
-  }
+    if (help->Next()) {
+        cmdline_error E;
+        E << "Overloaded online help\n";
+        return 1;
+    }
+    function* hf = smart_cast<function*>(help);
+    DCASSERT(hf);
+    result keyword;
+    DCASSERT(type::find("string"));
 
-  outputStream::globalOut() << "\n";
-  return 0;
+    traverse_data x(traverse_data::Compute);
+
+    if (0==argc) {
+        type::find("string")->assignFromString(keyword, "");
+        expr* foo = new value(location::NOWHERE(), type::find("string"), keyword);
+        hf->Compute(x, &foo, 1);
+        Delete(foo);
+    } else {
+        for (int i=0; i<argc; i++) {
+            type::find("string")->assignFromString(keyword, argv[i]);
+            expr* foo = new value(
+                    location::NOWHERE(), type::find("string"), keyword
+            );
+            hf->Compute(x, &foo, 1);
+            Delete(foo);
+        }
+    }
+
+    outputStream::globalOut() << "\n";
+    return 0;
 }
 
 int process_args(parse_module& pm, int argc, const char** argv)
 {
-  if (argc < 2)
-    return Usage();
+    if (argc < 2)
+        return Usage();
 
-  if (argc == 2 && argv[1][0] == '-' && argv[1][1] == 'c' && argv[1][2] == 0)
-    return Copyrights();
+    if (argc == 2 && argv[1][0] == '-' && argv[1][1] == 'c' && argv[1][2] == 0)
+        return Copyrights();
 
-  if (argv[1][0] == '-' && argv[1][1] == 'h' && argv[1][2] == 0)
-    return CmdLineHelp(argv+2, argc-2);
+    if (argv[1][0] == '-' && argv[1][1] == 'h' && argv[1][2] == 0)
+        return CmdLineHelp(argv+2, argc-2);
 
-  if (argv[1][0] == '-' && argv[1][1] == '?' && argv[1][2] == 0) {
-    cmdline_error E;
-    E << "Help system is now -h\n";
-    return 1;
-  }
+    if (argv[1][0] == '-' && argv[1][1] == '?' && argv[1][2] == 0) {
+        cmdline_error E;
+        E << "Help system is now -h\n";
+        return 1;
+    }
 
-  return pm.ParseSmartFiles(argv+1, argc-1);
+    return pm.ParseSmartFiles(argv+1, argc-1);
 }
 
 int main(int argc, const char** argv, const char** env)
 {
-  // Run initializers
-  static smart_init the_smart_init(env);
-  initializer::execute_all(true);
+    // Run initializers
+    static smart_init the_smart_init(env);
+    initializer::execute_all(false);
 
-  // Parser initialization
-  parse_module pm;
-  pm.Initialize();
+    // Parser initialization
+    parse_module pm;
+    pm.Initialize();
 
-  // Done adding types
-  type::finalizeRegistry();
+    // Finalize registries
+    type::finalizeRegistry();
+    option_manager::global().DoneAddingOptions();
 
-  // Process command line, start parser
-  int code = process_args(pm, argc, argv);
+    // Process command line, start parser
+    int code = process_args(pm, argc, argv);
 
-  return code;
+    return code;
 }

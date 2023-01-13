@@ -86,6 +86,8 @@ modif_type::modif_type(const std::string &n, modifier m, simple_type* b)
             b->setRand(this);
             break;
     }
+
+    // std::cout << "Adding modif type: " << n << "\n";
 }
 
 modifier modif_type::getModifier() const
@@ -158,6 +160,8 @@ proc_type::proc_type(const std::string &n, type* b) : type(n)
 {
     base = b;
     b->setProc(this);
+
+    // std::cout << "Adding proc type: " << n << "\n";
 }
 
 modifier proc_type::getModifier() const
@@ -227,6 +231,8 @@ set_type::set_type(const std::string &n, simple_type* b) : type(n)
 {
     base = b;
     b->setSet(this);
+
+    // std::cout << "Adding set type: " << n << "\n";
 }
 
 const type* set_type::getSetElemType() const
@@ -546,7 +552,7 @@ void type::allowProcMod(bool proc, modifier mod, simple_type* t)
 
     if (proc) {
         std::stringstream ps;
-        ps << "proc " << ps.str();
+        ps << "proc " << ss.str();
         new proc_type(ps.str(), mt);
     }
 }

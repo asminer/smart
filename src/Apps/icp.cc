@@ -61,8 +61,9 @@ int main(int argc, const char** argv, const char** env)
     parse_module pm;
     pm.Initialize();
 
-    // Finalize types
+    // Finalize registries
     type::finalizeRegistry();
+    option_manager::global().DoneAddingOptions();
 
     //
     // Process command line, start parser
