@@ -451,14 +451,14 @@ class init_cslmsrs : public initializer {
 };
 static init_cslmsrs the_cslmsr_initializer;
 
-init_cslmsrs::init_cslmsrs() : initializer(__FILE__, 2, 4)
+init_cslmsrs::init_cslmsrs() : initializer(__FILE__, 6)
 {
-  builds_resource(0, "CML");
-  builds_resource(1, "engtypes");
-  needs_resource(2, "stochtypes");
-  needs_resource(3, "stateset");
-  needs_resource(4, "statevect");
-  needs_resource(5, "procgen");
+  builds_resource("CML");
+  builds_resource("engtypes");
+  needs_resource("stochtypes");
+  needs_resource("stateset");
+  needs_resource("statevect");
+  needs_resource("procgen");
 }
 
 void init_cslmsrs::execute()

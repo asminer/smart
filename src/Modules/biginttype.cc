@@ -2075,10 +2075,10 @@ class init_bigints : public initializer {
 };
 static init_bigints the_bigint_initializer;
 
-init_bigints::init_bigints() : initializer(__FILE__, 1, 1)
+init_bigints::init_bigints() : initializer(__FILE__, 2)
 {
-    builds_resource(0, "bigint");
-    needs_resource(1, "types");
+    builds_resource("bigint");
+    needs_resource("types");
 }
 
 void init_bigints::execute()

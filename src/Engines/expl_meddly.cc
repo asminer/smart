@@ -3305,10 +3305,10 @@ class init_explmeddly : public initializer {
 };
 static init_explmeddly the_explmeddly_initializer;
 
-init_explmeddly::init_explmeddly() : initializer(__FILE__, 1, 1)
+init_explmeddly::init_explmeddly() : initializer(__FILE__, 2)
 {
-    builds_resource(0, "explmeddly");
-    needs_resource(1, "meddlyprocgen");
+    builds_resource("explmeddly");
+    needs_resource("meddlyprocgen");
 }
 
 void init_explmeddly::execute()

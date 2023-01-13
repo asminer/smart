@@ -27,17 +27,17 @@ class checklist_initializer : public initializer {
 };
 
 checklist_initializer::checklist_initializer(const char* name, const char* doc)
-    : initializer("checklist_initializer", 1, 0)
+    : initializer("checklist_initializer", 1)
 {
     optname = name;
     optdoc = doc;
 
-    builds_resource(0, name);
+    builds_resource(optname);
 }
 
 void checklist_initializer::execute()
 {
-    set_object(0,
+    set_object(optname,
         option_manager::global().addChecklistOption(optname, optdoc)
     );
 }
@@ -75,34 +75,39 @@ shared_object* initialize_group(shared_object* _main, unsigned items,
 // **********************************************************************
 
 message_initializer::message_initializer(const char* g, switchable_msg &m,
-    const char* name, const char* d)
-    : initializer("message_initializer", 1, 2), msg(m)
+    const char* n, const char* d)
+    : initializer("message_initializer", 3), msg(m)
 {
-    m.setName(name);
+    msg.setName(n);
     doc = d;
 
-    builds_resource(0, m.getName());
-    needs_resource(1, m.optName());
-    needs_resource(2, g);
+    builds_resource(msg.getName());
+    needs_resource(msg.optName());
+    needs_resource(g);
+
+    group = g;
 }
 
 message_initializer::message_initializer(switchable_msg &m,
-    const char* name, const char* d)
-    : initializer("message_initializer", 1, 2), msg(m)
+    const char* n, const char* d)
+    : initializer("message_initializer", 2), msg(m)
 {
-    m.setName(name);
+    msg.setName(n);
     doc = d;
 
-    builds_resource(0, m.getName());
-    needs_resource(1, m.optName());
+    builds_resource(msg.getName());
+    needs_resource(msg.optName());
+
+    group = nullptr;
 }
 
 void message_initializer::execute()
 {
-    shared_object* obj =
-        initialize_msg(msg, nullptr, doc, get_object(1), get_object(2));
+    shared_object* obj = initialize_msg(
+        msg, nullptr, doc, get_object(msg.getName()), get_object(group)
+    );
     DCASSERT(obj);
-    set_object(0, obj);
+    set_object(msg.getName(), obj);
 }
 
 shared_object* initialize_msg(switchable_msg &msg, const char* name,

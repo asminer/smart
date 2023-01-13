@@ -652,12 +652,12 @@ class init_sysfuncs : public initializer {
 };
 static init_sysfuncs the_sysfunc_initializer;
 
-init_sysfuncs::init_sysfuncs() : initializer(__FILE__, 1, 3)
+init_sysfuncs::init_sysfuncs() : initializer(__FILE__, 4)
 {
-    builds_resource(0, "funcs");
-    needs_resource(1, "types");
-    needs_resource(2, "env");
-    needs_resource(3, "string");
+    builds_resource("funcs");
+    needs_resource("types");
+    needs_resource("env");
+    needs_resource("string");
 }
 
 void init_sysfuncs::execute()
@@ -666,7 +666,7 @@ void init_sysfuncs::execute()
         timer_base::watches = new timer[256];
     }
 
-    environ* e = dynamic_cast <environ*> (get_object(2, "env"));
+    environ* e = dynamic_cast <environ*> (get_object("env"));
     if (e) {
         symbol_table::addGlobal(new version_si(e->version));
         symbol_table::addGlobal(new env_si(e->env)        );

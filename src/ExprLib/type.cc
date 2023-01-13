@@ -937,9 +937,9 @@ class type_initializer : public initializer {
 };
 static type_initializer the_type_initializer;
 
-type_initializer::type_initializer() : initializer("type.cc", 1, 0)
+type_initializer::type_initializer() : initializer("type.cc", 1)
 {
-    builds_resource(0, "types");
+    builds_resource("types");
 }
 
 void type_initializer::execute()

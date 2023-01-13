@@ -222,9 +222,9 @@ class init_statellm : public initializer {
 };
 static init_statellm the_statellm_initializer;
 
-init_statellm::init_statellm() : initializer("state_llm.cc", 1, 0)
+init_statellm::init_statellm() : initializer(__FILE__, 1)
 {
-    builds_resource(0, "state_llm.cc");
+    builds_resource("state_llm.cc");
 }
 
 void init_statellm::execute()

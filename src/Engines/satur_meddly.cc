@@ -2386,10 +2386,10 @@ class init_saturmeddly : public initializer {
 };
 static init_saturmeddly the_saturmeddly_initializer;
 
-init_saturmeddly::init_saturmeddly() : initializer(__FILE__, 1, 1)
+init_saturmeddly::init_saturmeddly() : initializer(__FILE__, 2)
 {
-    builds_resource(0, "satur_meddly");
-    needs_resource(1, "meddlyprocgen");
+    builds_resource("satur_meddly");
+    needs_resource("meddlyprocgen");
 }
 
 void init_saturmeddly::execute()

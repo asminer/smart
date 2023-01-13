@@ -1115,9 +1115,9 @@ class ops_real_init : public initializer {
 };
 static ops_real_init the_ops_real_initializer;
 
-ops_real_init::ops_real_init() : initializer(__FILE__, 1, 0)
+ops_real_init::ops_real_init() : initializer(__FILE__, 1)
 {
-    builds_resource(0, "ops_real");
+    builds_resource("ops_real");
 }
 
 void ops_real_init::execute()

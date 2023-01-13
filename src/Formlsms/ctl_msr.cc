@@ -1442,14 +1442,14 @@ class init_ctlmsrs : public initializer {
 };
 static init_ctlmsrs the_ctlmsr_initializer;
 
-init_ctlmsrs::init_ctlmsrs() : initializer(__FILE__, 1, 5)
+init_ctlmsrs::init_ctlmsrs() : initializer(__FILE__, 6)
 {
-  builds_resource(0, "CML");
-  needs_resource(1, "stateset");
-  needs_resource(2, "bigint");
-  needs_resource(3, "procgen");
-  needs_resource(4, "temporal");
-  needs_resource(5, "trace");
+  builds_resource("CML");
+  needs_resource("stateset");
+  needs_resource("bigint");
+  needs_resource("procgen");
+  needs_resource("temporal");
+  needs_resource("trace");
 }
 
 void init_ctlmsrs::execute()

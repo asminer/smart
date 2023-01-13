@@ -666,10 +666,10 @@ class lexer_init : public initializer {
 };
 static lexer_init the_lexer_initializer;
 
-lexer_init::lexer_init() : initializer("lexer.cc", 1, 1)
+lexer_init::lexer_init() : initializer(__FILE__, 2)
 {
-    builds_resource(0, "lexer.cc");
-    needs_resource(1, "Debug");
+    builds_resource("lexer.cc");
+    needs_resource("Debug");
 }
 
 void lexer_init::execute()
@@ -677,7 +677,7 @@ void lexer_init::execute()
     initialize_msg(lexer_mod::debug,
         "lexer",
         "When set, very low-level lexer messages are displayed.",
-        get_object(1, "Debug")
+        get_object("Debug")
     );
 #ifdef LEXER_DEBUG
     lexer_mod::debug.Activate();

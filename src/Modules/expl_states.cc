@@ -485,9 +485,9 @@ class init_my_exp_state_lib : public initializer {
 // **************************************************************************
 
 init_my_exp_state_lib::init_my_exp_state_lib(my_exp_state_lib &sl)
-    : initializer("init_my_exp_state_lib", 1, 0), SL(sl)
+    : initializer(__FILE__, 1), SL(sl)
 {
-    builds_resource(0, "my_exp_state_lib");
+    builds_resource("my_exp_state_lib");
 
     try_immediately();  // late initialization
 }

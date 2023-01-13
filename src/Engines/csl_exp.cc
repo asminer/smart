@@ -359,10 +359,10 @@ class init_cslengines : public initializer {
 };
 static init_cslengines the_cslengine_initializer;
 
-init_cslengines::init_cslengines() : initializer(__FILE__, 1, 1)
+init_cslengines::init_cslengines() : initializer(__FILE__, 2)
 {
-    builds_resource(0, "csl_engines");
-    needs_resource(1, "engtypes");
+    builds_resource("csl_engines");
+    needs_resource("engtypes");
 }
 
 void init_cslengines::execute()

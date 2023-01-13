@@ -791,10 +791,10 @@ static converge_initializer _the_converge_init;
 
 
 converge_initializer::converge_initializer()
-    : initializer("converge.cc", 1, 2)
+    : initializer(__FILE__, 2)
 {
-    builds_resource(0, "converge.cc");
-    needs_resource(1, "Debug");
+    builds_resource("converge");
+    needs_resource("Debug");
 }
 
 void converge_initializer::execute()
@@ -802,7 +802,7 @@ void converge_initializer::execute()
     option_manager& OM = option_manager::global();
 
     fixpoint_stmt::init(
-        get_object(1, "Debug"),
+        get_object("Debug"),
         "converges",
         "Use to view the sequence of assignments during the execution of a converge statement."
     );

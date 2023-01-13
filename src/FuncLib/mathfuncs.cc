@@ -990,10 +990,10 @@ class init_mathfuncs : public initializer {
 };
 static init_mathfuncs the_mathfunc_initializer;
 
-init_mathfuncs::init_mathfuncs() : initializer(__FILE__, 1, 1)
+init_mathfuncs::init_mathfuncs() : initializer(__FILE__, 2)
 {
-    builds_resource(0, "funcs");
-    needs_resource(1, "types");
+    builds_resource("funcs");
+    needs_resource("types");
 }
 
 void init_mathfuncs::execute()

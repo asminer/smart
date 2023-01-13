@@ -293,10 +293,10 @@ class init_dcps : public initializer {
 };
 static init_dcps the_dcp_initializer;
 
-init_dcps::init_dcps() : initializer(__FILE__, 1, 1)
+init_dcps::init_dcps() : initializer(__FILE__, 2)
 {
-    builds_resource(0, "formalisms");
-    needs_resource(1, "CML");
+    builds_resource("formalisms");
+    needs_resource("CML");
 }
 
 void init_dcps::execute()

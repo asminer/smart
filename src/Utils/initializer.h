@@ -129,6 +129,7 @@ class initializer {
             Set an object for a resource (that we build).
                 @param  name    Name of the resource.
                 @param  o       Object to set for the resource.
+                                Will NOT be set if the name is null.
         */
         void set_object(const char* name, shared_object* o);
 
@@ -136,6 +137,8 @@ class initializer {
             Get an object for a resource.
                 @param  name    Name of the resource.
                 @return         Object associated with the resource.
+                                Will be null if nothing was set,
+                                or if the name is null.
         */
         shared_object* get_object(const char* name);
 

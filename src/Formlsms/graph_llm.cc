@@ -297,10 +297,10 @@ class init_graphllm : public initializer {
 };
 static init_graphllm the_graphllm_initializer;
 
-init_graphllm::init_graphllm() : initializer("graph_llm.cc", 1, 1)
+init_graphllm::init_graphllm() : initializer(__FILE__, 2)
 {
-    builds_resource(0, "graph_llm.cc");
-    needs_resource(1, "Report");
+    builds_resource("graph_llm.cc");
+    needs_resource("Report");
 }
 
 void init_graphllm::execute()
@@ -309,12 +309,12 @@ void init_graphllm::execute()
     initialize_msg(graph_lldsm::reachgraph::numpaths_report,
         "num_paths",
         "When set, performance data for counting number of paths is displayed.",
-        get_object(1, "Report")
+        get_object("Report")
     );
     initialize_msg(graph_lldsm::reachgraph::ctl_report,
         "CTL_engines",
         "When set, CTL engine performance is reported.",
-        get_object(1, "Report")
+        get_object("Report")
     );
 
     // ------------------------------------------------------------------

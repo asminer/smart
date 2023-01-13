@@ -1306,10 +1306,10 @@ class init_dsde: public initializer {
 };
 static init_dsde the_dsde_startup;
 
-init_dsde::init_dsde() : initializer("init_dsde", 1, 1)
+init_dsde::init_dsde() : initializer(__FILE__, 2)
 {
-    builds_resource(0, "dsde_hlm.cc");
-    needs_resource(1, dsde_def::dup_part.optName());
+    builds_resource("dsde_hlm.cc");
+    needs_resource(dsde_def::dup_part.optName());
 }
 
 void init_dsde::execute()
@@ -1317,22 +1317,22 @@ void init_dsde::execute()
     initialize_msg(dsde_def::dup_part,
         "dup_part",
 	    "For multiple partition definitions for a state variable",
-        get_object(1)
+        get_object(dsde_def::dup_part.optName())
     );
     initialize_msg(dsde_def::no_part,
         "no_part",
 		"If some, but not all, state variables are assiged to groups using partition",
-        get_object(1)
+        get_object(dsde_def::dup_part.optName())
     );
     initialize_msg(dsde_def::dup_prio,
         "dup_prio",
 		"For multiple priority level definitions for a model event",
-        get_object(1)
+        get_object(dsde_def::dup_part.optName())
     );
     initialize_msg(dsde_hlm::ignored_prio,
         "ignored_prio",
 		"For ignored priority pairs (between events in different priority levels)",
-        get_object(1)
+        get_object(dsde_def::dup_part.optName())
     );
 }
 

@@ -690,12 +690,12 @@ class init_mcform : public initializer {
 };
 static init_mcform the_mcform_initializer;
 
-init_mcform::init_mcform() : initializer(__FILE__, 1, 3)
+init_mcform::init_mcform() : initializer(__FILE__, 4)
 {
-    builds_resource(0, "mc_form.cc");
-    needs_resource(1, "Warning");
-    needs_resource(2, "Debug");
-    needs_resource(3, "CML");
+    builds_resource("mc_form.cc");
+    needs_resource("Warning");
+    needs_resource("Debug");
+    needs_resource("CML");
 }
 
 void init_mcform::execute()
@@ -760,23 +760,23 @@ void init_mcform::execute()
     initialize_msg(markov_def::dup_init,
         "mc_dup_init",
         "For duplicatation of initial probabilities in Markov chain models",
-        get_object(1, "Warning")
+        get_object("Warning")
     );
     initialize_msg(markov_def::no_init,
         "mc_no_init",
         "For absence of initial probabilities in Markov chain models",
-        get_object(1, "Warning")
+        get_object("Warning")
     );
     initialize_msg(markov_def::dup_arc,
         "mc_dup_arc",
         "For duplicate arcs in Markov chain models",
-        get_object(1, "Warning")
+        get_object("Warning")
     );
 
     initialize_msg(markov_def::mc_debug,
         "mcs",
         "When set, diagnostic messages are displayed regarding Markov chain (dtmc and ctmc formalism) model construction.",
-        get_object(2, "Debug")
+        get_object("Debug")
     );
 
 }

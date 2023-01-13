@@ -600,9 +600,9 @@ class engine_init : public initializer {
 
 static engine_init the_engine_init;
 
-engine_init::engine_init() : initializer(__FILE__, 1, 0)
+engine_init::engine_init() : initializer(__FILE__, 1)
 {
-    builds_resource(0, "engines");
+    builds_resource("engines");
 }
 
 void engine_init::execute()

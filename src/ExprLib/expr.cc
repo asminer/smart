@@ -455,11 +455,11 @@ class expr_initializer : public initializer {
 };
 static expr_initializer the_expr_initializer;
 
-expr_initializer::expr_initializer() : initializer(__FILE__, 1, 2)
+expr_initializer::expr_initializer() : initializer(__FILE__, 3)
 {
-    builds_resource(0, "exprs");
-    needs_resource(1, "types");
-    needs_resource(2, "Debug");
+    builds_resource("exprs");
+    needs_resource("types");
+    needs_resource("Debug");
 }
 
 void expr_initializer::execute()
@@ -468,19 +468,19 @@ void expr_initializer::execute()
     initialize_msg(expr::expr_debug,
         "exprs",
         "When set, low-level expression and statement messages are displayed.",
-        get_object(2, "Debug")
+        get_object("Debug")
     );
 
     initialize_msg(expr::waitlist_debug,
         "waitlist",
         "When set, diagnostic messages are displayed regarding symbol waiting lists.",
-        get_object(2, "Debug")
+        get_object("Debug")
     );
 
     initialize_msg(expr::model_debug,
         "models",
         "When set, diagnostic messages are displayed regarding model construction.",
-        get_object(2, "Debug")
+        get_object("Debug")
     );
 }
 

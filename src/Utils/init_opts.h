@@ -21,6 +21,7 @@ shared_object* initialize_group(shared_object* main, unsigned items,
     Initializer for a switchable message.
 */
 class message_initializer : public initializer {
+        const char* group;
         switchable_msg &msg;
         const char* doc;
     public:

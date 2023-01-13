@@ -131,14 +131,13 @@ class init_static_varorder : public initializer {
 };
 static init_static_varorder the_static_varorder_initializer;
 
-init_static_varorder::init_static_varorder()
-    : initializer("order_base.cc", 3, 2)
+init_static_varorder::init_static_varorder() : initializer(__FILE__, 5)
 {
-    builds_resource(0, "order_base.cc");
-    builds_resource(1, "varorders");
-    builds_resource(2, "engtypes");
-    needs_resource(3, "Report");
-    needs_resource(4, "Debug");
+    builds_resource("order_base.cc");
+    builds_resource("varorders");
+    builds_resource("engtypes");
+    needs_resource("Report");
+    needs_resource("Debug");
 }
 
 void init_static_varorder::execute()
@@ -149,13 +148,13 @@ void init_static_varorder::execute()
     initialize_msg(static_varorder::report,
         "varorder",
         "When set, static variable ordering heuristic performance is reported.",
-        get_object(3, "Report")
+        get_object("Report")
     );
 
     initialize_msg(static_varorder::debug,
         "varorder",
         "When set, static variable ordering heuristic details are displayed.",
-        get_object(4, "Debug")
+        get_object("Debug")
     );
 
     //

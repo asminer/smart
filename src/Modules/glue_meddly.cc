@@ -1061,9 +1061,9 @@ class init_meddly : public initializer {
 };
 static init_meddly the_meddly_initializer;
 
-init_meddly::init_meddly() : initializer("glue_meddly.cc", 1, 0)
+init_meddly::init_meddly() : initializer(__FILE__, 1)
 {
-    builds_resource(0, "MEDDLY");
+    builds_resource("MEDDLY");
 }
 
 void init_meddly::execute()

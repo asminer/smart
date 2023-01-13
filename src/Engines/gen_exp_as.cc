@@ -1020,10 +1020,10 @@ class init_asynchgen: public initializer {
 };
 static init_asynchgen the_asynchgen_initializer;
 
-init_asynchgen::init_asynchgen() : initializer(__FILE__, 1, 1)
+init_asynchgen::init_asynchgen() : initializer(__FILE__, 2)
 {
-    builds_resource(0, "asynchgen");
-    needs_resource(1, "engtypes");
+    builds_resource("asynchgen");
+    needs_resource("engtypes");
 }
 
 void init_asynchgen::execute()

@@ -491,10 +491,10 @@ class init_phasegen : public initializer {
 };
 static init_phasegen the_phasegen_initializer;
 
-init_phasegen::init_phasegen() : initializer(__FILE__, 1, 1)
+init_phasegen::init_phasegen() : initializer(__FILE__, 2)
 {
-    builds_resource(0, "phasegen");
-    needs_resource(1, "engtypes");
+    builds_resource("phasegen");
+    needs_resource("engtypes");
 }
 
 void init_phasegen::execute()

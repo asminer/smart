@@ -702,9 +702,9 @@ class init_helpfuncs : public initializer {
 };
 static init_helpfuncs the_helpfunc_initializer;
 
-init_helpfuncs::init_helpfuncs() : initializer(__FILE__, 1, 0)
+init_helpfuncs::init_helpfuncs() : initializer(__FILE__, 1)
 {
-    builds_resource(0, "helpfuncs");
+    builds_resource("helpfuncs");
     // TBD
 }
 

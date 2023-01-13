@@ -1388,9 +1388,9 @@ class ops_int_init : public initializer {
 };
 static ops_int_init the_ops_int_initializer;
 
-ops_int_init::ops_int_init() : initializer(__FILE__, 1, 0)
+ops_int_init::ops_int_init() : initializer(__FILE__, 1)
 {
-    builds_resource(0, "ops_int");
+    builds_resource("ops_int");
 }
 
 void ops_int_init::execute()

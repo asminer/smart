@@ -2834,11 +2834,10 @@ class compile_initializer : public initializer {
 };
 static compile_initializer the_compile_initializer;
 
-compile_initializer::compile_initializer()
-    : initializer("compile.cc", 1, 1)
+compile_initializer::compile_initializer() : initializer(__FILE__, 2)
 {
-    builds_resource(0, "compile.cc");
-    needs_resource(1, "Debug");
+    builds_resource("compile.cc");
+    needs_resource("Debug");
 }
 
 void compile_initializer::execute()
@@ -2846,12 +2845,12 @@ void compile_initializer::execute()
     initialize_msg(parser_debug,
         "parser",
         "When set, very low-level parser messages are displayed.",
-        get_object(1, "Debug")
+        get_object("Debug")
     );
     initialize_msg(compiler_debug,
         "compiler",
         "When set, low-level compiler messages are displayed.",
-        get_object(1, "Debug")
+        get_object("Debug")
     );
 #ifdef PARSER_DEBUG
     parser_debug.Activate();

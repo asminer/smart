@@ -1307,10 +1307,10 @@ class init_temporal : public initializer {
 static init_temporal the_temporal_initializer;
 
 
-init_temporal::init_temporal() : initializer(__FILE__, 1, 1)
+init_temporal::init_temporal() : initializer(__FILE__, 2)
 {
-    builds_resource(0, "temporal");
-    needs_resource(1, "types");
+    builds_resource("temporal");
+    needs_resource("types");
 }
 
 void init_temporal::execute()

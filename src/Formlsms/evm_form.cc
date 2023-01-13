@@ -1290,12 +1290,12 @@ class init_evmform : public initializer {
 };
 static init_evmform the_evmform_initializer;
 
-init_evmform::init_evmform() : initializer(__FILE__, 1, 3)
+init_evmform::init_evmform() : initializer(__FILE__, 4)
 {
-    builds_resource(0, "evm");
-    needs_resource(1, "Warning");
-    needs_resource(2, "Debug");
-    needs_resource(3, "CML");
+    builds_resource("evm");
+    needs_resource("Warning");
+    needs_resource("Debug");
+    needs_resource("CML");
 }
 
 void init_evmform::execute()
@@ -1353,51 +1353,51 @@ void init_evmform::execute()
     initialize_msg(evm_def::evm_debug,
         "evms",
         "When set, diagnostic messages are displayed regarding evm (event & variable model) construction.",
-        get_object(2, "Debug")
+        get_object("Debug")
     );
     shared_object* evmwarnings = initialize_group(
-        get_object(1, "Warning"), 8,
+        get_object("Warning"), 8,
         "evm_ALL", "Group of all evm warnings"
     );
     initialize_msg(evm_def::no_event,
         "evm_no_event",
         "For absence of events in event & variable models",
-        get_object(1, "Warning"), evmwarnings
+        get_object("Warning"), evmwarnings
     );
     initialize_msg(evm_def::no_vars,
         "evm_no_vars",
         "For absence of variables in event & variable models",
-        get_object(1, "Warning"), evmwarnings
+        get_object("Warning"), evmwarnings
     );
     initialize_msg(evm_def::no_part,
         "evm_no_part",
         "If some, but not all, variables are assiged to groups using partition",
-        get_object(1, "Warning"), evmwarnings
+        get_object("Warning"), evmwarnings
     );
     initialize_msg(evm_def::dup_part,
         "evm_dup_part",
         "For multiple partition definitions for a variable",
-        get_object(1, "Warning"), evmwarnings
+        get_object("Warning"), evmwarnings
     );
     initialize_msg(evm_def::dup_range,
         "evm_dup_range",
         "For duplicate variable ranges in event & variable models",
-        get_object(1, "Warning"), evmwarnings
+        get_object("Warning"), evmwarnings
     );
     initialize_msg(evm_def::dup_assign,
         "evm_dup_assign",
         "For multiple assignments on the same variable and event in event & variable models",
-        get_object(1, "Warning"), evmwarnings
+        get_object("Warning"), evmwarnings
     );
     initialize_msg(evm_def::dup_init,
         "evm_dup_init",
         "For multiple calls to init for the same variable in event & variable models",
-        get_object(1, "Warning"), evmwarnings
+        get_object("Warning"), evmwarnings
     );
     initialize_msg(evm_def::dup_hide,
         "evm_dup_hide",
         "For multiple calls to hide for the same variable in event & variable models",
-        get_object(1, "Warning"), evmwarnings
+        get_object("Warning"), evmwarnings
     );
 
     option_manager &om = option_manager::global();

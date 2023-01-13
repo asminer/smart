@@ -367,11 +367,11 @@ class init_simul : public initializer {
 };
 static init_simul the_simul_initializer;
 
-init_simul::init_simul() : initializer(__FILE__, 1, 2)
+init_simul::init_simul() : initializer(__FILE__, 3)
 {
-    builds_resource(0, "simul.cc");
-    needs_resource(1, "Report");
-    needs_resource(2, "engtypes");
+    builds_resource("simul.cc");
+    needs_resource("Report");
+    needs_resource("engtypes");
 }
 
 void init_simul::execute()
@@ -382,7 +382,7 @@ void init_simul::execute()
     initialize_msg(monte_carlo_engine::report,
         "Monte_Carlo",
         "When set, Monte Carlo Simulation performance data is displayed.",
-        get_object(1, "Report")
+        get_object("Report")
     );
 
     //

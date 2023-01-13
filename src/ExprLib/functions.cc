@@ -1894,9 +1894,9 @@ class function_initializer : public initializer {
 static function_initializer the_function_initializer;
 
 function_initializer::function_initializer()
-    : initializer("functions.cc", 1, 0)
+    : initializer(__FILE__, 1)
 {
-    builds_resource(0, "functions.cc");
+    builds_resource("functions");
 }
 
 void function_initializer::execute()

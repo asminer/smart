@@ -564,12 +564,12 @@ class init_fsms : public initializer {
 };
 static init_fsms the_fsm_initializer;
 
-init_fsms::init_fsms() : initializer(__FILE__, 1, 3)
+init_fsms::init_fsms() : initializer(__FILE__, 4)
 {
-    builds_resource(0, "fsm");
-    needs_resource(1, "Warning");
-    needs_resource(2, "Debug");
-    needs_resource(3, "CML");
+    builds_resource("fsm");
+    needs_resource("Warning");
+    needs_resource("Debug");
+    needs_resource("CML");
 }
 
 void init_fsms::execute()
@@ -610,23 +610,23 @@ void init_fsms::execute()
     initialize_msg(fsm_def::fsm_debug,
         "fsms",
         "When set, diagnostic messages are displayed regarding FSM model construction.",
-        get_object(2, "Debug")
+        get_object("Debug")
     );
 
     initialize_msg(fsm_def::dup_init,
         "fsm_dup_init",
         "For duplicatation of initial states in finite state machine models",
-        get_object(1, "Warning")
+        get_object("Warning")
     );
     initialize_msg(fsm_def::no_init,
         "fsm_no_init",
         "For absence of initial states in finite state machine models",
-        get_object(1, "Warning")
+        get_object("Warning")
     );
     initialize_msg(fsm_def::dup_arc,
         "fsm_dup_arc",
         "For duplicate arcs in finite state machine models",
-        get_object(1, "Warning")
+        get_object("Warning")
     );
 }
 

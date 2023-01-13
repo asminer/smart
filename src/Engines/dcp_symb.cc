@@ -969,12 +969,12 @@ class init_dcpsymbolic : public initializer {
 };
 static init_dcpsymbolic the_dcpsymbolic_initializer;
 
-init_dcpsymbolic::init_dcpsymbolic() : initializer(__FILE__, 1, 3)
+init_dcpsymbolic::init_dcpsymbolic() : initializer(__FILE__, 4)
 {
-    builds_resource(0, "dcp_symb.cc");
-    needs_resource(1, "Report");
-    needs_resource(2, "Debug");
-    needs_resource(3, "engtypes");
+    builds_resource("dcp_symb.cc");
+    needs_resource("Report");
+    needs_resource("Debug");
+    needs_resource("engtypes");
 }
 
 void init_dcpsymbolic::execute()
@@ -985,12 +985,12 @@ void init_dcpsymbolic::execute()
     initialize_msg(icp_symbgen::report,
         "implicit_dcp_gen",
         "When set, implicit reachability set performance is reported.",
-        get_object(1, "Report")
+        get_object("Report")
     );
     initialize_msg(icp_symbgen::debug,
         "implicit_dcp_gen",
         "When set, implicit reachability set details are displayed.",
-        get_object(2, "Debug")
+        get_object("Debug")
     );
 
     //

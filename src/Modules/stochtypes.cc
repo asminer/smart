@@ -3129,10 +3129,10 @@ class init_stochtypes : public initializer {
 };
 static init_stochtypes the_stochtype_initializer;
 
-init_stochtypes::init_stochtypes() : initializer("stochtypes.cc", 1, 1)
+init_stochtypes::init_stochtypes() : initializer(__FILE__, 2)
 {
-    builds_resource(0, "stochtypes");
-    needs_resource(1, "types");
+    builds_resource("stochtypes");
+    needs_resource("types");
 }
 
 void init_stochtypes::execute()

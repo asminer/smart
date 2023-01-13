@@ -116,12 +116,12 @@ class init_procgen : public initializer {
 };
 static init_procgen the_procgen_initializer;
 
-init_procgen::init_procgen() : initializer(__FILE__, 2, 2)
+init_procgen::init_procgen() : initializer(__FILE__, 4)
 {
-    builds_resource(0, "procgen");
-    builds_resource(1, "engtypes");
-    needs_resource(2, "Debug");
-    needs_resource(3, "Report");
+    builds_resource("procgen");
+    builds_resource("engtypes");
+    needs_resource("Debug");
+    needs_resource("Report");
 }
 
 void init_procgen::execute()
@@ -151,13 +151,13 @@ void init_procgen::execute()
     initialize_msg(process_generator::report,
         "procgen",
         "When set, process generation performance is reported.",
-        get_object(3, "Report")
+        get_object("Report")
     );
 
     initialize_msg(process_generator::debug,
         "procgen",
         "When set, process generation details are displayed.",
-        get_object(2, "Debug")
+        get_object("Debug")
     );
 
     /*

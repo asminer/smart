@@ -476,12 +476,12 @@ class init_stochmsrs : public initializer {
 };
 static init_stochmsrs the_stochmsr_initiailzer;
 
-init_stochmsrs::init_stochmsrs() : initializer(__FILE__, 2, 2)
+init_stochmsrs::init_stochmsrs() : initializer(__FILE__, 4)
 {
-  builds_resource(0, "CML");
-  builds_resource(1, "engtypes");
-  needs_resource(2, "statevect");
-  needs_resource(3, "bigint");
+  builds_resource("CML");
+  builds_resource("engtypes");
+  needs_resource("statevect");
+  needs_resource("bigint");
 }
 
 void init_stochmsrs::execute()

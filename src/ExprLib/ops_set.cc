@@ -869,9 +869,9 @@ class ops_set_init : public initializer {
 };
 static ops_set_init the_ops_set_initializer;
 
-ops_set_init::ops_set_init() : initializer(__FILE__, 1, 0)
+ops_set_init::ops_set_init() : initializer(__FILE__, 1)
 {
-    builds_resource(0, "ops_set");
+    builds_resource("ops_set");
 }
 
 void ops_set_init::execute()

@@ -403,10 +403,10 @@ class ops_misc_init : public initializer {
 };
 static ops_misc_init the_ops_misc_initializer;
 
-ops_misc_init::ops_misc_init() : initializer(__FILE__, 1, 1)
+ops_misc_init::ops_misc_init() : initializer(__FILE__, 2)
 {
-    builds_resource(0, "ops_misc");
-    needs_resource(1, "types");
+    builds_resource("ops_misc");
+    needs_resource("types");
 }
 
 void ops_misc_init::execute()

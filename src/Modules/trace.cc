@@ -158,10 +158,10 @@ class init_trace : public initializer {
 };
 static init_trace the_trace_initializer;
 
-init_trace::init_trace() : initializer(__FILE__, 1, 1)
+init_trace::init_trace() : initializer(__FILE__, 2)
 {
-    builds_resource(0, "trace");
-    needs_resource(1, "types");
+    builds_resource("trace");
+    needs_resource("types");
 }
 
 void init_trace::execute()

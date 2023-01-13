@@ -939,11 +939,11 @@ class casting_init : public initializer {
 };
 static casting_init the_casting_initializer;
 
-casting_init::casting_init() : initializer(__FILE__, 1, 2)
+casting_init::casting_init() : initializer(__FILE__, 3)
 {
-    builds_resource(0, "casts");
-    needs_resource(1, "types"); // not sure how important this is
-    needs_resource(2, "Warning");
+    builds_resource("casts");
+    needs_resource("types"); // not sure how important this is
+    needs_resource("Warning");
 }
 
 void casting_init::execute()
@@ -954,7 +954,7 @@ void casting_init::execute()
     initialize_msg(typeconv::promote_arg,
         "promote_args",
         "When arguments are automatically promoted in a function call",
-        get_object(2, "Warning")
+        get_object("Warning")
     );
     typeconv::promote_arg.Deactivate();
 

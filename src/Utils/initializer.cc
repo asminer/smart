@@ -580,6 +580,7 @@ void initializer::needs_resource(const char* res)
 
 void initializer::set_object(const char* res, shared_object* o)
 {
+    if (!res) return;
     unsigned slot = res_list_find(res);
     if (slot < max_resources) {
         if (res_list[slot].set_object(o)) return;
@@ -598,6 +599,7 @@ void initializer::set_object(const char* res, shared_object* o)
 
 shared_object* initializer::get_object(const char* res)
 {
+    if (!res) return nullptr;
     unsigned slot = res_list_find(res);
     if (slot > max_resources) {
         internal_error E(__FILE__, __LINE__);

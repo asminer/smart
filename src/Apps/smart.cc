@@ -69,10 +69,10 @@ class smart_init : public initializer {
 
 // ============================================================
 
-smart_init::smart_init(const char** _env) : initializer(__FILE__, 1, 0)
+smart_init::smart_init(const char** _env) : initializer(__FILE__, 1)
 {
     env = _env;
-    builds_resource(0, "env");
+    builds_resource("env");
 }
 
 const char* smart_init::getVersionString()
@@ -101,7 +101,7 @@ const char* smart_init::getLongName()
 
 void smart_init::execute()
 {
-    set_object(0, new environ(getVersionString(), env), "env");
+    set_object("env", new environ(getVersionString(), env));
 }
 
 // ============================================================

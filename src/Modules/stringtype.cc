@@ -743,10 +743,10 @@ class init_strings : public initializer {
 };
 static init_strings the_string_initializer;
 
-init_strings::init_strings() : initializer(__FILE__, 1, 1)
+init_strings::init_strings() : initializer(__FILE__, 2)
 {
-    builds_resource(0, "string");
-    needs_resource(1, "types");
+    builds_resource("string");
+    needs_resource("types");
 }
 
 void init_strings::execute()

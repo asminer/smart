@@ -987,12 +987,12 @@ class init_exactengines : public initializer {
 };
 static init_exactengines the_exactengine_initializer;
 
-init_exactengines::init_exactengines() : initializer(__FILE__, 1, 3)
+init_exactengines::init_exactengines() : initializer(__FILE__, 4)
 {
-    builds_resource(0, "exact_engines");
-    needs_resource(1, "Debug");
-    needs_resource(2, "Report");
-    needs_resource(3, "engtypes");
+    builds_resource("exact_engines");
+    needs_resource("Debug");
+    needs_resource("Report");
+    needs_resource("engtypes");
 }
 
 void init_exactengines::execute()
@@ -1025,13 +1025,13 @@ void init_exactengines::execute()
     initialize_msg(exact_mcmsr::eng_debug,
         "exact_solver",
         "When set, diagnostic messages are displayed regarding Markov chain exact solution engines.",
-        get_object(1, "Debug")
+        get_object("Debug")
     );
 
     initialize_msg(exact_mcmsr::eng_report,
         "exact_solver",
         "When set, exact solution measure performance is reported.",
-        get_object(2, "Report")
+        get_object("Report")
     );
 
 }

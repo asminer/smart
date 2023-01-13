@@ -2781,12 +2781,12 @@ class init_pnform : public initializer {
 };
 static init_pnform the_pnform_initializer;
 
-init_pnform::init_pnform() : initializer(__FILE__, 1, 3)
+init_pnform::init_pnform() : initializer(__FILE__, 4)
 {
-    builds_resource(0, "pn");
-    needs_resource(1, "Warning");
-    needs_resource(2, "Debug");
-    needs_resource(3, "CML");
+    builds_resource("pn");
+    needs_resource("Warning");
+    needs_resource("Debug");
+    needs_resource("CML");
 }
 
 void init_pnform::execute()
@@ -2849,74 +2849,74 @@ void init_pnform::execute()
     // Warning messages
     //
     shared_object* pn_warnings = initialize_group(
-        get_object(2, "Warning"), 13,
+        get_object("Warning"), 13,
         "pn_ALL", "Group of all Petri net warnings"
     );
 
     initialize_msg(petri_def::zero_init,
         "pn_zero_init",
         "For zero tokens specified in an initial marking in Petri net models",
-        get_object(2, "Warning"), pn_warnings
+        get_object("Warning"), pn_warnings
     );
     initialize_msg(petri_def::zero_bound,
         "pn_zero_bound",
         "For zero tokens specified as an upper bound in Petri net models",
-        get_object(2, "Warning"), pn_warnings
+        get_object("Warning"), pn_warnings
     );
     initialize_msg(petri_def::no_trans,
         "pn_no_trans",
         "For absence of transitions in Petri net models",
-        get_object(2, "Warning"), pn_warnings
+        get_object("Warning"), pn_warnings
     );
     initialize_msg(petri_def::no_place,
         "pn_no_place",
         "For absence of places in Petri net models",
-        get_object(2, "Warning"), pn_warnings
+        get_object("Warning"), pn_warnings
     );
     initialize_msg(petri_def::no_init,
         "pn_no_init",
         "For no specified initial marking in Petri net models",
-        get_object(2, "Warning"), pn_warnings
+        get_object("Warning"), pn_warnings
     );
     initialize_msg(petri_def::no_fire,
         "pn_no_fire",
         "If some, but not all, transitions are given a firing distribution",
-        get_object(2, "Warning"), pn_warnings
+        get_object("Warning"), pn_warnings
     );
     initialize_msg(petri_def::no_weight,
         "pn_no_weight",
         "For immediate transitions with no weight given",
-        get_object(2, "Warning"), pn_warnings
+        get_object("Warning"), pn_warnings
     );
     initialize_msg(petri_def::dup_init,
         "pn_dup_init",
         "For duplicate place token initialization in Petri net models",
-        get_object(2, "Warning"), pn_warnings
+        get_object("Warning"), pn_warnings
     );
     initialize_msg(petri_def::dup_bound,
         "pn_dup_bound",
         "For duplicate place token bounding in Petri net models",
-        get_object(2, "Warning"), pn_warnings
+        get_object("Warning"), pn_warnings
     );
     initialize_msg(petri_def::dup_arc,
         "pn_dup_arc",
         "For duplicate arcs in Petri net models",
-        get_object(2, "Warning"), pn_warnings
+        get_object("Warning"), pn_warnings
     );
     initialize_msg(petri_def::dup_guard,
         "pn_dup_guard",
         "For multiple guards on the same transition in Petri net models",
-        get_object(2, "Warning"), pn_warnings
+        get_object("Warning"), pn_warnings
     );
     initialize_msg(petri_def::dup_fire,
         "pn_dup_fire",
         "For multiple firing assignments on the same transition in Petri net models",
-        get_object(2, "Warning"), pn_warnings
+        get_object("Warning"), pn_warnings
     );
     initialize_msg(petri_def::dup_weight,
         "pn_dup_weight",
         "For multiple weight assignments on the same transition in Petri net models",
-        get_object(2, "Warning"), pn_warnings
+        get_object("Warning"), pn_warnings
     );
 
     //
@@ -2925,7 +2925,7 @@ void init_pnform::execute()
     initialize_msg(petri_def::pn_debug,
         "pns",
         "When set, diagnostic messages are displayed regarding Petri net model construction.",
-        get_object(3, "Debug")
+        get_object("Debug")
     );
 
     //
