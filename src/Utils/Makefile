@@ -16,7 +16,7 @@ test_out: test_out.o outstream.o
 test_init: test_init.o initializer.o messages.o outstream.o location.o sigman.o strings.o
 	g++ $^ -o $@
 
-test_splay: test_splay.o splay.o strings.o
+test_splay: test_splay.o splay.o ordarray.o strings.o
 	g++ $^ -o $@
 
 %.o: %.cc
@@ -35,3 +35,4 @@ sigman.o: sigman.h
 strings.o: strings.h ../include/shared.h
 
 splay.o: splay.h
+ordarray.o: ordarray.h

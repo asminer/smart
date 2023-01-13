@@ -16,18 +16,18 @@ class myinit : public initializer {
 };
 
 myinit::myinit(const char* name, const char* b, const char* n1, const char* n2)
-    : initializer(name, 1, 2)
+    : initializer(name, 3)
 {
     if (b) {
-        builds_resource(0, b);
+        builds_resource(b);
     }
 
     if (n1) {
-        needs_resource(1, n1);
+        needs_resource(n1);
     }
 
     if (n2) {
-        needs_resource(2, n2);
+        needs_resource(n2);
     }
 }
 
@@ -46,13 +46,13 @@ class nowinit : public initializer {
 };
 
 nowinit::nowinit(const char* name, const char* b, const char* n)
-    : initializer(name, 1, 1)
+    : initializer(name, 2)
 {
     if (b) {
-        builds_resource(0, b);
+        builds_resource(b);
     }
     if (n) {
-        needs_resource(1, n);
+        needs_resource(n);
     }
 
     std::cout << "Try to run " << name << " right away...\n";

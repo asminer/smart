@@ -3,8 +3,6 @@
 
 #include "../include/shared.h"
 
-class orderedShared;
-
 /**
     Splay tree or list of shared objects.
     Not for super large collections (whatever fits in unsigned,

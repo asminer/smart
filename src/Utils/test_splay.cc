@@ -5,6 +5,7 @@
 
 #include <iostream>
 #include "splay.h"
+#include "ordarray.h"
 #include "strings.h"
 
 
@@ -41,15 +42,11 @@ int main()
     cout << "Copying to array of strings\n";
     cout.flush();
 
-    unsigned length = dict.numElements();
-    shared_string** sorted = new shared_string* [length];
-
-    copy_traversal <shared_string> copy(sorted, length);
-    dict.traverse(copy);
+    orderedArray <shared_string> A(dict);
 
     cout << "Sorted list of words:\n";
-    for (unsigned i=0; i<length; i++) {
-        cout << "\t" << *sorted[i] << "\n";
+    for (unsigned i=0; i<A.numElements(); i++) {
+        cout << "\t" << *A.get(i) << "\n";
     }
 
     cout << "Done\n";
