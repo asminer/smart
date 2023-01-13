@@ -720,6 +720,8 @@ int noop_addproc::getDistance(const type* src, const type* dest) const
   if (!dest->hasProc()) return -1;
   if (dest->getModifier() != RAND) return -1;
   if (src->getBaseType() != dest->getBaseType()) return -1;
+  // Original type must be rand x or proc x
+  if ((src->getModifier() != RAND) && (!src->hasProc())) return -1;
 
   int d = 0;
   if (!src->hasProc())  d = MAKE_PROC;

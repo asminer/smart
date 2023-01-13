@@ -247,7 +247,7 @@ public:
   int2bigint();
   virtual int getDistance(const type* src) const {
     DCASSERT(src);
-    if (type::matches(src, "int")) return -1;
+    if (!type::matches(src, "int")) return -1;
     return RANGE_EXPAND;
   }
   virtual const type* promotesTo(const type* src) const;
@@ -277,7 +277,6 @@ int2bigint::int2bigint() : specific_conv(false)
 
 const type* int2bigint::promotesTo(const type* src) const
 {
-  DCASSERT(src);
   DCASSERT(type::matches(src, "int"));
   return type::find("bigint");
 }
