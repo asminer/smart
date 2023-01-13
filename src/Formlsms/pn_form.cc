@@ -2815,10 +2815,12 @@ void init_pnform::execute()
     simple_type* t_place  = type::registerNew(new void_type("place", "Petri net place", "Place of a Petri net, can hold a non-negative number of tokens."));
     t_place->setPrintable();
     type::allowSetsOf(t_place);
+    petri_def::place_type = t_place;
 
     simple_type* t_trans  = type::registerNew(new void_type("trans", "Petri net transition", "Transition of a Petri net, can move tokens."));
     t_trans->setPrintable();
     type::allowSetsOf(t_trans);
+    petri_def::trans_type = t_trans;
 
     //
     // PN functions

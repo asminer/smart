@@ -278,6 +278,30 @@ std::ostream& formatted_string::show(std::ostream &s) const
 
 // ******************************************************************
 // *                                                                *
+// *                        basename methods                        *
+// *                                                                *
+// ******************************************************************
+
+basename::basename(const char* p)
+{
+    path = p;
+}
+
+std::ostream& basename::show(std::ostream &s) const
+{
+    if (!path) return s;
+    // Advance to just after the last /
+    const char* base = path;
+    for (const char* p = path; *p; p++) {
+        if ('/' == *p) {
+            base = p+1;
+        }
+    }
+    return s << base;
+}
+
+// ******************************************************************
+// *                                                                *
 // *                        padding  methods                        *
 // *                                                                *
 // ******************************************************************

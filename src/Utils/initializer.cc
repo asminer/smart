@@ -493,7 +493,7 @@ void initializer::run_or_wait()
     }
     state = running;
     if (debug) {
-        std::cerr << "Running initializer " << name << "\n";
+        std::cerr << "Running initializer " << basename(name) << "\n";
     }
     execute();
     // Notify resources we build
@@ -506,7 +506,8 @@ void initializer::run_or_wait()
 void initializer::notify(resource *r)
 {
     if (debug) {
-        std::cerr << "    notifying " << name << "; status: " << stateName() << "\n";
+        std::cerr   << "    notifying " << basename(name) << "; status: "
+                    << stateName() << "\n";
     }
     DCASSERT(running != state);
     DCASSERT(complete != state);
@@ -525,7 +526,7 @@ void initializer::notify(resource *r)
 
 void initializer::show(error_msg &E) const
 {
-    E << "Initializer '" << name << "'; status: " << stateName();
+    E << "Initializer '" << basename(name) << "'; status: " << stateName();
     E.newLine('+');
     for (unsigned i=0; i<max_resources; i++) {
         if (!res_list[i]) continue;

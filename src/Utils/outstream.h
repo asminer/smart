@@ -198,6 +198,16 @@ class element_writer {
 };
 
 /*
+ * Strips directories in a pathname
+ */
+class basename {
+        const char* path;
+    public:
+        basename(const char* p);
+        std::ostream& show(std::ostream &s) const;
+};
+
+/*
  * Padding
  */
 class padding {
@@ -247,6 +257,11 @@ template <class DATA>
 inline std::ostream& operator<< (std::ostream &s, element_writer <DATA> m)
 {
     return m.show(s);
+}
+
+inline std::ostream& operator<< (std::ostream &s, basename b)
+{
+    return b.show(s);
 }
 
 inline std::ostream& operator<< (std::ostream &s, padding p)

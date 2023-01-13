@@ -480,8 +480,8 @@ init_stochmsrs::init_stochmsrs() : initializer(__FILE__, 2, 2)
 {
   builds_resource(0, "CML");
   builds_resource(1, "engtypes");
-  needs_resource(2, "statevects");
-  needs_resource(3, "biginttype");
+  needs_resource(2, "statevect");
+  needs_resource(3, "bigint");
 }
 
 void init_stochmsrs::execute()
