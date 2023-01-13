@@ -104,7 +104,7 @@ message_initializer::message_initializer(switchable_msg &m,
 void message_initializer::execute()
 {
     shared_object* obj = initialize_msg(
-        msg, nullptr, doc, get_object(msg.getName()), get_object(group)
+        msg, nullptr, doc, get_object(msg.optName()), get_object(group)
     );
     DCASSERT(obj);
     set_object(msg.getName(), obj);
