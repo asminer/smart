@@ -33,6 +33,7 @@ class initializer {
         struct node;
         class resource;
         friend class resource;
+        class res_info;
     private:
         /// States of an initializer.
         enum status {
@@ -48,12 +49,13 @@ class initializer {
         /// Our state
         status state;
 
-        /// Array of resources; built first.
-        resource** res_list;
-        /// Number of built resources (max).
-        unsigned max_built;
-        /// Total number of resources (max).
+        /// Resource info (built/needed)
+        res_info* res_list;
+        /// Max size of resource list
         unsigned max_resources;
+        /// Current size of resource list
+        unsigned used_resources;
+
         /// Number of resources we're waiting on.
         unsigned wait_count;
 
@@ -70,12 +72,11 @@ class initializer {
         /**
             Build an initializer.
                 @param  _name       The initializer name (for debugging).
-                @param  max_bld     Max (typically, exact) number of
-                                    resources this initializer builds.
-                @param  max_nds     Max (typically, exact) number of
-                                    resources this initializer needs.
+                                    Normally the source file name.
+                @param  max_res     Max (typically, exact) number of
+                                    resources this initializer needs or builds.
         */
-        initializer(const char* _name, unsigned max_bld, unsigned max_nds);
+        initializer(const char* _name, unsigned max_res);
 
         /**
             Execute all initializers.
@@ -112,41 +113,31 @@ class initializer {
         /**
             Indicate that this initializer
             is a builder for the named resource.
-                @param  slot    The build slot; must be in the range
-                                [0, max_build)
                 @param  name    Resource name.  Ignored if null.
         */
-        void builds_resource(unsigned slot, const char* name);
+        void builds_resource(const char* name);
 
         /**
             Indicate that this initializer
             requires the named resource to be initialized,
             before it can execute.
-                @param  slot    The needed resource slot; must be in
-                                the range [max_build, max_build + max_needs)
                 @param  name    Resource name.  Ignored if null.
         */
-        void needs_resource(unsigned slot, const char* name);
+        void needs_resource(const char* name);
 
         /**
             Set an object for a resource (that we build).
-                @param  slot    The build slot; must be in the range
-                                [0, max_build).
+                @param  name    Name of the resource.
                 @param  o       Object to set for the resource.
-                @param  name    If given, we will sanity check the
-                                name against the one in the slot.
         */
-        void set_object(unsigned slot, shared_object* o, const char* name=nullptr);
+        void set_object(const char* name, shared_object* o);
 
         /**
             Get an object for a resource.
-                @param  slot    The resource slot; must be in the range
-                                [0, max_build + max_needs)
-                @param  name    If given, we will sanity check the
-                                name against the one in the slot.
+                @param  name    Name of the resource.
                 @return         Object associated with the resource.
         */
-        shared_object* get_object(unsigned slot, const char* name=nullptr);
+        shared_object* get_object(const char* name);
 
 
         /**
@@ -161,6 +152,12 @@ class initializer {
         void try_immediately();
 
     private:
+        /**
+            Find a resource we build/use, by name.
+            If not present, returns max_resources+1.
+        */
+        unsigned res_list_find(const char* n) const;
+
         /**
             If the initializer is ready to run,
             then run it; otherwise make it wait.
