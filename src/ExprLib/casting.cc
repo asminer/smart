@@ -288,6 +288,7 @@ const general_conv* typeconv::findGeneral(const type* oldt, const type* newt)
 {
     DCASSERT(oldt);
     DCASSERT(newt);
+    DCASSERT(oldt != newt);
     const general_conv* match = nullptr;
     int best = -1;
     unsigned count = 0;
@@ -342,7 +343,7 @@ void typeconv::findPair(const specific_conv* &list, const general_conv* &gc,
         DCASSERT(midt);
         int gd = 0;
         const general_conv* thisgc = nullptr;
-        if (midt != oldt) {
+        if (midt != newt) {
             thisgc = findGeneral(midt, newt);
             if (!thisgc) continue;
             gd = thisgc->getDistance(midt, newt);
