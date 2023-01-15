@@ -635,8 +635,15 @@ simple_type::~simple_type()
 
 void simple_type::printDocs(doc_formatter &df) const
 {
+#ifndef DEVELOPMENT_CODE
+    if (!longDocs()) return;
+#endif
     df.begin_indent();
-    df.Out() << longDocs();
+    if (longDocs()) {
+        df.Out() << longDocs();
+    } else {
+        df.Out() << "undocumented";
+    }
     df.end_indent();
 }
 
