@@ -46,27 +46,6 @@ void helpTopicTraversal::visit(shared_object* item)
         df.Out() << "\n";
         ht->PrintDocs(df, keyword);
     }
-
-    /* OLD
-
-
-    if (!item) return;
-    const symbol* sitem = dynamic_cast <symbol*> (item);
-    if (0==sitem) return;
-
-    if (!df.Matches(sitem->Name(), keyword)) return;
-    //
-    // Matching keyword.
-    // Now, traverse the list of symbols with the same name,
-    // and print documentation, but only for help topics
-    //
-    for (; sitem; sitem=sitem->Next()) {
-        const help_topic* ht = dynamic_cast <const help_topic*> (sitem);
-        if (!ht) continue;
-        df.Out() << "\n";
-        ht->PrintDocs(df, keyword);
-    } // for sitem
-    */
 }
 
 // ******************************************************************
@@ -99,7 +78,7 @@ public:
     const symbol* item;
     ftnode* within_models;
 
-    help_object() { item = 0; within_models = 0; }
+    help_object(const symbol* s) { item = s; within_models = 0; }
     virtual ~help_object() {
         while (within_models) {
             ftnode* foo = within_models;
@@ -122,25 +101,21 @@ public:
         return item->Compare(x);
     }
 
-  inline void AddFormalism(const formalism* ft) {
-    if (ft) within_models = new ftnode(ft, within_models);
-  }
-
-  void DocumentObject(doc_formatter &df, const char* keyword) const {
-    df.Out() << "\n";
-    if (0==within_models) {
-      item->PrintDocs(df, keyword);
-      return;
+    inline void AddFormalism(const formalism* ft) {
+        if (ft) within_models = new ftnode(ft, within_models);
     }
-    const function* fitem = smart_cast <const function*> (item);
-    DCASSERT(fitem);
-    if (!fitem->DocumentHeader(df))  return;
-    df.begin_indent();
-    df.Out() << "Allowed in models of type ";
-    within_models->Print(df.Out(), false);
-    df.Out() << "; cannot be called outside of a model. ";
-    fitem->DocumentBehavior(df);
-    df.end_indent();
+
+    void DocumentObject(doc_formatter &df, const char* keyword) const {
+        df.Out() << "\n";
+        if (!item->DocumentHeader(df))  return;
+        df.begin_indent();
+        if (within_models) {
+            df.Out() << "Allowed in models of type ";
+            within_models->Print(df.Out(), false);
+            df.Out() << "; cannot be called outside of a model. ";
+        }
+        item->DocumentBehavior(df);
+        df.end_indent();
   }
 };
 
@@ -186,8 +161,8 @@ void copy_matching::visit(shared_object* item)
     for (; sitem; sitem=sitem->Next()) {
         const help_topic* ht = dynamic_cast <const help_topic*> (sitem);
         if (ht) continue;
-        if (!hentry) hentry = new help_object;
-        hentry->item = sitem;
+        if (!hentry) hentry = new help_object(sitem);
+        else         hentry->item = sitem;
         help_object* tree_entry =
             dynamic_cast <help_object*> (doctree.insert(hentry));
         if (tree_entry == hentry) {

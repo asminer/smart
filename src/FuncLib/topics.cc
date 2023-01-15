@@ -26,7 +26,7 @@ class topic_topics : public help_topic {
     const symbol_table &st;
 public:
     topic_topics(const symbol_table &s);
-    virtual void PrintDocs(doc_formatter &df, const char*) const;
+    virtual void DocumentBehavior(doc_formatter &df) const;
 
     class visitor : public shared_visitor {
             doc_formatter &df;
@@ -77,17 +77,12 @@ topic_topics::topic_topics(const symbol_table &s)
 {
 }
 
-void topic_topics::PrintDocs(doc_formatter &df, const char*) const
+void topic_topics::DocumentBehavior(doc_formatter &df) const
 {
-  df.begin_heading();
-  PrintHeader(df.Out());
-  df.end_heading();
-
   visitor V(df);
   // First pass: determine longest topic name
   st.traverse(V);
 
-  df.begin_indent();
   df.Out() << "The following help topics are available:\n\n";
   df.begin_description(V.getMaxName());
 
@@ -96,7 +91,6 @@ void topic_topics::PrintDocs(doc_formatter &df, const char*) const
   st.traverse(V);
 
   df.end_description();
-  df.end_indent();
 }
 
 // ******************************************************************
@@ -107,15 +101,11 @@ class topic_types : public help_topic {
 public:
   topic_types()
    : help_topic("types", "Shows the available types for declared objects") { }
-  virtual void PrintDocs(doc_formatter &df, const char*) const;
+  virtual void DocumentBehavior(doc_formatter &df) const;
 };
 
-void topic_types::PrintDocs(doc_formatter &df, const char*) const
+void topic_types::DocumentBehavior(doc_formatter &df) const
 {
-  df.begin_heading();
-  PrintHeader(df.Out());
-  df.end_heading();
-  df.begin_indent();
   df.Out() << "The Smart language is strictly typed; all objects have a specified type. Basic types can be further modified by *natures*, which specify if the object is deterministic or random. Furthermore, objects may be allowed to depend on the state of a stochastic process, which are again modified by the keyword *proc*. Types are also used for formalisms, formalism variables, and sets of objects.\n\n";
   df.Out() << "Simple types:\n";
   df.begin_indent();
@@ -172,7 +162,6 @@ void topic_types::PrintDocs(doc_formatter &df, const char*) const
   }
   df.end_indent();
   df.Out() << "\nSee the help topics \"promotions\" and \"casting\" for details about how Smart changes types, and how you can force a type change.\n";
-  df.end_indent();
 }
 
 // ******************************************************************
@@ -209,16 +198,11 @@ class topic_promotions : public help_topic {
 public:
   topic_promotions()
    : help_topic("promotions", "Which types can be promoted to which other types") { }
-  virtual void PrintDocs(doc_formatter &df, const char*) const;
+  virtual void DocumentBehavior(doc_formatter &df) const;
 };
 
-void topic_promotions::PrintDocs(doc_formatter &df, const char*) const
+void topic_promotions::DocumentBehavior(doc_formatter &df) const
 {
-  df.begin_heading();
-  PrintHeader(df.Out());
-  df.end_heading();
-  df.begin_indent();
-
   df.Out() << "If necessary, Smart will attempt to promote expressions to other types.  Each promotion has an associated \"distance\", and Smart will normally choose the promotion with least distance (or give an error if it is unable to decide).  A type promotion can be forced using an explicit cast, see the help topic on \"casting\" for details.  Smart uses the following promotions:\n";
 
   one_promotion* parray = new one_promotion [type::numRegistered()];
@@ -255,8 +239,6 @@ void topic_promotions::PrintDocs(doc_formatter &df, const char*) const
     df.end_indent();
   } // for i
 
-  df.end_indent();
-
   delete[] parray;
 }
 
@@ -269,16 +251,11 @@ class topic_casting : public help_topic {
 public:
   topic_casting()
    : help_topic("casting", "Which types can be converted to which other types") { }
-  virtual void PrintDocs(doc_formatter &df, const char*) const;
+  virtual void DocumentBehavior(doc_formatter &df) const;
 };
 
-void topic_casting::PrintDocs(doc_formatter &df, const char*) const
+void topic_casting::DocumentBehavior(doc_formatter &df) const
 {
-  df.begin_heading();
-  PrintHeader(df.Out());
-  df.end_heading();
-  df.begin_indent();
-
   df.Out() << "An expression can be cast to a different using new_type(expr). This can be done to force promotion of an expression, or to change its type. For example:\n\n";
   df.begin_indent();
   df.Out() << "rand real x := ...;\nrand int i := rand int(x);\n\n";
@@ -301,7 +278,6 @@ void topic_casting::PrintDocs(doc_formatter &df, const char*) const
     } // for j
   } // for i
   df.end_indent();
-  df.end_indent();
 }
 
 
@@ -313,16 +289,11 @@ class topic_operators : public help_topic {
 public:
   topic_operators()
    : help_topic("operators", "Information about operators") { }
-  virtual void PrintDocs(doc_formatter &df, const char*) const;
+  virtual void DocumentBehavior(doc_formatter &df) const;
 };
 
-void topic_operators::PrintDocs(doc_formatter &df, const char*) const
+void topic_operators::DocumentBehavior(doc_formatter &df) const
 {
-  df.begin_heading();
-  PrintHeader(df.Out());
-  df.end_heading();
-  df.begin_indent();
-
   df.Out() << "The following unary operators may be used when constructing expressions in Smart:\n\n";
 
   df.begin_description(2);
@@ -384,8 +355,6 @@ void topic_operators::PrintDocs(doc_formatter &df, const char*) const
   df.Out() << "{ void1; void2; void3; }";
   df.end_indent();
   df.Out() << "produces a new void expression as the sequence of expressions void1, void2, and void3.\n";
-
-  df.end_indent();
 }
 
 // ******************************************************************
@@ -396,16 +365,11 @@ class topic_options : public help_topic {
 public:
   topic_options()
    : help_topic("options", "How to use options") { }
-  virtual void PrintDocs(doc_formatter &df, const char*) const;
+  virtual void DocumentBehavior(doc_formatter &df) const;
 };
 
-void topic_options::PrintDocs(doc_formatter &df, const char*) const
+void topic_options::DocumentBehavior(doc_formatter &df) const
 {
-  df.begin_heading();
-  PrintHeader(df.Out());
-  df.end_heading();
-  df.begin_indent();
-
   df.Out() << "An option statement is used to modify the behavior of Smart.  For example, there are options to control the solution algorithms (such as the precision or maximum number of iterations allowed) or the level of verbosity.  Option statements appear on lines beginning with \"#\" (except for the \"# include\" directive, which is handled by the preprocessor).  Different options have different types, and different sets of legal values.  Furthermore, some options are nested within other options.  The syntax of an option statement depends on the option type.  Generally, extra space in an option statement is fine, but newline characters are significant.  Basic options may be set using a statement of the form ";
   df.begin_indent();
   df.Out() << "# IntegerOption 42";
@@ -424,8 +388,6 @@ void topic_options::PrintDocs(doc_formatter &df, const char*) const
   df.end_indent();
   df.Out() << "The online help can be used to display details about available options.   The following top-level options are available (shown with their current settings):\n\n";
   option_manager::global().ListOptions(df);
-
-  df.end_indent();
 }
 
 // ******************************************************************
@@ -436,7 +398,7 @@ class topic_unaryop : public help_topic {
   unary_op::opcode op;
 public:
   topic_unaryop(unary_op::opcode u);
-  virtual void PrintDocs(doc_formatter &df, const char*) const;
+  virtual void DocumentBehavior(doc_formatter &df) const;
 };
 
 topic_unaryop::topic_unaryop(unary_op::opcode u)
@@ -450,13 +412,8 @@ topic_unaryop::topic_unaryop(unary_op::opcode u)
 }
 
 
-void topic_unaryop::PrintDocs(doc_formatter &df, const char*) const
+void topic_unaryop::DocumentBehavior(doc_formatter &df) const
 {
-  df.begin_heading();
-  PrintHeader(df.Out());
-  df.end_heading();
-  df.begin_indent();
-
   df.Out() << "Operator " << unary_op::getOp(op) << " is used for ";
   df.Out() << unary_op::documentOp(op);
   df.Out() << ".  It may be used on the following types of expressions:\n";
@@ -474,7 +431,6 @@ void topic_unaryop::PrintDocs(doc_formatter &df, const char*) const
     foo.str("");
   }
   df.end_description();
-  df.end_indent();
 }
 
 // ******************************************************************
@@ -485,7 +441,7 @@ class topic_binaryop : public help_topic {
   binary_op::opcode op;
 public:
   topic_binaryop(binary_op::opcode b);
-  virtual void PrintDocs(doc_formatter &df, const char*) const;
+  virtual void DocumentBehavior(doc_formatter &df) const;
 };
 
 topic_binaryop::topic_binaryop(binary_op::opcode b)
@@ -498,13 +454,8 @@ topic_binaryop::topic_binaryop(binary_op::opcode b)
   setSummary(binary_op::documentOp(op));
 }
 
-void topic_binaryop::PrintDocs(doc_formatter &df, const char*) const
+void topic_binaryop::DocumentBehavior(doc_formatter &df) const
 {
-  df.begin_heading();
-  PrintHeader(df.Out());
-  df.end_heading();
-  df.begin_indent();
-
   df.Out() << "Operator " << binary_op::getOp(op) << " is used for ";
   df.Out() << binary_op::documentOp(op);
   df.Out() << ".  It may be used on the following types of expressions:\n";
@@ -527,7 +478,6 @@ void topic_binaryop::PrintDocs(doc_formatter &df, const char*) const
     }
   }
   df.end_description();
-  df.end_indent();
 }
 
 // ******************************************************************
@@ -538,7 +488,7 @@ class topic_trinaryop : public help_topic {
   trinary_op::opcode op;
 public:
   topic_trinaryop(trinary_op::opcode b);
-  virtual void PrintDocs(doc_formatter &df, const char*) const;
+  virtual void DocumentBehavior(doc_formatter &df) const;
 };
 
 topic_trinaryop::topic_trinaryop(trinary_op::opcode b)
@@ -551,13 +501,8 @@ topic_trinaryop::topic_trinaryop(trinary_op::opcode b)
   setSummary(trinary_op::documentOp(op));
 }
 
-void topic_trinaryop::PrintDocs(doc_formatter &df, const char*) const
+void topic_trinaryop::DocumentBehavior(doc_formatter &df) const
 {
-  df.begin_heading();
-  PrintHeader(df.Out());
-  df.end_heading();
-  df.begin_indent();
-
   df.Out() << "Operator " << trinary_op::getFirst(op) << " ";
   df.Out() << trinary_op::getSecond(op) << " is used for ";
   df.Out() << trinary_op::documentOp(op);
@@ -586,7 +531,6 @@ void topic_trinaryop::PrintDocs(doc_formatter &df, const char*) const
     } // for j
   } // for i
   df.end_description();
-  df.end_indent();
 }
 
 // ******************************************************************
@@ -598,7 +542,7 @@ class topic_assocop : public help_topic {
   assoc_op::opcode op;
 public:
   topic_assocop(bool f, assoc_op::opcode b);
-  virtual void PrintDocs(doc_formatter &df, const char*) const;
+  virtual void DocumentBehavior(doc_formatter &df) const;
 };
 
 topic_assocop::topic_assocop(bool f, assoc_op::opcode b)
@@ -612,13 +556,8 @@ topic_assocop::topic_assocop(bool f, assoc_op::opcode b)
   setSummary(assoc_op::documentOp(flipped, op));
 }
 
-void topic_assocop::PrintDocs(doc_formatter &df, const char*) const
+void topic_assocop::DocumentBehavior(doc_formatter &df) const
 {
-  df.begin_heading();
-  PrintHeader(df.Out());
-  df.end_heading();
-  df.begin_indent();
-
   df.Out() << "Operator " << assoc_op::getOp(flipped, op) << " is used for ";
   df.Out() << assoc_op::documentOp(flipped, op);
   df.Out() << ".  It may be used on the following types of expressions:\n";
@@ -641,7 +580,6 @@ void topic_assocop::PrintDocs(doc_formatter &df, const char*) const
     }
   }
   df.end_description();
-  df.end_indent();
 }
 
 // ******************************************************************
@@ -652,15 +590,11 @@ class topic_models : public help_topic {
 public:
   topic_models()
    : help_topic("models", "Overview of models") { }
-  virtual void PrintDocs(doc_formatter &df, const char*) const;
+  virtual void DocumentBehavior(doc_formatter &df) const;
 };
 
-void topic_models::PrintDocs(doc_formatter &df, const char*) const
+void topic_models::DocumentBehavior(doc_formatter &df) const
 {
-  df.begin_heading();
-  PrintHeader(df.Out());
-  df.end_heading();
-  df.begin_indent();
   df.Out() << "A model is declared with a header that is similar to a function declaration, of the form\n\n";
   df.begin_indent();
   df.Out() << "formalism identifier(params) := { ... }\n\n";
@@ -689,7 +623,6 @@ void topic_models::PrintDocs(doc_formatter &df, const char*) const
   df.Out() << "m.any_measure_defined_in_model_identifier;\n\n";
   df.end_indent();
   df.Out() << "It is possible to declare arrays of type \"model\".\n";
-  df.end_indent();
 }
 
 

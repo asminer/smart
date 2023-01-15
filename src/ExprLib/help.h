@@ -24,7 +24,7 @@ class help_topic : public symbol {
             summary = sum;
         }
     public:
-        void PrintHeader(std::ostream &s) const;
+        virtual bool DocumentHeader(doc_formatter &df) const;
         inline const char* Summary() const { return summary; }
 };
 

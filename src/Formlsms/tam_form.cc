@@ -17,22 +17,28 @@
 // **************************************************************************
 
 class tam_border : public symbol {
-  long which;
+    long which;
 public:
-  tam_border(const type* t, char* n, long v);
-  virtual void Compute(traverse_data &x);
+    tam_border(const type* t, char* n, long v);
+    virtual void Compute(traverse_data &x);
+    virtual void DocumentBehavior(doc_formatter &df) const;
 };
 
 tam_border::tam_border(const type* t, char* n, long v)
- : symbol(location::NOWHERE(), t, n)
+ : symbol(location::INTERNALLY(), t, n)
 {
-  which = v;
+    which = v;
 }
 
 void tam_border::Compute(traverse_data &x)
 {
-  DCASSERT(x.answer);
-  x.answer->setInt(which);
+    DCASSERT(x.answer);
+    x.answer->setInt(which);
+}
+
+void tam_border::DocumentBehavior(doc_formatter &df) const
+{
+    df.Out() << "Specifies the " << Name() << " border of a tile.";
 }
 
 // **************************************************************************
@@ -1450,12 +1456,12 @@ void init_tamform::execute()
     type::allowSetsOf(t_tile);
     tam_def::tile_type = t_tile;
 
-    simple_type* t_glue = type::registerNew(new void_type("glue", "Glue", "Glue type in a tile assembly model."));
+    simple_type* t_glue = type::registerNew(new void_type("glue", "Glue for a tile", "Glue type in a tile assembly model."));
     t_glue->setPrintable();
     type::allowSetsOf(t_glue);
     tam_def::glue_type = t_glue;
 
-    simple_type* t_border = type::registerNew(new void_type("border", "Border", "Border type in a tile assembly model."));
+    simple_type* t_border = type::registerNew(new void_type("border", "Border of a tile", "Border type in a tile assembly model."));
     t_border->setPrintable();
     tam_def::border_type = t_border;
 

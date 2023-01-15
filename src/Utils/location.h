@@ -28,7 +28,7 @@ class location {
         location(const location& L);
 
         inline void operator=(const location& L) {
-            reset(L.filename, L.linenumber);
+            reset(L.ltype, L.filename, L.linenumber);
         }
 
         /// Checks if the location is different from nowhere.
@@ -78,7 +78,7 @@ class location {
         static const location& INTERNALLY();
 
     private:
-        void reset(shared_string* fn, unsigned ln);
+        void reset(char lt, shared_string* fn, unsigned ln);
 };
 
 

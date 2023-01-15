@@ -176,15 +176,6 @@ public:
   */
   virtual void PrintHeader(std::ostream &s, bool hide) const = 0;
 
-  /** Document the header only.
-  */
-  virtual bool DocumentHeader(doc_formatter &df) const;
-
-  /** Document the behavior only.
-  */
-  virtual void DocumentBehavior(doc_formatter &df) const;
-
-  virtual void PrintDocs(doc_formatter &df, const char* keyword) const;
 
   /** Does this header match the passed one?
       Used to detect duplicate or conflicting user-defined functions.

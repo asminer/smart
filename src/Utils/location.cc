@@ -20,17 +20,17 @@ location::location(const location& L)
 {
     filename = Share(L.filename);
     linenumber = L.linenumber;
-    ltype = 'f';
+    ltype = L.ltype;
 }
 
-void location::reset(shared_string* fn, unsigned ln)
+void location::reset(char lt, shared_string* fn, unsigned ln)
 {
     if (filename != fn) {
       Delete(filename);
       filename = Share(fn);
     }
     linenumber = ln;
-    ltype = 'f';
+    ltype = lt;
 }
 
 location::~location()

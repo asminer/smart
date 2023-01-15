@@ -241,26 +241,6 @@ int function::Traverse(traverse_data &x, expr** pass, int np)
   }
 }
 
-bool function::DocumentHeader(doc_formatter &df) const
-{
-  // provided in derived classes
-  DCASSERT(0);
-  return false;
-}
-
-void function::DocumentBehavior(doc_formatter &df) const
-{
-  DCASSERT(0);
-}
-
-void function::PrintDocs(doc_formatter &df, const char*) const
-{
-  if (!DocumentHeader(df))  return;
-  df.begin_indent();
-  DocumentBehavior(df);
-  df.end_indent();
-}
-
 bool function::HeadersMatch(const type* t, symbol** pl, int np) const
 {
   return false;

@@ -38,9 +38,12 @@ void help_topic::setName(const std::string &n)
 }
 
 
-void help_topic::PrintHeader(std::ostream &s) const
+bool help_topic::DocumentHeader(doc_formatter &df) const
 {
-    s << "Help topic: " << Name();
+    df.begin_heading();
+    df.Out() << "Help topic: " << Name();
+    df.end_heading();
+    return true;
 }
 
 // ******************************************************************
@@ -62,9 +65,7 @@ help_group::~help_group()
 
 void help_group::PrintDocs(doc_formatter &df, const char* keyword) const
 {
-    df.begin_heading();
-    PrintHeader(df.Out());
-    df.end_heading();
+    if (!DocumentHeader(df)) return;
     df.begin_indent();
     df.Out() << docs << "\n";
     if (funcs.Length()) {

@@ -62,7 +62,21 @@ class symbol : public expr {
 
         virtual void Traverse(traverse_data &x);
 
-        /// Display documentation for this symbol.
+        /** Document the header only.
+            Returns true iff something was printed; allows us to
+            decide not to document something.
+        */
+        virtual bool DocumentHeader(doc_formatter &df) const;
+
+        /** Document the behavior only.
+            Default is to show where the symbol was defined.
+        */
+        virtual void DocumentBehavior(doc_formatter &df) const;
+
+        /** Display documentation for this symbol.
+            Default is to document the header, then document
+            the behavior if that returned true.
+        */
         virtual void PrintDocs(doc_formatter &df, const char* keyword) const;
 
         /// Add a symbol to our waiting list.

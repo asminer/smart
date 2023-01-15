@@ -36,9 +36,7 @@ topic_simpletype::topic_simpletype(const simple_type* t)
 
 void topic_simpletype::PrintDocs(doc_formatter &df, const char*) const
 {
-    df.begin_heading();
-    PrintHeader(df.Out());
-    df.end_heading();
+    if (!DocumentHeader(df)) return;
     st->printDocs(df);
 }
 

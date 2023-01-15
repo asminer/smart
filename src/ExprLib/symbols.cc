@@ -179,16 +179,27 @@ void symbol::Traverse(traverse_data &x)
     }
 }
 
-void symbol::PrintDocs(doc_formatter &df, const char* keyword) const
+bool symbol::DocumentHeader(doc_formatter &df) const
 {
-    if (!name)  return;
+    if (!name)  return false;
     df.begin_heading();
     PrintType(df.Out());
-    df.Out() << " " << name->getStr();
+    df.Out() << " " << *name;
     df.end_heading();
-    df.begin_indent();
+    return true;
+}
+
+void symbol::DocumentBehavior(doc_formatter &df) const
+{
     df.Out() << "Defined " << Where();
-    df.end_indent();
+}
+
+void symbol::PrintDocs(doc_formatter &df, const char*) const
+{
+  if (!DocumentHeader(df))  return;
+  df.begin_indent();
+  DocumentBehavior(df);
+  df.end_indent();
 }
 
 void symbol::addToWaitList(symbol* w)
