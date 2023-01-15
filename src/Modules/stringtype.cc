@@ -524,13 +524,13 @@ assoc* string_add_op::makeExpr(const location &W, expr** list,
 
 // ******************************************************************
 // *                                                                *
-// *                     string_binary_op class                     *
+// *                    string_compare_op  class                    *
 // *                                                                *
 // ******************************************************************
 
-class string_binary_op : public binary_op {
+class string_compare_op : public binary_op {
 public:
-  string_binary_op(binary_op::opcode op);
+  string_compare_op(binary_op::opcode op);
   virtual int getPromoteDistance(const type* lt, const type* rt) const;
   virtual const type* getExprType(const type* l, const type* r) const;
   virtual binary* makeExpr(const location &W, expr* l, expr* r) const;
@@ -539,24 +539,25 @@ protected:
 };
 
 // ******************************************************************
-// *                    string_binary_op methods                    *
+// *                   string_compare_op  methods                   *
 // ******************************************************************
 
-string_binary_op::string_binary_op(binary_op::opcode op) : binary_op(op)
+string_compare_op::string_compare_op(binary_op::opcode op) : binary_op(op)
 {
 }
 
-int string_binary_op::getPromoteDistance(const type* lt, const type* rt) const
+int string_compare_op::getPromoteDistance(const type* lt, const type* rt) const
 {
   return StringAlignDistance(lt, rt);
 }
 
-const type* string_binary_op::getExprType(const type* l, const type* r) const
+const type* string_compare_op::getExprType(const type* l, const type* r) const
 {
-  return StringResultType(l, r);
+//  return StringResultType(l, r);
+    return type::find("bool");
 }
 
-binary* string_binary_op
+binary* string_compare_op
 ::makeExpr(const location &W, expr* l, expr* r) const
 {
   const type* lct = AlignStrings(W, l, r);
@@ -570,7 +571,7 @@ binary* string_binary_op
 // *                                                                *
 // ******************************************************************
 
-class string_equal_op : public string_binary_op {
+class string_equal_op : public string_compare_op {
 public:
   string_equal_op();
   virtual binary* makeValid(const location &W, expr* l, expr* r) const;
@@ -580,7 +581,7 @@ public:
 // *                    string_equal_op  methods                    *
 // ******************************************************************
 
-string_equal_op::string_equal_op() : string_binary_op(binary_op::bop_equals)
+string_equal_op::string_equal_op() : string_compare_op(binary_op::bop_equals)
 {
 }
 
@@ -597,7 +598,7 @@ binary* string_equal_op::makeValid(const location &W, expr* l, expr* r) const
 // *                                                                *
 // ******************************************************************
 
-class string_neq_op : public string_binary_op {
+class string_neq_op : public string_compare_op {
 public:
   string_neq_op();
   virtual binary* makeValid(const location &W, expr* l, expr* r) const;
@@ -607,7 +608,7 @@ public:
 // *                     string_neq_op  methods                     *
 // ******************************************************************
 
-string_neq_op::string_neq_op() : string_binary_op(binary_op::bop_nequal)
+string_neq_op::string_neq_op() : string_compare_op(binary_op::bop_nequal)
 {
 }
 
@@ -624,7 +625,7 @@ binary* string_neq_op::makeValid(const location &W, expr* l, expr* r) const
 // *                                                                *
 // ******************************************************************
 
-class string_gt_op : public string_binary_op {
+class string_gt_op : public string_compare_op {
 public:
   string_gt_op();
   virtual binary* makeValid(const location &W, expr* l, expr* r) const;
@@ -634,7 +635,7 @@ public:
 // *                      string_gt_op methods                      *
 // ******************************************************************
 
-string_gt_op::string_gt_op() : string_binary_op(binary_op::bop_gt)
+string_gt_op::string_gt_op() : string_compare_op(binary_op::bop_gt)
 {
 }
 
@@ -651,7 +652,7 @@ binary* string_gt_op::makeValid(const location &W, expr* l, expr* r) const
 // *                                                                *
 // ******************************************************************
 
-class string_ge_op : public string_binary_op {
+class string_ge_op : public string_compare_op {
 public:
   string_ge_op();
   virtual binary* makeValid(const location &W, expr* l, expr* r) const;
@@ -662,7 +663,7 @@ public:
 // ******************************************************************
 
 string_ge_op::string_ge_op()
- : string_binary_op(binary_op::bop_ge)
+ : string_compare_op(binary_op::bop_ge)
 {
 }
 
@@ -679,7 +680,7 @@ binary* string_ge_op::makeValid(const location &W, expr* l, expr* r) const
 // *                                                                *
 // ******************************************************************
 
-class string_lt_op : public string_binary_op {
+class string_lt_op : public string_compare_op {
 public:
   string_lt_op();
   virtual binary* makeValid(const location &W, expr* l, expr* r) const;
@@ -689,7 +690,7 @@ public:
 // *                      string_lt_op methods                      *
 // ******************************************************************
 
-string_lt_op::string_lt_op() : string_binary_op(binary_op::bop_lt)
+string_lt_op::string_lt_op() : string_compare_op(binary_op::bop_lt)
 {
 }
 
@@ -706,7 +707,7 @@ binary* string_lt_op::makeValid(const location &W, expr* l, expr* r) const
 // *                                                                *
 // ******************************************************************
 
-class string_le_op : public string_binary_op {
+class string_le_op : public string_compare_op {
 public:
   string_le_op();
   virtual binary* makeValid(const location &W, expr* l, expr* r) const;
@@ -716,7 +717,7 @@ public:
 // *                      string_le_op methods                      *
 // ******************************************************************
 
-string_le_op::string_le_op() : string_binary_op(binary_op::bop_le)
+string_le_op::string_le_op() : string_compare_op(binary_op::bop_le)
 {
 }
 
