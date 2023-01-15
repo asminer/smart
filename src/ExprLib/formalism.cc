@@ -121,6 +121,9 @@ formalism::~formalism()
 
 void formalism::printDocs(doc_formatter &df) const
 {
+#ifndef DEVELOPMENT_CODE
+    if (isHidden()) return;
+#endif
     df.begin_indent();
     df.Out() << longDocs();
     df.Out() << "\n\nLegal variable types:";

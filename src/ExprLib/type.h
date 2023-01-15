@@ -310,13 +310,6 @@ class typelist : public shared_object {
 /** Simple type with value, such as integer or boolean.
 */
 class simple_type : public type {
-        const type* phase_this;
-        const type* rand_this;
-        const type* proc_this;
-        const type* set_this;
-    protected:
-        const char* short_docs;
-        const char* long_docs;
     public:
         simple_type(const char* n, const char* sd, const char* ld);
         virtual ~simple_type();
@@ -346,6 +339,17 @@ class simple_type : public type {
 
         virtual const simple_type* getBaseType() const;
         virtual const type* changeBaseType(const type* newbase) const;
+    protected:
+        inline void Hidden()            { hidden_type = true; }
+        inline bool isHidden() const    { return hidden_type; }
+    private:
+        bool hidden_type;
+        const char* short_docs;
+        const char* long_docs;
+        const type* phase_this;
+        const type* rand_this;
+        const type* proc_this;
+        const type* set_this;
 };
 
 

@@ -627,6 +627,7 @@ simple_type::simple_type(const char* n, const char* sd,
     rand_this = nullptr;
     proc_this = nullptr;
     set_this = nullptr;
+    hidden_type = false;
 }
 
 simple_type::~simple_type()
@@ -636,7 +637,7 @@ simple_type::~simple_type()
 void simple_type::printDocs(doc_formatter &df) const
 {
 #ifndef DEVELOPMENT_CODE
-    if (!longDocs()) return;
+    if (isHidden()) return;
 #endif
     df.begin_indent();
     if (longDocs()) {
@@ -925,10 +926,13 @@ public:
 // ******************************************************************
 
 next_state_type::next_state_type()
-    : simple_type("next state", nullptr, nullptr)
+    : simple_type("next state",
+            "Internal, for next-state expressions",
+            "Internal type used for next-state expressions, within models. Each event will have an enabling condition (of type bool) and an updating expression (of type next state).")
 {
     NoFunctions();
     NoVariables();
+    Hidden();
 }
 
 const simple_type* next_state_type::getBaseType() const

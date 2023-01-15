@@ -52,6 +52,9 @@ void topic_topics::visitor::visit(shared_object* item)
     for (; chain; chain = chain->Next()) {
         const help_topic* ht = dynamic_cast <const help_topic*> (chain);
         if (!ht) continue;
+#ifndef DEVELOPMENT_CODE
+        if (!ht->Summary()) continue;
+#endif
         if (firstpass) {
             // Determine longest name
             unsigned len = strlen(ht->Name());
@@ -59,7 +62,11 @@ void topic_topics::visitor::visit(shared_object* item)
         } else {
             // Display documentation
             df.item(ht->Name());
-            df.Out() << ht->Summary();
+            if (ht->Summary()) {
+                df.Out() << ht->Summary();
+            } else {
+                df.Out() << "undocumented";
+            }
         }
     } // chain of symbols traversal
 }
