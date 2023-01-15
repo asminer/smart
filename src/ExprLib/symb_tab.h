@@ -44,7 +44,6 @@ class symbol_table {
 
         /// Add a symbol to the global symbol table.
         static inline void addGlobal(symbol* s) {
-            std::cout << "  adding global " << *s << "\n";
             global().addSymbol(s);
         }
 

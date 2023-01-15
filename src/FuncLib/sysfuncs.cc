@@ -43,6 +43,7 @@ void helpTopicTraversal::visit(shared_object* item)
 {
     const help_topic* ht = dynamic_cast <const help_topic*> (item);
     if (ht) {
+        if (!df.Matches(ht->Name(), keyword)) return;
         df.Out() << "\n";
         ht->PrintDocs(df, keyword);
     }
@@ -261,13 +262,11 @@ void help_base::Compute(traverse_data &x, expr** pass, int np)
 
 void help_base::HelpOptions(const char* search)
 {
-    std::cout << "Options:\n";
     option_manager::global().DocumentOptions(df, search);
 }
 
 void help_base::HelpTopics(const char* search)
 {
-    std::cout << "Topics:\n";
     helpTopicTraversal T(df, search);
     symbol::chain_visit V(T);
     symbol_table::global().traverse(V);
@@ -275,7 +274,6 @@ void help_base::HelpTopics(const char* search)
 
 void help_base::HelpFuncs(const char* search)
 {
-    std::cout << "Functions:\n";
     splayOfShared doctree(32, 0);
     copy_matching T(df, search, doctree);
 
