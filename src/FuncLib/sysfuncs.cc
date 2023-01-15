@@ -41,8 +41,19 @@ helpTopicTraversal::helpTopicTraversal(doc_formatter &_d, const char* keyw)
 
 void helpTopicTraversal::visit(shared_object* item)
 {
+    const help_topic* ht = dynamic_cast <const help_topic*> (item);
+    if (ht) {
+        df.Out() << "\n";
+        ht->PrintDocs(df, keyword);
+    }
+
+    /* OLD
+
+
+    if (!item) return;
     const symbol* sitem = dynamic_cast <symbol*> (item);
     if (0==sitem) return;
+
     if (!df.Matches(sitem->Name(), keyword)) return;
     //
     // Matching keyword.
@@ -55,6 +66,7 @@ void helpTopicTraversal::visit(shared_object* item)
         df.Out() << "\n";
         ht->PrintDocs(df, keyword);
     } // for sitem
+    */
 }
 
 // ******************************************************************
@@ -169,7 +181,7 @@ void copy_matching::visit(shared_object* item)
     //
     // Matching keyword.
     // Now, traverse the list of symbols with the same name,
-    // and print documentation but only for help topics.
+    // and print documentation but only for non help topics.
     //
     for (; sitem; sitem=sitem->Next()) {
         const help_topic* ht = dynamic_cast <const help_topic*> (sitem);
@@ -274,17 +286,21 @@ void help_base::Compute(traverse_data &x, expr** pass, int np)
 
 void help_base::HelpOptions(const char* search)
 {
+    std::cout << "Options:\n";
     option_manager::global().DocumentOptions(df, search);
 }
 
 void help_base::HelpTopics(const char* search)
 {
+    std::cout << "Topics:\n";
     helpTopicTraversal T(df, search);
-    symbol_table::global().traverse(T);
+    symbol::chain_visit V(T);
+    symbol_table::global().traverse(V);
 }
 
 void help_base::HelpFuncs(const char* search)
 {
+    std::cout << "Functions:\n";
     splayOfShared doctree(32, 0);
     copy_matching T(df, search, doctree);
 

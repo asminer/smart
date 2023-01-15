@@ -117,11 +117,14 @@ bool symbol::Print(std::ostream &s, int width) const
 
 int symbol::Compare(const shared_object* o) const
 {
-    const symbol *s = dynamic_cast<const symbol*> (o);
-    if (!s) return 1;
-    if ( (!name) && (!s->name) ) return 0;
+    if ( (!name) && (!o) ) return 0;
     if (!name) return -1;
-    return name->Compare(s->name);
+    const symbol* s = dynamic_cast <const symbol*> (o);
+    if (s) {
+        return name->Compare(s->name);
+    } else {
+        return name->Compare(o);
+    }
 }
 
 void symbol::Traverse(traverse_data &x)

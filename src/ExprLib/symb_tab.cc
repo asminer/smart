@@ -18,46 +18,42 @@ symbol_table* symbol_table::_allModels = nullptr;
 symbol_table::symbol_table(int l2t, int t2l) : table(l2t, t2l)
 {
     num_syms = 0;
-    FreeList = nullptr;
+    num_names = 0;
+    // FreeList = nullptr;
 }
 
 symbol_table::~symbol_table()
 {
+    /*
     for (symbol_list* ptr = PopFree(); ptr; ptr = PopFree()) {
         delete ptr;
     }
+    */
 }
 
 void symbol_table::addSymbol(symbol* s)
 {
     if (!s) return;
-    symbol_list* tmp = NewList();
-    tmp->Fill(s);
-    symbol_list* root = smart_cast <symbol_list*> (table.insert(tmp));
-    if (root != tmp) {
-        // existing node, add to list
-        s->LinkTo(root->front);
-        root->front = s;
-        RecycleList(tmp);
+    ++num_syms;
+    symbol* root = smart_cast <symbol*> (table.insert(s));
+    if (s != root) {
+        // Existing node; push s
+        s->LinkTo(root);
+        table.updateRoot(root, s);
+    } else {
+        // New node
+        ++num_names;
     }
-    num_syms++;
 
 #ifdef DEBUG_ADD
-    std::cerr << "Just added symbol: ";
-    s->Print(std::cerr);
-    std::cerr << "\n";
+    std::cerr << "Just added symbol: " << *s << "\n";
     std::cerr << "Symbol table:\n";
-    table->Show(std::cerr);
+    table.show(std::cerr);
 #endif
 }
 
-symbol* symbol_table::findSymbol(const char* name)
-{
-    const_string CS(name);
-    symbol_list* root = smart_cast <symbol_list*> (table.find(&CS));
-    return root ? root->front : nullptr;
-}
 
+/*
 bool symbol_table::removeSymbol(symbol* s)
 {
     const_string CS(s->Name());
@@ -96,7 +92,6 @@ bool symbol_table::removeSymbol(symbol* s)
     return true;
 }
 
-/*
 symbol* symbol_table::pop()
 {
     if (num_syms != table.numElements()) return nullptr;  // definitely chaining.
@@ -174,6 +169,7 @@ void symbol_table::documentSymbols(doc_formatter &df, const char* keyword)
 // *                                                                *
 // ******************************************************************
 
+/*
 symbol_table::symbol_list::symbol_list()
 {
     name = nullptr;
@@ -225,3 +221,4 @@ void symbol_table::symbol_list::Fill(const char* n)
     front = nullptr;
 }
 
+*/

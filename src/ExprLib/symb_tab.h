@@ -23,12 +23,15 @@ class symbol_table {
         void addSymbol(symbol* s);
 
         /// Find a (list of) symbol matching the given name, otherwise null.
-        symbol* findSymbol(const char* name);
+        inline symbol* findSymbol(const char* name) {
+            const_string CS(name);
+            return smart_cast <symbol*> (table.find(&CS));
+        }
 
         /// Remove the given symbol.  Return true if the item was in the table.
-        bool removeSymbol(symbol* s);
+        // bool removeSymbol(symbol* s);
 
-        /// Traverse the symbol table.
+        /// Traverse the symbol table
         inline void traverse(shared_visitor &t) const {
             table.traverse(t);
         }
@@ -56,7 +59,6 @@ class symbol_table {
 
         const splayOfShared& getTable() const { return table; }
 
-
         /// The "global" symbol table.
         static inline symbol_table& global() {
             if (!_global) _global = new symbol_table;
@@ -66,6 +68,7 @@ class symbol_table {
 
         /// Add a symbol to the global symbol table.
         static inline void addGlobal(symbol* s) {
+            std::cout << "  adding global " << *s << "\n";
             global().addSymbol(s);
         }
 
@@ -93,6 +96,7 @@ class symbol_table {
             allModelsTable().addSymbol(s);
         }
 
+        /*
     private:
         /// The head of a list of symbols, with this name.
         struct symbol_list : public shared_object {
@@ -127,25 +131,16 @@ class symbol_table {
             f->front = (symbol*) FreeList;
             FreeList = f;
         }
+        */
 
     private:
         unsigned num_syms;
         unsigned num_names;
         splayOfShared table;
-        symbol_list* FreeList;
+        // symbol_list* FreeList;
         static symbol_table* _global;
         static symbol_table* _allModels;
 };
 
-//
-// TO DO:
-//
-//   (1) Make sure this uses the new splay class
-//   (2) Static member for the global symbol table
-//   (3) Static member for the global measure table (common measures)
-//          search this after searching the per-model measure table.
-//
-
-// symbol_table* MakeSymbolTable();  // any params necessary?
 
 #endif

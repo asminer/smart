@@ -136,6 +136,15 @@ shared_object* splayOfShared::insert(shared_object* key)
     return key;
 }
 
+
+void splayOfShared::updateRoot(shared_object* old_r, shared_object* new_r)
+{
+    if (!root) return;  // empty tree
+    if (Item(root) != old_r) return;    // root mismatch
+    DCASSERT(0 == old_r->Compare(new_r));
+    Item(root) = new_r;
+}
+
 shared_object* splayOfShared::remove(shared_object* key)
 {
     if (!root)  return nullptr;

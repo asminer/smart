@@ -73,6 +73,14 @@ class splayOfShared {
         */
         shared_object* insert(shared_object* key);
 
+        /** Update the root element.
+            Call after find() or insert() so to root is known.
+                @param  old_r   Old root, for sanity checking.
+                                If this is not the actual root, do nothing.
+                @param  new_r   New root; must Compare() == 0 with old root.
+        */
+        void updateRoot(shared_object* old_r, shared_object* new_r);
+
         /** Find and remove element.
                 @param  key     Target to find.
                 @return item,   with item->Compare(key)==0, where item

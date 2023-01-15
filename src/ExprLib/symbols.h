@@ -187,6 +187,25 @@ class symbol : public expr {
         static symbol* makeModelArray(const location& W, const type* t,
                 char* name, symbol** indexes, int dim);
 
+
+    public:
+        //
+        // Useful for symbol tables, that store chains of symbols.
+        // This visitor will visit all symbols in a chain, and
+        // apply the inner visitor V.
+        //
+        class chain_visit : public shared_visitor {
+                shared_visitor &V;
+            public:
+                chain_visit(shared_visitor &v) : V(v) { };
+                virtual void visit(shared_object* obj) {
+                    symbol* s = dynamic_cast <symbol*> (obj);
+                    if (!s) return;
+                    for (; s; s=s->Next()) {
+                        V.visit(s);
+                    }
+                }
+        };
 };
 
 
