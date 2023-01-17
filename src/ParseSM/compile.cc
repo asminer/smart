@@ -529,20 +529,31 @@ expr* MakeStatementBlock(parser_list* stmts)
 
 bool BadIteratorList(char* n, parser_list* list)
 {
-    // Check for matching dimensions
-    int length = CircularLength(list);
-    int dimension = chainLength(Iterators);
-    if (length != dimension) {
-        parse_error E;
-        E << "Dimension of array " << n << " does not match iterators";
-        DeleteCircular(list);
-        free(n);
-        return true;
+    // Convert circular list to linear one
+    if (list) {
+        parser_list* next = list->next;
+        list->next = nullptr;
+        list = next;
     }
-    // Check for matching iterator names
+    // Reverse the linear list
+    parser_list* reversed = nullptr;
+    while (list) {
+        parser_list* next = list->next;
+        list->next = reversed;
+        reversed = list;
+        list = next;
+    }
+
+    // Make sure iterator names match reversed list names
     for (symbol* nth = Iterators; nth; nth=nth->Next()) {
-        list = list->next;
-        shared_string* forml = smart_cast <shared_string*> (list->data);
+        if (!reversed) {
+            // Out of list elements
+            parse_error E;
+            E << "Dimension of array " << n << " does not match iterators";
+            free(n);
+            return true;
+        }
+        shared_string* forml = smart_cast <shared_string*> (reversed->data);
         DCASSERT(forml);
         if (strcmp(nth->Name(), forml->getStr())) {
             parse_error E;
@@ -552,9 +563,23 @@ bool BadIteratorList(char* n, parser_list* list)
             free(n);
             return true;
         }
+        parser_list* next = reversed->next;
+        delete reversed;
+        reversed = next;
+    }
+    if (reversed) {
+        // Too many list elements
+        parse_error E;
+        E << "Dimension of array " << n << " does not match iterators";
+        free(n);
+        while (reversed) {
+            parser_list* next = reversed->next;
+            delete reversed;
+            reversed = next;
+        }
+        return true;
     }
     // iterator names match the ones in the list.
-    DeleteCircular(list);
     return false;
 }
 
@@ -1034,6 +1059,7 @@ int AddIterator(symbol* i)
     // Push i
     i->LinkTo(Iterators);
     Iterators = i;
+
     return 1;
 }
 
