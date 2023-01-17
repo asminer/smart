@@ -166,7 +166,9 @@ class type : public shared_string {
         static inline const type* procMod(bool p, modifier m, const type* t)
         {
             if (!t) return t;
-            t = t->modifyType(m);
+            if (m != DETERM) {
+                t = t->modifyType(m);
+            }
             if (!t || !p) return t;
             return t->addProc();
         }

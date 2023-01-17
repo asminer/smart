@@ -30,8 +30,6 @@ std::ostream& operator<< (std::ostream &s, const interval_point &p)
 // *                                                                *
 // ******************************************************************
 
-const type* interval_point::reals = 0;
-
 interval_point::interval_point()
 {
   setUnknown();
@@ -128,7 +126,7 @@ void interval_point::setFrom(const result &v, const type* st)
 {
     if (v.isNormal()) {
         status = normal_closed;
-        if (st->getBaseType() == reals) {
+        if (type::matches(st->getBaseType(), "real")) {
             value = v.getReal();
         } else {
             value = v.getInt();
@@ -211,8 +209,6 @@ void Maximum(interval_point &c, const interval_point &a, const interval_point &b
 // *                                                                *
 // ******************************************************************
 
-const type* interval_object::reals = 0;
-
 interval_object::interval_object() : shared_object()
 {
 }
@@ -230,6 +226,7 @@ interval_object::~interval_object()
 
 bool interval_object::Print(std::ostream &s, int width) const
 {
+    const type* reals = type::find("real");
     DCASSERT(reals);
     result x;
     left.getAsResult(x);
@@ -258,13 +255,6 @@ int interval_object::Compare(const shared_object *o) const
 // *                           Front  end                           *
 // *                                                                *
 // ******************************************************************
-
-void InitIntervals(const exprman* em)
-{
-  if (0==em) return;
-  interval_point::reals = interval_object::reals = type::find("real");
-}
-
 
 void computeUnion(interval_object &c, const interval_object &a, const interval_object &b)
 {

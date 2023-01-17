@@ -225,8 +225,19 @@ expr* typeconv::promoteExpr(expr* e, bool prc, bool rnd, const expr* fp)
     //
 
     if (1==nc) {
+        DCASSERT(fp->Type());
         const type* prf = type::procMod(prc, rnd ? RAND : DETERM, fp->Type());
         DCASSERT(prf);
+        if (!prf) {
+            internal_error E(__FILE__, __LINE__);
+            E << "Trying to build modified type.";
+            E.newLine();
+            E << "  fp: " << *(fp->Type());
+            E.newLine();
+            E << " prc: " << prc;
+            E.newLine();
+            E << " rnd: " << rnd;
+        }
         return castExpr(true, e->Where(), prf, e);
     }
 

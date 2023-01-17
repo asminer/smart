@@ -263,13 +263,12 @@ void symbol::notifyList()
 symbol* symbol::makeConstant(const location &W, const type* t,
       char* name, expr* rhs, List <symbol> *deps)
 {
-    if (!t || bogus_expr::orNull(rhs)) {
+    if (!t || bogus_expr::isError(rhs) || bogus_expr::isDefault(rhs)) {
         free(name);
         return nullptr;
     }
-    DCASSERT(rhs);
 
-    const type* rhstype = rhs->Type();
+    const type* rhstype = rhs ? rhs->Type() : type::null;
 
     if (!typeconv::isPromotable(rhstype, t)) {
         typechecking_error E(W);
@@ -291,10 +290,11 @@ symbol* symbol::makeConstant(const location &W, const type* t,
 
 symbol* symbol::makeConstant(const symbol* w, expr* rhs, List <symbol> *deps)
 {
-    if (bogus_expr::orNull(rhs))    return nullptr;
+    if (bogus_expr::isError(rhs))   return nullptr;
+    if (bogus_expr::isDefault(rhs)) return nullptr;
     if (!w)                         return nullptr;
 
-    const type* rhstype = rhs->Type();
+    const type* rhstype = rhs ? rhs->Type() : type::null;
     const type* t = w->Type();
 
     if (!typeconv::isPromotable(rhstype, t)) {

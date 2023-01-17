@@ -2202,7 +2202,7 @@ public:
 print_range::print_range(const type* RANDREAL)
  : simple_internal(type::find("void"), "print_range", 1)
 {
-  SetFormal(0, type::find(false, false, RAND, "real"), "X");
+  SetFormal(0, RANDREAL, "X");
   SetDocumentation("Prints the range of possible values for random variable X.");
   Hide();  // This is not supposed to be an end-user function
 }

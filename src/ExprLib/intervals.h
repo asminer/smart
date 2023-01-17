@@ -10,15 +10,11 @@
 #include "result.h"
 
 class type;
-class exprman;
 
 /** Interval point.
     Used for a single point in an interval.
 */
 class interval_point {
-    /// This is useful for printing.
-    static const type* reals;
-    friend void InitIntervals(const exprman *);
 
   public:
     enum status_code {
@@ -156,10 +152,6 @@ class interval_point {
 */
 class interval_object : public shared_object {
 
-  /// This is useful for printing.
-  static const type* reals;
-  friend void InitIntervals(const exprman *);
-
   interval_point left, right;
 
 public:
@@ -182,10 +174,6 @@ public:
   inline const interval_point& Right() const { return right; }
 
 };
-
-/** Initialize interval module.
-*/
-void InitIntervals(const exprman* em);
 
 /** Computes the union of two intervals.
     Note: even if there is a "gap", we return an interval.

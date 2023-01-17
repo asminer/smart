@@ -23,9 +23,14 @@ public:
 
     static expr* makeError();
     static expr* makeDefault();
-    static inline bool isError(const expr* x)   { return x == the_error; }
-    static inline bool isDefault(const expr* x) { return x == the_default; }
-
+    static inline bool isError(const expr* x)   {
+        if (!the_error) return false;
+        return x == the_error;
+    }
+    static inline bool isDefault(const expr* x) {
+        if (!the_default) return false;
+        return x == the_default;
+    }
     static inline bool orNull(expr* x) {
         if (!x) return true;
         return dynamic_cast <bogus_expr*> (x);
