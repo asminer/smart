@@ -187,7 +187,8 @@ unary* int_neg_op::makeExpr(const location &W, expr* x) const
 // *                                                                *
 // ******************************************************************
 
-int_assoc_op::int_assoc_op(assoc_op::opcode op) : assoc_op(op)
+int_assoc_op::int_assoc_op(assoc_op::opcode op)
+    : assoc_op(op, "int_assoc_op")
 {
 }
 

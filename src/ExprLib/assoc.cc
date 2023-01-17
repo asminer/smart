@@ -14,9 +14,10 @@
 
 const assoc_op** assoc_op::registry = nullptr;
 
-assoc_op::assoc_op(opcode o)
+assoc_op::assoc_op(opcode o, const char* dn)
 {
     code = o;
+    debug_name = dn;
     registerOp(this);
 }
 
@@ -96,7 +97,6 @@ const type* assoc_op::getTypeOf(const type* lt, bool flip, opcode op,
 expr* assoc_op::makeExpr(const location &W, opcode op, expr** opnds,
         bool* flip, int N)
 {
-    // TBD HERE
     bool has_null = false;
     bool has_error = false;
     for (int i=0; i<N; i++) {
@@ -158,6 +158,15 @@ expr* assoc_op::makeExpr(const location &W, opcode op, expr** opnds,
             E << " " << getOp(f, op) << " ";
             if (opnds[i])   opnds[i]->PrintType(E.stream());
             else            E << *type::null;
+        }
+        E.newLine();
+        E << "Best match is distance " << best_match << ". Matching ops:";
+        E.newLine();
+        for (const assoc_op* ptr = registry[op]; ptr; ptr=ptr->next) {
+            int d = ptr->getPromoteDistance(opnds, flip, N);
+            if (d != best_match) continue;
+            E << "    " << ptr->debug_name;
+            E.newLine();
         }
         return nullptr; // irrelevant
     }

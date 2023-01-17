@@ -819,7 +819,7 @@ public:
 // *                      set_union_op methods                      *
 // ******************************************************************
 
-set_union_op::set_union_op() : assoc_op(assoc_op::aop_union)
+set_union_op::set_union_op() : assoc_op(assoc_op::aop_union, "set_union_op")
 {
 }
 

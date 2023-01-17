@@ -41,7 +41,7 @@ class assoc_op {
         };
 
     public:
-        assoc_op(opcode code);
+        assoc_op(opcode code, const char* debug_name);
         virtual ~assoc_op();
 
         inline opcode getOpcode() const { return code; }
@@ -152,7 +152,8 @@ class assoc_op {
 
     private:
         opcode code;
-        const  assoc_op* next;
+        const assoc_op* next;
+        const char* debug_name;
 
         static const assoc_op** registry;
 };

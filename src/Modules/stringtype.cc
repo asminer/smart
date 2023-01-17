@@ -486,7 +486,7 @@ public:
 // *                     string_add_op  methods                     *
 // ******************************************************************
 
-string_add_op::string_add_op() : assoc_op(assoc_op::aop_plus)
+string_add_op::string_add_op() : assoc_op(assoc_op::aop_plus, "string_add_op")
 {
 }
 

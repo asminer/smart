@@ -1150,7 +1150,7 @@ expr* phase_add_op::myexpr::buildAnother(expr** x, bool* f, int n) const
 // *                      phase_add_op methods                      *
 // ******************************************************************
 
-phase_add_op::phase_add_op() : assoc_op(assoc_op::aop_plus)
+phase_add_op::phase_add_op() : assoc_op(assoc_op::aop_plus, "phase_add_op")
 {
 }
 

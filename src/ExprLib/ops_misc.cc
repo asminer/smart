@@ -31,7 +31,8 @@ public:
 // *                      sequence_op  methods                      *
 // ******************************************************************
 
-sequence_op::sequence_op(const type* wh) : assoc_op(assoc_op::aop_semi)
+sequence_op::sequence_op(const type* wh)
+    : assoc_op(assoc_op::aop_semi, "sequence_op")
 {
   which = wh;
   DCASSERT(which);
@@ -360,7 +361,7 @@ public:
 // *                       aggreg_op  methods                       *
 // ******************************************************************
 
-aggreg_op::aggreg_op() : assoc_op(assoc_op::aop_colon)
+aggreg_op::aggreg_op() : assoc_op(assoc_op::aop_colon, "aggreg_op")
 {
 }
 

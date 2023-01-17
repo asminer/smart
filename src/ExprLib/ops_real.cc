@@ -318,7 +318,8 @@ public:
 // *                     real_assoc_op  methods                     *
 // ******************************************************************
 
-real_assoc_op::real_assoc_op(assoc_op::opcode op) : assoc_op(op)
+real_assoc_op::real_assoc_op(assoc_op::opcode op)
+    : assoc_op(op, "real_assoc_op")
 {
 }
 

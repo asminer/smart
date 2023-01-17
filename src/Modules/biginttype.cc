@@ -1415,7 +1415,7 @@ inline int BigintAlignDistance(expr** x, int N)
     lct = typeconv::getLeastCommonType(lct, expr::SafeType(x[i]));
   }
   if (0==lct)        return -1;
-  if (type::matches(lct->getBaseType(), "bigint")) return -1;
+  if (!type::matches(lct->getBaseType(), "bigint")) return -1;
   if (lct->isASet())      return -1;
 
   int d = 0;
@@ -1465,7 +1465,8 @@ public:
 // *                    bigint_assoc_op  methods                    *
 // ******************************************************************
 
-bigint_assoc_op::bigint_assoc_op(assoc_op::opcode op) : assoc_op(op)
+bigint_assoc_op::bigint_assoc_op(assoc_op::opcode op)
+    : assoc_op(op, "bigint_assoc_op")
 {
 }
 

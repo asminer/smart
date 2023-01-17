@@ -264,7 +264,8 @@ public:
 // *                     bool_assoc_op  methods                     *
 // ******************************************************************
 
-bool_assoc_op::bool_assoc_op(assoc_op::opcode op) : assoc_op(op)
+bool_assoc_op::bool_assoc_op(assoc_op::opcode op)
+    : assoc_op(op, "bool_assoc_op")
 {
 }
 

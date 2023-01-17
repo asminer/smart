@@ -633,7 +633,8 @@ public:
 // *                   stateset_assoc_op  methods                   *
 // ******************************************************************
 
-stateset_assoc_op::stateset_assoc_op(assoc_op::opcode op) : assoc_op(op)
+stateset_assoc_op::stateset_assoc_op(assoc_op::opcode op)
+    : assoc_op(op, "stateset_assoc_op")
 {
 }
 
