@@ -193,6 +193,8 @@ expr* assoc_op::makeExpr(const location &W, opcode op, expr** opnds,
     if (!answer) {
         internal_error E(__FILE__, __LINE__, W);
         E << "Couldn't build associative expression for " << getOp(0, op);
+        E.newLine();
+        E << "Used " << match->debug_name << " to build";
     }
     return answer;
 }

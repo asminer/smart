@@ -1424,6 +1424,7 @@ inline int BigintAlignDistance(expr** x, int N)
     DCASSERT(dx>=0);
     d += dx;
   }
+
   return d;
 }
 
@@ -1435,7 +1436,10 @@ inline const type* AlignBigints(const location &W, expr** x, int N)
   for (int i=1; i<N; i++) {
     lct = typeconv::getLeastCommonType(lct, expr::SafeType(x[i]));
   }
-  if (  (0==lct) || type::matches(lct->getBaseType(), "bigint") || lct->isASet() ) {
+  if (  (0==lct) ||
+          !type::matches(lct->getBaseType(), "bigint") ||
+          lct->isASet() )
+  {
     for (int i=0; i<N; i++)  Delete(x[i]);
     return 0;
   }
