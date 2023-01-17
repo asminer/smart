@@ -542,45 +542,67 @@ bool BadIteratorList(char* n, parser_list* list)
         list->next = reversed;
         reversed = list;
         list = next;
+        shared_string* forml = smart_cast <shared_string*> (reversed->data);
+        DCASSERT(forml);
     }
 
     // Make sure iterator names match reversed list names
+    //
+    // Keep track of which symbols mismatched
+    const symbol* it_mismatch = nullptr;
+    const shared_string* pl_mismatch = nullptr;
+    parser_list* curr = reversed;
+
     for (symbol* nth = Iterators; nth; nth=nth->Next()) {
-        if (!reversed) {
+        if (!curr) {
             // Out of list elements
-            parse_error E;
-            E << "Dimension of array " << n << " does not match iterators";
-            free(n);
-            return true;
+            it_mismatch = nth;
+            pl_mismatch = nullptr;
+            break;
         }
-        shared_string* forml = smart_cast <shared_string*> (reversed->data);
+        shared_string* forml = smart_cast <shared_string*> (curr->data);
         DCASSERT(forml);
         if (strcmp(nth->Name(), forml->getStr())) {
-            parse_error E;
-            E << "Array " << n << " expecting index ";
-            E << nth->Name() << ", got " << forml->getStr();
-            DeleteCircular(list);
-            free(n);
-            return true;
+            it_mismatch = nth;
+            pl_mismatch = forml;
+            curr = nullptr;
+            break;
         }
+        curr = curr->next;
+    }
+    if (curr) {
+        // Too many list elements
+        it_mismatch = nullptr;
+        pl_mismatch = smart_cast <shared_string*> (curr->data);
+    }
+
+    //
+    // Display errors as appropriate
+    //
+    if (it_mismatch || pl_mismatch) {
+        parse_error E;
+        if (!it_mismatch || !pl_mismatch) {
+            E << "Dimension of array " << n << " does not match iterators";
+        } else {
+            E << "Array " << n << " expecting index ";
+            E << *it_mismatch << ", got " << *pl_mismatch;
+        }
+        free(n);
+        n = nullptr;
+    }
+
+    //
+    // Delete list
+    //
+    while (reversed) {
         parser_list* next = reversed->next;
         delete reversed;
         reversed = next;
     }
-    if (reversed) {
-        // Too many list elements
-        parse_error E;
-        E << "Dimension of array " << n << " does not match iterators";
-        free(n);
-        while (reversed) {
-            parser_list* next = reversed->next;
-            delete reversed;
-            reversed = next;
-        }
-        return true;
-    }
-    // iterator names match the ones in the list.
-    return false;
+
+    // name not deleted? was not bad so return false;
+    // otherwise, null name means bad so return true.
+    return !n;
 }
 
 /* =====================================================================
