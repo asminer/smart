@@ -565,8 +565,8 @@ bool BadIteratorList(char* n, parser_list* list)
         if (strcmp(nth->Name(), forml->getStr())) {
             it_mismatch = nth;
             pl_mismatch = forml;
-            curr = nullptr;
-            break;
+            // List is reversed, so keep going, so we
+            // can show the first mismatch
         }
         curr = curr->next;
     }
