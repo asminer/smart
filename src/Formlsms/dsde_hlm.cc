@@ -312,7 +312,7 @@ dsde_hlm::dsde_hlm(const model_instance* p, model_statevar** sv, int nv,
 	num_assertions = 0;
 	num_priolevels = 0;
 	last_timed = last_immed = 0;
-	decision_data= new decision_set(nd,dv);
+	decision_data= new decision_set(ndd,dv);
 	num_decs=ndd;
 	lltype = lldsm::Unknown;
 	determineModelType();

@@ -1507,18 +1507,39 @@ void CTL_min_decision_cost_base::Compute(traverse_data &x, expr** pass, int np)
 
   decision_set* dec_set = hlm->getDecisionSet();
 
-  std::queue<result**> Q; 
-  
+  std::priority_queue<result**> Q; 
+  bool flag=false;
+  int index=0;
+
   int size = dec_set->getNumDecisions();
+  
   result** eval;
 
   // populate priority queue depending on current values of decision set
-  while(false /* what condition goes here? */) {
+  //Q: when do we sort the decisions?
+  while(!flag /* what condition goes here? */) {
     eval = new result*[size];
-
-    for (int i = 0; i < size; ++i) {
-      
+    for (int i =0;i<size;i++){
+      if(!(dec_set->getDecision(i)->getDecisionValue())){
+        index=i;
+        break;
+      }
+    else
+      flag=true;
+    
     }
+
+    //for (int i = 0; i < size; ++i) {
+      //make the previous eval same as before
+    dec_set->getDecision(index)->setDecision();
+    for (int i=0;i<size;i++){
+        eval[i] = dynamic_cast<result*>(dec_set->getDecision(i));
+    }
+        //set the new eval[i] true
+      //}
+      
+      
+    //}
 
     Q.push(eval);
   }
