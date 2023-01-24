@@ -123,6 +123,19 @@ bool expl_stateset::Intersect(const expr* c, const char* op, const stateset* x)
   return true;
 }
 
+bool expl_stateset::Intersect(const stateset* x)
+{
+  if (0==data) return false;
+  const expl_stateset* ex = dynamic_cast <const expl_stateset*> (x);
+
+  if (0==ex) {
+    return false;
+  }
+
+  (*data) *= *(ex->data); 
+  return true;
+}
+
 bool expl_stateset::Plus(const expr* c, const char* op, const stateset* x)
 {
   return Intersect(c, op, x);
@@ -145,6 +158,15 @@ bool expl_stateset::isEmpty() const
   DCASSERT(data);
   return data->isEmpty();
 }
+
+bool expl_stateset::isSubsetOf(const stateset* x) const
+{
+  DCASSERT(data);
+  const expl_stateset* ex = dynamic_cast <const expl_stateset*> (x);
+  DCASSERT(ex);
+  return (*data) <= *(ex->data); 
+}
+
 
 bool expl_stateset::Print(OutputStream &s, int) const
 {

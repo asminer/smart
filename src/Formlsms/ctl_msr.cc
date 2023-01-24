@@ -11,6 +11,7 @@
 
 #include "../Modules/biginttype.h"
 #include "../Modules/statesets.h"
+#include "../Modules/expl_trissets.h"
 
 #include "../SymTabs/symtabs.h"
 
@@ -1508,11 +1509,17 @@ void CTL_min_decision_cost_base::Compute(traverse_data &x, expr** pass, int np)
 
   decision_set* dec_set = hlm->getDecisionSet();
 
-  stateset* p = grabParam(llm, pass[1], x);
-
   std::priority_queue<result**> Q; 
   bool flag=false;
   int index=0;
+
+  expr* ctl_expr = pass[1];
+  expl_tri_stateset* res;
+  const expl_stateset *trueset;
+  expl_stateset* falseset;
+
+  expl_stateset *initset = dynamic_cast<expl_stateset*> (llm->getInitialStates());
+  DCASSERT(initset);
 
   int size = dec_set->getNumDecisions();
   
@@ -1520,48 +1527,63 @@ void CTL_min_decision_cost_base::Compute(traverse_data &x, expr** pass, int np)
 
   /// add initial evaluations to queue
   //// (1) how to obtain evals based on enabling conds?
-  //// compute similar to model_event enabling conds?
+  //// ANSWER: call cond->Compute(x) where x is arg above, or create a new one  
 
-  while(!flag /* what condition goes here? */) { /// repeat loop until queue is empty
+  while(!Q.empty()) { /// repeat loop until queue is empty
     /// pop eval from queue
+    eval = Q.top();
+    Q.pop();
+    dec_set->setDecisions(eval);
 
     /// evaluate CTL expression using eval, obtain tri-stateset
     //// (2) how to compute CTL expressions using evals?
     //// how to dispatch to correct engine? (e.g., AG_base)
+    //// ASNWER: call pass[1]->Compute(x)
+    ctl_expr->Compute(x);
+    DCASSERT(x.answer);
+
+    res = smart_cast <expl_tri_stateset*> (x.answer->getPtr());
+    DCASSERT(res);
 
     /// check if all initial states are in trueset, or any in falseset
     /// if all in trueset, found min cost eval, return (b/c sorted by cost)
+    trueset = res->getTrueSet();
+    if(initset->isSubsetOf(trueset)) {
+      x.answer->setBool(true);
+      return;
+    }
+
     /// if any in falseset, no need to continue search down this branch, return
+    falseset = res->getFalseSet()->DeepCopy();
+    falseset->Intersect(initset);
+    if(!falseset->isEmpty()) {
+      x.answer->setBool(false);
+      return;
+    }
+
     /// else, some initial state is unknown, so continue
 
     /// add next set of evals to queue
     //// see (1)
 
-    eval = new result*[size];
-    for (int i =0;i<size;i++){
-      if(!(dec_set->getDecision(i)->getDecisionValue())){
-        index=i;
-        break;
-      }
-    else
-      flag=true;
+
+
+    // eval = new result*[size];
+    // for (int i =0;i<size;i++){
+    //   if(!(dec_set->getDecision(i)->getDecisionValue())){
+    //     index=i;
+    //     break;
+    //   }
+    // else
+    //   flag=true;
     
-    }
+    // }
 
-    //for (int i = 0; i < size; ++i) {
-      //make the previous eval same as before
-    dec_set->getDecision(index)->setDecision();
-    for (int i=0;i<size;i++){
-        eval[i] = dynamic_cast<result*>(dec_set->getDecision(i));
-    }
-        //set the new eval[i] true
-      //}
-      
-      
-    //}
 
-    Q.push(eval);
+    // Q.push(eval);
   }
+
+  x.answer->setBool(false);
 
   // stateset* p = grabParam(llm, pass[1], x);
   // setAnswer(x, llm->EX(revTime(), p));
