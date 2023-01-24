@@ -319,6 +319,7 @@ public:
   }
   
   inline void addEnablingCond(expr* e) {
+    DCASSERT(e->Type(0) == em->BOOL)
     enable_cond=e;
   } 
   
@@ -375,43 +376,6 @@ public:
   ~decision_set() { 
     for(decision* d : decisions) Delete(d);
   }
-
-// private:
-//   class iterator: public std::iterator<
-//                           std::random_access_iterator_tag,   // iterator_category
-//                           decision*,                 // value_type
-//                           long,                      // difference_type
-//                           const decision**,          // pointer
-//                           decision*                  // reference
-//                             >{
-//     decision **decs;
-//     int num_decs;
-//     int idx;
-//   public:
-//     explicit iterator(decision **d, int nd, int i) { 
-//       DCASSERT(i >= 0);
-//       decs = d; 
-//       num_decs = nd;
-//       idx = i; 
-//     }
-    
-//     iterator& operator++() { idx++; return *this; }
-//     iterator& operator--() { idx--; return *this; }
-//     iterator operator++(int) { iterator retval = *this; ++(*this); return retval; }
-//     iterator operator--(int) { iterator retval = *this; --(*this); return retval; }
-//     iterator operator-(iterator other) { iterator retval = *this; idx - other.idx; return retval; }
-//     iterator operator-(long distance) { iterator retval = *this; retval - distance; return retval;  }
-//     iterator& operator-=(long distance) { iterator retval = *this; retval - distance; return retval; }
-//     iterator operator+(long distance) { iterator retval = *this; retval + distance; return retval; }
-//     iterator& operator+=(long distance) { iterator retval = *this; retval + distance; return retval; }
-//     bool operator==(iterator other) const { return idx == other.idx; }
-//     bool operator!=(iterator other) const { return !(*this == other); }
-//     reference operator*() const { return idx < num_decs ? decs[idx] : NULL; }
-//   };
-
-// public:
-//   iterator begin() { return iterator(decisions, size, 0); }
-//   iterator end() { return iterator(decisions, size, size); }
 
 private:
   struct {

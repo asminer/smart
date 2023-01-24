@@ -48,7 +48,7 @@ protected:
         ProcGen->runEngine(hlm, f);
       }
       return hlm->GetProcess();
-    } // try
+    } // tryAG_base
     catch (subengine::error e) {
       if (em->startError()) {
         em->causedBy(err);
@@ -1501,11 +1501,14 @@ void CTL_min_decision_cost_base::Compute(traverse_data &x, expr** pass, int np)
   DCASSERT(pass);
   
   const graph_lldsm* llm = getLLM(x, pass[0]);
+  DCASSERT(llm);
   const dsde_hlm* hlm = dynamic_cast<const dsde_hlm*>(llm->GetParent());
   
   DCASSERT(hlm);
 
   decision_set* dec_set = hlm->getDecisionSet();
+
+  stateset* p = grabParam(llm, pass[1], x);
 
   std::priority_queue<result**> Q; 
   bool flag=false;
@@ -1515,9 +1518,25 @@ void CTL_min_decision_cost_base::Compute(traverse_data &x, expr** pass, int np)
   
   result** eval;
 
-  // populate priority queue depending on current values of decision set
-  //Q: when do we sort the decisions?
-  while(!flag /* what condition goes here? */) {
+  /// add initial evaluations to queue
+  //// (1) how to obtain evals based on enabling conds?
+  //// compute similar to model_event enabling conds?
+
+  while(!flag /* what condition goes here? */) { /// repeat loop until queue is empty
+    /// pop eval from queue
+
+    /// evaluate CTL expression using eval, obtain tri-stateset
+    //// (2) how to compute CTL expressions using evals?
+    //// how to dispatch to correct engine? (e.g., AG_base)
+
+    /// check if all initial states are in trueset, or any in falseset
+    /// if all in trueset, found min cost eval, return (b/c sorted by cost)
+    /// if any in falseset, no need to continue search down this branch, return
+    /// else, some initial state is unknown, so continue
+
+    /// add next set of evals to queue
+    //// see (1)
+
     eval = new result*[size];
     for (int i =0;i<size;i++){
       if(!(dec_set->getDecision(i)->getDecisionValue())){
