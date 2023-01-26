@@ -1726,6 +1726,7 @@ bool init_ctlmsrs::execute()
   static msr_func* the_EG_trace_si = 0;
   static msr_func* the_EU_trace_si = 0;
   static msr_func* the_traces = 0;
+  static msr_func* the_CTL_min_decision_cost_si=0;
 
   //
   // Initialize functions
@@ -1749,6 +1750,7 @@ bool init_ctlmsrs::execute()
   if (!the_AEF_si)    the_AEF_si    = new AEF_si;
   if (!the_num_paths) the_num_paths = new num_paths;
   if (!the_states)    the_states    = new states;
+  if (!the_CTL_min_decision_cost_si) the_CTL_min_decision_cost_si= new CTL_min_decision_cost_si;
 
   if (!the_And_trace_si)        the_And_trace_si = new And_trace_si;
   if (!the_EX_trace_si)         the_EX_trace_si  = new EX_trace_si;
@@ -1784,7 +1786,7 @@ bool init_ctlmsrs::execute()
   ctl_help->addFunction(the_states);
 
   ctl_help->addFunction(the_traces);
-
+  ctl_help->addFunction(the_CTL_min_decision_cost_si);
   //
   // Add functions to measure table
   //
@@ -1817,6 +1819,7 @@ bool init_ctlmsrs::execute()
   CML.Append(the_EG_trace_si);
   CML.Append(the_EU_trace_si);
   CML.Append(the_traces);
+  CML.Append(the_CTL_min_decision_cost_si);
 
   return true;
 }
