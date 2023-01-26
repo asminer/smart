@@ -103,7 +103,7 @@ public:
   virtual bool isEmpty() const = 0;
 
   /// Is the set a subset of x?
-  virtual bool isSubsetOf(const stateset* x) const = 0;
+  bool isSubsetOf(const stateset* x) const { return false; };
 
   /** Get a single state from the stateset.
       Mostly used when the stateset contains only one state.

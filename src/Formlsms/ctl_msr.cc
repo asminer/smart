@@ -1495,6 +1495,17 @@ CTL_min_decision_cost_base::CTL_min_decision_cost_base(const char* name, bool rt
   SetFormal(1, em->STATESET, "p");
 }
 
+int min_cost_taken(result** eval, int size)
+{
+  int i;
+  for(i = 0; i < size; ++i) {
+    if(!eval[i]->isUnknown()) {
+      return i;
+    }
+  }
+  return -1;
+}
+
 void CTL_min_decision_cost_base::Compute(traverse_data &x, expr** pass, int np)
 {
   DCASSERT(x.answer);
@@ -1523,11 +1534,34 @@ void CTL_min_decision_cost_base::Compute(traverse_data &x, expr** pass, int np)
 
   int size = dec_set->getNumDecisions();
   
-  result** eval;
+  result** eval, **new_eval;
 
-  /// add initial evaluations to queue
-  //// (1) how to obtain evals based on enabling conds?
-  //// ANSWER: call cond->Compute(x) where x is arg above, or create a new one  
+  // add initial evaluations to queue
+  /// (1) how to obtain evals based on enabling conds?
+  /// ANSWER: call cond->Compute(x) where x is arg above, or create a new one
+  
+  // All unknowns is first element to check (always possible since enabling conds are irrelevant)
+
+  // <U,U,U>
+  // <T,U,U>, <U,T,U>, <U,U,T>
+  // <T,T,U>, <T,U,T>, <U,T,T>
+  // <T,T,T>
+
+  // <U,U,U>, <T,U,U>, <U,T,U>, <U,U,T>, <T,T,U>, <T,U,T>, <U,T,T>, <T,T,T>
+  // <U,U,U>, <U,T,U>, <U,U,T>, <T,T,U>, <T,U,T>, <U,T,T>, <T,T,T> -- assume <T,U,U> is not possible due to enabling conds
+
+  // generate this ordering up front? or during populate queue during execution?
+
+  // how to do minimum number of CTL model checking calls?
+
+  eval = (result**) malloc(sizeof(result*) * size);
+  int i, j;
+  for(i = 0; i < size; ++i) {
+    eval[i] = new result();
+    eval[i]->setUnknown();
+  }
+  Q.push(eval);
+
 
   while(!Q.empty()) { /// repeat loop until queue is empty
     /// pop eval from queue
@@ -1535,25 +1569,25 @@ void CTL_min_decision_cost_base::Compute(traverse_data &x, expr** pass, int np)
     Q.pop();
     dec_set->setDecisions(eval);
 
-    /// evaluate CTL expression using eval, obtain tri-stateset
-    //// (2) how to compute CTL expressions using evals?
-    //// how to dispatch to correct engine? (e.g., AG_base)
-    //// ASNWER: call pass[1]->Compute(x)
+    // evaluate CTL expression using eval, obtain tri-stateset
+    /// (2) how to compute CTL expressions using evals?
+    /// how to dispatch to correct engine? (e.g., AG_base)
+    /// ASNWER: call pass[1]->Compute(x)
     ctl_expr->Compute(x);
     DCASSERT(x.answer);
 
     res = smart_cast <expl_tri_stateset*> (x.answer->getPtr());
     DCASSERT(res);
 
-    /// check if all initial states are in trueset, or any in falseset
-    /// if all in trueset, found min cost eval, return (b/c sorted by cost)
+    // check if all initial states are in trueset, or any in falseset
+    // if all in trueset, found min cost eval, return (b/c sorted by cost)
     trueset = res->getTrueSet();
     if(initset->isSubsetOf(trueset)) {
       x.answer->setBool(true);
       return;
     }
 
-    /// if any in falseset, no need to continue search down this branch, return
+    // if any in falseset, no need to continue search down this branch, return
     falseset = res->getFalseSet()->DeepCopy();
     falseset->Intersect(initset);
     if(!falseset->isEmpty()) {
@@ -1561,11 +1595,29 @@ void CTL_min_decision_cost_base::Compute(traverse_data &x, expr** pass, int np)
       return;
     }
 
-    /// else, some initial state is unknown, so continue
+    // else, some initial state is unknown, so continue
 
-    /// add next set of evals to queue
-    //// see (1)
+    // add next set of evals to queue
+    /// see (1)
+    int min_cost_idx = min_cost_taken(eval, size);
 
+    
+    for(i = min_cost_idx+1; i < size; ++i) {
+      new_eval = (result**) malloc(sizeof(result*) * size);
+      for(j = 0; j < size; ++j) {
+        if(j < min_cost_idx+1) {
+          new_eval[j] = new result(*eval[j]);
+        } else if(j == i) {
+          new_eval[i] = new result();
+          new_eval[i]->setBool(true);
+        } else {
+          new_eval[i] = new result();
+          new_eval[i]->setUnknown();
+        }
+      }
+      Q.push(new_eval);
+    }
+    free(eval);    
 
 
     // eval = new result*[size];

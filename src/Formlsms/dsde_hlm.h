@@ -319,7 +319,7 @@ public:
   }
   
   inline void addEnablingCond(expr* e) {
-    DCASSERT(e->Type(0) == em->BOOL)
+    DCASSERT(e->Type(0) == em->BOOL);
     enable_cond=e;
   } 
   

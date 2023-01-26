@@ -37,7 +37,7 @@ class expl_stateset : public stateset {
     virtual void getCardinality(result &x) const;
 
     virtual bool isEmpty() const;
-    virtual bool isSubsetOf(const stateset* x) const;
+    bool isSubsetOf(const stateset* x) const;
 
     virtual bool Print(OutputStream &s, int) const;
     virtual bool Equals(const shared_object *o) const;
