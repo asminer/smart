@@ -15,8 +15,6 @@ jobs:
     steps:
     - name: Checkout repository and submodules
       uses: actions/checkout@v3
-    - name: libGMP
-      run: wget --progress=dot:mega https://gmplib.org/download/gmp/gmp-6.2.1.tar.bz2 ; tar xjf gmp-6.2.1.tar.bz2 ; cd gmp-6.2.1 ; ./configure --enable-cxx --enable-fat --prefix=$(pwd)/../usr/local ; make -j ; make install ; cd .. ;    
     - name: configure
       run: ./Config-all ; cd bin-release/ ; make ; strip -s src/smart ; mkdir ../website ; cp src/smart ../website ; cd ..
     - name: Deploy to GitHub Pages
