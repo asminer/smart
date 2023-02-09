@@ -1,4 +1,3 @@
-
 #include "ctl_msr.h"
 #include "../ExprLib/startup.h"
 #include "../ExprLib/engine.h"
@@ -1609,11 +1608,21 @@ void CTL_min_decision_cost_base::Compute(traverse_data &x, expr** pass, int np)
           new_eval[j] = new result(*eval[j]);
         } else if(j == i) {
           new_eval[i] = new result();
-          new_eval[i]->setBool(true);
+          // check enabling condition
+          dec_set->getDecision(j)->getEnablingCond()->Compute(x);
+          if(x.answer->getBool()) {
+            new_eval[i]->setBool(true);
+          } else {
+            free(new_eval);
+            break;
+          }
         } else {
           new_eval[i] = new result();
           new_eval[i]->setUnknown();
         }
+      }
+      if(new_eval == NULL) {
+        continue;
       }
       Q.push(new_eval);
     }
