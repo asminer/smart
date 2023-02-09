@@ -9,7 +9,7 @@
 
 // External libraries
 
-#include "intset.h"
+#include "../_IntSets/intset.h"
 
 const int MAJOR_VERSION = 3;
 const int MINOR_VERSION = 0;
