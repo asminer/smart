@@ -1438,46 +1438,6 @@ void traces::traces_ex::Compute(traverse_data &x, expr** pass, int np)
 
 // *****************************************************************
 // *                                                               *
-// *                  CTL Cost w/ Unknowns                         *
-// *                                                               *
-// *****************************************************************
-
-// class CTL_decision_cost_base : public CTL_engine {
-// public:
-//   CTL_decision_cost_base(const char* name, bool rt);
-//   virtual void Compute(traverse_data &x, expr** pass, int np);
-// };
-
-// CTL_decision_cost_base::CTL_decision_cost_base(const char* name, bool rt)
-//  : CTL_engine(em->STATESET, name, rt, 2)
-// {
-//   SetFormal(1, em->STATESET, "p");
-// }
-
-// void CTL_decision_cost_base::Compute(traverse_data &x, expr** pass, int np)
-// {
-//   DCASSERT(x.answer);
-//   DCASSERT(0==x.aggregate);
-//   DCASSERT(pass);
-//   const graph_lldsm* llm = getLLM(x, pass[0]);
-//   stateset* p = grabParam(llm, pass[1], x);
-//   setAnswer(x, p);
-//   Delete(p);
-// }
-
-// class CTL_decision_cost_si : public CTL_decision_cost_base {
-// public:
-//   CTL_decision_cost_si();
-// };
-
-// CTL_decision_cost_si::CTL_decision_cost_si() : CTL_decision_cost_base("decision_cost", false)
-// {
-//   SetDocumentation("CTL decision cost");
-// }
-
-
-// *****************************************************************
-// *                                                               *
 // *                  CTL Min cost w/ Unknowns                     *
 // *                                                               *
 // *****************************************************************
@@ -1489,7 +1449,7 @@ public:
 };
 
 CTL_min_decision_cost_base::CTL_min_decision_cost_base(const char* name, bool rt)
- : CTL_engine(em->STATESET, name, rt, 2)
+ : CTL_engine(em->BOOL, name, rt, 2)
 {
   SetFormal(1, em->STATESET, "p");
 }
@@ -1504,6 +1464,8 @@ int min_cost_taken(result** eval, int size)
   }
   return -1;
 }
+
+#include <iostream>
 
 void CTL_min_decision_cost_base::Compute(traverse_data &x, expr** pass, int np)
 {
@@ -1561,6 +1523,34 @@ void CTL_min_decision_cost_base::Compute(traverse_data &x, expr** pass, int np)
   }
   Q.push(eval);
 
+  result** eval2 = (result**) malloc(sizeof(result*) * size);
+  for(i = 0; i < size; ++i) {
+    eval2[i] = new result();
+    eval2[i]->setUnknown();
+  }
+  eval2[0]->setBool(true);
+  Q.push(eval2);
+
+  result** eval3 = (result**) malloc(sizeof(result*) * size);
+  for(i = 0; i < size; ++i) {
+    eval3[i] = new result();
+    eval3[i]->setUnknown();
+  }
+  eval3[0]->setBool(true);
+  eval3[1]->setBool(true);
+  Q.push(eval3);
+
+  result** eval4 = (result**) malloc(sizeof(result*) * size);
+  for(i = 0; i < size; ++i) {
+    eval4[i] = new result();
+    eval4[i]->setUnknown();
+  }
+  eval4[0]->setBool(true);
+  eval4[1]->setBool(true);
+  eval4[2]->setBool(true);
+  Q.push(eval4);
+
+  // std::cerr << Q.size() << "\n";
 
   while(!Q.empty()) { /// repeat loop until queue is empty
     /// pop eval from queue
@@ -1575,7 +1565,12 @@ void CTL_min_decision_cost_base::Compute(traverse_data &x, expr** pass, int np)
     ctl_expr->Compute(x);
     DCASSERT(x.answer);
 
-    res = smart_cast <expl_tri_stateset*> (x.answer->getPtr());
+    res = dynamic_cast <expl_tri_stateset*> (x.answer->getPtr());
+    if(res==0) {
+      expl_stateset* ss = dynamic_cast <expl_stateset*> (x.answer->getPtr());
+      DCASSERT(ss);
+      res = new expl_tri_stateset(llm, ss);
+    }
     DCASSERT(res);
 
     // check if all initial states are in trueset, or any in falseset
@@ -1600,33 +1595,44 @@ void CTL_min_decision_cost_base::Compute(traverse_data &x, expr** pass, int np)
     /// see (1)
     int min_cost_idx = min_cost_taken(eval, size);
 
+
+
     
-    for(i = min_cost_idx+1; i < size; ++i) {
-      new_eval = (result**) malloc(sizeof(result*) * size);
-      for(j = 0; j < size; ++j) {
-        if(j < min_cost_idx+1) {
-          new_eval[j] = new result(*eval[j]);
-        } else if(j == i) {
-          new_eval[i] = new result();
-          // check enabling condition
-          dec_set->getDecision(j)->getEnablingCond()->Compute(x);
-          if(x.answer->getBool()) {
-            new_eval[i]->setBool(true);
-          } else {
-            free(new_eval);
-            break;
-          }
-        } else {
-          new_eval[i] = new result();
-          new_eval[i]->setUnknown();
-        }
-      }
-      if(new_eval == NULL) {
-        continue;
-      }
-      Q.push(new_eval);
-    }
-    free(eval);    
+    // for(i = min_cost_idx+1; i < size; ++i) {
+    //   new_eval = (result**) malloc(sizeof(result*) * size);
+    //   for(j = 0; j < size; ++j) {
+    //     if(j < min_cost_idx+1) {
+    //       new_eval[j] = new result(*eval[j]);
+    //     } else if(j == i) {
+    //       new_eval[i] = new result();
+    //       // check enabling condition
+    //       decision* d = dec_set->getDecision(j);
+    //       expr* e = d->getEnablingCond();
+    //       e->Compute(x);
+    //       // if(e!=0) {
+    //       //   e->Compute(x);
+    //       // } else {
+    //       //   x.answer->setBool(true);
+    //       // }
+    //       if(x.answer->getBool()) {
+    //         new_eval[i]->setBool(true);
+    //       } else {
+    //         free(new_eval);
+    //         break;
+    //       }
+    //     } else {
+    //       new_eval[i] = new result();
+    //       new_eval[i]->setUnknown();
+    //     }
+    //   }
+
+    //   if(new_eval == NULL) {
+    //     continue;
+    //   }
+
+    //   Q.push(new_eval);
+    // }
+    // free(eval);    
 
 
     // eval = new result*[size];
@@ -1644,6 +1650,11 @@ void CTL_min_decision_cost_base::Compute(traverse_data &x, expr** pass, int np)
     // Q.push(eval);
   }
 
+  std::cerr << "returning\n";
+
+  // TODO:
+  // WHY????
+  // this should be returning false, but returns true
   x.answer->setBool(false);
 
   // stateset* p = grabParam(llm, pass[1], x);

@@ -89,7 +89,7 @@ void measure::Compute(traverse_data &x)
   Solve(x);
   if (isComputed())
     (*x.answer) = value;
-  else
+  else if(!recomputable)
     x.answer->setNull();
 }
 
@@ -503,7 +503,11 @@ measure* msr_noengine
   int ln = x.parent ? x.parent->Linenumber() : -1;
   expr* comp = em->makeFunctionCall(fn, ln, this, pass, np);
   engtype* et = em->NO_ENGINE;
-  return new measure(x.parent, et, x.model, comp);
+  measure* msr = new measure(x.parent, et, x.model, comp);
+  if(recomputable) {
+    msr->setRecomputable();
+  }
+  return msr;
 }
 
 // ******************************************************************

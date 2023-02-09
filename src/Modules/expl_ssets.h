@@ -4,7 +4,6 @@
     Module for statesets, implemented explicity with a bitvector.
 
 */
-
 #include "statesets.h"
 
 #ifndef EXPL_SSETS_H

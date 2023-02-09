@@ -5,6 +5,7 @@
 #include "../ExprLib/mod_def.h"
 #include "../ExprLib/mod_vars.h"
 #include "../ExprLib/mod_inst.h"
+#include "../ExprLib/values.h"
 #include "../_IntSets/intset.h"
 
 #include <vector>
@@ -286,7 +287,9 @@ public:
   decision(const symbol* w, const model_instance* pn) : model_var(w,pn) {
   	dec = new result();
     dec->setUnknown();
-    enable_cond=0;
+    result* const_true = new result();
+    const_true->setBool(true);
+    enable_cond=new value("",0, em->BOOL, *const_true);
     cost =1;
   }
 
@@ -342,6 +345,8 @@ public:
 // *                                                                        *
 // **************************************************************************
 
+#include <iostream>
+
 class decision_set_value;
 
 class decision_set {
@@ -362,6 +367,7 @@ public:
 
     for (int i = 0; i < nd; ++i) {
       decisions.push_back(decs[i]);
+      // decs[i]->setDecision();
     }
 
     switch (policy) {

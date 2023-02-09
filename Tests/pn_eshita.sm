@@ -79,10 +79,10 @@ pn cruft(int n) := {
   );
   decision aa, bb, cc;
   cost(aa:1,bb:2,cc:1);
-  enable_decision(aa:(true & true));
-  bool ab := is_taken(aa);
-  enable_decision(bb:ab);
-  enable_decision(cc:true);
+  //enable_decision(aa:(true & true));
+  //bool ab := is_taken(aa);
+  //enable_decision(bb:ab);
+  //enable_decision(cc:true);
   //aa:=1;
   //find the model type:study them
   
@@ -116,8 +116,11 @@ pn cruft(int n) := {
 
   stateset test3 := EX(test2);
 
+  bool min_cost := min_decision_cost(test2);
+
   stateset test4 := !test2;
 
+  stateset init := initial;
 
   // Existentials
 
@@ -142,8 +145,9 @@ print("\n");
 print(cruft(5).test1);
 print("\n", cruft(5).test2);
 print("\n I am testing the following");
-print("\n", cruft(5).test3);
-print("\n", cruft(5).test4);
+print("\ninitial states: ", cruft(5).init);
+print("\n", cruft(5).test2, "\n");
+print("\n", cruft(5).min_cost);
 
 /*print("\nEX tests:\n--------------------------------------------------\n");
 
@@ -157,4 +161,4 @@ print("False set:::", cruft(5).FS,"\n");
 print("\nErrors:\n--------------------------------------------------\n");
 print(cruft(5).prop1 | cruft(5).prop1, "\n");
 */
-print("Done!\n");
+print("\nDone!\n");
