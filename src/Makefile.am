@@ -16,6 +16,9 @@ BUILT_SOURCES = \
 AM_YFLAGS = -d
 AM_CXXFLAGS = -Wall
 
+smart_LDFLAGS=${LDFLAGS} -all-static
+smart_CXXFLAGS =${CXXFLAGS} -Wall -O3 -DNDEBUG
+
 ## ============================================================
 ##
 ## SMART
@@ -153,7 +156,7 @@ smart_SOURCES = \
   Apps/smart.cc
 
 
-smart_LDADD = _Meddly/src/libmeddly.la
+smart_LDADD = _Meddly/src/.libs/libmeddly.a
 
 
 ## ============================================================
