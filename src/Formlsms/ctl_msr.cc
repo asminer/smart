@@ -25,7 +25,7 @@ extern parse_module* pm;
 
 class CTL_engine : public msr_noengine {
 public:
-  CTL_engine(const type* t, const char* name, bool rt, int np);
+  CTL_engine(const type* t, const char* name, bool rt, int np, bool recomp);
 
 protected:
   inline bool revTime() const {
@@ -107,11 +107,11 @@ private:
 
 engtype*  CTL_engine::ProcGen                 = 0;
 
-CTL_engine::CTL_engine(const type* t, const char* name, bool rt, int np)
+CTL_engine::CTL_engine(const type* t, const char* name, bool rt, int np, bool recomp)
  : msr_noengine(CTL, t, name, np)
 {
   reverse_time = rt;
-  setRecomputable();
+  if(recomp) setRecomputable();
 }
 
 // *****************************************************************
@@ -127,7 +127,7 @@ public:
 };
 
 EX_base::EX_base(const char* name, bool rt)
- : CTL_engine(em->STATESET, name, rt, 2)
+ : CTL_engine(em->STATESET, name, rt, 2, true)
 {
   SetFormal(1, em->STATESET, "p");
 }
@@ -188,7 +188,7 @@ public:
 };
 
 EF_base::EF_base(const char* name, bool rt)
- : CTL_engine(em->STATESET, name, rt, 2)
+ : CTL_engine(em->STATESET, name, rt, 2, true)
 {
   SetFormal(1, em->STATESET, "p");
 }
@@ -249,7 +249,7 @@ public:
 };
 
 EU_base::EU_base(const char* name, bool rt)
- : CTL_engine(em->STATESET, name, rt, 3)
+ : CTL_engine(em->STATESET, name, rt, 3, true)
 {
   SetFormal(1, em->STATESET, "p");
   SetFormal(2, em->STATESET, "q");
@@ -317,7 +317,7 @@ public:
 };
 
 EG_base::EG_base(const char* name, bool rt)
- : CTL_engine(em->STATESET, name, rt, 2)
+ : CTL_engine(em->STATESET, name, rt, 2, true)
 {
   SetFormal(1, em->STATESET, "p");
 }
@@ -381,7 +381,7 @@ public:
 };
 
 AX_base::AX_base(const char* name, bool rt)
- : CTL_engine(em->STATESET, name, rt, 2)
+ : CTL_engine(em->STATESET, name, rt, 2, true)
 {
   SetFormal(1, em->STATESET, "p");
 }
@@ -442,7 +442,7 @@ public:
 };
 
 AF_base::AF_base(const char* name, bool rt)
- : CTL_engine(em->STATESET, name, rt, 2)
+ : CTL_engine(em->STATESET, name, rt, 2, true)
 {
   SetFormal(1, em->STATESET, "p");
 }
@@ -505,7 +505,7 @@ public:
 };
 
 AG_base::AG_base(const char* name, bool rt)
- : CTL_engine(em->STATESET, name, rt, 2)
+ : CTL_engine(em->STATESET, name, rt, 2, true)
 {
   SetFormal(1, em->STATESET, "p");
 }
@@ -566,7 +566,7 @@ public:
 };
 
 AU_base::AU_base(const char* name, bool rt)
- : CTL_engine(em->STATESET, name, rt, 3)
+ : CTL_engine(em->STATESET, name, rt, 3, true)
 {
   SetFormal(1, em->STATESET, "p");
   SetFormal(2, em->STATESET, "q");
@@ -637,7 +637,7 @@ public:
 };
 
 AEF_si::AEF_si()
- : CTL_engine(em->STATESET, "AEF", false, 3)
+ : CTL_engine(em->STATESET, "AEF", false, 3, true)
 {
   SetFormal(1, em->STATESET, "p");
   SetFormal(2, em->STATESET, "q");
@@ -670,7 +670,7 @@ public:
 };
 
 num_paths::num_paths()
-: CTL_engine(em->BIGINT, "num_paths", false, 3)
+: CTL_engine(em->BIGINT, "num_paths", false, 3, true)
 {
   SetFormal(1, em->STATESET, "src");
   SetFormal(2, em->STATESET, "dest");
@@ -714,7 +714,7 @@ public:
 };
 
 states::states()
-: CTL_engine(em->STATESET, "states", false, 2)
+: CTL_engine(em->STATESET, "states", false, 2, true)
 {
   SetFormal(1, em->TEMPORAL, "formula");
   SetDocumentation("Compute the stateset satisfying the given temporal formula.");
@@ -753,7 +753,7 @@ protected:
   class CTL_trace_ex : public CTL_engine {
   public:
     CTL_trace_ex(const char* name, bool rt, int np)
-      : CTL_engine(em->TRACE, name, rt, np)
+      : CTL_engine(em->TRACE, name, rt, np, true)
     {
     }
 
@@ -800,7 +800,7 @@ public:
 };
 
 CTL_trace::CTL_trace(const char* name, bool rt, int np)
-  : CTL_engine(em->STATESET, name, rt, np)
+  : CTL_engine(em->STATESET, name, rt, np, true)
 {
 }
 
@@ -1345,7 +1345,7 @@ protected:
   class traces_ex : public CTL_engine {
   public:
     traces_ex()
-      : CTL_engine(em->TRACE, "traces_ex", false, 3)
+      : CTL_engine(em->TRACE, "traces_ex", false, 3, true)
     {
       SetFormal(1, em->STATESET, "initial_states");
       SetFormal(2, em->STATESET, "states satisfying the temporal formula");
@@ -1362,7 +1362,7 @@ public:
 };
 
 traces::traces()
-: CTL_engine(em->TRACE, "traces", false, 3)
+: CTL_engine(em->TRACE, "traces", false, 3, true)
 {
   SetFormal(1, em->STATESET, "initial_states");
   SetFormal(2, em->TEMPORAL, "formula");
@@ -1449,7 +1449,7 @@ public:
 };
 
 CTL_min_decision_cost_base::CTL_min_decision_cost_base(const char* name, bool rt)
- : CTL_engine(em->BOOL, name, rt, 2)
+ : CTL_engine(em->BOOL, name, rt, 2, false)
 {
   SetFormal(1, em->STATESET, "p");
 }
@@ -1517,28 +1517,28 @@ void CTL_min_decision_cost_base::Compute(traverse_data &x, expr** pass, int np)
 
   eval = (result**) malloc(sizeof(result*) * size);
   int i, j;
-  for(i = 0; i < size; ++i) {
-    eval[i] = new result();
-    eval[i]->setUnknown();
-  }
-  Q.push(eval);
+  // for(i = 0; i < size; ++i) {
+  //   eval[i] = new result();
+  //   eval[i]->setUnknown();
+  // }
+  // Q.push(eval);
 
-  result** eval2 = (result**) malloc(sizeof(result*) * size);
-  for(i = 0; i < size; ++i) {
-    eval2[i] = new result();
-    eval2[i]->setUnknown();
-  }
-  eval2[0]->setBool(true);
-  Q.push(eval2);
+  // result** eval2 = (result**) malloc(sizeof(result*) * size);
+  // for(i = 0; i < size; ++i) {
+  //   eval2[i] = new result();
+  //   eval2[i]->setUnknown();
+  // }
+  // eval2[0]->setBool(true);
+  // Q.push(eval2);
 
-  result** eval3 = (result**) malloc(sizeof(result*) * size);
-  for(i = 0; i < size; ++i) {
-    eval3[i] = new result();
-    eval3[i]->setUnknown();
-  }
-  eval3[0]->setBool(true);
-  eval3[1]->setBool(true);
-  Q.push(eval3);
+  // result** eval3 = (result**) malloc(sizeof(result*) * size);
+  // for(i = 0; i < size; ++i) {
+  //   eval3[i] = new result();
+  //   eval3[i]->setUnknown();
+  // }
+  // eval3[0]->setBool(true);
+  // eval3[1]->setBool(true);
+  // Q.push(eval3);
 
   result** eval4 = (result**) malloc(sizeof(result*) * size);
   for(i = 0; i < size; ++i) {
@@ -1573,6 +1573,9 @@ void CTL_min_decision_cost_base::Compute(traverse_data &x, expr** pass, int np)
     }
     DCASSERT(res);
 
+    res->Print(em->cout(), 0);
+    em->cout() << "\n";
+
     // check if all initial states are in trueset, or any in falseset
     // if all in trueset, found min cost eval, return (b/c sorted by cost)
     trueset = res->getTrueSet();
@@ -1585,8 +1588,7 @@ void CTL_min_decision_cost_base::Compute(traverse_data &x, expr** pass, int np)
     falseset = res->getFalseSet()->DeepCopy();
     falseset->Intersect(initset);
     if(!falseset->isEmpty()) {
-      x.answer->setBool(false);
-      return;
+      continue;
     }
 
     // else, some initial state is unknown, so continue
@@ -1650,16 +1652,7 @@ void CTL_min_decision_cost_base::Compute(traverse_data &x, expr** pass, int np)
     // Q.push(eval);
   }
 
-  std::cerr << "returning\n";
-
-  // TODO:
-  // WHY????
-  // this should be returning false, but returns true
   x.answer->setBool(false);
-
-  // stateset* p = grabParam(llm, pass[1], x);
-  // setAnswer(x, llm->EX(revTime(), p));
-  // Delete(p);
 }
 
 class CTL_min_decision_cost_si : public CTL_min_decision_cost_base {

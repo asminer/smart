@@ -73,11 +73,11 @@ public:
   }
   inline void SetValue(const result &v) {
     value = v;
-    if (!recomputable) Affix();
+    Affix();
   }
   inline void SetNull() {
     value.setNull();
-    if (!recomputable) Affix();
+    Affix();
   }
   inline void PrecomputeRHS() {
     if (rhs)	rhs->PreCompute();

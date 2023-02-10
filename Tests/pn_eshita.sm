@@ -112,7 +112,7 @@ pn cruft(int n) := {
   stateset apEn:= reachable & potential(tk(E)==1);
 
   stateset test1 := potential(tk(I)>0 & true);
-  stateset test2 := potential(tk(I)>0 & dec_value(aa));
+  stateset test2 := potential(tk(I)>0 & is_taken(aa));
 
   stateset test3 := EX(test2);
 

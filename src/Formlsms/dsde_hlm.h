@@ -276,6 +276,7 @@ public:
 // *                            decision class                              *
 // *                                                                        *
 // **************************************************************************
+#include <iostream>
 
 class decision : public model_var {
   result* dec; //this will be a three valued data
@@ -345,7 +346,6 @@ public:
 // *                                                                        *
 // **************************************************************************
 
-#include <iostream>
 
 class decision_set_value;
 

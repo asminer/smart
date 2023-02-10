@@ -77,7 +77,7 @@ void measure::Solve(traverse_data &x)
   }
 
   DCASSERT(!isBlocked());
-  if (isComputed())   return;
+  if (isComputed() && !recomputable)   return;
   if (which_engine)   owner->SolveMeasure(x, this);
   else                x.answer->setNull();
 }
@@ -89,8 +89,8 @@ void measure::Compute(traverse_data &x)
   Solve(x);
   if (isComputed())
     (*x.answer) = value;
-  else if(!recomputable)
-    x.answer->setNull();
+  else{
+    x.answer->setNull();}
 }
 
 void measure::Traverse(traverse_data &x)
