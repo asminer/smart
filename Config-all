@@ -91,7 +91,7 @@ export CC=gcc
 export CXX=g++
 export CXXFLAGS="$CXXFLAGS -Wall -std=c++11 -DNDEBUG"
 export CPPFLAGS=""
-export LDFLAGS="$LDFLAGS -static -static-libgcc -static-libstdc++ -flto -fwhole-program"
+export LDFLAGS="$LDFLAGS -static -static-libgcc -static-libstdc++"
 
 GMP_STATUS=""
 
