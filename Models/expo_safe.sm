@@ -1,0 +1,52 @@
+pn expo_safe(int N, int M) := {
+   for (int j in {0..M-1}) {
+     for (int i in {0..N-1}) {
+	place P[j][i]; 
+	partition(P[j][i]);
+     }
+   }
+   for (int j in {0..M-1}) {
+     init(P[j][1]:1);
+   }
+   for (int j in {0..M-1}) {
+     for (int i in {0..N-1}) {
+       trans T[j][i];
+       arcs (P[j][i]:T[j][i]);
+       arcs (T[j][i]:P[j][(i+1)%N]);
+     }
+   }
+   bigint num1 := num_states;
+};
+
+int N := read_int("N"); compute(N);
+int M := read_int("M"); compute(M);
+
+
+
+// Parameters and Stuff here
+# MeddlyVariableStyle ON_THE_FLY
+//# MeddlyProcessGeneration OTF_IMPLICIT_SATURATION
+# MeddlyProcessGeneration OTF_SATURATION
+
+# MeddlyNSFNodeDeletion OPTIMISTIC
+# MeddlyRSSNodeDeletion OPTIMISTIC
+# ProcessGeneration MEDDLY
+# MeddlyProcessEdgeStyle ACTUAL
+# MeddlyImageStarUsesSaturation true 
+# OutputThousandSeparator ","
+# Report + ALL
+# OutputThousandSeparator ","
+# ReportThousandSeparator ","
+//# MeddlyNSFNodeDeletion PESSIMISTIC
+//# MeddlyRSSNodeDeletion PESSIMISTIC
+
+
+
+
+
+bigint compute_expo(int a, int b) := cond(b == 0, 1, a * compute_expo(a,b-1));
+
+print("Expecting ", compute_expo(N,M), " states\n");
+
+
+print("Number of reachable states: ", expo_safe(N,M).num1,"\n");
