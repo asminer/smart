@@ -9,4 +9,12 @@ if ! git subrepo --version 1> /dev/null 2> /dev/null; then
   exit 1
 fi
 
+if [ ! -f src/_Meddly/.gitrepo ]; then
+  cd ..
+fi
+if [ ! -f src/_Meddly/.gitrepo ]; then
+  echo "Run this script either in the repository root directory or in Devel"
+  exit 1
+fi
+
 git subrepo pull _Meddly
