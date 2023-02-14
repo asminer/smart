@@ -1185,11 +1185,16 @@ void meddly_otfsat::buildRSS(meddly_varoption &x)
 #ifdef ONLY_STATE_SPACE
     // Build a monolithic transition relation
     NSF->bindExtensibleVariables();
-    //MEDDLY::node_handle mxd = NSF->getBoundedMonolithicNSF();
-    shared_ddedge* d = new shared_ddedge(NSF->getRelForest());
-    //d->E.set(mxd);
-    NSF->getBoundedMonolithicNSF(d->E);
-    setNSF(d);
+
+    try {
+        shared_ddedge* d = new shared_ddedge(NSF->getRelForest());
+        NSF->getBoundedMonolithicNSF(d->E);
+        setNSF(d);
+    }
+    catch (MEDDLY::error) {
+    }
+    catch (int) {
+    };
 
     clearMeddlyComputeTable(x, *NSF);
 #else

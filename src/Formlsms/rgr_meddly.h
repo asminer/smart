@@ -76,7 +76,7 @@ class meddly_monolithic_rg : public graph_lldsm::reachgraph {
     virtual void getNumArcs(result &na) const override;
     virtual void getNumArcs(long &na) const override;
     virtual void showInternal(OutputStream &os) const override;
-    virtual void showArcs(OutputStream &os, const show_options &opt, 
+    virtual void showArcs(OutputStream &os, const show_options &opt,
       state_lldsm::reachset* RSS, shared_state* st) const override;
 
     //
@@ -103,7 +103,7 @@ class meddly_monolithic_rg : public graph_lldsm::reachgraph {
 
     virtual stateset* attachWeight(const stateset* p) const override;
 
-  // 
+  //
   // Helpers
   //
   public:
@@ -123,15 +123,15 @@ class meddly_monolithic_rg : public graph_lldsm::reachgraph {
     inline shared_ddedge* newMxdEdge() const {
       return new shared_ddedge(getMxdForest());
     }
-    
-    inline void createMinterms(const int* const* from, const int* const* to, int n, 
+
+    inline void createMinterms(const int* const* from, const int* const* to, int n,
       shared_object* ans)
     {
       DCASSERT(mxd_wrap);
       mxd_wrap->createMinterms(from, to, n, ans);
     }
 
-    inline void createMinterms(const int* const* from, const int* const* to, 
+    inline void createMinterms(const int* const* from, const int* const* to,
       const float* v, int n, shared_object* ans)
     {
       DCASSERT(mxd_wrap);
@@ -140,11 +140,12 @@ class meddly_monolithic_rg : public graph_lldsm::reachgraph {
 
   private:
     inline shared_ddedge* buildActualEdges() const {
-      DCASSERT(edges);
-      DCASSERT(states);
-      shared_ddedge* actual = newMxdEdge();
-      mxd_wrap->selectRows(edges, states, actual);
-      return actual;
+        if (!edges) return nullptr;
+        DCASSERT(edges);
+        DCASSERT(states);
+        shared_ddedge* actual = newMxdEdge();
+        mxd_wrap->selectRows(edges, states, actual);
+        return actual;
     }
 
     template <class INT>
@@ -195,7 +196,7 @@ class meddly_monolithic_rg : public graph_lldsm::reachgraph {
         shared_ddedge* ans, List<shared_ddedge>* extra = nullptr)
     {
         //
-        // Build set of source/deadlocked states 
+        // Build set of source/deadlocked states
         //
         shared_ddedge* dead = 0;
 

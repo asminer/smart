@@ -306,16 +306,22 @@ meddly_encoder::~meddly_encoder()
 void meddly_encoder::dumpNode(OutputStream &s, shared_object* e) const
 {
   shared_ddedge* me = dynamic_cast <shared_ddedge*> (e);
-  if (0==me) throw  Invalid_Edge;
-  s.Put(me->E.getNode());
+  if (me) {
+    s.Put(me->E.getNode());
+  } else {
+    s.Put("null or invalid dd_edge");
+  }
 }
 
 void meddly_encoder::showNodeGraph(OutputStream &s, shared_object* e) const
 {
   shared_ddedge* me = dynamic_cast <shared_ddedge*> (e);
-  if (0==me) throw  Invalid_Edge;
-  smart_output sout(s);
-  me->E.show(sout, 2);
+  if (me) {
+    smart_output sout(s);
+    me->E.show(sout, 2);
+  } else {
+    s.Put("null or invalid dd_edge");
+  }
 }
 
 void meddly_encoder::dumpForest(OutputStream &s) const
