@@ -17,4 +17,4 @@ if [ ! -f src/_Meddly/.gitrepo ]; then
   exit 1
 fi
 
-git subrepo pull _Meddly
+git subrepo pull src/_Meddly
