@@ -344,10 +344,12 @@ protected:
 bool_and::bool_and(const char* fn, int line, const type* t, expr **x, int n) 
  : product(fn, line, exprman::aop_and, t, x, 0, n) 
 { 
+  setRecomputable();
 }
-
+#include <iostream>
 void bool_and::Compute(traverse_data &x)
 {
+  em->cout() << "computing bool_and\n";
   DCASSERT(x.answer);
   DCASSERT(0==x.aggregate);
   int i;

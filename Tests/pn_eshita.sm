@@ -86,22 +86,40 @@ pn cruft(int n) := {
   //aa:=1;
   //find the model type:study them
   
-  void show_rs := show_states(false);
-  void show_dec := show_decisions();
-  void show_rg := show_arcs(false);
-  bigint na := num_arcs;
-  for(int i in {0..5}){
-  	int design_D[i]:=DontKnow;
-  }
+  //void show_rs := show_states(false);
+  //void show_dec := show_decisions();
+  //void show_rg := show_arcs(false);
+  //bigint na := num_arcs;
+  //for(int i in {0..5}){
+  // 	int design_D[i]:=DontKnow;
+  //}
   //int d1 := DontKnow;
   //or add an array
   //how to perform concretization here?
   //rules for compatibility to take design decisions; when to make design_D[i]:=T
   //how to add enable function;
 
-// should I make a pair of sets? pair<stateset, stateset> SS?  
+
+  //stateset test2 := potential(tk(I)>0 & dec_value(aa));
+  //bool min_cost := min_decision_cost(test2);
+  
+  bool min_cost := min_decision_cost(potential(tk(I)>0 & dec_value(cc)));
+
+  /* NOTES:
+    - Need to mark each expression with a decision as an ancestor as "recomputable" 
+    - How to best do this?
+
+    - Thought about editing the "state" of a measure -- this opens a can of worms
+
+    
+    - What's really happening is these expressions are "model instance agnostic"
+    - So, any expression with a decision as an ancestor actually represents an 
+      exponential number of models w.r.t. the number of decisions, but we abstract this away
+  */
 
 
+  // should I make a pair of sets? pair<stateset, stateset> SS?  
+  /*
   stateset rs := reachable;
   stateset apB := reachable & potential(tk(B)>0);
   stateset apBaa := reachable & potential(tk(B)>0);
@@ -112,11 +130,9 @@ pn cruft(int n) := {
   stateset apEn:= reachable & potential(tk(E)==1);
 
   stateset test1 := potential(tk(I)>0 & true);
-  stateset test2 := potential(tk(I)>0 & is_taken(aa));
 
   stateset test3 := EX(test2);
 
-  bool min_cost := min_decision_cost(test2);
 
   stateset test4 := !test2;
 
@@ -133,8 +149,13 @@ pn cruft(int n) := {
   stateset prop4 := EX(apH);
 
   stateset prop5 := reachable & !EX(reachable);
+  */
 };
 
+print(cruft(5).min_cost);
+//print("\n", cruft(5).test2, "\n");
+
+/*
 print("Reachable states:\n");
 compute(cruft(5).show_rs);
 print("decisions: \n");
@@ -147,9 +168,10 @@ print("\n", cruft(5).test2);
 print("\n I am testing the following");
 print("\ninitial states: ", cruft(5).init);
 print("\n", cruft(5).test2, "\n");
-print("\n", cruft(5).min_cost);
+*/
 
-/*print("\nEX tests:\n--------------------------------------------------\n");
+/*
+print("\nEX tests:\n--------------------------------------------------\n");
 
 print("Should be {[B], [I], [J]}:\n          ", cruft(5).prop1, "\n");
 print("Should be {[A], [D], [K]}:\n          ", cruft(5).prop2, "\n");

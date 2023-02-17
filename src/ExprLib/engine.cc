@@ -525,7 +525,7 @@ void noop_engine::SolveMeasure(hldsm*, measure* what)
   result foo;
   x.answer = &foo;
   what->ComputeRHS(x);
-  what->SetValue(foo);
+  what->SetValue(foo); // TODO:
 }
 
 bool noop_engine::AppliesToModelType(hldsm::model_type mt) const

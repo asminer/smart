@@ -1469,6 +1469,7 @@ int min_cost_taken(result** eval, int size)
 
 void CTL_min_decision_cost_base::Compute(traverse_data &x, expr** pass, int np)
 {
+  em->cout() << "computing min_decision_cost\n";
   DCASSERT(x.answer);
   DCASSERT(0==x.aggregate);
   DCASSERT(pass);
@@ -1495,7 +1496,7 @@ void CTL_min_decision_cost_base::Compute(traverse_data &x, expr** pass, int np)
 
   int size = dec_set->getNumDecisions();
   
-  result** eval, **new_eval;
+  result** eval, **eval1, **new_eval;
 
   // add initial evaluations to queue
   /// (1) how to obtain evals based on enabling conds?
@@ -1503,67 +1504,60 @@ void CTL_min_decision_cost_base::Compute(traverse_data &x, expr** pass, int np)
   
   // All unknowns is first element to check (always possible since enabling conds are irrelevant)
 
-  // <U,U,U>
-  // <T,U,U>, <U,T,U>, <U,U,T>
-  // <T,T,U>, <T,U,T>, <U,T,T>
-  // <T,T,T>
-
-  // <U,U,U>, <T,U,U>, <U,T,U>, <U,U,T>, <T,T,U>, <T,U,T>, <U,T,T>, <T,T,T>
-  // <U,U,U>, <U,T,U>, <U,U,T>, <T,T,U>, <T,U,T>, <U,T,T>, <T,T,T> -- assume <T,U,U> is not possible due to enabling conds
-
-  // generate this ordering up front? or during populate queue during execution?
-
   // how to do minimum number of CTL model checking calls?
 
-  eval = (result**) malloc(sizeof(result*) * size);
+  eval1 = (result**) malloc(sizeof(result*) * size);
   int i, j;
-  // for(i = 0; i < size; ++i) {
-  //   eval[i] = new result();
-  //   eval[i]->setUnknown();
-  // }
-  // Q.push(eval);
-
-  // result** eval2 = (result**) malloc(sizeof(result*) * size);
-  // for(i = 0; i < size; ++i) {
-  //   eval2[i] = new result();
-  //   eval2[i]->setUnknown();
-  // }
-  // eval2[0]->setBool(true);
-  // Q.push(eval2);
-
-  // result** eval3 = (result**) malloc(sizeof(result*) * size);
-  // for(i = 0; i < size; ++i) {
-  //   eval3[i] = new result();
-  //   eval3[i]->setUnknown();
-  // }
-  // eval3[0]->setBool(true);
-  // eval3[1]->setBool(true);
-  // Q.push(eval3);
-
-  result** eval4 = (result**) malloc(sizeof(result*) * size);
   for(i = 0; i < size; ++i) {
-    eval4[i] = new result();
-    eval4[i]->setUnknown();
+    eval1[i] = new result();
+    eval1[i]->setUnknown();
   }
-  eval4[0]->setBool(true);
-  eval4[1]->setBool(true);
-  eval4[2]->setBool(true);
-  Q.push(eval4);
+  Q.push(eval1);
 
-  // std::cerr << Q.size() << "\n";
+  result** eval2 = (result**) malloc(sizeof(result*) * size);
+  for(i = 0; i < size; ++i) {
+    eval2[i] = new result();
+    eval2[i]->setUnknown();
+  }
+  eval2[0]->setBool(true);
+  Q.push(eval2);
+
+  result** eval3 = (result**) malloc(sizeof(result*) * size);
+  for(i = 0; i < size; ++i) {
+    eval3[i] = new result();
+    eval3[i]->setUnknown();
+  }
+  eval3[0]->setBool(true);
+  eval3[1]->setBool(true);
+  Q.push(eval3);
+
+  // result** eval4 = (result**) malloc(sizeof(result*) * size);
+  // for(i = 0; i < size; ++i) {
+  //   eval4[i] = new result();
+  //   eval4[i]->setUnknown();
+  // }
+  // eval4[0]->setBool(true);
+  // eval4[1]->setBool(true);
+  // eval4[2]->setBool(true);
+  // Q.push(eval4);
 
   while(!Q.empty()) { /// repeat loop until queue is empty
+    em->cout() << "Queue size: " << Q.size() << "\n";
     /// pop eval from queue
     eval = Q.top();
     Q.pop();
+    em->cout() << "Popping eval from Q\n";
     dec_set->setDecisions(eval);
 
     // evaluate CTL expression using eval, obtain tri-stateset
     /// (2) how to compute CTL expressions using evals?
     /// how to dispatch to correct engine? (e.g., AG_base)
     /// ASNWER: call pass[1]->Compute(x)
+    em->cout() << "Computing CTL expression\n";
+    ctl_expr->Print(em->cout(), 0);
+    em->cout() << "\n";
     ctl_expr->Compute(x);
-    DCASSERT(x.answer);
+    DCASSERT(x.answer->getPtr());
 
     res = dynamic_cast <expl_tri_stateset*> (x.answer->getPtr());
     if(res==0) {
@@ -1573,13 +1567,20 @@ void CTL_min_decision_cost_base::Compute(traverse_data &x, expr** pass, int np)
     }
     DCASSERT(res);
 
-    res->Print(em->cout(), 0);
-    em->cout() << "\n";
+    // res->Print(em->cout(), 0);
+    // em->cout() << "\n";
 
     // check if all initial states are in trueset, or any in falseset
     // if all in trueset, found min cost eval, return (b/c sorted by cost)
     trueset = res->getTrueSet();
     if(initset->isSubsetOf(trueset)) {
+
+      initset->Print(em->cout(), 0);
+      em->cout() << "\n";
+      trueset->Print(em->cout(), 0);
+      em->cout() << "\n";
+      em->cout() << "Min cost eval is 'true'\n";
+
       x.answer->setBool(true);
       return;
     }
@@ -1588,6 +1589,7 @@ void CTL_min_decision_cost_base::Compute(traverse_data &x, expr** pass, int np)
     falseset = res->getFalseSet()->DeepCopy();
     falseset->Intersect(initset);
     if(!falseset->isEmpty()) {
+      em->cout() << "Min cost eval is 'false'\n";
       continue;
     }
 
@@ -1597,9 +1599,6 @@ void CTL_min_decision_cost_base::Compute(traverse_data &x, expr** pass, int np)
     /// see (1)
     int min_cost_idx = min_cost_taken(eval, size);
 
-
-
-    
     // for(i = min_cost_idx+1; i < size; ++i) {
     //   new_eval = (result**) malloc(sizeof(result*) * size);
     //   for(j = 0; j < size; ++j) {
@@ -1652,6 +1651,7 @@ void CTL_min_decision_cost_base::Compute(traverse_data &x, expr** pass, int np)
     // Q.push(eval);
   }
 
+  em->cout() << "Min cost is 'false'\n";
   x.answer->setBool(false);
 }
 

@@ -1544,9 +1544,10 @@ potential_si::potential_si()
   SetFormal(1, em->BOOL->addProc(), "p");
   SetDocumentation("Returns the set of model states satisfying p.  Note that this set could contain states that are not reachable from the initial state(s) of the model.");
 }
-
+#include <iostream>
 void potential_si::Compute(traverse_data &x, expr** pass, int np)
 {
+  em->cout() << "computing potential\n";
   DCASSERT(x.answer);
   DCASSERT(0==x.aggregate);
   DCASSERT(pass);
@@ -1564,6 +1565,7 @@ void potential_si::Compute(traverse_data &x, expr** pass, int np)
   } else {
     x.answer->setNull();
   }
+  DCASSERT(ss);
 }
 
 

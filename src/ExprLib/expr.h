@@ -231,6 +231,8 @@ private:
   int IDnum;
   /// Static member used to set the identifiers
   static int global_IDnum;
+  ///  
+  bool recomputable;
 public:
   /** Constructor for simple types.
         @param  fn    Filename.
@@ -272,6 +274,11 @@ public:
   inline bool isDefined() const { return state >= 2; }
   inline bool isGuessed() const { return state >= 1; }
 
+  inline void setPreviousState() {
+    DCASSERT(state > 1);
+    DCASSERT(state < 6);
+    state--;
+  }
   inline void setGuessed() { 
     DCASSERT(state >= 0);
     DCASSERT(state < 1);
@@ -296,6 +303,10 @@ public:
     DCASSERT(state >= 0);
     DCASSERT(state < 5);
     state = 5;
+  }
+
+  inline void setRecomputable() {
+    recomputable = true;
   }
 
 protected:

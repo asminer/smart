@@ -82,9 +82,6 @@ public:
   inline void PrecomputeRHS() {
     if (rhs)	rhs->PreCompute();
   }
-  inline void setRecomputable() {
-    recomputable = true;
-  }
   inline void ComputeRHS(traverse_data &x) {
     SafeCompute(rhs, x);
   }
