@@ -1,4 +1,7 @@
+
 #include "ctl_msr.h"
+#include "../_IntSets/bitvector.h"
+
 #include "../ExprLib/startup.h"
 #include "../ExprLib/engine.h"
 #include "../ExprLib/measures.h"
@@ -1482,7 +1485,7 @@ void CTL_min_decision_cost_base::Compute(traverse_data &x, expr** pass, int np)
 
   decision_set* dec_set = hlm->getDecisionSet();
 
-  std::queue<result**> Q; 
+  std::priority_queue<decision_eval*, std::vector<decision_eval*>, decision_eval_comp> Q; 
   bool flag=false;
   int index=0;
 
@@ -1496,60 +1499,38 @@ void CTL_min_decision_cost_base::Compute(traverse_data &x, expr** pass, int np)
 
   int size = dec_set->getNumDecisions();
   
-  result** eval, **eval1, **new_eval;
-
   // add initial evaluations to queue
   /// (1) how to obtain evals based on enabling conds?
   /// ANSWER: call cond->Compute(x) where x is arg above, or create a new one
-  
-  // All unknowns is first element to check (always possible since enabling conds are irrelevant)
 
-  // how to do minimum number of CTL model checking calls?
-
-  eval1 = (result**) malloc(sizeof(result*) * size);
-  int i, j;
-  for(i = 0; i < size; ++i) {
-    eval1[i] = new result();
-    eval1[i]->setUnknown();
-  }
-  Q.push(eval1);
-
-  result** eval2 = (result**) malloc(sizeof(result*) * size);
-  for(i = 0; i < size; ++i) {
-    eval2[i] = new result();
-    eval2[i]->setUnknown();
-  }
-  eval2[0]->setBool(true);
-  Q.push(eval2);
-
-  result** eval3 = (result**) malloc(sizeof(result*) * size);
-  for(i = 0; i < size; ++i) {
-    eval3[i] = new result();
-    eval3[i]->setUnknown();
-  }
-  eval3[0]->setBool(true);
-  eval3[1]->setBool(true);
-  Q.push(eval3);
-
-  result** eval4 = (result**) malloc(sizeof(result*) * size);
-  for(i = 0; i < size; ++i) {
-    eval4[i] = new result();
-    eval4[i]->setUnknown();
-  }
-  eval4[0]->setBool(true);
-  eval4[1]->setBool(true);
-  eval4[2]->setBool(true);
+  // Hard-coded queue
+  bitvector *bv = new bitvector(size);
+  // decision_eval *eval1 = new decision_eval(dec_set);
+  // Q.push(eval1);
+  bv->Set(2);
+  decision_eval *eval2 = new decision_eval(dec_set,bv);
+  // Q.push(eval2);
+  bv->Set(1);
+  decision_eval *eval3 = new decision_eval(dec_set,bv);
+  // Q.push(eval3);
+  bv->Set(0);
+  decision_eval *eval4 = new decision_eval(dec_set,bv);
   Q.push(eval4);
+
+  decision_eval *eval;
+  // decision_eval *eval = new decision_eval(dec_set);
+  // Q.push(eval);
 
   while(!Q.empty()) { /// repeat loop until queue is empty
     em->cout() << "Queue size: " << Q.size() << "\n";
     /// pop eval from queue
-    eval = Q.front();
+    eval = Q.top();
     Q.pop();
     em->cout() << "Popping eval from Q\n";
     dec_set->setDecisions(eval);
 
     em->cout() << "Eval: ";
+    int i;
     for(i = 0; i < size; ++i) {
       if(dec_set->getDecision(i)->isTaken())
         em->cout() << dec_set->getDecision(i)->Name() << " ";
@@ -1603,59 +1584,10 @@ void CTL_min_decision_cost_base::Compute(traverse_data &x, expr** pass, int np)
     // else, some initial state is unknown, so continue
 
     // add next set of evals to queue
-    /// see (1)
-    int min_cost_idx = min_cost_taken(eval, size);
-
-    // for(i = min_cost_idx+1; i < size; ++i) {
-    //   new_eval = (result**) malloc(sizeof(result*) * size);
-    //   for(j = 0; j < size; ++j) {
-    //     if(j < min_cost_idx+1) {
-    //       new_eval[j] = new result(*eval[j]);
-    //     } else if(j == i) {
-    //       new_eval[i] = new result();
-    //       // check enabling condition
-    //       decision* d = dec_set->getDecision(j);
-    //       expr* e = d->getEnablingCond();
-    //       e->Compute(x);
-    //       // if(e!=0) {
-    //       //   e->Compute(x);
-    //       // } else {
-    //       //   x.answer->setBool(true);
-    //       // }
-    //       if(x.answer->getBool()) {
-    //         new_eval[i]->setBool(true);
-    //       } else {
-    //         free(new_eval);
-    //         break;
-    //       }
-    //     } else {
-    //       new_eval[i] = new result();
-    //       new_eval[i]->setUnknown();
-    //     }
-    //   }
-
-    //   if(new_eval == NULL) {
-    //     continue;
-    //   }
-
-    //   Q.push(new_eval);
+    // std::vector<decision_eval*>* next_evals = eval->getNextEvals(x);
+    // for(decision_eval *de : *next_evals) {
+    //   Q.push(de);
     // }
-    // free(eval);    
-
-
-    // eval = new result*[size];
-    // for (int i =0;i<size;i++){
-    //   if(!(dec_set->getDecision(i)->getDecisionValue())){
-    //     index=i;
-    //     break;
-    //   }
-    // else
-    //   flag=true;
-    
-    // }
-
-
-    // Q.push(eval);
   }
 
   em->cout() << "Min cost is 'false'\n";

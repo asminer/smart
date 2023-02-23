@@ -292,6 +292,122 @@ void model_event::decideEnabled(traverse_data &x) {
 
 // ******************************************************************
 // *                                                                *
+// *                        decision  methods                       *
+// *                                                                *
+// ******************************************************************
+
+decision::decision(const symbol* w, const model_instance* pn) : model_var(w,pn) 
+{
+  	dec = new result();
+    dec->setUnknown();
+    result* const_true = new result();
+    const_true->setBool(true);
+    enable_cond=new value("",0, em->BOOL, *const_true);
+    cost =1;
+}
+
+void decision::buildEnablingDependencies() 
+{
+	List<symbol> L;
+	getEnablingCond()->BuildSymbolList(traverse_data::GetSymbols, 0, &L);
+
+	for (int i = 0; i < L.Length(); i++) {
+		symbol* s = L.Item(i);
+		DCASSERT(s);
+		decision *d = dynamic_cast<decision*> (s);
+		deps.Append(d);
+	}
+}
+
+// ******************************************************************
+// *                                                                *
+// *                      decision_set  methods                     *
+// *                                                                *
+// ******************************************************************
+
+decision_set::decision_set(int nd, decision** decs) 
+{ 
+	size = nd;
+
+	for (int i = 0; i < nd; ++i) {
+		decisions.push_back(decs[i]);
+		// decs[i]->setDecision();
+	}
+}
+
+void decision_set::setDecisions(decision_eval *eval) 
+{
+	DCASSERT(size == eval->getSize());
+	for (int i = 0; i < size; ++i) {
+		DCASSERT(decisions[i]);
+
+		if (eval->isUnknown(i)) decisions[i]->unsetDecision();
+		else decisions[i]->setDecision(); 
+	}
+}
+
+// ******************************************************************
+// *                                                                *
+// *                      decision_eval  methods                    *
+// *                                                                *
+// ******************************************************************
+
+
+decision_eval::decision_eval(decision_set *d) 
+{
+	DCASSERT(d);
+	ds = d;
+	size = d->getNumDecisions();
+	bv = new bitvector(size);
+	bv->UnsetAll(); // maybe not needed
+	cost = 0; 
+}
+
+decision_eval::decision_eval(decision_set *d, bitvector *b) 
+{
+	DCASSERT(d);
+	DCASSERT(b);
+	ds = d;
+	size = d->getNumDecisions();
+	bv = new bitvector(size);
+	bv->FillFrom(b);
+	
+	cost = 0;
+	int i;
+	for(i = 0; i < size; ++i) {
+		if(bv->IsSet(i)) {
+			std::cerr << "1";
+			cost += ds->getDecision(i)->getCost();
+		} else {
+			std::cerr << "0";
+		}
+	}
+	std::cerr << "\n";
+}
+
+std::vector<decision_eval*>* decision_eval::getNextEvals(traverse_data &x) 
+{
+	std::vector<decision_eval*>* next_evals = new std::vector<decision_eval*>;
+	bitvector *b = new bitvector(*bv);
+
+	int i;
+	for(i = 0; i < size; ++i) {
+		if(!bv->IsSet(i)) {
+			expr* enable_cond = ds->getDecision(i)->getEnablingCond();
+			enable_cond->Compute(x);
+			if(x.answer->getBool()) {
+				bv->Set(i);
+				next_evals->push_back(new decision_eval(ds,bv));
+				bv->Unset(i);
+			}
+		}
+	}
+
+	return next_evals;
+}
+
+// ******************************************************************
+// *                                                                *
 // *                        dsde_hlm  methods                       *
 // *                                                                *
 // ******************************************************************

@@ -79,7 +79,7 @@ pn cruft(int n) := {
   );
   decision aa, bb, cc;
   cost(aa:1,bb:2,cc:1);
-  enable_decision(aa:bb);
+  //enable_decision(aa:bb);
   //bool ab := is_taken(aa);
   //enable_decision(bb:ab);
   //enable_decision(cc:true);

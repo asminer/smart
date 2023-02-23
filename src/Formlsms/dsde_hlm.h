@@ -2,6 +2,8 @@
 #ifndef DSDE_HLM_H
 #define DSDE_HLM_H
 
+#include "../_IntSets/bitvector.h"
+
 #include "../ExprLib/mod_def.h"
 #include "../ExprLib/mod_vars.h"
 #include "../ExprLib/mod_inst.h"
@@ -286,14 +288,7 @@ class decision : public model_var {
   int cost;
   List<decision> deps;
 public:
-  decision(const symbol* w, const model_instance* pn) : model_var(w,pn) {
-  	dec = new result();
-    dec->setUnknown();
-    result* const_true = new result();
-    const_true->setBool(true);
-    enable_cond=new value("",0, em->BOOL, *const_true);
-    cost =1;
-  }
+  decision(const symbol* w, const model_instance* pn);
 
   // decision(const char* fn, int line, const type* t, char* n,
 		// const model_instance* p);
@@ -301,9 +296,7 @@ protected:
   ~decision() { }
 public:
   // add get and set method
-  inline result* getDecision() {
-    return dec; 
-  }
+  inline result* getDecision() { return dec; }
 
   inline bool getDecisionValue() {
     if (dec->isUnknown()) return false; 
@@ -340,17 +333,7 @@ public:
     return cost;
   }
 
-  inline void buildEnablingDependencies() {
-    List<symbol> L;
-    getEnablingCond()->BuildSymbolList(traverse_data::GetSymbols, 0, &L);
-
-    for (int i = 0; i < L.Length(); i++) {
-      symbol* s = L.Item(i);
-      DCASSERT(s);
-      decision *d = dynamic_cast<decision*> (s);
-      deps.Append(d);
-    }
-  }
+  void buildEnablingDependencies();
 
   inline List<decision>& getEnablingDeps() {
     return deps;
@@ -363,51 +346,21 @@ public:
 // *                                                                        *
 // **************************************************************************
 
-
-class decision_set_value;
+class decision_eval;
 
 class decision_set {
-
-  enum {
-    cost
-  } search_policy;
-
+private:
   /// Underlying data structure
   std::vector<decision*> decisions;
   int size;
   int policy;
 
 public:
-  decision_set(int nd, decision** decs) { 
-    policy = cost; 
-    size = nd;
-
-    for (int i = 0; i < nd; ++i) {
-      decisions.push_back(decs[i]);
-      // decs[i]->setDecision();
-    }
-
-    switch (policy) {
-      case cost: 
-        std::sort(decisions.begin(), decisions.end(), costComp);
-        break;
-      default:
-        break; 
-    }
-  }
+  decision_set(int, decision**);
 
   ~decision_set() { 
     for(decision* d : decisions) Delete(d);
   }
-
-private:
-  struct {
-    bool operator()(decision *a, decision *b) const { 
-      DCASSERT(a);
-      DCASSERT(b);
-      return a->getCost() < b->getCost(); 
-    }
-  } costComp;
 
 public:
   inline decision* getDecision(int i) {
@@ -427,15 +380,7 @@ public:
     return NULL;
   } 
 
-  inline void setDecisions(result** eval) {
-    for (int i = 0; i < size; ++i) {
-      DCASSERT(decisions[i]);
-      DCASSERT(eval[i]);
-
-      if (eval[i]->isUnknown()) decisions[i]->unsetDecision();
-      else decisions[i]->setDecision(); 
-    }
-  }
+  void setDecisions(decision_eval *);
 
   inline void buildEnablingDependencies() {
     int i;
@@ -444,6 +389,34 @@ public:
     }
   }
 
+};
+
+class decision_eval {
+private:
+  bitvector *bv;
+  decision_set *ds;
+  int size;
+  int cost;
+
+public:
+  decision_eval(decision_set *d);
+  decision_eval(decision_set *d, bitvector *b);
+
+  inline int getCost() { return cost; }
+  inline int getSize() { return size; }
+
+  inline bool isUnknown(long i) {
+    return bv->IsSet(i);
+  }
+
+  std::vector<decision_eval*>* getNextEvals(traverse_data &x);
+};
+
+struct decision_eval_comp {
+  bool operator()(decision_eval* a, decision_eval* b) const { 
+    std::cout << "comparing " << a->getCost() << " < " << b->getCost() << "\n";
+    return a->getCost() < b->getCost(); 
+  }
 };
 
 // **************************************************************************
