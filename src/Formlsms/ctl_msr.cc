@@ -1482,7 +1482,7 @@ void CTL_min_decision_cost_base::Compute(traverse_data &x, expr** pass, int np)
 
   decision_set* dec_set = hlm->getDecisionSet();
 
-  std::priority_queue<result**> Q; 
+  std::queue<result**> Q; 
   bool flag=false;
   int index=0;
 
@@ -1531,31 +1531,37 @@ void CTL_min_decision_cost_base::Compute(traverse_data &x, expr** pass, int np)
   eval3[1]->setBool(true);
   Q.push(eval3);
 
-  // result** eval4 = (result**) malloc(sizeof(result*) * size);
-  // for(i = 0; i < size; ++i) {
-  //   eval4[i] = new result();
-  //   eval4[i]->setUnknown();
-  // }
-  // eval4[0]->setBool(true);
-  // eval4[1]->setBool(true);
-  // eval4[2]->setBool(true);
-  // Q.push(eval4);
+  result** eval4 = (result**) malloc(sizeof(result*) * size);
+  for(i = 0; i < size; ++i) {
+    eval4[i] = new result();
+    eval4[i]->setUnknown();
+  }
+  eval4[0]->setBool(true);
+  eval4[1]->setBool(true);
+  eval4[2]->setBool(true);
+  Q.push(eval4);
 
   while(!Q.empty()) { /// repeat loop until queue is empty
     em->cout() << "Queue size: " << Q.size() << "\n";
     /// pop eval from queue
-    eval = Q.top();
+    eval = Q.front();
     Q.pop();
     em->cout() << "Popping eval from Q\n";
     dec_set->setDecisions(eval);
+
+    em->cout() << "Eval: ";
+    for(i = 0; i < size; ++i) {
+      if(dec_set->getDecision(i)->isTaken())
+        em->cout() << dec_set->getDecision(i)->Name() << " ";
+    }
+    em->cout() << "\n";
+
 
     // evaluate CTL expression using eval, obtain tri-stateset
     /// (2) how to compute CTL expressions using evals?
     /// how to dispatch to correct engine? (e.g., AG_base)
     /// ASNWER: call pass[1]->Compute(x)
     em->cout() << "Computing CTL expression\n";
-    ctl_expr->Print(em->cout(), 0);
-    em->cout() << "\n";
     ctl_expr->Compute(x);
     DCASSERT(x.answer->getPtr());
 
@@ -1575,8 +1581,9 @@ void CTL_min_decision_cost_base::Compute(traverse_data &x, expr** pass, int np)
     trueset = res->getTrueSet();
     if(initset->isSubsetOf(trueset)) {
 
+      em->cout() << "Initial states: ";
       initset->Print(em->cout(), 0);
-      em->cout() << "\n";
+      em->cout() << "\nTrue states: ";
       trueset->Print(em->cout(), 0);
       em->cout() << "\n";
       em->cout() << "Min cost eval is 'true'\n";

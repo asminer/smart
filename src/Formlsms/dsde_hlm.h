@@ -284,6 +284,7 @@ class decision : public model_var {
   //std:: vector<result*> decisions;// not vector: one decision // will it be a vector of expr or just three valued number?//ask Dr. Miner is result compatible with exprmin a formula like aa & apD
   expr* enable_cond;
   int cost;
+  List<decision> deps;
 public:
   decision(const symbol* w, const model_instance* pn) : model_var(w,pn) {
   	dec = new result();
@@ -337,6 +338,22 @@ public:
   
   inline int getCost(){
     return cost;
+  }
+
+  inline void buildEnablingDependencies() {
+    List<symbol> L;
+    getEnablingCond()->BuildSymbolList(traverse_data::GetSymbols, 0, &L);
+
+    for (int i = 0; i < L.Length(); i++) {
+      symbol* s = L.Item(i);
+      DCASSERT(s);
+      decision *d = dynamic_cast<decision*> (s);
+      deps.Append(d);
+    }
+  }
+
+  inline List<decision>& getEnablingDeps() {
+    return deps;
   }
 };
 
@@ -406,6 +423,10 @@ public:
     return size == 0;
   }
 
+  inline result*** getNextEvals() {
+    return NULL;
+  } 
+
   inline void setDecisions(result** eval) {
     for (int i = 0; i < size; ++i) {
       DCASSERT(decisions[i]);
@@ -413,6 +434,13 @@ public:
 
       if (eval[i]->isUnknown()) decisions[i]->unsetDecision();
       else decisions[i]->setDecision(); 
+    }
+  }
+
+  inline void buildEnablingDependencies() {
+    int i;
+    for(i = 0; i < size; ++i) {
+      getDecision(i)->buildEnablingDependencies();
     }
   }
 
