@@ -359,7 +359,7 @@ decision_eval::decision_eval(decision_set *d)
 	ds = d;
 	size = d->getNumDecisions();
 	bv = new bitvector(size);
-	bv->UnsetAll(); // maybe not needed
+	bv->UnsetAll();
 	cost = 0; 
 }
 

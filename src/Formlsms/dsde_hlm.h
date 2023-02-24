@@ -404,10 +404,9 @@ public:
 
   inline int getCost() { return cost; }
   inline int getSize() { return size; }
-
-  inline bool isUnknown(long i) {
-    return bv->IsSet(i);
-  }
+  inline bool isTaken(long i) { return bv->IsSet(i); }
+  inline bool isUnknown(long i) { return !isTaken(i); }
+  inline bitvector* getBitvector() { return bv; }
 
   std::vector<decision_eval*>* getNextEvals(traverse_data &x);
 };

@@ -1468,6 +1468,18 @@ int min_cost_taken(result** eval, int size)
   return -1;
 }
 
+#include <cmath>
+
+int bitvectorToInt(bitvector* bv)
+{
+  long size = bv->Size();
+  long val = 0;
+  long i;
+  for(i = 0; i < size; ++i) {
+    if(bv->IsSet(i)) val += lround(pow(2,i));
+  }
+}
+
 #include <iostream>
 
 void CTL_min_decision_cost_base::Compute(traverse_data &x, expr** pass, int np)
@@ -1485,9 +1497,6 @@ void CTL_min_decision_cost_base::Compute(traverse_data &x, expr** pass, int np)
 
   decision_set* dec_set = hlm->getDecisionSet();
 
-  std::priority_queue<decision_eval*, std::vector<decision_eval*>, decision_eval_comp> Q; 
-  bool flag=false;
-  int index=0;
 
   expr* ctl_expr = pass[1];
   expl_tri_stateset* res;
@@ -1497,6 +1506,8 @@ void CTL_min_decision_cost_base::Compute(traverse_data &x, expr** pass, int np)
   expl_stateset *initset = dynamic_cast<expl_stateset*> (llm->getInitialStates());
   DCASSERT(initset);
 
+  std::priority_queue<decision_eval*, std::vector<decision_eval*>, decision_eval_comp> Q; 
+  intset explored;
   int size = dec_set->getNumDecisions();
   
   // add initial evaluations to queue
@@ -1504,22 +1515,21 @@ void CTL_min_decision_cost_base::Compute(traverse_data &x, expr** pass, int np)
   /// ANSWER: call cond->Compute(x) where x is arg above, or create a new one
 
   // Hard-coded queue
-  bitvector *bv = new bitvector(size);
+  // bitvector *bv = new bitvector(size);
   // decision_eval *eval1 = new decision_eval(dec_set);
   // Q.push(eval1);
-  bv->Set(2);
-  decision_eval *eval2 = new decision_eval(dec_set,bv);
+  // bv->Set(2);
+  // decision_eval *eval2 = new decision_eval(dec_set,bv);
   // Q.push(eval2);
-  bv->Set(1);
-  decision_eval *eval3 = new decision_eval(dec_set,bv);
+  // bv->Set(1);
+  // decision_eval *eval3 = new decision_eval(dec_set,bv);
   // Q.push(eval3);
-  bv->Set(0);
-  decision_eval *eval4 = new decision_eval(dec_set,bv);
-  Q.push(eval4);
+  // bv->Set(0);
+  // decision_eval *eval4 = new decision_eval(dec_set,bv);
+  // Q.push(eval4);
 
-  decision_eval *eval;
-  // decision_eval *eval = new decision_eval(dec_set);
-  // Q.push(eval);
+  decision_eval *eval = new decision_eval(dec_set);
+  Q.push(eval);
 
   while(!Q.empty()) { /// repeat loop until queue is empty
     em->cout() << "Queue size: " << Q.size() << "\n";
@@ -1528,6 +1538,7 @@ void CTL_min_decision_cost_base::Compute(traverse_data &x, expr** pass, int np)
     Q.pop();
     em->cout() << "Popping eval from Q\n";
     dec_set->setDecisions(eval);
+    explored.addElement(bitvectorToInt(eval->getBitvector()));
 
     em->cout() << "Eval: ";
     int i;
@@ -1584,10 +1595,18 @@ void CTL_min_decision_cost_base::Compute(traverse_data &x, expr** pass, int np)
     // else, some initial state is unknown, so continue
 
     // add next set of evals to queue
-    // std::vector<decision_eval*>* next_evals = eval->getNextEvals(x);
-    // for(decision_eval *de : *next_evals) {
-    //   Q.push(de);
-    // }
+    std::vector<decision_eval*>* next_evals = eval->getNextEvals(x);
+    for(decision_eval *de : *next_evals) {
+      if(!explored.contains(bitvectorToInt(de->getBitvector()))) {
+        Q.push(de);
+        em->cout() << "Adding to Queue: ";
+        for(i = 0; i < size; ++i) {
+          if(de->isTaken(i))
+            em->cout() << dec_set->getDecision(i)->Name() << " ";
+        }
+        em->cout() << "\n";
+      }
+    }
   }
 
   em->cout() << "Min cost is 'false'\n";
