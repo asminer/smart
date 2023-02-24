@@ -103,7 +103,7 @@ pn cruft(int n) := {
   //stateset test2 := potential(tk(I)>0 & dec_value(aa));
   //bool min_cost := min_decision_cost(test2);
   
-  bool min_cost := min_decision_cost(potential(tk(I)>0 & dec_value(bb)));
+  bool min_cost := min_decision_cost(potential(tk(I)>0 & dec_value(cc)));
 
   /* NOTES:
     - Need to mark each expression with a decision as an ancestor as "recomputable" 

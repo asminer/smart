@@ -414,7 +414,7 @@ public:
 struct decision_eval_comp {
   bool operator()(decision_eval* a, decision_eval* b) const { 
     std::cout << "comparing " << a->getCost() << " < " << b->getCost() << "\n";
-    return a->getCost() < b->getCost(); 
+    return a->getCost() > b->getCost(); 
   }
 };
 
