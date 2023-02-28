@@ -1469,6 +1469,8 @@ int min_cost_taken(result** eval, int size)
 }
 
 #include <cmath>
+#include <iostream>
+#include <unordered_set>
 
 int bitvectorToInt(bitvector* bv)
 {
@@ -1478,9 +1480,9 @@ int bitvectorToInt(bitvector* bv)
   for(i = 0; i < size; ++i) {
     if(bv->IsSet(i)) val += lround(pow(2,i));
   }
+  return val;
 }
 
-#include <iostream>
 
 void CTL_min_decision_cost_base::Compute(traverse_data &x, expr** pass, int np)
 {
@@ -1507,7 +1509,7 @@ void CTL_min_decision_cost_base::Compute(traverse_data &x, expr** pass, int np)
   DCASSERT(initset);
 
   std::priority_queue<decision_eval*, std::vector<decision_eval*>, decision_eval_comp> Q; 
-  intset explored;
+  std::unordered_set<int> explored;
   int size = dec_set->getNumDecisions();
   
   // add initial evaluations to queue
@@ -1538,7 +1540,8 @@ void CTL_min_decision_cost_base::Compute(traverse_data &x, expr** pass, int np)
     Q.pop();
     em->cout() << "Popping eval from Q\n";
     dec_set->setDecisions(eval);
-    explored.addElement(bitvectorToInt(eval->getBitvector()));
+    explored.insert(bitvectorToInt(eval->getBitvector()));
+    em->cout() << bitvectorToInt(eval->getBitvector()) << "\n";
 
     em->cout() << "Eval: ";
     int i;
@@ -1597,7 +1600,7 @@ void CTL_min_decision_cost_base::Compute(traverse_data &x, expr** pass, int np)
     // add next set of evals to queue
     std::vector<decision_eval*>* next_evals = eval->getNextEvals(x);
     for(decision_eval *de : *next_evals) {
-      if(!explored.contains(bitvectorToInt(de->getBitvector()))) {
+      if(explored.find(bitvectorToInt(de->getBitvector())) == explored.end()) {
         Q.push(de);
         em->cout() << "Adding to Queue: ";
         for(i = 0; i < size; ++i) {

@@ -2996,16 +2996,16 @@ void pn_transitions::Compute(traverse_data &x, expr** pass, int np)
 
 
 // ********************************************************
-// *                   pn_decision  class                   *
+// *                   pn_decision  class                 *
 // ********************************************************
 
 class pn_decisions : public model_internal{
-  
   const type* dset;
 public:
   pn_decisions(const type* dset);
   virtual void Compute(traverse_data &x, expr** pass, int ndd);
 };
+
 pn_decisions::pn_decisions(const type* ds): model_internal(ds,"decisions",1) //: model_internal(ps, "decisions", 1)
 {
   dset = ds;
@@ -3077,6 +3077,7 @@ void pn_is_taken::Compute(traverse_data &x, expr** pass, int ndd)
   DCASSERT(pass);
 
   model_instance* mi = grabModelInstance(x, pass[0]);
+  DCASSERT(mi);
   dsde_hlm* mypn;
   mypn = smart_cast <dsde_hlm*> (mi->GetCompiledModel());
 
