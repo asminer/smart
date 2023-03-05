@@ -3055,7 +3055,7 @@ void pn_decisions::Compute(traverse_data &x, expr** pass, int ndd)
 // *                           is_taken                             *
 // ******************************************************************
 
-class pn_is_taken : public proc_noengine {
+class pn_is_taken : public model_internal {
 public:
   pn_is_taken();
   virtual void Compute(traverse_data &x, expr** pass, int ndd);
@@ -3063,7 +3063,7 @@ public:
 
 
 pn_is_taken::pn_is_taken()
- : proc_noengine(Nothing, em->BOOL, "is_taken", 2)
+ : model_internal(em->BOOL, "is_taken", 2)
 {
   const type* dec = em->findType("decision"); 
   SetFormal(1, dec, "d");

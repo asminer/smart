@@ -314,6 +314,7 @@ void decision::buildEnablingDependencies()
 	for (int i = 0; i < L.Length(); i++) {
 		symbol* s = L.Item(i);
 		DCASSERT(s);
+		s->Name();
 		decision *d = dynamic_cast<decision*> (s);
 		deps.Append(d);
 	}
