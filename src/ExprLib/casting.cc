@@ -252,7 +252,7 @@ expr* typeconv::promoteExpr(expr* e, bool prc, bool rnd, const expr* fp)
         if (!thisagg) {
             newagg[i] = thisagg;
         } else {
-            newagg[i] = castExpr(true, e->Where(), prf, e);
+            newagg[i] = castExpr(true, e->Where(), prf, thisagg);
             DCASSERT(!bogus_expr::orNull(newagg[i]));
         }
     }

@@ -231,9 +231,9 @@ class type : public shared_string {
         */
         static void allowSetsOf(simple_type* t);
 
+        inline void setFormalism()          { is_formalism = true; }
     protected:
         inline void setVoid()               { is_void = true; }
-        inline void setFormalism()          { is_formalism = true; }
 
         virtual bool print_normal(std::ostream &s, const result& r,
                 int w=0, int p=-1) const;

@@ -2423,7 +2423,7 @@ expr* MakeMCall(shared_object* mcall, char* m)
 
   expr* foo = 0;
   if (mcd->model1) {
-    foo = expr::makeMeasureCall(Where(),
+    foo = model_def::makeMeasureCall(Where(),
       mcd->model1, mcd->pass, mcd->np, m);
   } else {
     foo = expr::makeMeasureCall(Where(), mcd->model2, m);
@@ -2476,7 +2476,7 @@ expr* MakeMACall(shared_object* mcall, char* m, parser_list* ind)
   RecycleCircular(ind);
   expr* foo = 0;
   if (mcd->model1) {
-    foo = expr::makeMeasureCall(Where(),
+    foo = model_def::makeMeasureCall(Where(),
       mcd->model1, mcd->pass, mcd->np, m, I, length);
   } else {
     foo = expr::makeMeasureCall(Where(),
