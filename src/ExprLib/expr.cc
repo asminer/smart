@@ -209,7 +209,7 @@ void expr::SetModelType(const model_def* mt)
     if (!mt) return;
     DCASSERT(!aggtype);
     if (simple) {
-        DCASSERT(simple->isAFormalism());
+        DCASSERT(simple->isAFormalism() || simple->matches("model"));
     } else {
         simple = type::find("model");
     }

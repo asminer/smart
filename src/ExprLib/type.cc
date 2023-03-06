@@ -997,7 +997,6 @@ void type_initializer::execute()
     simple_type* t_model = type::registerNew(new simple_type("model",
         "Generic model", "Generic model; can be set from any formalism."));
     t_model->NoFunctions();
-    t_model->setFormalism();
 
     type::registerNew(new next_state_type);
 
