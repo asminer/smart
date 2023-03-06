@@ -148,8 +148,8 @@ markov_def::markov_def(const location &W, const type* t, bool d,
 {
   statelist = 0;
   state_count = 0;
-  mymc = 0;
-  initial = 0;
+  mymc = nullptr;
+  initial = nullptr;
   discrete = d;
   error = 0;
 }
@@ -241,7 +241,7 @@ void markov_def::InitModel()
 {
   statelist = 0;
   state_count = 0;
-  DCASSERT(0==mymc);
+  DCASSERT(!mymc);
   mymc = new GraphLib::dynamic_summable<double> (isDiscrete(), true);
   DCASSERT(mymc);
   DCASSERT(0==initial);
@@ -309,6 +309,8 @@ void markov_def::FinalizeModel(outputStream &ds)
     foo->dumpDot(ds);
     ConstructionSuccess(bar);
     mymc = nullptr;
+    delete initial;
+    initial = nullptr;
 }
 
 
