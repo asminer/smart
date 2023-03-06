@@ -101,10 +101,11 @@ class init_dcpmeasures : public initializer {
 };
 static init_dcpmeasures the_dcpmeasure_initializer;
 
-init_dcpmeasures::init_dcpmeasures() : initializer(__FILE__, 2)
+init_dcpmeasures::init_dcpmeasures() : initializer(__FILE__, 3)
 {
-  builds_resource("CML");
-  builds_resource("engtypes");
+    builds_resource("CML");
+    builds_resource("engtypes");
+    needs_resource("types");
 }
 
 void init_dcpmeasures::execute()

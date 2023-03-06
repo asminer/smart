@@ -600,13 +600,13 @@ bool IllegalModelVarName(char* ident, const char* what_am_i)
 // --------------------------------------------------------------
 void StartModel()
 {
-    const type* ICP_TYPE = type::find("dcp");
-    ModelType = dynamic_cast <const formalism*> (ICP_TYPE);
-    DCASSERT(ModelType);
-    DCASSERT(ICP_TYPE);
     DCASSERT(0==ModelType);
     DCASSERT(0==model_under_construction);
     DCASSERT(0==ModelInternal);
+    const type* ICP_TYPE = type::find("dcp");
+    DCASSERT(ICP_TYPE);
+    ModelType = dynamic_cast <const formalism*> (ICP_TYPE);
+    DCASSERT(ModelType);
     char* name = strdup(" ");
     model_under_construction =
         ModelType->makeNewModel(location::NOWHERE(), name, 0, 0);
@@ -635,7 +635,7 @@ void FinishModel()
 
   // Build measure calls
   for (int i=0; i<pm->num_measures; i++) {
-    pm->measure_calls[i] = expr::makeMeasureCall(Where(),
+    pm->measure_calls[i] = model_def::makeMeasureCall(Where(),
       model_under_construction, 0, 0, pm->measure_names[i]);
   }
 
