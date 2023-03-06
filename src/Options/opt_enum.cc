@@ -40,17 +40,16 @@ int option_enum::Compare(const shared_object* b) const
     if (ss) {
         return strcmp(Name(), ss->getStr());
     }
+    const const_string* cs = dynamic_cast <const const_string*> (b);
+    if (cs) {
+        return strcmp(Name(), cs->getStr());
+    }
     const option_enum* oe = dynamic_cast <const option_enum*> (b);
     if (oe)  {
         return strcmp(Name(), oe->Name());
     } else {
         return 1;
     }
-}
-
-int option_enum::Compare(const char* n) const
-{
-    return strcmp(Name(), n);
 }
 
 bool option_enum::isApropos(const doc_formatter &df, const char* key) const

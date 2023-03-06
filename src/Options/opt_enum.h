@@ -38,7 +38,6 @@ class option_enum : public shared_object {
         bool Print(std::ostream &s, int width=0) const;
 
         int Compare(const shared_object* b) const;
-        int Compare(const char* name) const;
 
         inline const option_manager* readSettings() const { return settings; }
         inline void makeSettings(const option_manager* s) { settings = s; }
