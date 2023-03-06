@@ -249,7 +249,8 @@ class expr : public shared_object {
             state = 2;
         }
         inline void setBlocked() {
-            CHECK_RANGE(__FILE__, __LINE__, 0, state, 3);   // or 4?
+            CHECK_RANGE(__FILE__, __LINE__, 0, state, 4);
+            // state could be 3 already; that's fine
             state = 3;
         }
         inline void setReady() {
