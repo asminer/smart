@@ -352,6 +352,8 @@ set_of_measures** engtype::buildMeasureGroups()
     }
 
     build_groups_traversal T(sets, registry_size);
+    if (registry) registry->traverse(T);
+
     return sets;
 }
 
