@@ -2705,7 +2705,8 @@ expr* FindIdent(char* name)
   // Check "constants"
   if (!find) find = Constants->findSymbol(name);
 
-  if (find) {
+  const function* ffind = dynamic_cast <const function*> (find);
+  if (find && !ffind) {
     free(name);
     return Share(find);
   }
