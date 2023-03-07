@@ -269,12 +269,24 @@ void markov_def::FinalizeModel(outputStream &ds)
     // build initial distribution
     //
     unsigned size = initial->numElements();
+
+    if (!size && StartWarning(no_init, 0)) {
+      no_init << "Empty initial distribution";
+      DoneWarning(no_init);
+    }
+
     long* indexes = size ? new long[size] : nullptr;
     float* probs = size ? new float[size] : nullptr;
     state_weight::visitor v(indexes, probs, size);
     initial->traverse(v);   // calculate total weights
     v.secondPass();
     initial->traverse(v);   // get probabilities
+
+    //
+    // Done with initial
+    //
+    delete initial;
+    initial = nullptr;
 
     //
     // Copy into format for linear solvers
@@ -309,8 +321,6 @@ void markov_def::FinalizeModel(outputStream &ds)
     foo->dumpDot(ds);
     ConstructionSuccess(bar);
     mymc = nullptr;
-    delete initial;
-    initial = nullptr;
 }
 
 

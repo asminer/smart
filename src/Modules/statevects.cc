@@ -147,7 +147,7 @@ statevect::statevect(const stochastic_lldsm* p, LS_Vector &V,
 {
   parent = p;
 
-  DCASSERT(V.d_value || V.f_value);
+  DCASSERT(0==V.size || V.d_value || V.f_value);
 
   //
   // Determine number of nonzeroes, truncation point
