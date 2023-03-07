@@ -66,15 +66,21 @@ class warning_msg : public switchable_msg {
 
 /*
  * Named messages.
- * The option name is part of the message prefix.
  */
 class named_msg : public switchable_msg {
-        static char prefix[256];
-    protected:
-        const char* setPrefix(char x) const;
-        const char* getPrefix() const { return prefix; }
     public:
         named_msg(const char* optname);
+
+    protected:
+        bool start(outputStream &out) const;
+
+        inline void newLine(outputStream &out, char tab) const {
+            if ('+' == tab) out.incIndent();
+            if ('-' == tab) out.decIndent();
+            out.newLine();
+        }
+
+        void stop(outputStream &out, bool newline) const;
 };
 
 /*
@@ -92,20 +98,20 @@ class reporting_msg : public named_msg {
         inline static void defaultOutput() {
             Out.defaultOutput();
         }
-
-        bool start() const;
-
         static inline std::ostream& stream() {
             return Out.stream();
         }
-        inline void newLine(char tab=0) const {
-            if ('+' == tab) Out.incIndent();
-            if ('-' == tab) Out.decIndent();
-            Out.newLine(getPrefix());
+
+        inline bool start() const {
+            return named_msg::start(Out);
         }
-        static inline void stop(bool nl=true) {
-            if (nl) stream() << std::endl;
-            Out.deactivate();
+
+        inline void newLine(char tab=0) const {
+            named_msg::newLine(Out, tab);
+        }
+
+        inline void stop(bool nl=true) const {
+            named_msg::stop(Out, nl);
         }
 };
 
@@ -124,20 +130,20 @@ class debugging_msg : public named_msg {
         inline static void defaultOutput() {
             Out.defaultOutput();
         }
-
-        bool start() const;
-
         static inline std::ostream& stream() {
             return Out.stream();
         }
-        inline void newLine(char tab=0) const {
-            if ('+' == tab) Out.incIndent();
-            if ('-' == tab) Out.decIndent();
-            Out.newLine(getPrefix());
+
+        inline bool start() const {
+            return named_msg::start(Out);
         }
-        static inline void stop(bool nl=true) {
-            if (nl) stream() << std::endl;
-            Out.deactivate();
+
+        inline void newLine(char tab=0) const {
+            named_msg::newLine(Out, tab);
+        }
+
+        inline void stop(bool nl=true) const {
+            named_msg::stop(Out, nl);
         }
 };
 

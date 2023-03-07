@@ -48,26 +48,26 @@ bool warning_msg::start(const location &L) const
 // *                       named_msg  methods                       *
 // ******************************************************************
 
-char named_msg::prefix[256];
-
-const char* named_msg::setPrefix(char x) const
-{
-    prefix[0] = 'x';
-    unsigned i;
-    for (i=0; i<250; i++) {
-        if (0 == getName()[i]) break;
-        prefix[i+1] = getName()[i];
-    }
-    prefix[i++] = ':';
-    prefix[i++] = ' ';
-    prefix[i++] = 0;
-    return prefix;
-}
-
 named_msg::named_msg(const char* optn) : switchable_msg(optn)
 {
 }
 
+bool named_msg::start(outputStream &out) const
+{
+    if (!isActive()) return false;
+    out.activate();
+    out.clearIndent();
+    out << "***** " << getName() << " " << optName() << " *****\n";
+    out.incIndent();
+    return true;
+}
+
+void named_msg::stop(outputStream &out, bool newline) const
+{
+    if (!isActive()) return;
+    if (newline) out.stream() << std::endl;
+    out.deactivate();
+}
 
 // ******************************************************************
 // *                     reporting_msg  methods                     *
@@ -80,17 +80,6 @@ reporting_msg::reporting_msg() : named_msg("Report")
     Deactivate();
 }
 
-bool reporting_msg::start() const
-{
-    if (!isActive()) return false;
-    Out.activate();
-    Out.clearIndent();
-    Out << setPrefix('R');
-    return true;
-}
-
-
-
 // ******************************************************************
 // *                     debugging_msg  methods                     *
 // ******************************************************************
@@ -101,16 +90,6 @@ debugging_msg::debugging_msg() : named_msg("Debug")
 {
     Deactivate();
 }
-
-bool debugging_msg::start() const
-{
-    if (!isActive()) return false;
-    Out.activate();
-    Out.clearIndent();
-    Out << setPrefix('D');
-    return true;
-}
-
 
 // ******************************************************************
 // *                       error_msg  methods                       *
