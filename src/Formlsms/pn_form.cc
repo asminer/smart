@@ -2735,7 +2735,6 @@ pn_tk::pn_tk() : model_internal(em->INT->addProc(), "tk", 2)
 #include <iostream>
 void pn_tk::Compute(traverse_data &x, expr** pass, int np)
 {
-  em->cout() << "computing tk\n";
   DCASSERT(x.answer);
   DCASSERT(0==x.aggregate);
   DCASSERT(x.current_state);
@@ -3108,7 +3107,6 @@ pn_dec_value::pn_dec_value()
 #include <iostream>
 void pn_dec_value::Compute(traverse_data &x, expr** pass, int ndd)
 {
-  em->cout() << "computing dec_value\n";
   DCASSERT(x.answer);
   DCASSERT(0==x.aggregate);
   DCASSERT(pass);

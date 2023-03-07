@@ -222,6 +222,7 @@ stateset* ectl_reachgraph::AX(bool revTime, const stateset* p)
   return new expl_stateset(p->getParent(), answer);
 }
 
+#include <iostream>
 
 stateset* ectl_reachgraph::EU(bool revTime, const stateset* p, const stateset* q, trace_data* td)
 {
@@ -235,13 +236,16 @@ stateset* ectl_reachgraph::EU(bool revTime, const stateset* p, const stateset* q
     :   ( p ? "EU" : "EF" )
   ;
 
-  if (0==ep || 0==eq) {
+  if ((0!=p && 0==ep) || 0==eq) {
     const expl_tri_stateset* etp = dynamic_cast <const expl_tri_stateset*> (p);
     const expl_tri_stateset* etq = dynamic_cast <const expl_tri_stateset*> (q);
 
     if (0==etp) {
+      std::cout << "0==etp\n";
       etp = new expl_tri_stateset(p->getParent(), ep);
+      std::cout << "0==etp\n";
     } else if (0==etq) {
+      std::cout << "0==etq\n";
       etq = new expl_tri_stateset(q->getParent(), eq);
     } else {
       return incompatibleOperand(CTLOP);

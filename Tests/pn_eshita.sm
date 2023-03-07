@@ -87,9 +87,9 @@ pn cruft(int n) := {
   //aa:=1;
   //find the model type:study them
   
-  //void show_rs := show_states(false);
-  //void show_dec := show_decisions();
-  //void show_rg := show_arcs(false);
+  void show_rs := show_states(false);
+  void show_dec := show_decisions();
+  void show_rg := show_arcs(false);
   //bigint na := num_arcs;
   //for(int i in {0..5}){
   // 	int design_D[i]:=DontKnow;
@@ -103,24 +103,9 @@ pn cruft(int n) := {
 
   //stateset test2 := potential(tk(I)>0 & dec_value(aa));
   //bool min_cost := min_decision_cost(test2);
-  
-  bool min_cost := min_decision_cost(potential(tk(I)>0 & dec_value(aa)));
-
-  /* NOTES:
-    - Need to mark each expression with a decision as an ancestor as "recomputable" 
-    - How to best do this?
-
-    - Thought about editing the "state" of a measure -- this opens a can of worms
-
-    
-    - What's really happening is these expressions are "model instance agnostic"
-    - So, any expression with a decision as an ancestor actually represents an 
-      exponential number of models w.r.t. the number of decisions, but we abstract this away
-  */
+  //bool min_cost := min_decision_cost(potential(tk(I)>0 & dec_value(aa)));
 
 
-  // should I make a pair of sets? pair<stateset, stateset> SS?  
-  /*
   stateset rs := reachable;
   stateset apB := reachable & potential(tk(B)>0);
   stateset apBaa := reachable & potential(tk(B)>0);
@@ -129,13 +114,6 @@ pn cruft(int n) := {
   stateset apH := reachable & potential(tk(H)>0);
   stateset apK := reachable & potential(tk(K)>0);
   stateset apEn:= reachable & potential(tk(E)==1);
-
-  stateset test1 := potential(tk(I)>0 & true);
-
-  stateset test3 := EX(test2);
-
-
-  stateset test4 := !test2;
 
   stateset init := initial;
 
@@ -150,13 +128,11 @@ pn cruft(int n) := {
   stateset prop4 := EX(apH);
 
   stateset prop5 := reachable & !EX(reachable);
-  */
 };
 
-print(cruft(5).min_cost);
+//print(cruft(5).min_cost);
 //print("\n", cruft(5).test2, "\n");
 
-/*
 print("Reachable states:\n");
 compute(cruft(5).show_rs);
 print("decisions: \n");
@@ -164,14 +140,7 @@ compute(cruft(5).show_dec);
 print("State graph:\n");
 compute(cruft(5).show_rg);
 print("\n");
-print(cruft(5).test1);
-print("\n", cruft(5).test2);
-print("\n I am testing the following");
-print("\ninitial states: ", cruft(5).init);
-print("\n", cruft(5).test2, "\n");
-*/
 
-/*
 print("\nEX tests:\n--------------------------------------------------\n");
 
 print("Should be {[B], [I], [J]}:\n          ", cruft(5).prop1, "\n");
@@ -183,5 +152,4 @@ print("test: ", cruft(5).prop0,"\n");
 print("False set:::", cruft(5).FS,"\n");
 print("\nErrors:\n--------------------------------------------------\n");
 print(cruft(5).prop1 | cruft(5).prop1, "\n");
-*/
 print("\nDone!\n");
