@@ -88,20 +88,21 @@ void meddly_monolithic_rg::attachToParent(graph_lldsm* p, state_lldsm::reachset*
 
 void meddly_monolithic_rg::setEdges(shared_ddedge* nsf)
 {
-  DCASSERT(nsf);
-  if (nsf->getForest() == mxd_wrap->getForest()) {
-    edges = nsf;
-    return;
-  }
+    if (!nsf) return;
 
-  //
-  // Different forests.  Make a copy.
-  //
+    if (nsf->getForest() == mxd_wrap->getForest()) {
+        edges = nsf;
+        return;
+    }
 
-  Delete(edges);  // probably zero but this is safest
-  edges = newMxdEdge();
-  MEDDLY::apply(MEDDLY::COPY, nsf->E, edges->E);
-  Delete(nsf);
+    //
+    // Different forests.  Make a copy.
+    //
+
+    Delete(edges);  // probably zero but this is safest
+    edges = newMxdEdge();
+    MEDDLY::apply(MEDDLY::COPY, nsf->E, edges->E);
+    Delete(nsf);
 }
 
 void meddly_monolithic_rg::scheduleConversionToActual()

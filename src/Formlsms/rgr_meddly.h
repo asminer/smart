@@ -140,11 +140,12 @@ class meddly_monolithic_rg : public graph_lldsm::reachgraph {
 
   private:
     inline shared_ddedge* buildActualEdges() const {
-      DCASSERT(edges);
-      DCASSERT(states);
-      shared_ddedge* actual = newMxdEdge();
-      mxd_wrap->selectRows(edges, states, actual);
-      return actual;
+        if (!edges) return nullptr;
+        DCASSERT(edges);
+        DCASSERT(states);
+        shared_ddedge* actual = newMxdEdge();
+        mxd_wrap->selectRows(edges, states, actual);
+        return actual;
     }
 
     template <class INT>

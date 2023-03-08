@@ -1,0 +1,9 @@
+
+// # Debug + procgen
+
+// # MeddlyProcessGeneration TRADITIONAL
+# MeddlyProcessGeneration OTF_SATURATION
+# MeddlyVariableStyle ON_THE_FLY
+# MeddlyNSFNodeDeletion PESSIMISTIC
+# ProcessGeneration MEDDLY
+# MeddlyProcessEdgeStyle ACTUAL
