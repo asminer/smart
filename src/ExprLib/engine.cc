@@ -8,7 +8,23 @@
 #include "../Options/radio_opt.h"
 #include "measures.h"
 #include "mod_inst.h"
-// #include "exprman.h"
+
+// #define DEBUG_REGISTRY
+
+// ********************************************************
+// *               finalizer_visitor class                *
+// ********************************************************
+
+class finalizer_visitor : public shared_visitor {
+        option_manager &om;
+    public:
+        finalizer_visitor(option_manager &_om) : om(_om) { };
+        virtual void visit(shared_object* obj) {
+            engtype* et = smart_cast <engtype*> (obj);
+            if (!et) return;
+            et->finalizeRegistry(om);
+        }
+};
 
 // ********************************************************
 // *                engine_watcher  class                 *
@@ -230,6 +246,9 @@ engtype::~engtype()
 void engtype::registerEngine(engine* e)
 {
     if (!e)  throw subengine::No_Engine;
+#ifdef DEBUG_REGISTRY
+    std::cerr << "Engine type " << *this << ", registering engine " << *e << "\n";
+#endif
     e->etype = this;
     if (finalized) throw subengine::Finalized;
     if (Nothing == form) {
@@ -258,10 +277,13 @@ void engtype::registerSubengine(const char* name, subengine* se)
     f->AddSubEngine(se);
 }
 
-void engtype::finalizeRegistry(option_manager* om)
+void engtype::finalizeRegistry(option_manager &om)
 {
     if (finalized)      return;
     if (!EngTree)       return;
+#ifdef DEBUG_REGISTRY
+    std::cerr << "finalizing registry for engine type " << *this << "\n";
+#endif
 
     //
     // Convert engines into an ordered array
@@ -270,7 +292,6 @@ void engtype::finalizeRegistry(option_manager* om)
     killEngTree();
     finalized = true;
 
-    if (!om) return;    // Can't build an option
     if (EngList->numElements() < 2) {
         engine* item0 = dynamic_cast <engine*> (EngList->get(0));
         DCASSERT(item0);
@@ -282,7 +303,7 @@ void engtype::finalizeRegistry(option_manager* om)
     //
 
     engine_watcher* EW = new engine_watcher(this);
-    option* ro = om->addRadioOption(Name(), Documentation(),
+    option* ro = om.addRadioOption(Name(), Documentation(),
         EngList->numElements(), EW->Link());
     ro->registerWatcher(EW);
     for (unsigned i=0; i<EngList->numElements(); i++) {
@@ -327,6 +348,10 @@ set_of_measures* engtype::makeMeasureSet() const
 
 engtype* engtype::registerEngineType(engtype* et)
 {
+    if (!et) return nullptr;
+#ifdef DEBUG_REGISTRY
+    std::cout << "Registering engine type " << *et << "\n";
+#endif
     if (!registry) {
         registry = new splayOfShared(16, 0);
         registry_size = 0;
@@ -364,6 +389,11 @@ engtype* engtype::findEngineType(const char* name)
     return smart_cast <engtype*> (registry->find(&S));
 }
 
+void engtype::finalizeAll(option_manager &om)
+{
+    finalizer_visitor v(om);
+    if (registry) registry->traverse(v);
+}
 
 void engtype::killEngTree()
 {
@@ -619,7 +649,7 @@ void engine_init::execute()
         new engtype("No Engine", "No solution engine", engtype::Single)
     );
     RegisterEngine(noengine, "no-op", "Do nothing", &the_noop_engine);
-    noengine->finalizeRegistry();
+    noengine->finalizeRegistry(option_manager::global());
 
     //
     // Set up special "blocked" engine type.
@@ -630,7 +660,7 @@ void engine_init::execute()
     );
     blocked->is_blocked_engine = true;
     RegisterEngine(blocked, "fail", "Fail and bail out", &the_bogus_engine);
-    blocked->finalizeRegistry();
+    blocked->finalizeRegistry(option_manager::global());
 }
 
 // ******************************************************************

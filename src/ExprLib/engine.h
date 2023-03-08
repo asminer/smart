@@ -282,7 +282,7 @@ class engtype : public shared_string {
         void registerSubengine(const char* engname, subengine* se);
 
         /// Call when we are done registering engines.
-        void finalizeRegistry(option_manager* om=nullptr);
+        void finalizeRegistry(option_manager &om);
 
         /** Run an engine on parameters.
             Call this for engines of form "FunctionCall".
@@ -363,6 +363,9 @@ class engtype : public shared_string {
         */
         static engtype* findEngineType(const char* name);
 
+        /** Finalize all registered engine types.
+         */
+        static void finalizeAll(option_manager &om);
 
     private:
         void killEngTree();

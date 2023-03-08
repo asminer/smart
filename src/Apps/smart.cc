@@ -37,6 +37,7 @@
 #include "../ExprLib/functions.h"
 #include "../ExprLib/values.h"
 #include "../ExprLib/symb_tab.h"
+#include "../ExprLib/engine.h"
 
 #include "../ParseSM/parse_sm.h"
 
@@ -219,6 +220,7 @@ int main(int argc, const char** argv, const char** env)
 
     // Finalize registries
     type::finalizeRegistry();
+    engtype::finalizeAll(option_manager::global());
     option_manager::global().DoneAddingOptions();
 
     // Process command line, start parser

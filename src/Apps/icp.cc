@@ -13,6 +13,7 @@
 #include "../Utils/library.h"
 #include "../Utils/initializer.h"
 #include "../ExprLib/expr.h"
+#include "../ExprLib/engine.h"
 #include "../ParseICP/parse_icp.h"
 
 
@@ -63,6 +64,7 @@ int main(int argc, const char** argv, const char** env)
 
     // Finalize registries
     type::finalizeRegistry();
+    engtype::finalizeAll(option_manager::global());
     option_manager::global().DoneAddingOptions();
 
     //
