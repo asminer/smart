@@ -9,14 +9,10 @@ end_of_line = lf
 insert_final_newline = true
 trim_trailing_whitespace = true
 indent_style = space
-indent_size = 2
+indent_size = 4
 
 # Settings for Makefiles
 [Makefile]
 indent_style = tab
-indent_size = 2
-
-# Settings for sources
-[*.{c,cc,cpp,h,hh,hpp}]
 indent_size = 4
 
