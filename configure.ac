@@ -3,8 +3,8 @@
 # See the README file for more details.
 #
 
-AC_PREREQ(2.59)
-AC_INIT([smartpack], [3.4.1], [asminer@iastate.edu], [smartpack], [http://smart.cs.iastate.edu])
+AC_PREREQ([2.71])
+AC_INIT([smartpack],[3.4.2],[asminer@iastate.edu],[smartpack],[http://smart.cs.iastate.edu])
 AM_INIT_AUTOMAKE([-Wall foreign parallel-tests color-tests subdir-objects])
 # Allow silent builds, and make it the default, if we can:
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
@@ -19,7 +19,7 @@ AM_PROG_LEX
 AC_PROG_YACC
 # Use AM_PROG_AR if we can...
 m4_ifdef([AM_PROG_AR], [AM_PROG_AR])
-AM_PROG_LIBTOOL
+LT_INIT
 
 #
 # Check for GMP
@@ -44,7 +44,6 @@ AC_CHECK_HEADERS([sys/time.h unistd.h])
 AC_FUNC_MALLOC
 AC_FUNC_MEMCMP
 AC_FUNC_REALLOC
-AC_TYPE_SIGNAL
 
 # Our configuration stuff
 
