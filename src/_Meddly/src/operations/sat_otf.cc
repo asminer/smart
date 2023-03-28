@@ -657,13 +657,6 @@ void MEDDLY::satotf_opname::otf_relation::confirm(const dd_edge& set)
     findConfirmedStates(const_cast<otf_relation*>(this),
         confirmed, num_confirmed, set.getNode(), num_levels-1, visited);
 
-    /*
-    for (int level = 1; level < num_levels; level++) {
-        for (int ei = 0; ei < getNumOfEvents(level); ei++) {
-            events_by_top_level[level][ei]->rebuild();
-        }
-    }
-    */
 #ifdef DEBUG_CONFIRM
     FILE_output out(stdout);
     showInfo(out);
@@ -695,6 +688,11 @@ void MEDDLY::satotf_opname::otf_relation::enlargeConfirmedArrays(int level, int 
 
 void MEDDLY::satotf_opname::otf_relation::showInfo(output &strm) const
 {
+    for (int level = 1; level < num_levels; level++) {
+        for (int ei = 0; ei < getNumOfEvents(level); ei++) {
+            events_by_top_level[level][ei]->rebuild();
+        }
+    }
     strm << "On-the-fly relation info:\n";
     for (int level = 1; level < num_levels; level++) {
         for (int ei = 0; ei < getNumOfEvents(level); ei++) {
@@ -1457,7 +1455,7 @@ void MEDDLY::forwd_otf_dfs_by_events_mt::saturateHelper(unpacked_node& nb)
           if (0==Ru[ei]) {
             Ru[ei] = unpacked_node::useUnpackedNode();
           }
-          const int eventLevel = mxd.getNode();
+          const int eventLevel = mxd.getLevel();
           if (ABS(eventLevel) < level || eventLevel < 0) {
             // Takes care of two situations:
             // - skipped unprimed level (due to Fully Reduced)
