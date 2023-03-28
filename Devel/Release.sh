@@ -5,16 +5,28 @@ LASISU="git@git.las.iastate.edu:asminer/Smart.git"
 GITHUB="git@github.com:asminer/smart.git"
 
 if [ $# -ne 0 ]; then
-    printf "\nUsage: $0 \n\n"
-    printf "Creates a release based on the version number in configure.ac.\n"
-    printf "Automatically updates the revision date in the source,\n"
-    printf "and creates a tag for the release, named v[version].\n\n"
-    printf "Before running, be sure that all modified files have been\n"
-    printf "committed  to the repository.\n\n"
+    echo
+    echo "Usage: $0"
+    echo
+    echo "Creates a release based on the version number in configure.ac."
+    echo "Automatically updates the revision date in the source,"
+    echo "and creates a tag for the release, named v[version]."
+    echo
+    echo "Before running, be sure that all modified files have been"
+    echo "committed  to the repository."
+    echo
     exit 0
 fi
 
-printf "Checking remotes...\n"
+if [ ! -f INSTALL ]; then
+    echo
+    echo "Run this script in the root directory."
+    echo
+    exit 1
+fi
+
+
+echo "Checking remotes..."
 
 OREM=`git remote -v | awk '/origin.*(push)/ {print $2}'`
 GREM=`git remote -v | awk '/public-github.*(push)/ {print $2}'`
@@ -42,10 +54,10 @@ fi
 version=`awk '/AC_INIT/{print $2}' configure.ac | tr -d '[],'`
 
 
-printf "Creating release for version $version\n"
+echo "Creating release for version $version"
 
 rdate=`date +"%Y %B %d"`
-printf "const char* SMART_DATE = \"%s\";\n" "$rdate" > src/revision.h
+echo "const char* SMART_DATE = \"$rdate\";" > src/revision.h
 
 nextver=`awk -F. '{for (i=1; i<NF; i++) printf($i"."); print $NF+1}' <<< $version`
 
@@ -71,7 +83,7 @@ git push public-github v$version
 # Automatically bump the version number
 #
 
-printf "Updating version to $nextver, edit configure.ac to change\n"
+echo "Updating version to $nextver, edit configure.ac to change"
 sed "/AC_INIT/s/$version/$nextver/" configure.ac > configure.new
 mv -f configure.ac configure.ac.old
 mv configure.new configure.ac
