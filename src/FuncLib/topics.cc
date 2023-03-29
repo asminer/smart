@@ -124,17 +124,23 @@ void topic_types::DocumentBehavior(doc_formatter &df) const
   df.begin_indent();
   for (unsigned i=0; i<type::numRegistered(); i++) {
     const type* t = type::getRegistered(i);
-    if (t->getModifier() == DETERM) continue;
-    if (t->hasProc())               continue;
-    df.Out() << *t << "\n";
+    const type* pt = t->modifyType(PHASE);
+    const type* rt = t->modifyType(RAND);
+    if (pt) df.Out() << *pt << "\n";
+    if (rt) df.Out() << *rt << "\n";
   }
   df.end_indent();
   df.Out() << "\nProcess types:\n";
   df.begin_indent();
   for (unsigned i=0; i<type::numRegistered(); i++) {
     const type* t = type::getRegistered(i);
-    if (!t->hasProc())    continue;
-    df.Out() << *t << "\n";
+    const type* prt = t->addProc();
+    if (!prt) continue;
+    df.Out() << *prt << "\n";
+    const type* pt = prt->modifyType(PHASE);
+    const type* rt = prt->modifyType(RAND);
+    if (pt) df.Out() << *pt << "\n";
+    if (rt) df.Out() << *rt << "\n";
   }
   df.end_indent();
   df.Out() << "\nFormalism types:\n";
@@ -157,8 +163,8 @@ void topic_types::DocumentBehavior(doc_formatter &df) const
   df.begin_indent();
   for (unsigned i=0; i<type::numRegistered(); i++) {
     const type* t = type::getRegistered(i);
-    if (!t->isASet())    continue;
-    df.Out() << *t << "\n";
+    const type* st = t->getSetOfThis();
+    if (st) df.Out() << *st << "\n";
   }
   df.end_indent();
   df.Out() << "\nSee the help topics \"promotions\" and \"casting\" for details about how Smart changes types, and how you can force a type change.\n";
