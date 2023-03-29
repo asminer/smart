@@ -176,76 +176,138 @@ void topic_types::DocumentBehavior(doc_formatter &df) const
 
 class topic_promotions : public help_topic {
 
-  class one_promotion {
-    int typeno;
-    int distance;
-  public:
-    one_promotion() { typeno = 0; distance = 0; }
-    inline void set(int a, int b) { typeno = a; distance = b; }
-    inline bool operator <= (const one_promotion& b) {
-      if (distance < b.distance) return true;
-      if (distance > b.distance) return false;
-      return typeno <= b.typeno;
-    }
-    inline bool operator >= (const one_promotion& b) {
-      if (distance < b.distance) return false;
-      if (distance > b.distance) return true;
-      return typeno >= b.typeno;
-    }
-    inline bool operator > (const one_promotion& b) {
-      if (distance < b.distance) return false;
-      if (distance > b.distance) return true;
-      return typeno > b.typeno;
-    }
-    inline int getTypeNo() const { return typeno; }
-    inline int getDistance() const { return distance; }
-  };
+        class one_promotion : public shared_object {
+                const type* desttype;
+                int distance;
+            public:
+                one_promotion(const type* dt, int d);
+                virtual bool Print(std::ostream &s, int width) const;
+                virtual int Compare(const shared_object* o) const;
+                void show(doc_formatter &df) const;
+        };
 
-public:
-  topic_promotions()
-   : help_topic("promotions", "Which types can be promoted to which other types") { }
-  virtual void DocumentBehavior(doc_formatter &df) const;
+        class printer : public shared_visitor {
+                doc_formatter &df;
+            public:
+                printer(doc_formatter &d);
+                virtual void visit(shared_object* obj);
+        };
+
+    public:
+        topic_promotions();
+        virtual void DocumentBehavior(doc_formatter &df) const;
+
+    private:
+        inline static void checkPromo(splayOfShared &p, unsigned &width,
+                    const type* from, const type* to)
+        {
+            if (!from) return;
+            if (!to) return;
+            int d = typeconv::getPromoteDistance(from, to);
+            if (d > 0)  {
+                p.insert(new one_promotion(to, d));
+                width = MAX(width, to->length());
+            }
+        }
+
 };
+
+// ************************************************************
+
+topic_promotions::one_promotion::one_promotion(const type* dt, int d)
+{
+    desttype = dt;
+    distance = d;
+}
+
+bool topic_promotions::one_promotion::Print(std::ostream &s, int) const
+{
+    s << *desttype;
+    return true;
+}
+
+int topic_promotions::one_promotion::Compare(const shared_object* o) const
+{
+    const one_promotion* op = dynamic_cast <const one_promotion*> (o);
+    if (!op) return 0;
+    int diff = distance - op->distance;
+    if (diff) return diff;
+    // Same distances; compare type names
+    return desttype->Compare(op->desttype);
+}
+
+void topic_promotions::one_promotion::show(doc_formatter &df) const
+{
+    df.item(desttype->getStr());
+    df.Out() << "(distance " << distance << ")\n";
+}
+
+// ************************************************************
+
+topic_promotions::printer::printer(doc_formatter &d) : df(d)
+{
+}
+
+void topic_promotions::printer::visit(shared_object* obj)
+{
+    const topic_promotions::one_promotion* op
+        = dynamic_cast <const topic_promotions::one_promotion*> (obj);
+
+    if (!op) return;
+    op->show(df);
+}
+
+// ************************************************************
+
+topic_promotions::topic_promotions() : help_topic("promotions",
+        "Which types can be promoted to which other types")
+{
+}
 
 void topic_promotions::DocumentBehavior(doc_formatter &df) const
 {
-  df.Out() << "If necessary, Smart will attempt to promote expressions to other types.  Each promotion has an associated \"distance\", and Smart will normally choose the promotion with least distance (or give an error if it is unable to decide).  A type promotion can be forced using an explicit cast, see the help topic on \"casting\" for details.  Smart uses the following promotions:\n";
+    df.Out() << "If necessary, Smart will attempt to promote expressions to other types.  Each promotion has an associated \"distance\", and Smart will normally choose the promotion with least distance (or give an error if it is unable to decide).  A type promotion can be forced using an explicit cast, see the help topic on \"casting\" for details.  Smart uses the following promotions:\n";
 
-  one_promotion* parray = new one_promotion [type::numRegistered()];
+    splayOfShared parray(32, 32);
+    printer P(df);
 
-  for (unsigned i=0; i<type::numRegistered(); i++) {
-    const type* from = type::getRegistered(i);
-    DCASSERT(from);
+    for (unsigned i=0; i<type::numRegistered(); i++) {
+        const type* from = type::getRegistered(i);
+        DCASSERT(from);
+        unsigned width = 4;
 
-    // build sorted list of promotions
-    int plength = 0;
-    for (unsigned j=0; j<type::numRegistered(); j++) {
-      const type* to = type::getRegistered(j);
-      int d = typeconv::getPromoteDistance(from, to);
-      if (d <= 0) continue;
-      parray[plength].set(j, d);
-      plength++;
-    } // for j
+        // build sorted list of promotions
+        for (unsigned j=0; j<type::numRegistered(); j++) {
+            const type* to = type::getRegistered(j);
+            // Phase, Rand, Proc, and set modifiers
+            const type* pht = to->modifyType(PHASE);
+            const type* rat = to->modifyType(RAND);
+            const type* prt = to->addProc();
+            const type* prpht = pht ? pht->addProc() : nullptr;
+            const type* prrat = rat ? rat->addProc() : nullptr;
+            const type* sett = to->getSetOfThis();
 
-    if (0==plength) continue;  // no promotions from here
+            checkPromo(parray, width, from, to);
+            checkPromo(parray, width, from, pht);
+            checkPromo(parray, width, from, rat);
+            checkPromo(parray, width, from, prt);
+            checkPromo(parray, width, from, prpht);
+            checkPromo(parray, width, from, prrat);
+            checkPromo(parray, width, from, sett);
+        }
 
-    HeapSort(parray, plength);
-    df.Out() << "\n" << *from << ":\n";
-    df.begin_indent();
-    df.begin_description(15);
+        if (0==parray.numElements()) continue;  // no promotions from here
 
-    for (int j=0; j<plength; j++) {
-      const type* to = type::getRegistered(parray[j].getTypeNo());
-      DCASSERT(to);
-      df.item(to->getStr());
-      df.Out() << "(distance " << parray[j].getDistance() << ")\n";
-    }
+        df.Out() << "\n" << *from << ":\n";
+        df.begin_indent();
+        df.begin_description(4*(width/4+1));
+        parray.traverse(P);
+        df.end_description();
+        df.end_indent();
 
-    df.end_description();
-    df.end_indent();
+        parray.deleteAndClear();
+
   } // for i
-
-  delete[] parray;
 }
 
 
