@@ -4,7 +4,7 @@
 #
 
 AC_PREREQ([2.71])
-AC_INIT([smartpack],[3.4.1],[asminer@iastate.edu],[smartpack],[http://smart.cs.iastate.edu])
+AC_INIT([smartpack],[3.4.2],[asminer@iastate.edu],[smartpack],[http://smart.cs.iastate.edu])
 AM_INIT_AUTOMAKE([-Wall foreign parallel-tests color-tests subdir-objects])
 # Allow silent builds, and make it the default, if we can:
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
@@ -25,14 +25,14 @@ LT_INIT
 # Check for GMP
 #
 AC_ARG_WITH([gmp],
-  [AS_HELP_STRING([--without-gmp], [disable support for gmp])],
-  [],
-  [with_gmp=yes])
+    [AS_HELP_STRING([--without-gmp], [disable support for gmp])],
+    [],
+    [with_gmp=yes])
 # LIBGMP=
 AS_IF(
-  [test "x$with_gmp" != xno],
+    [test "x$with_gmp" != xno],
     [AC_CHECK_LIB([gmp], [__gmpz_init], [], [AC_MSG_FAILURE(["gmp test failed (--without-gmp to disable)"])], [])],
-  [])
+    [])
 AM_CONDITIONAL([LINK_GMP], [test "x$with_gmp" != xno])
 
 

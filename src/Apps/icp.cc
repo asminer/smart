@@ -10,6 +10,7 @@
 */
 
 #include "../Options/optman.h"
+#include "../Options/options.h"
 #include "../Utils/library.h"
 #include "../Utils/initializer.h"
 #include "../ExprLib/expr.h"
@@ -18,6 +19,7 @@
 
 
 // #define DEBUG_MSRS
+// #define DEBUG_OPTIONS
 
 // ============================================================
 
@@ -51,6 +53,39 @@ void SolveMeasures(outputStream& s, parse_module* pm)
     // solve measures here...
 }
 
+void setOption(const char* opt, const char* setting)
+{
+    option* O = option_manager::global().FindOption(opt);
+    if (!O) {
+#ifdef DEBUG_OPTIONS
+        std::cerr << "Didn't find option " << opt << "\n";
+#endif
+        return;
+    }
+    option_enum* S = O->FindConstant(setting);
+    if (!S) {
+#ifdef DEBUG_OPTIONS
+        std::cerr << "Didn't find setting " << setting << " for " << opt << "\n";
+#endif
+        return;
+    }
+#ifdef DEBUG_OPTIONS
+    option::error err = O->SetValue(S);
+    std::cerr << "Set " << opt << " to " << setting << "; error code: ";
+    switch (err) {
+        case option::Success:       std::cerr << "success\n";       return;
+        case option::WrongType:     std::cerr << "wrong type\n";    return;
+        case option::RangeError:    std::cerr << "range error\n";   return;
+        case option::NullFunction:  std::cerr << "null func\n";     return;
+        case option::Finalized:     std::cerr << "finalized\n";     return;
+        case option::Duplicate:     std::cerr << "duplicate\n";     return;
+        default:                    std::cerr << "unknown\n";
+    }
+#else
+    O->SetValue(S);
+#endif
+}
+
 int main(int argc, const char** argv, const char** env)
 {
     //
@@ -66,6 +101,14 @@ int main(int argc, const char** argv, const char** env)
     type::finalizeRegistry();
     engtype::finalizeAll(option_manager::global());
     option_manager::global().DoneAddingOptions();
+
+    //
+    // Set default options
+    //
+    setOption("MinExpr", "EXPLICIT");
+    setOption("MaxExpr", "EXPLICIT");
+    setOption("SatExpr", "EXPLICIT");
+
 
     //
     // Process command line, start parser

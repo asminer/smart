@@ -90,7 +90,7 @@ printf "\n"
 
 export CC=gcc
 export CXX=g++
-export CXXFLAGS="$CXXFLAGS -Wall -std=gnu++11"
+export CXXFLAGS="$CXXFLAGS -Wall -std=c++11"
 export LDFLAGS=""
 export CPPFLAGS=""
 
