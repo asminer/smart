@@ -714,9 +714,6 @@ void topic_binaryop::op_left::visit(const shared_object* obj)
     df.end_indent();
 }
 
-// ************************************************************
-
-
 // ******************************************************************
 
 topic_binaryop::topic_binaryop(binary_op::opcode b) : help_topic()
@@ -744,52 +741,137 @@ void topic_binaryop::DocumentBehavior(doc_formatter &df) const
 // ******************************************************************
 
 class topic_trinaryop : public help_topic {
-  trinary_op::opcode op;
-public:
-  topic_trinaryop(trinary_op::opcode b);
-  virtual void DocumentBehavior(doc_formatter &df) const;
+        trinary_op::opcode op;
+    public:
+        topic_trinaryop(trinary_op::opcode b);
+        virtual void DocumentBehavior(doc_formatter &df) const;
+
+    private:
+        class op_third : public shared_visitor {
+                doc_formatter &df;
+                const type* first;
+                const type* second;
+                trinary_op::opcode op;
+                bool printed;
+            public:
+                op_third(doc_formatter &d, trinary_op::opcode op);
+                virtual void visit(const shared_object* obj);
+                inline void set_first(const type* F) {
+                    first = F;
+                    printed = false;
+                }
+                inline void set_second(const type* S) {
+                    second = S;
+                }
+                inline bool notempty() const { return printed; }
+        };
+
+    private:
+        class op_second : public shared_visitor {
+                op_third &inner;
+            public:
+                op_second(op_third &i);
+                virtual void visit(const shared_object* obj);
+                inline virtual void set_first(const type* F) {
+                    inner.set_first(F);
+                }
+                inline bool notempty() const { return inner.notempty(); }
+        };
+
+    private:
+        class op_first : public shared_visitor {
+                doc_formatter &df;
+                op_second &inner;
+            public:
+                op_first(doc_formatter &d, op_second &i);
+                virtual void visit(const shared_object* obj);
+        };
 };
+
+// ******************************************************************
+
+topic_trinaryop::op_third::op_third(doc_formatter &d, trinary_op::opcode o)
+    : df(d)
+{
+    first = nullptr;
+    second = nullptr;
+    op = o;
+}
+
+void topic_trinaryop::op_third::visit(const shared_object* obj)
+{
+    if (!first) return;
+    if (!second) return;
+    const type* third = dynamic_cast <const type*> (obj);
+    if (!third) return;
+
+    const type* w = trinary_op::getTypeOf(op, first, second, third);
+    if (!w) return;
+
+    df.Out() << *first << ' ' << trinary_op::getFirst(op) << ' ';
+    df.Out() << *second << ' ' << trinary_op::getSecond(op) << ' ';
+    df.Out() << *third << '\n';
+
+    printed = true;
+}
+
+// ******************************************************************
+
+topic_trinaryop::op_second::op_second(op_third &i) : inner(i)
+{
+}
+
+void topic_trinaryop::op_second::visit(const shared_object* obj)
+{
+    const type* second = dynamic_cast <const type*> (obj);
+    if (!second) return;
+    inner.set_second(second);
+    type::traverseRegistry(inner);
+}
+
+// ******************************************************************
+
+topic_trinaryop::op_first::op_first(doc_formatter &d, op_second &i)
+    : df(d), inner(i)
+{
+}
+
+void topic_trinaryop::op_first::visit(const shared_object* obj)
+{
+    const type* first = dynamic_cast <const type*> (obj);
+    if (!first) return;
+
+    df.begin_indent();
+    inner.set_first(first);
+    type::traverseRegistry(inner);
+    if (inner.notempty()) df.Out() << '\n';
+    df.end_indent();
+}
+
+
+// ******************************************************************
 
 topic_trinaryop::topic_trinaryop(trinary_op::opcode b)
  : help_topic()
 {
-  op = b;
-  std::stringstream foo;
-  foo << "trinary " << trinary_op::getFirst(op) << " " << trinary_op::getSecond(op);
-  setName(foo.str());
-  setSummary(trinary_op::documentOp(op));
+    op = b;
+    std::stringstream foo;
+    foo << "trinary " << trinary_op::getFirst(op) << " " << trinary_op::getSecond(op);
+    setName(foo.str());
+    setSummary(trinary_op::documentOp(op));
 }
 
 void topic_trinaryop::DocumentBehavior(doc_formatter &df) const
 {
-  df.Out() << "Operator " << trinary_op::getFirst(op) << " ";
-  df.Out() << trinary_op::getSecond(op) << " is used for ";
-  df.Out() << trinary_op::documentOp(op);
-  df.Out() << ".  It may be used on the following types of expressions:\n";
+    df.Out() << "Operator " << trinary_op::getFirst(op) << " ";
+    df.Out() << trinary_op::getSecond(op) << " is used for ";
+    df.Out() << trinary_op::documentOp(op);
+    df.Out() << ".  It may be used on with the following operand types:\n\n";
 
-  df.begin_description(35);
-  for (unsigned i=0; i<type::numRegistered(); i++) {
-    const type* t = type::getRegistered(i);
-    DCASSERT(t);
-    for (unsigned j=0; j<type::numRegistered(); j++) {
-      const type* u = type::getRegistered(j);
-      DCASSERT(u);
-      for (unsigned k=0; k<type::numRegistered(); k++) {
-        const type* v = type::getRegistered(k);
-        DCASSERT(v);
-        const type* w = trinary_op::getTypeOf(op, t, u, v);
-        if (0==w)  continue;
-        std::stringstream foo;
-        foo << *t << " " << trinary_op::getFirst(op) << " ";
-        foo << *u << " " << trinary_op::getSecond(op) << " ";
-        foo << *v;
-        df.item(foo.str().c_str());
-        df.Out() << "has type " << *w << "\n";
-        foo.str("");
-      } // for k
-    } // for j
-  } // for i
-  df.end_description();
+    op_third inner(df, op);
+    op_second middle(inner);
+    op_first outer(df, middle);
+    type::traverseRegistry(outer);
 }
 
 // ******************************************************************
