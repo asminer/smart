@@ -251,6 +251,37 @@ const type* set_type::changeBaseType(const type* newbase) const
 }
 
 // ******************************************************************
+// *                     type::alltype  methods                     *
+// ******************************************************************
+
+type::alltypes::alltypes(shared_visitor &v) : V(v)
+{
+}
+
+void type::alltypes::visit(const shared_object* item)
+{
+    const type* t = dynamic_cast <const type*> (item);
+    if (!t) return;
+
+    // Phase, Rand, Proc, and set modifiers
+    const type* pht = t->modifyType(PHASE);
+    const type* rat = t->modifyType(RAND);
+    const type* prt = t->addProc();
+    const type* prpht = pht ? pht->addProc() : nullptr;
+    const type* prrat = rat ? rat->addProc() : nullptr;
+    const type* sett = t->getSetOfThis();
+
+    // Visit everything
+    V.visit(t);
+    V.visit(pht);
+    V.visit(rat);
+    V.visit(prt);
+    V.visit(prpht);
+    V.visit(prrat);
+    V.visit(sett);
+}
+
+// ******************************************************************
 // *                                                                *
 // *                                                                *
 // *                          type methods                          *
@@ -493,12 +524,13 @@ void type::finalizeRegistry()
 
 void type::traverseRegistry(shared_visitor &v)
 {
+    alltypes av(v);
     if (reg_list) {
-        reg_list->traverse(v);
+        reg_list->traverse(av);
         return;
     }
     if (reg_tree) {
-        reg_tree->traverse(v);
+        reg_tree->traverse(av);
         return;
     }
 }

@@ -267,6 +267,14 @@ class type : public shared_string {
         void init();
 
     private:
+        class alltypes : public shared_visitor {
+                shared_visitor &V;
+            public:
+                alltypes(shared_visitor &v);
+                virtual void visit(const shared_object* item);
+        };
+
+    private:
         bool is_void;
         bool func_definable;
         bool var_definable;
