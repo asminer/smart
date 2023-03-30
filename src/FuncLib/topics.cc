@@ -642,46 +642,101 @@ void topic_unaryop::DocumentBehavior(doc_formatter &df) const
 // ******************************************************************
 
 class topic_binaryop : public help_topic {
-  binary_op::opcode op;
-public:
-  topic_binaryop(binary_op::opcode b);
-  virtual void DocumentBehavior(doc_formatter &df) const;
+        binary_op::opcode op;
+    public:
+        topic_binaryop(binary_op::opcode b);
+        virtual void DocumentBehavior(doc_formatter &df) const;
+
+    private:
+        class op_right : public shared_visitor {
+                doc_formatter &df;
+                const type* left;
+                binary_op::opcode op;
+                bool printed;
+            public:
+                op_right(doc_formatter &d, binary_op::opcode op);
+                virtual void visit(const shared_object* obj);
+                inline void set_left(const type* L) {
+                    left = L;
+                    printed = false;
+                }
+                inline bool notempty() const { return printed; }
+        };
+
+    private:
+        class op_left : public shared_visitor {
+                doc_formatter &df;
+                op_right &inner;
+            public:
+                op_left(doc_formatter &d, op_right &i);
+                virtual void visit(const shared_object* obj);
+        };
 };
 
-topic_binaryop::topic_binaryop(binary_op::opcode b)
- : help_topic()
+// ******************************************************************
+
+topic_binaryop::op_right::op_right(doc_formatter &d, binary_op::opcode o)
+    : df(d)
 {
-  op = b;
-  std::stringstream foo;
-  foo << "binary " << binary_op::getOp(op);
-  setName(foo.str());
-  setSummary(binary_op::documentOp(op));
+    left = nullptr;
+    op = o;
+}
+
+void topic_binaryop::op_right::visit(const shared_object* obj)
+{
+    if (!left) return;
+    const type* right = dynamic_cast <const type*> (obj);
+    if (!right) return;
+
+    const type* v = binary_op::getTypeOf(left, op, right);
+    if (!v) return;
+
+    df.Out() << *left << ' ' << binary_op::getOp(op) << ' ' << *right << '\n';
+    printed = true;
+}
+
+// ************************************************************
+
+topic_binaryop::op_left::op_left(doc_formatter &d, op_right &i)
+    : df(d), inner(i)
+{
+}
+
+void topic_binaryop::op_left::visit(const shared_object* obj)
+{
+    const type* left = dynamic_cast <const type*> (obj);
+    if (!left) return;
+
+    df.begin_indent();
+    inner.set_left(left);
+    type::traverseRegistry(inner);
+    if (inner.notempty()) df.Out() << '\n';
+    df.end_indent();
+}
+
+// ************************************************************
+
+
+// ******************************************************************
+
+topic_binaryop::topic_binaryop(binary_op::opcode b) : help_topic()
+{
+    op = b;
+    std::stringstream foo;
+    foo << "binary " << binary_op::getOp(op);
+    setName(foo.str());
+    setSummary(binary_op::documentOp(op));
 }
 
 void topic_binaryop::DocumentBehavior(doc_formatter &df) const
 {
-  df.Out() << "Operator " << binary_op::getOp(op) << " is used for ";
-  df.Out() << binary_op::documentOp(op);
-  df.Out() << ".  It may be used on the following types of expressions:\n";
+    df.Out() << "Operator " << binary_op::getOp(op) << " is used for ";
+    df.Out() << binary_op::documentOp(op);
+    df.Out() << ".  It may be used with the following operand types:\n\n";
 
-  df.begin_description(35);
-  for (unsigned i=0; i<type::numRegistered(); i++) {
-    const type* t = type::getRegistered(i);
-    DCASSERT(t);
-    for (unsigned j=0; j<type::numRegistered(); j++) {
-      const type* u = type::getRegistered(j);
-      DCASSERT(u);
-      const type* v = binary_op::getTypeOf(t, op, u);
-      if (0==v)  continue;
-      std::stringstream foo;
-      foo << *t << " ";
-      foo << binary_op::getOp(op) << " " << *u;
-      df.item(foo.str().c_str());
-      df.Out() << "has type " << *v << "\n";
-      foo.str("");
-    }
-  }
-  df.end_description();
+    op_right inner(df, op);
+    op_left outer(df, inner);
+    type::traverseRegistry(outer);
 }
 
 // ******************************************************************
