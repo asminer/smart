@@ -879,48 +879,104 @@ void topic_trinaryop::DocumentBehavior(doc_formatter &df) const
 // ******************************************************************
 
 class topic_assocop : public help_topic {
-  bool flipped;
-  assoc_op::opcode op;
-public:
-  topic_assocop(bool f, assoc_op::opcode b);
-  virtual void DocumentBehavior(doc_formatter &df) const;
+        bool flipped;
+        assoc_op::opcode op;
+    public:
+        topic_assocop(bool f, assoc_op::opcode b);
+        virtual void DocumentBehavior(doc_formatter &df) const;
+
+    private:
+        class op_right : public shared_visitor {
+                doc_formatter &df;
+                const type* left;
+                assoc_op::opcode op;
+                bool flipped;
+                bool printed;
+            public:
+                op_right(doc_formatter &d, bool f, assoc_op::opcode op);
+                virtual void visit(const shared_object* obj);
+                inline void set_left(const type* L) {
+                    left = L;
+                    printed = false;
+                }
+                inline bool notempty() const { return printed; }
+        };
+
+    private:
+        class op_left : public shared_visitor {
+                doc_formatter &df;
+                op_right &inner;
+            public:
+                op_left(doc_formatter &d, op_right &i);
+                virtual void visit(const shared_object* obj);
+        };
 };
+
+// ******************************************************************
+
+topic_assocop::op_right::op_right(doc_formatter &d, bool f, assoc_op::opcode o)
+    : df(d)
+{
+    left = nullptr;
+    op = o;
+    flipped = f;
+}
+
+void topic_assocop::op_right::visit(const shared_object* obj)
+{
+    if (!left) return;
+    const type* right = dynamic_cast <const type*> (obj);
+    if (!right) return;
+
+    const type* v = assoc_op::getTypeOf(left, flipped, op, right);
+    if (!v) return;
+
+    df.Out() << *left << ' ';
+    df.Out() << assoc_op::getOp(flipped, op) << ' ' << *right << '\n';
+    printed = true;
+}
+
+// ************************************************************
+
+topic_assocop::op_left::op_left(doc_formatter &d, op_right &i)
+    : df(d), inner(i)
+{
+}
+
+void topic_assocop::op_left::visit(const shared_object* obj)
+{
+    const type* left = dynamic_cast <const type*> (obj);
+    if (!left) return;
+
+    df.begin_indent();
+    inner.set_left(left);
+    type::traverseRegistry(inner);
+    if (inner.notempty()) df.Out() << '\n';
+    df.end_indent();
+}
+
+// ******************************************************************
 
 topic_assocop::topic_assocop(bool f, assoc_op::opcode b)
  : help_topic()
 {
-  op = b;
-  flipped = f;
-  std::stringstream foo;
-  foo << "binary " << assoc_op::getOp(flipped, op);
-  setName(foo.str());
-  setSummary(assoc_op::documentOp(flipped, op));
+    op = b;
+    flipped = f;
+    std::stringstream foo;
+    foo << "binary " << assoc_op::getOp(flipped, op);
+    setName(foo.str());
+    setSummary(assoc_op::documentOp(flipped, op));
 }
 
 void topic_assocop::DocumentBehavior(doc_formatter &df) const
 {
-  df.Out() << "Operator " << assoc_op::getOp(flipped, op) << " is used for ";
-  df.Out() << assoc_op::documentOp(flipped, op);
-  df.Out() << ".  It may be used on the following types of expressions:\n";
+    df.Out() << "Operator " << assoc_op::getOp(flipped, op) << " is used for ";
+    df.Out() << assoc_op::documentOp(flipped, op);
+    df.Out() << ".  It may be used with the following operand types:\n\n";
 
-  df.begin_description(35);
-  for (unsigned i=0; i<type::numRegistered(); i++) {
-    const type* t = type::getRegistered(i);
-    DCASSERT(t);
-    for (unsigned j=0; j<type::numRegistered(); j++) {
-      const type* u = type::getRegistered(j);
-      DCASSERT(u);
-      const type* v = assoc_op::getTypeOf(t, flipped, op, u);
-      if (0==v)  continue;
-      std::stringstream foo;
-      foo << *t << " ";
-      foo << assoc_op::getOp(flipped, op) << " " << *u;
-      df.item(foo.str().c_str());
-      df.Out() << "has type " << *v << "\n";
-      foo.str("");
-    }
-  }
-  df.end_description();
+    op_right inner(df, flipped, op);
+    op_left outer(df, inner);
+    type::traverseRegistry(outer);
 }
 
 // ******************************************************************
@@ -928,42 +984,66 @@ void topic_assocop::DocumentBehavior(doc_formatter &df) const
 // ******************************************************************
 
 class topic_models : public help_topic {
-public:
-  topic_models()
-   : help_topic("models", "Overview of models") { }
-  virtual void DocumentBehavior(doc_formatter &df) const;
+    public:
+        topic_models();
+        virtual void DocumentBehavior(doc_formatter &df) const;
+    private:
+        class print_models : public shared_visitor {
+                std::ostream &out;
+                bool printed;
+            public:
+                print_models(std::ostream &o);
+                virtual void visit(const shared_object* obj);
+        };
 };
+
+// ******************************************************************
+
+topic_models::print_models::print_models(std::ostream &o) : out(o)
+{
+    printed = false;
+}
+
+void topic_models::print_models::visit(const shared_object* obj)
+{
+    const type* t = dynamic_cast <const type*> (obj);
+    if (!t) return;
+    if (!t->isAFormalism()) return;
+    if (printed) out << ", ";
+    out << *t;
+    printed = true;
+}
+
+// ******************************************************************
+
+topic_models::topic_models() : help_topic("models", "Overview of models")
+{
+}
 
 void topic_models::DocumentBehavior(doc_formatter &df) const
 {
-  df.Out() << "A model is declared with a header that is similar to a function declaration, of the form\n\n";
-  df.begin_indent();
-  df.Out() << "formalism identifier(params) := { ... }\n\n";
-  df.end_indent();
-  df.Out() << "where \"formalism\" is one of the formalism types:\n";
-  df.begin_indent();
-  bool printed = false;
-  for (unsigned i=0; i<type::numRegistered(); i++) {
-    const type* t = type::getRegistered(i);
-    if (!t->isAFormalism())    continue;
-    if (printed) df.Out() << ", ";
-    df.Out() << *t;
-    printed = true;
-  }
-  df.Out() << ".\n\n";
-  df.end_indent();
-  df.Out() << "The statements within the braces specify how to build the model when necessary, and may include declarations and function calls specific to the formalism type.  Additionally, there may be statements that define the measures for the model, which are visible outside the model.  Note that a model call has the form\n\n";
-  df.begin_indent();
-  df.Out() << "model_identifier(params).measure;\n\n";
-  df.end_indent();
-  df.Out() << "and that a model is not instantiated until needed to compute a measure.  Measures may be classified by solution engine as appropriate, and calling a single measure may cause several measures to be computed (e.g., all steady-state measures will be computed together).  It is possible to declare arrays of measures, and measures of type void which execute the specified instructions whenever they are called.\n";
-  df.Out() << "\nSee the help topics for a particular formalism for more information about what may be declared within a model, and functions available to build the model.\n";
-  df.Out() <<"\nThere is also a special type named \"model\", which may be assigned to any constructed model.  For example:\n\n";
-  df.begin_indent();
-  df.Out() << "model m := model_identifier(params);\n";
-  df.Out() << "m.any_measure_defined_in_model_identifier;\n\n";
-  df.end_indent();
-  df.Out() << "It is possible to declare arrays of type \"model\".\n";
+    df.Out() << "A model is declared with a header that is similar to a function declaration, of the form\n\n";
+    df.begin_indent();
+    df.Out() << "formalism identifier(params) := { ... }\n\n";
+    df.end_indent();
+    df.Out() << "where \"formalism\" is one of the formalism types:\n\n";
+    df.begin_indent();
+    print_models P(df.Out());
+    type::traverseRegistry(P);
+    df.Out() << ".\n\n";
+    df.end_indent();
+    df.Out() << "The statements within the braces specify how to build the model when necessary, and may include declarations and function calls specific to the formalism type.  Additionally, there may be statements that define the measures for the model, which are visible outside the model.  Note that a model call has the form\n\n";
+    df.begin_indent();
+    df.Out() << "model_identifier(params).measure;\n\n";
+    df.end_indent();
+    df.Out() << "and that a model is not instantiated until needed to compute a measure.  Measures may be classified by solution engine as appropriate, and calling a single measure may cause several measures to be computed (e.g., all steady-state measures will be computed together).  It is possible to declare arrays of measures, and measures of type void which execute the specified instructions whenever they are called.\n";
+    df.Out() << "\nSee the help topics for a particular formalism for more information about what may be declared within a model, and functions available to build the model.\n";
+    df.Out() <<"\nThere is also a special type named \"model\", which may be assigned to any constructed model.  For example:\n\n";
+    df.begin_indent();
+    df.Out() << "model m := model_identifier(params);\n";
+    df.Out() << "m.any_measure_defined_in_model_identifier;\n\n";
+    df.end_indent();
+    df.Out() << "It is possible to declare arrays of type \"model\".\n";
 }
 
 
@@ -991,58 +1071,57 @@ init_helpfuncs::init_helpfuncs() : initializer(__FILE__, 1)
 
 void init_helpfuncs::execute()
 {
+    symbol_table::addGlobal(new help_group(
+        "#include",
+        "Preprocessor directive to include files",
+        "A source file can include other source files using the #include preprocessing directive, as in C.  An #include directive is ignored if it causes a circular dependency."
+    ));
 
-  symbol_table::addGlobal(new help_group(
-    "#include",
-    "Preprocessor directive to include files",
-    "A source file can include other source files using the #include preprocessing directive, as in C.  An #include directive is ignored if it causes a circular dependency."
-  ));
+    symbol_table::addGlobal(new help_group(
+        "comments",
+        "Preprocessor rules for comments",
+        "Source files can contain C and C++ style comments, which are stripped by the lexer.  The rules are:\n  (1) Characters on a line following \"//\" are ignored.\n  (2) Characters between \"/*\" and \"*/\" are ignored."
+    ));
 
-  symbol_table::addGlobal(new help_group(
-    "comments",
-    "Preprocessor rules for comments",
-    "Source files can contain C and C++ style comments, which are stripped by the lexer.  The rules are:\n  (1) Characters on a line following \"//\" are ignored.\n  (2) Characters between \"/*\" and \"*/\" are ignored."
-  ));
+    symbol_table::addGlobal(new help_group(
+        "functions",
+        "Function call rules",
+        "Built-in and user functions can be called using the usual, C-style syntax.  When functions are overloaded, Smart determines which function to call by summing the promotion distance (see the help topic on promotions) from the passed parameter to the formal parameter. Smart will also promote a function if necessary, by adding the modifier rand and/or proc to every formal parameter and to the return type of the function.  For instance, the definition:\n \t rand real mydist := sqrt(uniform(0, 1));\n is legal because the function\n \t real sqrt(real x)\n is automatically promoted to the form\n \t rand real sqrt(rand real x)."
+    ));
 
-  symbol_table::addGlobal(new help_group(
-    "functions",
-    "Function call rules",
-    "Built-in and user functions can be called using the usual, C-style syntax.  When functions are overloaded, Smart determines which function to call by summing the promotion distance (see the help topic on promotions) from the passed parameter to the formal parameter. Smart will also promote a function if necessary, by adding the modifier rand and/or proc to every formal parameter and to the return type of the function.  For instance, the definition:\n \t rand real mydist := sqrt(uniform(0, 1));\n is legal because the function\n \t real sqrt(real x)\n is automatically promoted to the form\n \t rand real sqrt(rand real x)."
-  ));
+    symbol_table::addGlobal(  new topic_topics(symbol_table::global())      );
+    symbol_table::addGlobal(  new topic_types                               );
+    symbol_table::addGlobal(  new topic_promotions                          );
+    symbol_table::addGlobal(  new topic_casting                             );
+    symbol_table::addGlobal(  new topic_operators                           );
+    symbol_table::addGlobal(  new topic_options                             );
 
-  symbol_table::addGlobal(  new topic_topics(symbol_table::global())      );
-  symbol_table::addGlobal(  new topic_types                               );
-  symbol_table::addGlobal(  new topic_promotions                          );
-  symbol_table::addGlobal(  new topic_casting                             );
-  symbol_table::addGlobal(  new topic_operators                           );
-  symbol_table::addGlobal(  new topic_options                             );
+    symbol_table::addGlobal(  new topic_unaryop(unary_op::uop_not)          );
+    symbol_table::addGlobal(  new topic_unaryop(unary_op::uop_neg)          );
 
-  symbol_table::addGlobal(  new topic_unaryop(unary_op::uop_not)          );
-  symbol_table::addGlobal(  new topic_unaryop(unary_op::uop_neg)          );
+    symbol_table::addGlobal(  new topic_binaryop(binary_op::bop_implies)    );
+    symbol_table::addGlobal(  new topic_binaryop(binary_op::bop_mod)        );
+    symbol_table::addGlobal(  new topic_binaryop(binary_op::bop_diff)       );
+    symbol_table::addGlobal(  new topic_binaryop(binary_op::bop_equals)     );
+    symbol_table::addGlobal(  new topic_binaryop(binary_op::bop_nequal)     );
+    symbol_table::addGlobal(  new topic_binaryop(binary_op::bop_gt)         );
+    symbol_table::addGlobal(  new topic_binaryop(binary_op::bop_ge)         );
+    symbol_table::addGlobal(  new topic_binaryop(binary_op::bop_lt)         );
+    symbol_table::addGlobal(  new topic_binaryop(binary_op::bop_le)         );
 
-  symbol_table::addGlobal(  new topic_binaryop(binary_op::bop_implies)    );
-  symbol_table::addGlobal(  new topic_binaryop(binary_op::bop_mod)        );
-  symbol_table::addGlobal(  new topic_binaryop(binary_op::bop_diff)       );
-  symbol_table::addGlobal(  new topic_binaryop(binary_op::bop_equals)     );
-  symbol_table::addGlobal(  new topic_binaryop(binary_op::bop_nequal)     );
-  symbol_table::addGlobal(  new topic_binaryop(binary_op::bop_gt)         );
-  symbol_table::addGlobal(  new topic_binaryop(binary_op::bop_ge)         );
-  symbol_table::addGlobal(  new topic_binaryop(binary_op::bop_lt)         );
-  symbol_table::addGlobal(  new topic_binaryop(binary_op::bop_le)         );
+    symbol_table::addGlobal(  new topic_trinaryop(trinary_op::top_interval) );
 
-  symbol_table::addGlobal(  new topic_trinaryop(trinary_op::top_interval) );
+    symbol_table::addGlobal(  new topic_assocop(false, assoc_op::aop_and)   );
+    symbol_table::addGlobal(  new topic_assocop(false, assoc_op::aop_or)    );
+    symbol_table::addGlobal(  new topic_assocop(false, assoc_op::aop_plus)  );
+    symbol_table::addGlobal(  new topic_assocop(true , assoc_op::aop_plus)  );
+    symbol_table::addGlobal(  new topic_assocop(false, assoc_op::aop_times) );
+    symbol_table::addGlobal(  new topic_assocop(true , assoc_op::aop_times) );
 
-  symbol_table::addGlobal(  new topic_assocop(false, assoc_op::aop_and)   );
-  symbol_table::addGlobal(  new topic_assocop(false, assoc_op::aop_or)    );
-  symbol_table::addGlobal(  new topic_assocop(false, assoc_op::aop_plus)  );
-  symbol_table::addGlobal(  new topic_assocop(true , assoc_op::aop_plus)  );
-  symbol_table::addGlobal(  new topic_assocop(false, assoc_op::aop_times) );
-  symbol_table::addGlobal(  new topic_assocop(true , assoc_op::aop_times) );
+    symbol_table::addGlobal(  new topic_assocop(false, assoc_op::aop_semi)  );
+    symbol_table::addGlobal(  new topic_assocop(false, assoc_op::aop_union) );
 
-  symbol_table::addGlobal(  new topic_assocop(false, assoc_op::aop_semi)  );
-  symbol_table::addGlobal(  new topic_assocop(false, assoc_op::aop_union) );
-
-  symbol_table::addGlobal(  new topic_models                              );
+    symbol_table::addGlobal(  new topic_models                              );
 }
 
 
