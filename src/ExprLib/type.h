@@ -26,8 +26,6 @@ const modifier  RAND  = 2;
 const modifier  ANY_MODIFIER = 254;
 const modifier  NO_SUCH_MODIFIER = 255;
 
-#define OLD_TYPE_ACCESS
-
 // ******************************************************************
 // *                                                                *
 // *                           type class                           *
@@ -190,13 +188,11 @@ class type : public shared_string {
 
         /**
             Traverse the type registry.
+                @param  v           How to visit each type
+                @param  expand      If true, we expand the list of types
+                                    to include phase, rand, proc, sets.
         */
-        static void traverseRegistry(shared_visitor &v);
-
-#ifdef OLD_TYPE_ACCESS
-        static unsigned numRegistered();
-        static const simple_type* getRegistered(unsigned i);
-#endif
+        static void traverseRegistry(shared_visitor &v, bool expand=true);
 
         /**
             Find a simple type.

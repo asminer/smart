@@ -158,12 +158,11 @@ void topic_types::filtertypes::visit(const shared_object* item)
        if (set_off) return;
        else deflt = false;
     }
-    if (t->getModifier() != DETERM) {
-        if (stoch_off) return;
-        else deflt = false;
-    }
     if (t->hasProc()) {
         if (proc_off) return;
+        else deflt = false;
+    } else if (t->getModifier() != DETERM) {
+        if (stoch_off) return;
         else deflt = false;
     }
     if (deflt && default_off) return;
@@ -181,7 +180,7 @@ void topic_types::DocumentBehavior(doc_formatter &df) const
     df.Out() << "Simple types:\n";
     ft.default_off = false;
     df.begin_indent();
-    type::traverseRegistry(ft);
+    type::traverseRegistry(ft, false);
     df.end_indent();
 
     df.Out() << "\nStochastic types:\n";
@@ -192,6 +191,7 @@ void topic_types::DocumentBehavior(doc_formatter &df) const
     df.end_indent();
 
     df.Out() << "\nProcess types:\n";
+    ft.stoch_off = true;
     ft.proc_off = false;
     df.begin_indent();
     type::traverseRegistry(ft);
@@ -199,17 +199,16 @@ void topic_types::DocumentBehavior(doc_formatter &df) const
 
     df.Out() << "\nFormalism types:\n";
     ft.proc_off = true;
-    ft.stoch_off = true;
     ft.form_off = false;
     df.begin_indent();
-    type::traverseRegistry(ft);
+    type::traverseRegistry(ft, false);
     df.end_indent();
 
     df.Out() << "\nVoid types (usually within formalisms):\n";
     ft.form_off = true;
     ft.void_off = false;
     df.begin_indent();
-    type::traverseRegistry(ft);
+    type::traverseRegistry(ft, false);
     df.end_indent();
 
     df.Out() << "\nSet types:\n";
@@ -826,7 +825,7 @@ void topic_trinaryop::op_second::visit(const shared_object* obj)
     const type* second = dynamic_cast <const type*> (obj);
     if (!second) return;
     inner.set_second(second);
-    type::traverseRegistry(inner);
+    type::traverseRegistry(inner, false);
 }
 
 // ******************************************************************
@@ -843,7 +842,7 @@ void topic_trinaryop::op_first::visit(const shared_object* obj)
 
     df.begin_indent();
     inner.set_first(first);
-    type::traverseRegistry(inner);
+    type::traverseRegistry(inner, first);
     if (inner.notempty()) df.Out() << '\n';
     df.end_indent();
 }
@@ -871,7 +870,7 @@ void topic_trinaryop::DocumentBehavior(doc_formatter &df) const
     op_third inner(df, op);
     op_second middle(inner);
     op_first outer(df, middle);
-    type::traverseRegistry(outer);
+    type::traverseRegistry(outer, false);
 }
 
 // ******************************************************************
@@ -1029,7 +1028,7 @@ void topic_models::DocumentBehavior(doc_formatter &df) const
     df.Out() << "where \"formalism\" is one of the formalism types:\n\n";
     df.begin_indent();
     print_models P(df.Out());
-    type::traverseRegistry(P);
+    type::traverseRegistry(P, false);
     df.Out() << ".\n\n";
     df.end_indent();
     df.Out() << "The statements within the braces specify how to build the model when necessary, and may include declarations and function calls specific to the formalism type.  Additionally, there may be statements that define the measures for the model, which are visible outside the model.  Note that a model call has the form\n\n";
