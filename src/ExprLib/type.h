@@ -26,6 +26,8 @@ const modifier  RAND  = 2;
 const modifier  ANY_MODIFIER = 254;
 const modifier  NO_SUCH_MODIFIER = 255;
 
+#define OLD_TYPE_ACCESS
+
 // ******************************************************************
 // *                                                                *
 // *                           type class                           *
@@ -186,8 +188,15 @@ class type : public shared_string {
          */
         static void finalizeRegistry();
 
+        /**
+            Traverse the type registry.
+        */
+        static void traverseRegistry(shared_visitor &v);
+
+#ifdef OLD_TYPE_ACCESS
         static unsigned numRegistered();
         static const simple_type* getRegistered(unsigned i);
+#endif
 
         /**
             Find a simple type.

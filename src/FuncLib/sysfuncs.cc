@@ -30,7 +30,7 @@ class helpTopicTraversal : public shared_visitor {
         const char* keyword;
     public:
         helpTopicTraversal(doc_formatter &df, const char* keyw);
-        virtual void visit(shared_object* item);
+        virtual void visit(const shared_object* item);
 };
 
 helpTopicTraversal::helpTopicTraversal(doc_formatter &_d, const char* keyw)
@@ -39,7 +39,7 @@ helpTopicTraversal::helpTopicTraversal(doc_formatter &_d, const char* keyw)
     keyword = keyw;
 }
 
-void helpTopicTraversal::visit(shared_object* item)
+void helpTopicTraversal::visit(const shared_object* item)
 {
     const help_topic* ht = dynamic_cast <const help_topic*> (item);
     if (ht) {
@@ -138,7 +138,7 @@ class copy_matching : public shared_visitor {
         inline void changeFormalism(const formalism* _ft) {
             ft = _ft;
         }
-        virtual void visit(shared_object* item);
+        virtual void visit(const shared_object* item);
 };
 
 copy_matching::copy_matching(doc_formatter &_d, const char* keyw,
@@ -149,9 +149,9 @@ copy_matching::copy_matching(doc_formatter &_d, const char* keyw,
     hentry = nullptr;
 }
 
-void copy_matching::visit(shared_object* item)
+void copy_matching::visit(const shared_object* item)
 {
-    const symbol* sitem = dynamic_cast <symbol*> (item);
+    const symbol* sitem = dynamic_cast <const symbol*> (item);
     if (0==sitem) return;
     if (!df.Matches(sitem->Name(), keyword)) return;
     //
@@ -186,7 +186,7 @@ class docuversal : public shared_visitor {
         const char* keyword;
     public:
         docuversal(doc_formatter &_df, const char* keyw);
-        virtual void visit(shared_object* item);
+        virtual void visit(const shared_object* item);
 };
 
 docuversal::docuversal(doc_formatter &_df, const char* keyw)
@@ -195,9 +195,9 @@ docuversal::docuversal(doc_formatter &_df, const char* keyw)
     keyword = keyw;
 }
 
-void docuversal::visit(shared_object* item)
+void docuversal::visit(const shared_object* item)
 {
-    const help_object* hitem = dynamic_cast <help_object*> (item);
+    const help_object* hitem = dynamic_cast <const help_object*> (item);
     if (0==hitem) return;
     hitem->DocumentObject(df, keyword);
 }
@@ -207,56 +207,72 @@ void docuversal::visit(shared_object* item)
 // ******************************************************************
 
 class help_base : public simple_internal {
-  const symbol** flist;
-  long flist_alloc;
-//   splayOfShared *doctree;
-  doc_formatter df;
-public:
-  help_base(const char* name, int np);
-  virtual ~help_base();
-  virtual void Compute(traverse_data &x, expr** pass, int np);
-protected:
-  virtual void Help(const char* search) = 0;
-  void HelpOptions(const char* search);
-  void HelpTopics(const char* key);
-  void HelpFuncs(const char* key);
+        doc_formatter df;
+    public:
+        help_base(const char* name, int np);
+        virtual ~help_base();
+        virtual void Compute(traverse_data &x, expr** pass, int np);
+    protected:
+        virtual void Help(const char* search) = 0;
+        void HelpOptions(const char* search);
+        void HelpTopics(const char* key);
+        void HelpFuncs(const char* key);
+    private:
+        class form_visit : public shared_visitor {
+                copy_matching &T;
+            public:
+                form_visit(copy_matching &t);
+                virtual void visit(const shared_object* item);
+        };
 };
+
+// ******************************************************************
+
+help_base::form_visit::form_visit(copy_matching &t) : T(t)
+{
+}
+
+void help_base::form_visit::visit(const shared_object* item)
+{
+    const formalism* ft = dynamic_cast <const formalism*> (item);
+    if (!ft) return;
+    T.changeFormalism(ft);
+    ft->traverseSymbols(T);
+}
+
+// ******************************************************************
 
 help_base::help_base(const char* name, int np)
 : simple_internal(type::find("void"), name, np),
     df(80, outputStream::globalOut())
 {
-  flist = 0;
-  flist_alloc = 0;
-  // doctree = 0;
 }
 
 help_base::~help_base()
 {
-  delete[] flist;
 }
 
 void help_base::Compute(traverse_data &x, expr** pass, int np)
 {
-  DCASSERT(0==x.aggregate);
-  DCASSERT(1==np);
-  if (x.stopExecution())  return;
-  result* answer = x.answer;
-  result foo;
-  x.answer = &foo;
-  SafeCompute(pass[0], x);
-  x.answer = answer;
-  const char* search;
-  if (foo.isNormal()) {
-    shared_string *xss = smart_cast <shared_string*> (foo.getPtr());
-    DCASSERT(xss);
-    search = xss->getStr();
-  } else if (foo.isNull()) {
-    search = 0;
-  } else {
-    return;
-  }
-  Help(search);
+    DCASSERT(0==x.aggregate);
+    DCASSERT(1==np);
+    if (x.stopExecution())  return;
+    result* answer = x.answer;
+    result foo;
+    x.answer = &foo;
+    SafeCompute(pass[0], x);
+    x.answer = answer;
+    const char* search;
+    if (foo.isNormal()) {
+        shared_string *xss = smart_cast <shared_string*> (foo.getPtr());
+        DCASSERT(xss);
+        search = xss->getStr();
+    } else if (foo.isNull()) {
+        search = 0;
+    } else {
+        return;
+    }
+    Help(search);
 }
 
 
@@ -281,14 +297,8 @@ void help_base::HelpFuncs(const char* search)
     symbol_table::global().traverse(T);
 
     // Add formalism functions
-    for (unsigned i=0; i<type::numRegistered(); i++) {
-        const type* t = type::getRegistered(i);
-        if (!t->isAFormalism())    continue;
-        const formalism* ft = smart_cast <const formalism*> (t);
-        DCASSERT(ft);
-        T.changeFormalism(ft);
-        ft->traverseSymbols(T);
-    }
+    form_visit FV(T);
+    type::traverseRegistry(FV);
 
     // Print documentation for what we collected
     docuversal D(df, search);

@@ -44,6 +44,11 @@ class splayOfShared {
         */
         void traverse(shared_visitor &t) const;
 
+        /** Traverse the elements, and possibly update them, in order.
+                @param  t   How to visit each item.
+        */
+        void traverse(shared_updater &t) const;
+
         /** Find element.
                 @param  key  Item to search for.
                 @return null pointer, if not found;

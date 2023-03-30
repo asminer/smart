@@ -67,9 +67,10 @@ class state_weight : public shared_object {
                     i = 0;
                     first_pass = true;
                 }
-                virtual void visit(shared_object* item) {
+                virtual void visit(const shared_object* item) {
                     if (i>=size) return;
-                    state_weight *s = dynamic_cast <state_weight*> (item);
+                    const state_weight *s
+                        = dynamic_cast <const state_weight*> (item);
                     DCASSERT(s);
                     if (first_pass) {
                         total += s->weight;

@@ -64,6 +64,36 @@ void splayOfShared::traverse(shared_visitor &t) const
     } // outer while
 }
 
+void splayOfShared::traverse(shared_updater &t) const
+{
+    if (!root) return;
+    unsigned i = root;
+    if (is_list) {
+        for (; Left(i); i=Left(i)) { }
+        for (; i; i=Right(i)) {
+            t.update(Item(i));
+        }
+        return;
+    }
+    // non-recursive, inorder tree traversal
+    StackClear();
+    while (i) {
+        if (Left(i)) {
+            Push(i);
+            i = Left(i);
+            continue;
+        }
+        while (i) {
+            t.update(Item(i));
+            if (Right(i)) {
+                i = Right(i);
+                break;
+            }
+            i = Pop();
+        } // inner while
+    } // outer while
+}
+
 shared_object* splayOfShared::insert(shared_object* key)
 {
     if (!root) {

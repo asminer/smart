@@ -143,13 +143,25 @@ inline void Nullify(SHARED* &ptr)
 
 // ******************************************************************
 // *                                                                *
+// *                      shared_updater class                      *
+// *                                                                *
+// ******************************************************************
+
+class shared_updater {
+    public:
+        virtual void update(shared_object* obj) = 0;
+};
+
+// ******************************************************************
+// *                                                                *
 // *                      shared_visitor class                      *
 // *                                                                *
 // ******************************************************************
 
 class shared_visitor {
     public:
-        virtual void visit(shared_object* obj) = 0;
+        virtual void visit(const shared_object* obj) = 0;
 };
+
 
 #endif

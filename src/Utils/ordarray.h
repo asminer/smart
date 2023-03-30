@@ -10,6 +10,7 @@ class orderedShared {
         orderedShared(const splayOfShared &S);
         ~orderedShared();
         shared_object* find(const shared_object* key) const;
+        void traverse(shared_updater &u) const;
         void traverse(shared_visitor &v) const;
 
         inline unsigned numElements() const { return num_items; }

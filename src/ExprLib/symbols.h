@@ -212,8 +212,8 @@ class symbol : public expr {
                 shared_visitor &V;
             public:
                 chain_visit(shared_visitor &v) : V(v) { };
-                virtual void visit(shared_object* obj) {
-                    symbol* s = dynamic_cast <symbol*> (obj);
+                virtual void visit(const shared_object* obj) {
+                    const symbol* s = dynamic_cast <const symbol*> (obj);
                     if (!s) return;
                     for (; s; s=s->Next()) {
                         V.visit(s);

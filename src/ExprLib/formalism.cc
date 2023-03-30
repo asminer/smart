@@ -7,11 +7,12 @@
 // Visitor to copy from the global, "all models" table into a formalism
 //
 // **********************************************************************
-class copy_into_formalism : public shared_visitor {
+
+class copy_into_formalism : public shared_updater {
         formalism &F;
     public:
         copy_into_formalism(formalism &f);
-        virtual void visit(shared_object* item);
+        virtual void update(shared_object* item);
 };
 
 copy_into_formalism::copy_into_formalism(formalism &f) : F(f)
@@ -19,7 +20,7 @@ copy_into_formalism::copy_into_formalism(formalism &f) : F(f)
     DCASSERT(F.symb_tree);
 }
 
-void copy_into_formalism::visit(shared_object* item)
+void copy_into_formalism::update(shared_object* item)
 {
     msr_func* mf = dynamic_cast <msr_func*> (item);
     if (!mf) return;
@@ -59,15 +60,15 @@ class doc_formlsm : public shared_visitor {
         bool first;
     public:
         doc_formlsm(doc_formatter &_df) : df(_df) {}
-        virtual void visit(shared_object* item);
+        virtual void visit(const shared_object* item);
         inline void showIdents() { first = true; idents = true; }
         inline void showFuncs()  { first = true; idents = false; }
         inline bool printed()    { return !first; }
 };
 
-void doc_formlsm::visit(shared_object* item)
+void doc_formlsm::visit(const shared_object* item)
 {
-    const symbol* chain = dynamic_cast <symbol*> (item);
+    const symbol* chain = dynamic_cast <const symbol*> (item);
     for (; chain; chain=chain->Next()) {
         const function* func = dynamic_cast <const function*> (chain);
 
@@ -93,6 +94,33 @@ void doc_formlsm::visit(shared_object* item)
             df.Out() << "\n";
         }
     } // for chain
+}
+
+// **********************************************************************
+//
+// Visitor for documenting types that can be declared in formalism
+//
+// **********************************************************************
+
+class doc_declare : public shared_visitor {
+        std::ostream &out;
+        const formalism* F;
+    public:
+        doc_declare(std::ostream &o, const formalism* f);
+        virtual void visit(const shared_object* item);
+};
+
+doc_declare::doc_declare(std::ostream &o, const formalism* f) : out(o)
+{
+    F = f;
+}
+
+void doc_declare::visit(const shared_object* item)
+{
+    const type* t = dynamic_cast <const type*> (item);
+    if (F->canDeclareType(t)) {
+        out << *t << "\n";
+    }
 }
 
 // **********************************************************************
@@ -128,11 +156,9 @@ void formalism::printDocs(doc_formatter &df) const
     df.Out() << longDocs();
     df.Out() << "\n\nLegal variable types:";
     df.begin_indent();
-    for (unsigned i=0; i<type::numRegistered(); i++) {
-        const type* t = type::getRegistered(i);
-        DCASSERT(t);
-        if (canDeclareType(t)) df.Out() << *t << "\n";
-    }
+
+    doc_declare D(df.Out(), this);
+    type::traverseRegistry(D);
     df.end_indent();
 
     //

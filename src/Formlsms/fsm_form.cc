@@ -30,9 +30,10 @@ class fsm_index_visitor : public shared_visitor {
             size = n;
             i = 0;
         }
-        virtual void visit(shared_object* item) {
+        virtual void visit(const shared_object* item) {
             if (i>=size) return;
-            model_enum_value* st = dynamic_cast <model_enum_value*> (item);
+            const model_enum_value* st
+                = dynamic_cast <const model_enum_value*> (item);
             DCASSERT(st);
             indexes[i++] = st->GetIndex();
         }

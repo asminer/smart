@@ -50,16 +50,6 @@ public:
 
   virtual int Compare(const shared_object* o) const;
 
-  /*
-  inline int Compare(const model_var* p) const {
-    return SIGN(SafeID(lhs) - SafeID(p));
-  }
-  inline int Compare(const assign_entry* x) const {
-    DCASSERT(x);
-    return Compare(x->lhs);
-  }
-  */
-
   void Compile();
 };
 
@@ -87,12 +77,6 @@ bool assign_entry::Print(std::ostream &s, int width) const
 
 int assign_entry::Compare(const shared_object* o) const
 {
-    /*
-    const model_var* p = dynamic_cast <const model_var*> (o);
-    if (p) {
-        return SIGN(SafeID(lhs) - SafeID(p));
-    }
-    */
     const assign_entry* a = dynamic_cast <const assign_entry*> (o);
     DCASSERT(a);
     return SIGN(SafeID(lhs) - SafeID(a->lhs));
@@ -110,17 +94,17 @@ void assign_entry::Compile()
 // *                                                                        *
 // **************************************************************************
 
-class assign_entry_visitor : public shared_visitor {
+class assign_entry_updater : public shared_updater {
         expr** list;
         unsigned size;
         unsigned i;
     public:
-        assign_entry_visitor(expr** L, unsigned s) {
+        assign_entry_updater(expr** L, unsigned s) {
             list = L;
             size = s;
             i=0;
         }
-        virtual void visit(shared_object* item) {
+        virtual void update(shared_object* item) {
             if (i>=size) return;
             assign_entry* a = dynamic_cast <assign_entry*> (item);
             DCASSERT(a);
@@ -376,9 +360,9 @@ void evm_event::Finalize(outputStream &ds)
     if (build_data->modlist) {
         unsigned na = build_data->modlist->numElements();
         expr** nextlist = na ? new expr*[na] : nullptr;
-        assign_entry_visitor v(nextlist, na);
-        build_data->modlist->traverse(v);
-        setNextstate(v.combine());
+        assign_entry_updater u(nextlist, na);
+        build_data->modlist->traverse(u);
+        setNextstate(u.combine());
     }
 
     // cleanup

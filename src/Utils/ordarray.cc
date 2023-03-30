@@ -2,14 +2,14 @@
 #include "ordarray.h"
 #include "splay.h"
 
-class orderedShared::copier : public shared_visitor {
+class orderedShared::copier : public shared_updater {
         orderedShared &A;
         unsigned slot;
     public:
         copier(orderedShared &a) : A(a) {
             slot = 0;
         }
-        virtual void visit(shared_object* item) {
+        virtual void update(shared_object* item) {
             DCASSERT(slot < A.num_items);
             A.items[slot++] = item;
         }
@@ -50,6 +50,13 @@ shared_object* orderedShared::find(const shared_object* key) const
     }
     // not found
     return nullptr;
+}
+
+void orderedShared::traverse(shared_updater &u) const
+{
+    for (unsigned i=0; i<num_items; i++) {
+        u.update(items[i]);
+    }
 }
 
 void orderedShared::traverse(shared_visitor &v) const

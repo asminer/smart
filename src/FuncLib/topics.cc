@@ -8,6 +8,7 @@
 #include "../Utils/initializer.h"
 
 #include "../ExprLib/help.h"
+#include "../ExprLib/type.h"
 #include "../ExprLib/formalism.h"
 #include "../ExprLib/functions.h"
 #include "../ExprLib/symb_tab.h"
@@ -18,12 +19,53 @@
 
 #include "../Options/optman.h"
 
+
+// ******************************************************************
+// *                         alltypes class                         *
+// ******************************************************************
+
+class alltypes : public shared_visitor {
+        shared_visitor &V;
+    public:
+        alltypes(shared_visitor &v);
+        virtual void visit(const shared_object* item);
+};
+
+// ******************************************************************
+
+alltypes::alltypes(shared_visitor &v) : V(v)
+{
+}
+
+void alltypes::visit(const shared_object* item)
+{
+    const type* t = dynamic_cast <const type*> (item);
+    if (!t) return;
+
+    // Phase, Rand, Proc, and set modifiers
+    const type* pht = t->modifyType(PHASE);
+    const type* rat = t->modifyType(RAND);
+    const type* prt = t->addProc();
+    const type* prpht = pht ? pht->addProc() : nullptr;
+    const type* prrat = rat ? rat->addProc() : nullptr;
+    const type* sett = t->getSetOfThis();
+
+    // Visit everything
+    V.visit(t);
+    V.visit(pht);
+    V.visit(rat);
+    V.visit(prt);
+    V.visit(prpht);
+    V.visit(prrat);
+    V.visit(sett);
+}
+
+
 // ******************************************************************
 // *                       topic_topics class                       *
 // ******************************************************************
 
 class topic_topics : public help_topic {
-    const symbol_table &st;
 public:
     topic_topics(const symbol_table &s);
     virtual void DocumentBehavior(doc_formatter &df) const;
@@ -34,11 +76,18 @@ public:
             bool firstpass;
         public:
             visitor(doc_formatter &d);
-            virtual void visit(shared_object* item);
+            virtual void visit(const shared_object* item);
             inline unsigned getMaxName() const { return maxname; }
             inline void secondPass() { firstpass = false; }
     };
+
+    static void traverseAllTypes(shared_visitor &v);
+
+private:
+    const symbol_table &st;
 };
+
+// ******************************************************************
 
 topic_topics::visitor::visitor(doc_formatter &d) : df(d)
 {
@@ -46,9 +95,9 @@ topic_topics::visitor::visitor(doc_formatter &d) : df(d)
     firstpass = true;
 }
 
-void topic_topics::visitor::visit(shared_object* item)
+void topic_topics::visitor::visit(const shared_object* item)
 {
-    const symbol* chain = dynamic_cast <symbol*> (item);
+    const symbol* chain = dynamic_cast <const symbol*> (item);
     for (; chain; chain = chain->Next()) {
         const help_topic* ht = dynamic_cast <const help_topic*> (chain);
         if (!ht) continue;
@@ -70,6 +119,8 @@ void topic_topics::visitor::visit(shared_object* item)
         }
     } // chain of symbols traversal
 }
+
+// ******************************************************************
 
 topic_topics::topic_topics(const symbol_table &s)
     : help_topic("topics", "Shows all available help topics (this list!)"),
@@ -93,81 +144,132 @@ void topic_topics::DocumentBehavior(doc_formatter &df) const
   df.end_description();
 }
 
+void topic_topics::traverseAllTypes(shared_visitor &v)
+{
+    alltypes av(v);
+    type::traverseRegistry(av);
+}
+
+
 // ******************************************************************
 // *                       topic_types  class                       *
 // ******************************************************************
 
 class topic_types : public help_topic {
-public:
-  topic_types()
-   : help_topic("types", "Shows the available types for declared objects") { }
-  virtual void DocumentBehavior(doc_formatter &df) const;
+    public:
+        topic_types() : help_topic("types",
+                "Shows the available types for declared objects")
+        { }
+        virtual void DocumentBehavior(doc_formatter &df) const;
+
+    private:
+        class filtertypes : public shared_visitor {
+                std::ostream &out;
+            public:
+                bool void_off;
+                bool form_off;
+                bool set_off;
+                bool stoch_off;
+                bool proc_off;
+                bool default_off;
+            public:
+                filtertypes(std::ostream &o);
+                virtual void visit(const shared_object* item);
+        };
+
 };
+
+// ******************************************************************
+
+topic_types::filtertypes::filtertypes(std::ostream &o) : out(o)
+{
+    void_off = true;
+    form_off = true;
+    set_off = true;
+    stoch_off = true;
+    proc_off = true;
+    default_off = true;
+}
+
+void topic_types::filtertypes::visit(const shared_object* item)
+{
+    const type* t = dynamic_cast <const type*> (item);
+    if (!t) return;
+    bool deflt = true;
+    if (t->isVoid()) {
+       if (void_off) return;
+       else deflt = false;
+    }
+    if (t->isAFormalism()) {
+        if (form_off) return;
+        else deflt = false;
+    }
+    if (t->isASet()) {
+       if (set_off) return;
+       else deflt = false;
+    }
+    if (t->getModifier() != DETERM) {
+        if (stoch_off) return;
+        else deflt = false;
+    }
+    if (t->hasProc()) {
+        if (proc_off) return;
+        else deflt = false;
+    }
+    if (deflt && default_off) return;
+    out << *t << "\n";
+}
+
+// ******************************************************************
 
 void topic_types::DocumentBehavior(doc_formatter &df) const
 {
-  df.Out() << "The Smart language is strictly typed; all objects have a specified type. Basic types can be further modified by *natures*, which specify if the object is deterministic or random. Furthermore, objects may be allowed to depend on the state of a stochastic process, which are again modified by the keyword *proc*. Types are also used for formalisms, formalism variables, and sets of objects.\n\n";
-  df.Out() << "Simple types:\n";
-  df.begin_indent();
-  for (unsigned i=0; i<type::numRegistered(); i++) {
-    const type* t = type::getRegistered(i);
-    DCASSERT(t);
-    if (t->isVoid())                continue;
-    if (t->isAFormalism())          continue;
-    if (t->isASet())                continue;
-    if (t->getModifier() != DETERM) continue;
-    if (t->hasProc())               continue;
-    df.Out() << *t << "\n";
-  }
-  df.end_indent();
-  df.Out() << "\nStochastic types:\n";
-  df.begin_indent();
-  for (unsigned i=0; i<type::numRegistered(); i++) {
-    const type* t = type::getRegistered(i);
-    const type* pt = t->modifyType(PHASE);
-    const type* rt = t->modifyType(RAND);
-    if (pt) df.Out() << *pt << "\n";
-    if (rt) df.Out() << *rt << "\n";
-  }
-  df.end_indent();
-  df.Out() << "\nProcess types:\n";
-  df.begin_indent();
-  for (unsigned i=0; i<type::numRegistered(); i++) {
-    const type* t = type::getRegistered(i);
-    const type* prt = t->addProc();
-    if (!prt) continue;
-    df.Out() << *prt << "\n";
-    const type* pt = prt->modifyType(PHASE);
-    const type* rt = prt->modifyType(RAND);
-    if (pt) df.Out() << *pt << "\n";
-    if (rt) df.Out() << *rt << "\n";
-  }
-  df.end_indent();
-  df.Out() << "\nFormalism types:\n";
-  df.begin_indent();
-  for (unsigned i=0; i<type::numRegistered(); i++) {
-    const type* t = type::getRegistered(i);
-    if (!t->isAFormalism())    continue;
-    df.Out() << *t << "\n";
-  }
-  df.end_indent();
-  df.Out() << "\nVoid types (usually within formalisms):\n";
-  df.begin_indent();
-  for (unsigned i=0; i<type::numRegistered(); i++) {
-    const type* t = type::getRegistered(i);
-    if (!t->isVoid())    continue;
-    df.Out() << *t << "\n";
-  }
-  df.end_indent();
-  df.Out() << "\nSet types:\n";
-  df.begin_indent();
-  for (unsigned i=0; i<type::numRegistered(); i++) {
-    const type* t = type::getRegistered(i);
-    const type* st = t->getSetOfThis();
-    if (st) df.Out() << *st << "\n";
-  }
-  df.end_indent();
-  df.Out() << "\nSee the help topics \"promotions\" and \"casting\" for details about how Smart changes types, and how you can force a type change.\n";
+    df.Out() << "The Smart language is strictly typed; all objects have a specified type. Basic types can be further modified by *natures*, which specify if the object is deterministic or random. Furthermore, objects may be allowed to depend on the state of a stochastic process, which are again modified by the keyword *proc*. Types are also used for formalisms, formalism variables, and sets of objects.\n\n";
+
+    filtertypes ft(df.Out());
+    alltypes av(ft);
+
+    df.Out() << "Simple types:\n";
+    ft.default_off = false;
+    df.begin_indent();
+    type::traverseRegistry(av);
+    df.end_indent();
+
+    df.Out() << "\nStochastic types:\n";
+    ft.default_off = true;
+    ft.stoch_off = false;
+    df.begin_indent();
+    type::traverseRegistry(av);
+    df.end_indent();
+
+    df.Out() << "\nProcess types:\n";
+    ft.proc_off = false;
+    df.begin_indent();
+    type::traverseRegistry(av);
+    df.end_indent();
+
+    df.Out() << "\nFormalism types:\n";
+    ft.proc_off = true;
+    ft.stoch_off = true;
+    ft.form_off = false;
+    df.begin_indent();
+    type::traverseRegistry(av);
+    df.end_indent();
+
+    df.Out() << "\nVoid types (usually within formalisms):\n";
+    ft.form_off = true;
+    ft.void_off = false;
+    df.begin_indent();
+    type::traverseRegistry(av);
+    df.end_indent();
+
+    df.Out() << "\nSet types:\n";
+    ft.void_off = true;
+    ft.set_off = false;
+    df.begin_indent();
+    type::traverseRegistry(av);
+    df.end_indent();
+    df.Out() << "\nSee the help topics \"promotions\" and \"casting\" for details about how Smart changes types, and how you can force a type change.\n";
 }
 
 // ******************************************************************
@@ -176,6 +278,7 @@ void topic_types::DocumentBehavior(doc_formatter &df) const
 
 class topic_promotions : public help_topic {
 
+    /*
         class one_promotion : public shared_object {
                 const type* desttype;
                 int distance;
@@ -190,13 +293,46 @@ class topic_promotions : public help_topic {
                 doc_formatter &df;
             public:
                 printer(doc_formatter &d);
-                virtual void visit(shared_object* obj);
+                virtual void visit(const shared_object* obj);
         };
 
+        */
     public:
         topic_promotions();
         virtual void DocumentBehavior(doc_formatter &df) const;
 
+    private:
+        class promote_to : public shared_visitor {
+                doc_formatter &df;
+                const type* from;
+                bool first_pass;
+                unsigned width;
+            public:
+                promote_to(doc_formatter &d);
+                virtual void visit(const shared_object* obj);
+
+                inline unsigned getWidth() const { return width; }
+
+                inline void new_from(const type* f) {
+                    from = f;
+                    first_pass = true;
+                    width = 0;
+                }
+                inline void pass_2() {
+                    first_pass = false;
+                }
+        };
+
+    private:
+        class promote_from : public shared_visitor {
+                doc_formatter &df;
+                promote_to &inner;
+            public:
+                promote_from(doc_formatter &d, promote_to &i);
+                virtual void visit(const shared_object* obj);
+        };
+
+        /*
     private:
         inline static void checkPromo(splayOfShared &p, unsigned &width,
                     const type* from, const type* to)
@@ -209,11 +345,63 @@ class topic_promotions : public help_topic {
                 width = MAX(width, to->length());
             }
         }
-
+*/
 };
 
 // ************************************************************
 
+topic_promotions::promote_to::promote_to(doc_formatter &d) : df(d)
+{
+    from = nullptr;
+}
+
+void topic_promotions::promote_to::visit(const shared_object* obj)
+{
+    if (!from) return;
+    const type* to = dynamic_cast <const type*> (obj);
+    if (!to) return;
+
+    int d = typeconv::getPromoteDistance(from, to);
+    if (d > 0)  {
+        if (first_pass) {
+            width = MAX(width, to->length());
+        } else {
+            df.item(to->getStr());
+            df.Out() << "(distance " << d << ")\n";
+        }
+    }
+}
+
+// ************************************************************
+
+topic_promotions::promote_from::promote_from(doc_formatter &d, promote_to &i)
+    : df(d), inner(i)
+{
+}
+
+void topic_promotions::promote_from::visit(const shared_object* obj)
+{
+    const type* from = dynamic_cast <const type*> (obj);
+    if (!from) return;
+
+    inner.new_from(from);
+    alltypes at(inner);
+    type::traverseRegistry(at);
+
+    if (!inner.getWidth()) return;  // empty list
+
+    df.Out() << "\n" << *from << ":\n";
+    df.begin_indent();
+    df.begin_description(4*(inner.getWidth()/4+1));
+    inner.pass_2();
+    type::traverseRegistry(at);
+    df.end_description();
+    df.end_indent();
+}
+
+
+// ************************************************************
+/*
 topic_promotions::one_promotion::one_promotion(const type* dt, int d)
 {
     desttype = dt;
@@ -241,14 +429,14 @@ void topic_promotions::one_promotion::show(doc_formatter &df) const
     df.item(desttype->getStr());
     df.Out() << "(distance " << distance << ")\n";
 }
-
+*/
 // ************************************************************
-
+/*
 topic_promotions::printer::printer(doc_formatter &d) : df(d)
 {
 }
 
-void topic_promotions::printer::visit(shared_object* obj)
+void topic_promotions::printer::visit(const shared_object* obj)
 {
     const topic_promotions::one_promotion* op
         = dynamic_cast <const topic_promotions::one_promotion*> (obj);
@@ -256,7 +444,7 @@ void topic_promotions::printer::visit(shared_object* obj)
     if (!op) return;
     op->show(df);
 }
-
+*/
 // ************************************************************
 
 topic_promotions::topic_promotions() : help_topic("promotions",
@@ -268,6 +456,12 @@ void topic_promotions::DocumentBehavior(doc_formatter &df) const
 {
     df.Out() << "If necessary, Smart will attempt to promote expressions to other types.  Each promotion has an associated \"distance\", and Smart will normally choose the promotion with least distance (or give an error if it is unable to decide).  A type promotion can be forced using an explicit cast, see the help topic on \"casting\" for details.  Smart uses the following promotions:\n";
 
+    promote_to tolist(df);
+    promote_from fromlist(df, tolist);
+    alltypes at(fromlist);
+    type::traverseRegistry(at);
+
+    /*
     splayOfShared parray(32, 32);
     printer P(df);
 
@@ -308,6 +502,7 @@ void topic_promotions::DocumentBehavior(doc_formatter &df) const
         parray.deleteAndClear();
 
   } // for i
+    */
 }
 
 

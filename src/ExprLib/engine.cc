@@ -15,11 +15,11 @@
 // *               finalizer_visitor class                *
 // ********************************************************
 
-class finalizer_visitor : public shared_visitor {
+class finalizer_updater : public shared_updater {
         option_manager &om;
     public:
-        finalizer_visitor(option_manager &_om) : om(_om) { };
-        virtual void visit(shared_object* obj) {
+        finalizer_updater(option_manager &_om) : om(_om) { };
+        virtual void update(shared_object* obj) {
             engtype* et = smart_cast <engtype*> (obj);
             if (!et) return;
             et->finalizeRegistry(om);
@@ -195,7 +195,7 @@ class build_groups_traversal : public shared_visitor {
         unsigned numgroups;
     public:
         build_groups_traversal(set_of_measures** g, unsigned ng);
-        virtual void visit(shared_object* item);
+        virtual void visit(const shared_object* item);
 };
 
 build_groups_traversal::build_groups_traversal(set_of_measures** g,
@@ -205,7 +205,7 @@ build_groups_traversal::build_groups_traversal(set_of_measures** g,
     numgroups = ng;
 }
 
-void build_groups_traversal::visit(shared_object* item)
+void build_groups_traversal::visit(const shared_object* item)
 {
     const engtype* et = dynamic_cast <const engtype*> (item);
     DCASSERT(et);
@@ -391,8 +391,8 @@ engtype* engtype::findEngineType(const char* name)
 
 void engtype::finalizeAll(option_manager &om)
 {
-    finalizer_visitor v(om);
-    if (registry) registry->traverse(v);
+    finalizer_updater u(om);
+    if (registry) registry->traverse(u);
 }
 
 void engtype::killEngTree()

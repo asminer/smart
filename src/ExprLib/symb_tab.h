@@ -33,6 +33,11 @@ class symbol_table {
             table.traverse(t);
         }
 
+        /// Traverse the symbol table
+        inline void traverse(shared_updater &t) const {
+            table.traverse(t);
+        }
+
         const splayOfShared& getTable() const { return table; }
 
         /// The "global" symbol table.

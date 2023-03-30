@@ -156,13 +156,13 @@ protected:
     expr* makeSum(List <expr>* &x);
 
 public:
-    class visitor : public shared_visitor {
+    class updater : public shared_updater {
             outputStream &dotStream;
             transition &trans;
         public:
-            visitor(outputStream &ds, transition &t)
+            updater(outputStream &ds, transition &t)
                 : dotStream(ds), trans(t) { }
-            virtual void visit(shared_object* item);
+            virtual void update(shared_object* item);
     };
 };
 
@@ -401,7 +401,7 @@ expr* arc_entry::makeSum(List <expr> * &x)
             args, nullptr, nargs);
 }
 
-void arc_entry::visitor::visit(shared_object* item)
+void arc_entry::updater::update(shared_object* item)
 {
       arc_entry* a = dynamic_cast <arc_entry*> (item);
       DCASSERT(a);
@@ -507,7 +507,7 @@ void transition::compile(outputStream &ds)
     ds << " [shape=box, label=\"" << Name() << "\"];\n";
     DCASSERT(build_data);
     if (build_data->arclist) {
-        arc_entry::visitor v(ds, *this);
+        arc_entry::updater v(ds, *this);
         build_data->arclist->traverse(v);
     }
 }

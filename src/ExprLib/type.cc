@@ -491,6 +491,20 @@ void type::finalizeRegistry()
     }
 }
 
+void type::traverseRegistry(shared_visitor &v)
+{
+    if (reg_list) {
+        reg_list->traverse(v);
+        return;
+    }
+    if (reg_tree) {
+        reg_tree->traverse(v);
+        return;
+    }
+}
+
+#ifdef OLD_TYPE_ACCESS
+
 unsigned type::numRegistered()
 {
     DCASSERT(reg_list);
@@ -502,6 +516,8 @@ const simple_type* type::getRegistered(unsigned i)
     DCASSERT(reg_list);
     return dynamic_cast<simple_type*> (reg_list->get(i));
 }
+
+#endif
 
 simple_type* type::find(const char* tname)
 {
