@@ -19,6 +19,114 @@
 
 #include "../Options/optman.h"
 
+// ******************************************************************
+//
+//  A generic 'visit all pairs of types' class.
+//
+//      virtual void header(const type* t1) const;
+//      virtual bool check(const type* t1, const type* t2) const;
+//      virtual void display(const type* t2) const;
+//
+//
+// ******************************************************************
+
+
+class enumerate_pairs : public shared_visitor {
+    public:
+        // Derive from this to use enumerate_pairs.
+        class visitor {
+            public:
+                // Check if we're going to print anything for types t1, t2
+                virtual bool check(const type* t1, const type* t2) const = 0;
+                // Show header for t1 (knowing we'll print something)
+                virtual void header(doc_formatter &df, const type* t1)
+                    const = 0;
+                // Show entry for t2 under header for t1
+                virtual void display(doc_formatter &df, const type* t1,
+                    const type* t2) const = 0;
+        };
+
+    public:
+        enumerate_pairs(doc_formatter &d, visitor &pv);
+
+        virtual void visit(const shared_object* obj);
+
+    private:
+        class inner : public shared_visitor {
+                const type* first;
+                bool first_pass;
+                unsigned width;
+            public:
+                doc_formatter &df;
+                visitor &pv;
+            public:
+                inner(doc_formatter &d, visitor &pv);
+                virtual void visit(const shared_object* obj);
+
+                inline unsigned getWidth() const { return width; }
+
+                inline void new_first(const type* f) {
+                    first = f;
+                    first_pass = true;
+                    width = 0;
+                }
+                inline void pass_2() {
+                    first_pass = false;
+                }
+        };
+
+    private:
+        inner IN;
+};
+
+// ******************************************************************
+
+enumerate_pairs::enumerate_pairs(doc_formatter &d, visitor &pv)
+    : IN(d, pv)
+{
+}
+
+void enumerate_pairs::visit(const shared_object* obj)
+{
+    const type* first = dynamic_cast <const type*> (obj);
+    if (!first) return;
+
+    IN.new_first(first);
+    type::traverseRegistry(IN);
+
+    unsigned w = IN.getWidth();
+    if (!w) return;  // empty list
+
+    IN.pv.header(IN.df, first);
+    IN.df.begin_indent();
+    IN.df.begin_description(4*(w/4+1));
+    IN.pass_2();
+    type::traverseRegistry(IN);
+    IN.df.end_description();
+    IN.df.end_indent();
+}
+
+// ******************************************************************
+
+enumerate_pairs::inner::inner(doc_formatter &d, visitor &_pv) : df(d), pv(_pv)
+{
+    first = nullptr;
+}
+
+void enumerate_pairs::inner::visit(const shared_object* obj)
+{
+    if (!first) return;
+    const type* second = dynamic_cast <const type*> (obj);
+    if (!second) return;
+
+    if (!pv.check(first, second)) return;
+
+    if (first_pass) {
+        width = MAX(width, second->length());
+    } else {
+        pv.display(df, first, second);
+    }
+}
 
 // ******************************************************************
 // *                       topic_topics class                       *
@@ -230,85 +338,34 @@ class topic_promotions : public help_topic {
         virtual void DocumentBehavior(doc_formatter &df) const;
 
     private:
-        class promote_to : public shared_visitor {
-                doc_formatter &df;
-                const type* from;
-                bool first_pass;
-                unsigned width;
+        class pvisit : public enumerate_pairs::visitor {
             public:
-                promote_to(doc_formatter &d);
-                virtual void visit(const shared_object* obj);
-
-                inline unsigned getWidth() const { return width; }
-
-                inline void new_from(const type* f) {
-                    from = f;
-                    first_pass = true;
-                    width = 0;
-                }
-                inline void pass_2() {
-                    first_pass = false;
-                }
-        };
-
-    private:
-        class promote_from : public shared_visitor {
-                doc_formatter &df;
-                promote_to &inner;
-            public:
-                promote_from(doc_formatter &d, promote_to &i);
-                virtual void visit(const shared_object* obj);
+                virtual bool check(const type* t1, const type* t2) const;
+                virtual void header(doc_formatter &df, const type* t1) const;
+                virtual void display(doc_formatter &df, const type* t1,
+                        const type* t2) const;
         };
 };
 
 // ************************************************************
 
-topic_promotions::promote_to::promote_to(doc_formatter &d) : df(d)
+bool topic_promotions::pvisit::check(const type* t1, const type* t2) const
 {
-    from = nullptr;
+    if (!t1 || !t2) return false;
+    return typeconv::getPromoteDistance(t1, t2) > 0;
 }
 
-void topic_promotions::promote_to::visit(const shared_object* obj)
+void topic_promotions::pvisit::header(doc_formatter &df, const type* t1) const
 {
-    if (!from) return;
-    const type* to = dynamic_cast <const type*> (obj);
-    if (!to) return;
-
-    int d = typeconv::getPromoteDistance(from, to);
-    if (d > 0)  {
-        if (first_pass) {
-            width = MAX(width, to->length());
-        } else {
-            df.item(to->getStr());
-            df.Out() << "(distance " << d << ")\n";
-        }
-    }
+    df.Out() << "\nFrom " << *t1 << " to:\n";
 }
 
-// ************************************************************
-
-topic_promotions::promote_from::promote_from(doc_formatter &d, promote_to &i)
-    : df(d), inner(i)
+void topic_promotions::pvisit::display(doc_formatter &df, const type* t1,
+        const type* t2) const
 {
-}
-
-void topic_promotions::promote_from::visit(const shared_object* obj)
-{
-    const type* from = dynamic_cast <const type*> (obj);
-    if (!from) return;
-
-    inner.new_from(from);
-    type::traverseRegistry(inner);
-
-    if (!inner.getWidth()) return;  // empty list
-
-    df.Out() << "\n" << *from << ":\n";
-    df.begin_indent();
-    df.begin_description(4*(inner.getWidth()/4+1));
-    inner.pass_2();
-    type::traverseRegistry(inner);
-    df.end_description();
-    df.end_indent();
+    df.item(t2->getStr());
+    df.Out() << "(distance "
+             << typeconv::getPromoteDistance(t1, t2) << ")\n";
 }
 
 // ************************************************************
@@ -322,9 +379,9 @@ void topic_promotions::DocumentBehavior(doc_formatter &df) const
 {
     df.Out() << "If necessary, Smart will attempt to promote expressions to other types.  Each promotion has an associated \"distance\", and Smart will normally choose the promotion with least distance (or give an error if it is unable to decide).  A type promotion can be forced using an explicit cast, see the help topic on \"casting\" for details.  Smart uses the following promotions:\n";
 
-    promote_to tolist(df);
-    promote_from fromlist(df, tolist);
-    type::traverseRegistry(fromlist);
+    pvisit pv;
+    enumerate_pairs EP(df, pv);
+    type::traverseRegistry(EP);
 }
 
 
@@ -338,82 +395,33 @@ class topic_casting : public help_topic {
         virtual void DocumentBehavior(doc_formatter &df) const;
 
     private:
-        class cast_to : public shared_visitor {
-                doc_formatter &df;
-                const type* from;
-                bool first_pass;
-                unsigned count;
+        class pvisit : public enumerate_pairs::visitor {
             public:
-                cast_to(doc_formatter &d);
-                virtual void visit(const shared_object* obj);
-
-                inline unsigned getCount() const { return count; }
-
-                inline void new_from(const type* f) {
-                    from = f;
-                    first_pass = true;
-                    count = 0;
-                }
-                inline void pass_2() {
-                    first_pass = false;
-                }
-        };
-
-    private:
-        class cast_from : public shared_visitor {
-                doc_formatter &df;
-                cast_to &inner;
-            public:
-                cast_from(doc_formatter &d, cast_to &i);
-                virtual void visit(const shared_object* obj);
+                virtual bool check(const type* t1, const type* t2) const;
+                virtual void header(doc_formatter &df, const type* t1) const;
+                virtual void display(doc_formatter &df, const type* t1,
+                        const type* t2) const;
         };
 };
 
 // ************************************************************
 
-topic_casting::cast_to::cast_to(doc_formatter &d) : df(d)
+bool topic_casting::pvisit::check(const type* t1, const type* t2) const
 {
-    from = nullptr;
+    if (typeconv::isPromotable(t1, t2)) return false;
+    return typeconv::isCastable(t1, t2);
 }
 
-void topic_casting::cast_to::visit(const shared_object* obj)
+void topic_casting::pvisit::header(doc_formatter &df, const type* t1) const
 {
-    if (!from) return;
-    const type* to = dynamic_cast <const type*> (obj);
-    if (!to) return;
-
-    if (typeconv::isPromotable(from, to)) return;
-    if (!typeconv::isCastable(from, to)) return;
-
-    if (first_pass) {
-        ++count;
-    } else {
-        df.Out() << *to << '\n';
-    }
+    df.Out() << "\nFrom " << *t1 << " to:\n";
 }
 
-// ************************************************************
-
-topic_casting::cast_from::cast_from(doc_formatter &d, cast_to &i)
-    : df(d), inner(i)
+void topic_casting::pvisit::display(doc_formatter &df, const type* t1,
+        const type* t2) const
 {
-}
-
-void topic_casting::cast_from::visit(const shared_object* obj)
-{
-    const type* from = dynamic_cast <const type*> (obj);
-    if (!from) return;
-
-    inner.new_from(from);
-    type::traverseRegistry(inner);
-
-    if (!inner.getCount()) return;  // empty list
-
-    df.Out() << "\nFrom " << *from << " to:\n";
-    df.begin_indent();
-    inner.pass_2();
-    type::traverseRegistry(inner);
-    df.end_indent();
+    df.item(t2->getStr());
+    df.Out() << '\n';
 }
 
 // ************************************************************
@@ -432,9 +440,9 @@ void topic_casting::DocumentBehavior(doc_formatter &df) const
 
     df.Out() << "An expression can be explicitly cast from type A to type B if it can be promoted from type A to type B (see help topic \"promotions\").  In addition, the following conversions are allowed:\n";
 
-    cast_to tolist(df);
-    cast_from fromlist(df, tolist);
-    type::traverseRegistry(fromlist);
+    pvisit pv;
+    enumerate_pairs EP(df, pv);
+    type::traverseRegistry(EP);
 }
 
 
@@ -647,89 +655,40 @@ class topic_binaryop : public help_topic {
         virtual void DocumentBehavior(doc_formatter &df) const;
 
     private:
-        class op_right : public shared_visitor {
-                doc_formatter &df;
-                const type* left;
+        class pvisit : public enumerate_pairs::visitor {
                 binary_op::opcode op;
-                unsigned width;
-                bool firstpass;
             public:
-                op_right(doc_formatter &d, binary_op::opcode op);
-                virtual void visit(const shared_object* obj);
-                inline void set_left(const type* L) {
-                    left = L;
-                    width = 0;
-                    firstpass = true;
-                }
-                inline unsigned nextPass() {
-                    firstpass = false;
-                    return width;
-                }
-                inline void header() {
-                    df.Out() << '\n' << *left << ' '
-                             << binary_op::getOp(op) << '\n';
-                }
-        };
-
-    private:
-        class op_left : public shared_visitor {
-                doc_formatter &df;
-                op_right &inner;
-            public:
-                op_left(doc_formatter &d, op_right &i);
-                virtual void visit(const shared_object* obj);
+                pvisit(binary_op::opcode op);
+                virtual bool check(const type* t1, const type* t2) const;
+                virtual void header(doc_formatter &df, const type* t1) const;
+                virtual void display(doc_formatter &df, const type* t1,
+                        const type* t2) const;
         };
 };
 
-// ******************************************************************
-
-topic_binaryop::op_right::op_right(doc_formatter &d, binary_op::opcode o)
-    : df(d)
-{
-    left = nullptr;
-    op = o;
-}
-
-void topic_binaryop::op_right::visit(const shared_object* obj)
-{
-    if (!left) return;
-    const type* right = dynamic_cast <const type*> (obj);
-    if (!right) return;
-
-    const type* v = binary_op::getTypeOf(left, op, right);
-    if (!v) return;
-
-    if (firstpass) {
-        width = MAX(width, right->length());
-    } else {
-        df.item(right->getStr());
-        df.Out() << "has type: " << *v << '\n';
-    }
-}
-
 // ************************************************************
 
-topic_binaryop::op_left::op_left(doc_formatter &d, op_right &i)
-    : df(d), inner(i)
+topic_binaryop::pvisit::pvisit(binary_op::opcode _op)
 {
+    op = _op;
 }
 
-void topic_binaryop::op_left::visit(const shared_object* obj)
+bool topic_binaryop::pvisit::check(const type* t1, const type* t2) const
 {
-    const type* left = dynamic_cast <const type*> (obj);
-    if (!left) return;
+    return binary_op::getTypeOf(t1, op, t2);
+}
 
-    inner.set_left(left);
-    type::traverseRegistry(inner);
-    unsigned w = inner.nextPass();
-    if (!w) return;
+void topic_binaryop::pvisit::header(doc_formatter &df, const type* t1) const
+{
+    df.Out() << '\n' << *t1 << ' ' << binary_op::getOp(op) << '\n';
+}
 
-    inner.header();
-    df.begin_indent();
-    df.begin_description(4*(w/4+1));
-    type::traverseRegistry(inner);
-    df.end_description();
-    df.end_indent();
+void topic_binaryop::pvisit::display(doc_formatter &df, const type* t1,
+        const type* t2) const
+{
+    df.item(t2->getStr());
+    const type* v = binary_op::getTypeOf(t1, op, t2);
+    df.Out() << "has type: " << *v << '\n';
 }
 
 // ******************************************************************
@@ -749,9 +708,9 @@ void topic_binaryop::DocumentBehavior(doc_formatter &df) const
     df.Out() << binary_op::documentOp(op);
     df.Out() << ".  It may be used with the following operand types:\n\n";
 
-    op_right inner(df, op);
-    op_left outer(df, inner);
-    type::traverseRegistry(outer);
+    pvisit pv(op);
+    enumerate_pairs EP(df, pv);
+    type::traverseRegistry(EP);
 }
 
 // ******************************************************************

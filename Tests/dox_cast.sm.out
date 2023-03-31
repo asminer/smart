@@ -7,35 +7,35 @@ Help topic: promotions
     explicit cast, see the help topic on "casting" for details. Smart uses
     the following promotions:
 
-    bool:
+    From bool to:
         rand bool          (distance 6)
         proc bool          (distance 9)
         proc rand bool     (distance 15)
 
-    rand bool:
+    From rand bool to:
         proc rand bool     (distance 9)
 
-    proc bool:
+    From proc bool to:
         proc rand bool     (distance 6)
 
-    event:
+    From event to:
         {event}            (distance 20)
 
-    expo:
+    From expo to:
         proc expo          (distance 9)
         ph real            (distance 3)
         rand real          (distance 6)
         proc ph real       (distance 12)
         proc rand real     (distance 15)
 
-    proc expo:
+    From proc expo to:
         proc ph real       (distance 3)
         proc rand real     (distance 6)
 
-    glue:
+    From glue to:
         {glue}             (distance 20)
 
-    int:
+    From int to:
         bigint             (distance 1)
         ph int             (distance 3)
         rand int           (distance 6)
@@ -51,39 +51,39 @@ Help topic: promotions
         proc rand real     (distance 17)
         {real}             (distance 22)
 
-    ph int:
+    From ph int to:
         rand int           (distance 6)
         proc ph int        (distance 9)
         proc rand int      (distance 15)
         rand real          (distance 8)
         proc rand real     (distance 17)
 
-    rand int:
+    From rand int to:
         proc rand int      (distance 9)
         rand real          (distance 2)
         proc rand real     (distance 11)
 
-    proc int:
+    From proc int to:
         proc ph int        (distance 3)
         proc rand int      (distance 6)
         proc real          (distance 2)
         proc ph real       (distance 5)
         proc rand real     (distance 8)
 
-    proc ph int:
+    From proc ph int to:
         proc rand int      (distance 6)
         proc rand real     (distance 8)
 
-    proc rand int:
+    From proc rand int to:
         proc rand real     (distance 2)
 
-    {int}:
+    From {int} to:
         {real}             (distance 2)
 
-    intvar:
+    From intvar to:
         {intvar}           (distance 20)
 
-    null:
+    From null to:
         bigint             (distance 1)
         bool               (distance 1)
         rand bool          (distance 1)
@@ -144,10 +144,10 @@ Help topic: promotions
         {trans}            (distance 1)
         void               (distance 1)
 
-    place:
+    From place to:
         {place}            (distance 20)
 
-    real:
+    From real to:
         ph real            (distance 3)
         rand real          (distance 6)
         proc real          (distance 9)
@@ -155,28 +155,28 @@ Help topic: promotions
         proc rand real     (distance 15)
         {real}             (distance 20)
 
-    ph real:
+    From ph real to:
         rand real          (distance 6)
         proc ph real       (distance 9)
         proc rand real     (distance 15)
 
-    rand real:
+    From rand real to:
         proc rand real     (distance 9)
 
-    proc real:
+    From proc real to:
         proc ph real       (distance 3)
         proc rand real     (distance 6)
 
-    proc ph real:
+    From proc ph real to:
         proc rand real     (distance 6)
 
-    state:
+    From state to:
         {state}            (distance 20)
 
-    tile:
+    From tile to:
         {tile}             (distance 20)
 
-    trans:
+    From trans to:
         {trans}            (distance 20)
 
 Help topic: casting
