@@ -605,7 +605,7 @@ void topic_unaryop::ontype::visit(const shared_object* obj)
         std::stringstream foo;
         foo << unary_op::getOp(op) << " " << *t;
         df.item(foo.str().c_str());
-        df.Out() << "has type " << *u << "\n";
+        df.Out() << "has type: " << *u << "\n";
     }
 }
 
@@ -651,15 +651,24 @@ class topic_binaryop : public help_topic {
                 doc_formatter &df;
                 const type* left;
                 binary_op::opcode op;
-                bool printed;
+                unsigned width;
+                bool firstpass;
             public:
                 op_right(doc_formatter &d, binary_op::opcode op);
                 virtual void visit(const shared_object* obj);
                 inline void set_left(const type* L) {
                     left = L;
-                    printed = false;
+                    width = 0;
+                    firstpass = true;
                 }
-                inline bool notempty() const { return printed; }
+                inline unsigned nextPass() {
+                    firstpass = false;
+                    return width;
+                }
+                inline void header() {
+                    df.Out() << '\n' << *left << ' '
+                             << binary_op::getOp(op) << '\n';
+                }
         };
 
     private:
@@ -690,8 +699,12 @@ void topic_binaryop::op_right::visit(const shared_object* obj)
     const type* v = binary_op::getTypeOf(left, op, right);
     if (!v) return;
 
-    df.Out() << *left << ' ' << binary_op::getOp(op) << ' ' << *right << '\n';
-    printed = true;
+    if (firstpass) {
+        width = MAX(width, right->length());
+    } else {
+        df.item(right->getStr());
+        df.Out() << "has type: " << *v << '\n';
+    }
 }
 
 // ************************************************************
@@ -706,10 +719,16 @@ void topic_binaryop::op_left::visit(const shared_object* obj)
     const type* left = dynamic_cast <const type*> (obj);
     if (!left) return;
 
-    df.begin_indent();
     inner.set_left(left);
     type::traverseRegistry(inner);
-    if (inner.notempty()) df.Out() << '\n';
+    unsigned w = inner.nextPass();
+    if (!w) return;
+
+    inner.header();
+    df.begin_indent();
+    df.begin_description(4*(w/4+1));
+    type::traverseRegistry(inner);
+    df.end_description();
     df.end_indent();
 }
 
