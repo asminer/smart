@@ -3115,6 +3115,94 @@ phint2randreal::phint2randreal() : specific_conv(false)
 
 // ******************************************************************
 // *                                                                *
+// *                      phreal2randint class                      *
+// *                                                                *
+// ******************************************************************
+
+/** The name says it all: casts from ph real to rand int.
+*/
+class phreal2randint : public specific_conv {
+
+    class converter : public typecast {
+      phase_hlm* cached;
+      bool precomputed;
+    public:
+      converter(const location &W, const type* nt, expr* x);
+      virtual void Compute(traverse_data &x);
+      virtual void Traverse(traverse_data &x);
+    protected:
+      virtual expr* buildAnother(expr* x) const {
+        return new converter(Where(), Type(), x);
+      }
+    };
+
+public:
+  phreal2randint();
+  virtual int getDistance(const type* src) const {
+    DCASSERT(src);
+    if (!type::matches(src->getBaseType(), "real")) return -1;
+    if (src->getModifier() != PHASE)    return -1;
+    return SIMPLE_CONV + MAKE_RAND;
+  }
+  virtual const type* promotesTo(const type* src) const {
+    DCASSERT(src);
+    const type* dest = type::find(false, src->hasProc(), RAND, "int");
+    DCASSERT(dest);
+    return dest;
+  }
+  virtual expr* convert(const location &W, expr* e, const type* t) const {
+    return new converter(W, t, e);
+  }
+};
+
+phreal2randint::converter
+ ::converter(const location &W, const type* nt, expr* x)
+ : typecast(W, nt, x)
+{
+  precomputed = false;
+  cached = 0;
+}
+
+void phreal2randint::converter::Compute(traverse_data &x)
+{
+  if (!precomputed) {
+    internal_error E(__FILE__, __LINE__, Where());
+    E << "Expression not precomputed: ";
+    Print(E.stream());
+  }
+  DCASSERT(x.answer);
+  if (cached) {
+    cached->Sample(x);
+    if (x.answer->isNormal()) x.answer->setInt(long(x.answer->getReal()));
+  } else {
+    x.answer->setNull();
+  }
+}
+
+void phreal2randint::converter::Traverse(traverse_data &x)
+{
+  if (x.which != traverse_data::PreCompute) {
+    typecast::Traverse(x);
+    return;
+  }
+  result answer;
+  result* save = x.answer;
+  x.answer = &answer;
+  x.which = traverse_data::Compute;
+  SafeCompute(opnd, x);
+  x.which = traverse_data::PreCompute;
+  x.answer = save;
+  cached = smart_cast <phase_hlm*> ( Share(answer.getPtr()) );
+  precomputed = true;
+}
+
+
+phreal2randint::phreal2randint() : specific_conv(true)
+{
+}
+
+// ******************************************************************
+// *                                                                *
 // *                                                                *
 // *                         Initialization                         *
 // *                                                                *
@@ -3171,6 +3259,7 @@ void init_stochtypes::execute()
     new real2phreal;
     new ph2rand;
     new phint2randreal;
+    new phreal2randint;
 
     //
     // Operations (register themselves)

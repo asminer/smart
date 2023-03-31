@@ -430,7 +430,7 @@ void topic_casting::DocumentBehavior(doc_formatter &df) const
     df.Out() << "rand real x := ...;\nrand int i := rand int(x);\n\n";
     df.end_indent();
 
-    df.Out() << "An expression can be explicitly cast from type A to type B if it can be promoted from type A to type B (see help topic \"promotions\").  In addition, the following conversions are allowed:\n\n";
+    df.Out() << "An expression can be explicitly cast from type A to type B if it can be promoted from type A to type B (see help topic \"promotions\").  In addition, the following conversions are allowed:\n";
 
     cast_to tolist(df);
     cast_from fromlist(df, tolist);

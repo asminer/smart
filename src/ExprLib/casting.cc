@@ -890,6 +890,7 @@ public:
   virtual int getDistance(const type* src) const {
     DCASSERT(src);
     if (!type::matches(src->getBaseType(), "real")) return -1;
+    if (src->getModifier() == PHASE)    return -1;  // different rule.
     return SIMPLE_CONV;
   }
   virtual const type* promotesTo(const type* src) const;
