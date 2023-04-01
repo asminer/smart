@@ -706,7 +706,7 @@ void topic_binaryop::DocumentBehavior(doc_formatter &df) const
 {
     df.Out() << "Operator " << binary_op::getOp(op) << " is used for ";
     df.Out() << binary_op::documentOp(op);
-    df.Out() << ".  It may be used with the following operand types:\n\n";
+    df.Out() << ".  It may be used with the following operand types:\n";
 
     pvisit pv(op);
     enumerate_pairs EP(df, pv);
@@ -785,9 +785,11 @@ void topic_trinaryop::op_third::visit(const shared_object* obj)
     const type* w = trinary_op::getTypeOf(op, first, second, third);
     if (!w) return;
 
-    df.Out() << *first << ' ' << trinary_op::getFirst(op) << ' ';
-    df.Out() << *second << ' ' << trinary_op::getSecond(op) << ' ';
-    df.Out() << *third << '\n';
+    std::stringstream foo;
+    foo << *first << ' ' << trinary_op::getFirst(op) << ' ';
+    foo << *second << ' ' << trinary_op::getSecond(op) << ' ' << *third;
+    df.item(foo.str().c_str());
+    df.Out() << "has type: " << *w << '\n';
 
     printed = true;
 }
@@ -818,11 +820,11 @@ void topic_trinaryop::op_first::visit(const shared_object* obj)
     const type* first = dynamic_cast <const type*> (obj);
     if (!first) return;
 
-    df.begin_indent();
+    df.begin_description(24);
     inner.set_first(first);
     type::traverseRegistry(inner, first);
     if (inner.notempty()) df.Out() << '\n';
-    df.end_indent();
+    df.end_description();
 }
 
 
@@ -843,7 +845,7 @@ void topic_trinaryop::DocumentBehavior(doc_formatter &df) const
     df.Out() << "Operator " << trinary_op::getFirst(op) << " ";
     df.Out() << trinary_op::getSecond(op) << " is used for ";
     df.Out() << trinary_op::documentOp(op);
-    df.Out() << ".  It may be used on with the following operand types:\n\n";
+    df.Out() << ".  It may be used with the following operand types:\n\n";
 
     op_third inner(df, op);
     op_second middle(inner);
@@ -863,73 +865,42 @@ class topic_assocop : public help_topic {
         virtual void DocumentBehavior(doc_formatter &df) const;
 
     private:
-        class op_right : public shared_visitor {
-                doc_formatter &df;
-                const type* left;
-                assoc_op::opcode op;
+        class pvisit : public enumerate_pairs::visitor {
                 bool flipped;
-                bool printed;
+                assoc_op::opcode op;
             public:
-                op_right(doc_formatter &d, bool f, assoc_op::opcode op);
-                virtual void visit(const shared_object* obj);
-                inline void set_left(const type* L) {
-                    left = L;
-                    printed = false;
-                }
-                inline bool notempty() const { return printed; }
-        };
-
-    private:
-        class op_left : public shared_visitor {
-                doc_formatter &df;
-                op_right &inner;
-            public:
-                op_left(doc_formatter &d, op_right &i);
-                virtual void visit(const shared_object* obj);
+                pvisit(bool f, assoc_op::opcode op);
+                virtual bool check(const type* t1, const type* t2) const;
+                virtual void header(doc_formatter &df, const type* t1) const;
+                virtual void display(doc_formatter &df, const type* t1,
+                        const type* t2) const;
         };
 };
 
-// ******************************************************************
-
-topic_assocop::op_right::op_right(doc_formatter &d, bool f, assoc_op::opcode o)
-    : df(d)
-{
-    left = nullptr;
-    op = o;
-    flipped = f;
-}
-
-void topic_assocop::op_right::visit(const shared_object* obj)
-{
-    if (!left) return;
-    const type* right = dynamic_cast <const type*> (obj);
-    if (!right) return;
-
-    const type* v = assoc_op::getTypeOf(left, flipped, op, right);
-    if (!v) return;
-
-    df.Out() << *left << ' ';
-    df.Out() << assoc_op::getOp(flipped, op) << ' ' << *right << '\n';
-    printed = true;
-}
-
 // ************************************************************
 
-topic_assocop::op_left::op_left(doc_formatter &d, op_right &i)
-    : df(d), inner(i)
+topic_assocop::pvisit::pvisit(bool f, assoc_op::opcode _op)
 {
+    flipped = f;
+    op = _op;
 }
 
-void topic_assocop::op_left::visit(const shared_object* obj)
+bool topic_assocop::pvisit::check(const type* t1, const type* t2) const
 {
-    const type* left = dynamic_cast <const type*> (obj);
-    if (!left) return;
+    return assoc_op::getTypeOf(t1, flipped, op, t2);
+}
 
-    df.begin_indent();
-    inner.set_left(left);
-    type::traverseRegistry(inner);
-    if (inner.notempty()) df.Out() << '\n';
-    df.end_indent();
+void topic_assocop::pvisit::header(doc_formatter &df, const type* t1) const
+{
+    df.Out() << '\n' << *t1 << ' ' << assoc_op::getOp(flipped, op) << '\n';
+}
+
+void topic_assocop::pvisit::display(doc_formatter &df, const type* t1,
+        const type* t2) const
+{
+    df.item(t2->getStr());
+    const type* v = assoc_op::getTypeOf(t1, flipped, op, t2);
+    df.Out() << "has type: " << *v << '\n';
 }
 
 // ******************************************************************
@@ -951,9 +922,9 @@ void topic_assocop::DocumentBehavior(doc_formatter &df) const
     df.Out() << assoc_op::documentOp(flipped, op);
     df.Out() << ".  It may be used with the following operand types:\n\n";
 
-    op_right inner(df, flipped, op);
-    op_left outer(df, inner);
-    type::traverseRegistry(outer);
+    pvisit pv(flipped, op);
+    enumerate_pairs EP(df, pv);
+    type::traverseRegistry(EP);
 }
 
 // ******************************************************************
