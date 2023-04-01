@@ -49,6 +49,7 @@ class state_weight : public shared_object {
                 return state->GetIndex() - sw->state->GetIndex();
             }
             DCASSERT(0);
+            return 0;
         }
 
         class visitor : public shared_visitor {

@@ -542,8 +542,8 @@ bool BadIteratorList(char* n, parser_list* list)
         list->next = reversed;
         reversed = list;
         list = next;
-        shared_string* forml = smart_cast <shared_string*> (reversed->data);
-        DCASSERT(forml);
+        // shared_string* forml = smart_cast <shared_string*> (reversed->data);
+        // DCASSERT(forml);
     }
 
     // Make sure iterator names match reversed list names

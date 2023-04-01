@@ -3217,7 +3217,7 @@ sathyb_opname::hybrid_relation* substate_varoption::buildNSF_HYBRID(debugging_ms
           if (in==0) in = -1;
             if(rnmap_level_to_enable_inh_del.find(k)!=rnmap_level_to_enable_inh_del.end()){
                 std::vector<long> effects;
-                for(int dh = 0; dh<rnmap_level_to_enable_inh_del[k].size();dh++)
+                for(unsigned dh = 0; dh<rnmap_level_to_enable_inh_del[k].size();dh++)
                 effects.push_back(rnmap_level_to_enable_inh_del[k][dh]);
                 effects.push_back(delta);
                 rnmap_level_to_enable_inh_del[k] = effects;

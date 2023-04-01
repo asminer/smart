@@ -216,8 +216,11 @@ public:
 
 		default:
             hldsm::errmsg E(&model);
-            if (x)  E << "Couldn't " << x << " in process: ";
-            else    E << "While building process: ";
+            if (x) {
+                E << "Couldn't " << x << " in process: ";
+            } else {
+                E << "While building process: ";
+            }
 		    E << e.getString();
 			throw subengine::Engine_Failed;
 		} // switch e
@@ -802,7 +805,7 @@ void as_procgenCOV::RunEngine(hldsm* hm, result &statesonly) {
 	init.index = 0;
 	init.f_value = 0;
 	init.d_value = 0;
-	lchild_rsiblingt* node;
+	lchild_rsiblingt* node = nullptr;
 
     signal_manager &tsm = signal_manager::theSigMan();
 	tsm.waitTermination();
@@ -816,8 +819,9 @@ void as_procgenCOV::RunEngine(hldsm* hm, result &statesonly) {
 	try {
 		if (nondeterm) {
 			node = generateCT(dsm, rss1, init, cg);
-		} else
+		} else {
 			generateMC(dsm, rss, init, vc);
+        }
 	} catch (error e) {
 		procOK = false;
 		bailOut = e;
