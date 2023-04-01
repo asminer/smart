@@ -214,7 +214,8 @@ void model_event::finishPriorityInfo(List<model_event> &keep,
 
 	DCASSERT(0==prio_list);
 	if (0 == prio_list_dynamic)
-		return; DCASSERT(prio_length>0);
+		return;
+    DCASSERT(prio_length>0);
 
 	// remove anything from the list that has a different priority level.
 	keep.Clear();
@@ -995,7 +996,8 @@ void dsde_def::SetPriorityOver(const expr* call, shared_set* a, shared_set* b) {
 		model_var* foo = smart_cast <model_var*>(ae.getPtr());
 		DCASSERT(foo);
 		if (!isVariableOurs(foo, call, "ignoring priority assignments"))
-			continue; DCASSERT(smart_cast <model_event*> (foo));
+			continue;
+        DCASSERT(smart_cast <model_event*> (foo));
 	}
 	for (int z = 0; z < b->Size(); z++) {
 		b->GetElement(z, be);
@@ -1003,7 +1005,8 @@ void dsde_def::SetPriorityOver(const expr* call, shared_set* a, shared_set* b) {
 		model_var* foo = smart_cast <model_var*>(be.getPtr());
 		DCASSERT(foo);
 		if (!isVariableOurs(foo, call, "ignoring priority assignments"))
-			continue; DCASSERT(smart_cast <model_event*> (foo));
+			continue;
+        DCASSERT(smart_cast <model_event*> (foo));
 	}
 
 	// Ok, enumerate all pairs

@@ -272,7 +272,7 @@ assoc* next_state_seq_op::makeExpr(const location &W, expr** list,
 class aggregates : public assoc {
 public:
   /// Constructor.
-  aggregates(const location &W, expr **x, int nc);
+  aggregates(const location &W, expr **x, unsigned nc);
   virtual expr* GetComponent(int i);
   virtual void Compute(traverse_data &x);
   virtual void Traverse(traverse_data &x);
@@ -286,7 +286,7 @@ protected:
 // *                       aggregates methods                       *
 // ******************************************************************
 
-aggregates::aggregates(const location &W, expr **x, int nc)
+aggregates::aggregates(const location &W, expr **x, unsigned nc)
  : assoc (W, assoc_op::aop_colon, (typelist*) 0, x, nc)
 {
   DCASSERT(nc>0);

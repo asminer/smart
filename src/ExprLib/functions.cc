@@ -615,7 +615,7 @@ void fplist::build(int n, typelist* t, const char* name)
   CHECK_RANGE(__FILE__, __LINE__, 0, n, num_formal);
   DCASSERT(t);
 #ifdef DEVELOPMENT_CODE
-  for (int a=0; a<t->Length(); a++) DCASSERT(t->GetItem(a));
+  for (unsigned a=0; a<t->Length(); a++) DCASSERT(t->GetItem(a));
 #endif
   formal[n] = new formal_param(t, name);
 }

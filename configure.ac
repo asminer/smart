@@ -3,7 +3,7 @@
 # See the README file for more details.
 #
 
-AC_PREREQ([2.71])
+AC_PREREQ([2.69])
 AC_INIT([smartpack],[3.4.2],[asminer@iastate.edu],[smartpack],[http://smart.cs.iastate.edu])
 AM_INIT_AUTOMAKE([-Wall foreign parallel-tests color-tests subdir-objects])
 # Allow silent builds, and make it the default, if we can:

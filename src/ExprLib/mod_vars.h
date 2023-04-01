@@ -459,30 +459,36 @@ public:
 
 	/// Is the value for state variable i unknown?
 	inline bool unknown(int i) const {
-		if (0 == is_unknown)
-			return false;CHECK_RANGE(__FILE__, __LINE__, 0, i, num_buckets);
+		if (0 == is_unknown) {
+			return false;
+        }
+        CHECK_RANGE(__FILE__, __LINE__, 0, i, num_buckets);
 		return is_unknown[i];
 	}
 	inline bool omega(int i) const {
 
-		if (0 == is_omega)
-			return false;CHECK_RANGE(__FILE__, __LINE__, 0, i, num_buckets);
+		if (0 == is_omega) {
+			return false;
+        }
+        CHECK_RANGE(__FILE__, __LINE__, 0, i, num_buckets);
 		return is_omega[i];
 	}
 	/// Get value for state variable i; must not be a list.
 	inline int get(int i) const {
-		DCASSERT(data);CHECK_RANGE(__FILE__, __LINE__, 0, i, num_buckets);DCASSERT((0==is_unknown) || (false==is_unknown[i]));
+		DCASSERT(data);
+        CHECK_RANGE(__FILE__, __LINE__, 0, i, num_buckets);
+        DCASSERT((0==is_unknown) || (false==is_unknown[i]));
 		if (is_omega == 0) {
-
 			return data[i];
 		}
 		if (0 == is_list) {
 			if (omega(i) == true) {
-
 				return OOmega;		//-10 ;//-10;
-			} else
+			} else {
 				return data[i];
-		}DCASSERT(false==is_list[i]);
+            }
+		}
+        DCASSERT(false==is_list[i]);
 
 		// Not implemented yet
 		DCASSERT(0);
@@ -549,8 +555,10 @@ public:
 
 	/// Set a substate to be known
 	inline void set_substate_known(int k) {
-		if (0 == is_unknown)
-			return;CHECK_RANGE(__FILE__, __LINE__, 1, k, 1+num_substates);
+		if (0 == is_unknown) {
+			return;
+        }
+        CHECK_RANGE(__FILE__, __LINE__, 1, k, 1+num_substates);
 		for (int i = substate_offset[k]; i < substate_offset[k - 1]; i++) {
 			CHECK_RANGE(__FILE__, __LINE__, 0, i, num_buckets);
 			is_unknown[i] = false;

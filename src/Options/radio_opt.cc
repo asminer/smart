@@ -38,7 +38,7 @@ radio_opt::radio_opt(const char* n, const char* d, unsigned np, unsigned &w)
 
 radio_opt::~radio_opt()
 {
-    for (int i=0; i<numpossible; i++) {
+    for (unsigned i=0; i<numpossible; i++) {
         delete possible[i];
     }
     delete[] possible;

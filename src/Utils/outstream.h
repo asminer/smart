@@ -101,6 +101,12 @@ class memoryCount {
         std::ostream& show(std::ostream &s) const;
 };
 
+inline std::ostream& operator<< (std::ostream &s, memoryCount m)
+{
+    return m.show(s);
+}
+
+
 /*
  * Formatted integers.
  */
@@ -113,6 +119,12 @@ class formatted_int {
         std::ostream& show(std::ostream &s) const;
 };
 
+inline std::ostream& operator<< (std::ostream &s, formatted_int m)
+{
+    return m.show(s);
+}
+
+
 /*
  * Numbers, as strings.
  */
@@ -124,6 +136,12 @@ class formatted_number {
         formatted_number(const char* v, int w, const char* c=nullptr);
         std::ostream& show(std::ostream &s) const;
 };
+
+inline std::ostream& operator<< (std::ostream &s, formatted_number m)
+{
+    return m.show(s);
+}
+
 
 /*
  * Reals in SCIENTIFIC (%e) format.
@@ -138,6 +156,12 @@ class scientific_real {
         std::ostream& show(std::ostream &s) const;
 };
 
+inline std::ostream& operator<< (std::ostream &s, scientific_real m)
+{
+    return m.show(s);
+}
+
+
 /*
  * Reals in FIXED (%f) format.
  */
@@ -150,6 +174,12 @@ class fixed_real {
         fixed_real(double v, int w, int p=-1, const char* c=nullptr);
         std::ostream& show(std::ostream &s) const;
 };
+
+inline std::ostream& operator<< (std::ostream &s, fixed_real m)
+{
+    return m.show(s);
+}
+
 
 /*
  * Reals in GENERAL (%g) format.
@@ -164,6 +194,11 @@ class general_real {
         std::ostream& show(std::ostream &s) const;
 };
 
+inline std::ostream& operator<< (std::ostream &s, general_real m)
+{
+    return m.show(s);
+}
+
 
 /*
  * Formatted strings.
@@ -175,6 +210,12 @@ class formatted_string {
         formatted_string(const char* v, int w);
         std::ostream& show(std::ostream &s) const;
 };
+
+inline std::ostream& operator<< (std::ostream &s, formatted_string m)
+{
+    return m.show(s);
+}
+
 
 /*
  * Write an array.
@@ -197,6 +238,13 @@ class element_writer {
         }
 };
 
+template <class DATA>
+inline std::ostream& operator<< (std::ostream &s, element_writer <DATA> m)
+{
+    return m.show(s);
+}
+
+
 /*
  * Strips directories in a pathname
  */
@@ -206,6 +254,12 @@ class basename {
         basename(const char* p);
         std::ostream& show(std::ostream &s) const;
 };
+
+inline std::ostream& operator<< (std::ostream &s, class basename b)
+{
+    return b.show(s);
+}
+
 
 /*
  * Padding
@@ -218,57 +272,10 @@ class padding {
         std::ostream& show(std::ostream &s) const;
 };
 
-inline std::ostream& operator<< (std::ostream &s, memoryCount m)
-{
-    return m.show(s);
-}
-
-inline std::ostream& operator<< (std::ostream &s, formatted_int m)
-{
-    return m.show(s);
-}
-
-inline std::ostream& operator<< (std::ostream &s, formatted_number m)
-{
-    return m.show(s);
-}
-
-inline std::ostream& operator<< (std::ostream &s, scientific_real m)
-{
-    return m.show(s);
-}
-
-inline std::ostream& operator<< (std::ostream &s, fixed_real m)
-{
-    return m.show(s);
-}
-
-inline std::ostream& operator<< (std::ostream &s, general_real m)
-{
-    return m.show(s);
-}
-
-inline std::ostream& operator<< (std::ostream &s, formatted_string m)
-{
-    return m.show(s);
-}
-
-template <class DATA>
-inline std::ostream& operator<< (std::ostream &s, element_writer <DATA> m)
-{
-    return m.show(s);
-}
-
-inline std::ostream& operator<< (std::ostream &s, basename b)
-{
-    return b.show(s);
-}
-
 inline std::ostream& operator<< (std::ostream &s, padding p)
 {
     return p.show(s);
 }
-
 
 #endif
 

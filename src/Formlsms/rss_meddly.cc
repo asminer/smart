@@ -189,7 +189,7 @@ long meddly_reachset::computeMaxTokensPerSet(  MEDDLY::node_handle mdd,
     if (mddLevel > level) {
       // if mddLevel > level
       // --- skip the mddLevel and look down, return compute(mdd, mxd, level-1)
-      for (int i = 0; i < mdd_nr->getNNZs(); i++) {
+      for (unsigned i = 0; i < mdd_nr->getNNZs(); i++) {
         result = MAX( result, (computeMaxTokensPerSet(mdd_nr->d(i), offset, ct, set_of_places)));
       }
      }
@@ -202,7 +202,7 @@ long meddly_reachset::computeMaxTokensPerSet(  MEDDLY::node_handle mdd,
         }
 
         // expand mdd
-        for (int i = 0; i < mdd_nr->getNNZs(); i++) {
+        for (unsigned i = 0; i < mdd_nr->getNNZs(); i++) {
           result = MAX( result,
                        (LevelIndex_token[level][mdd_nr->i(i)] +
                         computeMaxTokensPerSet(mdd_nr->d(i), offset-1, ct, set_of_places)) );

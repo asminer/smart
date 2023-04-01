@@ -208,12 +208,13 @@ shared_object* splayOfShared::remove(shared_object* key)
             root = oldright;
         }
     } else {
-        //
-        // Remove root node from the splay tree
-        //
-        //                  oldroot
-        //                 /      \
-        //           oldleft      oldright
+        /*
+           Remove root node from the splay tree
+
+                            oldroot
+                           /      \
+                     oldleft      oldright
+        */
         if (oldleft) {
             root = oldleft;
             splay(Item(oldroot));
