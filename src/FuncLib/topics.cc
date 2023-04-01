@@ -920,7 +920,7 @@ void topic_assocop::DocumentBehavior(doc_formatter &df) const
 {
     df.Out() << "Operator " << assoc_op::getOp(flipped, op) << " is used for ";
     df.Out() << assoc_op::documentOp(flipped, op);
-    df.Out() << ".  It may be used with the following operand types:\n\n";
+    df.Out() << ".  It may be used with the following operand types:\n";
 
     pvisit pv(flipped, op);
     enumerate_pairs EP(df, pv);
