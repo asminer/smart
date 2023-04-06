@@ -14,10 +14,10 @@ BUILT_SOURCES = \
   ParseICP/icplex.cc ParseICP/icpyacc.hh ParseICP/icpyacc.cc
 
 AM_YFLAGS = -d
-AM_CXXFLAGS = ${CXXFLAGS} -Wall
+AM_CXXFLAGS = ${CXXFLAGS} -Wall -Wno-sign-compare
 
 smart_LDFLAGS=${LDFLAGS} -all-static
-smart_CXXFLAGS =${CXXFLAGS} -Wall -g
+smart_CXXFLAGS =${CXXFLAGS} -Wall -g -Wno-sign-compare
 
 ## ============================================================
 ##
