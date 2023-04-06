@@ -77,6 +77,9 @@ pn cruft(int n) := {
     J : tJK, tJK : K,
     J : tJD, tJD : D
   );
+
+  decision d1,d2,d3;
+  cost(d1:1,d2:2,d3:1);
   
   void show_rs := show_states(false);
   void show_rg := show_arcs(false);
@@ -126,6 +129,7 @@ pn cruft(int n) := {
   stateset prop23:= EF(apF) & EP(apF);
 
   stateset abdij:= EU(!apK, apD); // !apK U apD
+  //stateset abdij:= EU(!apK, reachable & potential(tk(D)>0 & dec_value(d1) & !dec_value(d2))); // !apK U apD
   stateset prop25:= EU(!prop15, apH);
   stateset prop26:= ES(!apK, apD); // !apK S apD
   stateset prop27:= ES(!prop15, apH);
@@ -179,6 +183,10 @@ pn cruft(int n) := {
   stateset prop58 := reachable & AH(!apK);
   stateset prop59 := reachable & AH(!apEn);
   stateset allH := AH(reachable);
+
+
+  stateset mc := reachable & potential(tk(D)>0 & dec_value(d1));
+  bool min_cost := min_decision_cost(mc);
 
 };
 
@@ -346,5 +354,9 @@ print("  should be ", cruft(5).rs, ":\n            ", cruft(5).allH, "\n");
 
 print("\nErrors:\n--------------------------------------------------\n");
 print(cruft(5).prop1 | cruft(4).prop1, "\n");
+
+print("\nMin Cost:\n--------------------------------------------------\n");
+print(cruft(5).mc, "\n");
+print(cruft(5).min_cost);
 
 print("Done!\n");

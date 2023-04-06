@@ -101,8 +101,8 @@ pn cruft(int n) := {
   //how to add enable function;
 
 
-  //stateset test2 := potential(tk(I)>0 & dec_value(aa));
-  //bool min_cost := min_decision_cost(test2);
+  stateset test2 := reachable & potential(tk(I)>0 & dec_value(aa));
+  bool min_cost := min_decision_cost(test2);
   //bool min_cost := min_decision_cost(potential(tk(I)>0 & dec_value(aa)));
 
 
@@ -130,7 +130,7 @@ pn cruft(int n) := {
   stateset prop5 := reachable & !EX(reachable);
 };
 
-//print(cruft(5).min_cost);
+print(cruft(5).min_cost);
 //print("\n", cruft(5).test2, "\n");
 
 print("Reachable states:\n");
@@ -150,6 +150,6 @@ print(     "Should be {[G], [H]}:\n          ", cruft(5).prop4, "\n");
 print(          "Should be {[E]}:\n          ", cruft(5).prop5, "\n");
 print("test: ", cruft(5).prop0,"\n");
 print("False set:::", cruft(5).FS,"\n");
-print("\nErrors:\n--------------------------------------------------\n");
+//print("\nErrors:\n--------------------------------------------------\n");
 print(cruft(5).prop1 | cruft(5).prop1, "\n");
 print("\nDone!\n");

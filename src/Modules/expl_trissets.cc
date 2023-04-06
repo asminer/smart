@@ -36,6 +36,13 @@ expl_tri_stateset::expl_tri_stateset(const state_lldsm* p, stateset* t, stateset
   falseset = dynamic_cast<expl_stateset*>(f);
 }
 
+expl_tri_stateset::expl_tri_stateset(const state_lldsm* p, stateset* t) :  stateset(p)
+{
+  trueset = dynamic_cast<expl_stateset*>(t);
+  falseset = trueset->DeepCopy();
+  falseset->Complement();
+}
+
 expl_tri_stateset::expl_tri_stateset(const state_lldsm* p, const expl_stateset* t) : stateset(p)
 {
   trueset = t->DeepCopy();
@@ -50,7 +57,7 @@ expl_tri_stateset::~expl_tri_stateset()
   // delete falseset;
 }
 
-stateset* expl_tri_stateset::DeepCopy() const
+expl_tri_stateset* expl_tri_stateset::DeepCopy() const
 {
   DCASSERT(trueset);
   DCASSERT(falseset);
@@ -91,15 +98,24 @@ bool expl_tri_stateset::Union(const expr* c, const char* op, const stateset* x)
 bool expl_tri_stateset::Intersect(const expr* c, const char* op, const stateset* x)
 {
   if (0==trueset || 0==falseset) return false;
-  const expl_tri_stateset* ex = dynamic_cast <const expl_tri_stateset*> (x);
-  if (0==ex) {
-    storageMismatchError(c, op);
-    return false;
+  const expl_tri_stateset* ext = dynamic_cast <const expl_tri_stateset*> (x);
+  if (0==ext) {
+    const expl_stateset* ex = dynamic_cast <const expl_stateset*> (x);
+    if (0==ex) {
+      storageMismatchError(c, op);
+      return false;
+    } else {
+      trueset->Intersect(c,op,ex);
+      expl_stateset* copy = ex->DeepCopy();
+      copy->Complement();
+      falseset->Intersect(c,op,copy);
+      return true;
+    }
+  } else {
+    trueset->Intersect(c,op,ext->trueset);
+    falseset->Intersect(c,op,ext->falseset);
+    return true;
   }
-
-  trueset->Intersect(c,op,ex->trueset);
-  falseset->Intersect(c,op,ex->falseset);
-  return true;
 }
 
 bool expl_tri_stateset::Plus(const expr* c, const char* op, const stateset* x)

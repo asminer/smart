@@ -12,6 +12,7 @@
 
 
 #include "statesets.h"
+#include "expl_trissets.h"
 
 
 // ******************************************************************
@@ -428,31 +429,48 @@ stateset_intersect
 
 void stateset_intersect::Compute(traverse_data &x)
 {
+  // to hack tri-stateset approach:
+  //   check if any operands are tri-statesets,
+  //   if so, then copy total as a tri-stateset and cast each arg into a tri-stateset
+  bool is_tri = false;
+
   DCASSERT(x.answer);
   DCASSERT(0==x.aggregate);
   SafeCompute(operands[0], x);
   if (!x.answer->isNormal()) return;
   stateset* total = smart_cast <stateset*> (x.answer->getPtr());
+
+  expl_tri_stateset* total_tri = dynamic_cast <expl_tri_stateset*> (total);
+  if (total_tri) {
+    is_tri = true;
+  }
+
   DCASSERT(total);
-  if (total->numRefs() > 1) {
-    total = total->DeepCopy();
+  if (is_tri ? total_tri->numRefs() > 1 : total->numRefs() > 1) {
+    is_tri ? (total_tri = total_tri->DeepCopy()) : (total = total->DeepCopy());
   } else {
-    total = Share(total);
+    is_tri ? (total_tri = Share(total_tri)) : (total = Share(total));
   }
   DCASSERT(total);
 
   for (int i=1; i<opnd_count; i++) {
     SafeCompute(operands[i], x);
     if (!x.answer->isNormal()) {
-      Delete(total);
+      is_tri ? Delete(total_tri) : Delete(total);
       return;
     }
     stateset* curr = smart_cast <stateset*> (x.answer->getPtr());
     DCASSERT(curr);
 
+    expl_tri_stateset* curr_tri = dynamic_cast <expl_tri_stateset*> (x.answer->getPtr());
+    if (curr_tri) {
+      is_tri = true;
+      total_tri = new expl_tri_stateset(total->getParent(), total);
+    }
+
     bool ok = false;
     if (stateset::parentsMatch(this, "intersection", total, curr)) {
-      ok = total->Intersect(this, curr);
+      ok = is_tri ? total_tri->Intersect(this, "intersection", curr_tri) : total->Intersect(this, curr);
     } 
     if (!ok) {
       Delete(total);
@@ -461,7 +479,7 @@ void stateset_intersect::Compute(traverse_data &x)
     }
   } // for i
 
-  x.answer->setPtr(total);
+  is_tri ? x.answer->setPtr(total_tri) : x.answer->setPtr(total);
 }
 
 expr* stateset_intersect::buildAnother(expr **x, bool* f, int n) const

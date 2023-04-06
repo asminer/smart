@@ -21,12 +21,13 @@ class expl_tri_stateset : public stateset {
     expl_tri_stateset(const state_lldsm* p, intset* t, intset* f);
     expl_tri_stateset(const state_lldsm* p, expl_stateset* t, expl_stateset* f);
     expl_tri_stateset(const state_lldsm* p, stateset* t, stateset* f);
+    expl_tri_stateset(const state_lldsm* p, stateset* t);
     expl_tri_stateset(const state_lldsm* p, const expl_stateset* t);
   protected:
     virtual ~expl_tri_stateset();
 
   public:
-    virtual stateset* DeepCopy() const;
+    virtual expl_tri_stateset* DeepCopy() const;
     virtual bool Complement();
     virtual bool Union(const expr* c, const char* op, const stateset* x);
     virtual bool Intersect(const expr* c, const char* op, const stateset* x);

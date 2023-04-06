@@ -1513,23 +1513,6 @@ void CTL_min_decision_cost_base::Compute(traverse_data &x, expr** pass, int np)
   int size = dec_set->getNumDecisions();
   
   // add initial evaluations to queue
-  /// (1) how to obtain evals based on enabling conds?
-  /// ANSWER: call cond->Compute(x) where x is arg above, or create a new one
-
-  // Hard-coded queue
-  // bitvector *bv = new bitvector(size);
-  // decision_eval *eval1 = new decision_eval(dec_set);
-  // Q.push(eval1);
-  // bv->Set(2);
-  // decision_eval *eval2 = new decision_eval(dec_set,bv);
-  // Q.push(eval2);
-  // bv->Set(1);
-  // decision_eval *eval3 = new decision_eval(dec_set,bv);
-  // Q.push(eval3);
-  // bv->Set(0);
-  // decision_eval *eval4 = new decision_eval(dec_set,bv);
-  // Q.push(eval4);
-
   decision_eval *eval = new decision_eval(dec_set);
   Q.push(eval);
 
