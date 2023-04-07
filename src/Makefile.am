@@ -14,7 +14,10 @@ BUILT_SOURCES = \
   ParseICP/icplex.cc ParseICP/icpyacc.hh ParseICP/icpyacc.cc
 
 AM_YFLAGS = -d
-AM_CXXFLAGS = -Wall
+AM_CXXFLAGS = ${CXXFLAGS} -Wall -Wno-sign-compare
+
+smart_LDFLAGS=${LDFLAGS} -all-static
+smart_CXXFLAGS =${CXXFLAGS} -Wall -g -Wno-sign-compare
 
 ## ============================================================
 ##
@@ -165,7 +168,7 @@ smart_SOURCES = \
   Apps/smart.cc
 
 
-smart_LDADD = _Meddly/src/libmeddly.la
+smart_LDADD = _Meddly/src/.libs/libmeddly.a
 
 
 ## ============================================================

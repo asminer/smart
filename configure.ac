@@ -17,9 +17,7 @@ AC_PROG_CXX
 AX_CXX_COMPILE_STDCXX(11)
 AM_PROG_LEX
 AC_PROG_YACC
-# Use AM_PROG_AR if we can...
-m4_ifdef([AM_PROG_AR], [AM_PROG_AR])
-AM_PROG_LIBTOOL
+LT_INIT([disable-shared])
 
 #
 # Check for GMP
