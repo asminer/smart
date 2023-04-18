@@ -1524,7 +1524,7 @@ void CTL_min_decision_cost_base::Compute(traverse_data &x, expr** pass, int np)
     em->cout() << "Popping eval from Q\n";
     dec_set->setDecisions(eval);
     explored.insert(bitvectorToInt(eval->getBitvector()));
-    em->cout() << bitvectorToInt(eval->getBitvector()) << "\n";
+    // em->cout() << bitvectorToInt(eval->getBitvector()) << "\n";
 
     em->cout() << "Eval: ";
     int i;

@@ -81,18 +81,28 @@ bool expl_tri_stateset::Complement()
   return true;
 }
 
+#include <iostream>
 bool expl_tri_stateset::Union(const expr* c, const char* op, const stateset* x)
 {
   if (0==trueset || 0==falseset) return false;
-  const expl_tri_stateset* ex = dynamic_cast <const expl_tri_stateset*> (x);
-  if (0==ex) {
-    storageMismatchError(c, op);
-    return false;
+  const expl_tri_stateset* ext = dynamic_cast <const expl_tri_stateset*> (x);
+  if (0==ext) {
+    const expl_stateset* ex = dynamic_cast <const expl_stateset*> (x);
+    if (0==ex) {
+      storageMismatchError(c, op);
+      return false;
+    } else {
+      trueset->Union(c,op,ex);
+      expl_stateset* copy = ex->DeepCopy();
+      copy->Complement();
+      falseset->Intersect(c,op,copy);
+      return true;
+    }
+  } else {
+    trueset->Union(c,op,ext->trueset);
+    falseset->Intersect(c,op,ext->falseset);
+    return true;
   }
-
-  trueset->Union(c,op,ex->trueset);
-  falseset->Intersect(c,op,ex->falseset); // verify
-  return true;
 }
 
 bool expl_tri_stateset::Intersect(const expr* c, const char* op, const stateset* x)

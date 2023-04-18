@@ -186,6 +186,12 @@ void stateset_diff::Compute(traverse_data &x)
   stateset* notR = smart_cast <stateset*> (x.answer->getPtr());
   DCASSERT(notR);
 
+  expl_tri_stateset* notRtri = dynamic_cast <expl_tri_stateset*> (x.answer->getPtr());
+  bool is_tri = false;
+  if (notRtri) {
+    is_tri = true;
+  }
+
   if (notR->numRefs() > 1) {
     notR = notR->DeepCopy();  // loses the original but x.answer still has it
     notR->Complement();
@@ -206,6 +212,10 @@ void stateset_diff::Compute(traverse_data &x)
 
   stateset* L = smart_cast <stateset*> (x.answer->getPtr());
   DCASSERT(L);
+
+  if (is_tri) {
+    L = new expl_tri_stateset(L->getParent(), L);
+  }
 
   //
   // We have L
@@ -279,6 +289,12 @@ void stateset_implies::Compute(traverse_data &x)
   stateset* notL = smart_cast <stateset*> (x.answer->getPtr());
   DCASSERT(notL);
 
+  expl_tri_stateset* notLtri = dynamic_cast <expl_tri_stateset*> (x.answer->getPtr());
+  bool is_tri = false;
+  if (notLtri) {
+    is_tri = true;
+  }
+
   if (notL->numRefs() > 1) {
     notL->Complement();
     notL = Share(notL);
@@ -298,11 +314,13 @@ void stateset_implies::Compute(traverse_data &x)
   stateset* R = smart_cast <stateset*> (x.answer->getPtr());
   DCASSERT(R);
 
+  if (is_tri) {
+    R = new expl_tri_stateset(R->getParent(), R);
+  }
+
   //
   // We have R
   //
-
-  stateset* foo = 0;
 
   if (stateset::parentsMatch(this, "implication", notL, R)) {
     bool ok;
@@ -313,16 +331,11 @@ void stateset_implies::Compute(traverse_data &x)
       ok = R->Union(this, "implication", notL);
       R = Share(R);
     }
-    if (!ok) {
-      // Union failed
-      Delete(foo);
-      foo = 0;
-    }
   }
   Delete(notL);
 
-  if (foo) {
-    x.answer->setPtr(foo);
+  if (R) {
+    x.answer->setPtr(R);
   } else {
     x.answer->setNull();
   }
@@ -360,31 +373,48 @@ stateset_union
 
 void stateset_union::Compute(traverse_data &x)
 {
+  // to hack tri-stateset approach:
+  //   check if any operands are tri-statesets,
+  //   if so, then copy total as a tri-stateset and cast each arg into a tri-stateset
+  bool is_tri = false;
+
   DCASSERT(x.answer);
   DCASSERT(0==x.aggregate);
   SafeCompute(operands[0], x);
   if (!x.answer->isNormal()) return;
   stateset* total = smart_cast <stateset*> (x.answer->getPtr());
+
+  expl_tri_stateset* total_tri = dynamic_cast <expl_tri_stateset*> (total);
+  if (total_tri) {
+    is_tri = true;
+  }
+
   DCASSERT(total);
-  if (total->numRefs() > 1) {
-    total = total->DeepCopy();
+  if (is_tri ? total_tri->numRefs() > 1 : total->numRefs() > 1) {
+    is_tri ? (total_tri = total_tri->DeepCopy()) : (total = total->DeepCopy());
   } else {
-    total = Share(total);
+    is_tri ? (total_tri = Share(total_tri)) : (total = Share(total));
   }
   DCASSERT(total);
 
   for (int i=1; i<opnd_count; i++) {
     SafeCompute(operands[i], x);
     if (!x.answer->isNormal()) {
-      Delete(total);
+      is_tri ? Delete(total_tri) : Delete(total);
       return;
     }
     stateset* curr = smart_cast <stateset*> (x.answer->getPtr());
     DCASSERT(curr);
 
+    expl_tri_stateset* curr_tri = dynamic_cast <expl_tri_stateset*> (x.answer->getPtr());
+    if (curr_tri) {
+      is_tri = true;
+      total_tri = new expl_tri_stateset(total->getParent(), total);
+    }
+
     bool ok = false;
     if (stateset::parentsMatch(this, "union", total, curr)) {
-      ok = total->Union(this, curr);
+      ok = is_tri ? total_tri->Union(this, "union", curr_tri) : total->Union(this, curr);
     } 
     if (!ok) {
       Delete(total);
@@ -393,7 +423,7 @@ void stateset_union::Compute(traverse_data &x)
     }
   } // for i
 
-  x.answer->setPtr(total);
+  is_tri ? x.answer->setPtr(total_tri) : x.answer->setPtr(total);
 }
 
 expr* stateset_union::buildAnother(expr **x, bool* f, int n) const

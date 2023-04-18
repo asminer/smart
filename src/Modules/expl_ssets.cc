@@ -84,6 +84,7 @@ bool expl_stateset::Complement()
   return true;
 }
 
+#include <iostream>
 bool expl_stateset::Union(const expr* c, const char* op, const stateset* x)
 {
   if (0==data) return false;
