@@ -3118,8 +3118,6 @@ void pn_dec_value::Compute(traverse_data &x, expr** pass, int ndd)
   decision* d = smart_cast <decision*> (pass[1]);
   DCASSERT(d);
 
-  em->cout() << d->isTaken() << "\n";
-
   if (d->isTaken()) x.answer->setBool(true);
   else x.answer->setUnknown();
 }

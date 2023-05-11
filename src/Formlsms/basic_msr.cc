@@ -1547,7 +1547,6 @@ potential_si::potential_si()
 #include <iostream>
 void potential_si::Compute(traverse_data &x, expr** pass, int np)
 {
-  em->cout() << "computing potential\n";
   DCASSERT(x.answer);
   DCASSERT(0==x.aggregate);
   DCASSERT(pass);

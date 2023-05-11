@@ -8,7 +8,7 @@
 #StatesetPrintIndexes false
 
 pn plks := {
-  place p00, p01, p10, p11, samples_max, samples;
+  place p00, p01, p10, p11, samples_max, samples, battery;
 
   trans t00_01, t00_10,
         t01_11, t01_00, 
@@ -16,7 +16,7 @@ pn plks := {
         t11_10, t11_01,
         samples_t;
 
-  init(p00:1,samples_max:2);
+  init(p00:1, samples_max:2, battery:3);
 
   arcs(
       p00 : t00_01, p00 : t00_10,
@@ -28,7 +28,11 @@ pn plks := {
       t10_11 : p11, t10_00 : p00,
       t11_10 : p10, t11_01 : p01,
       samples_max : samples_t,
-      samples_t : samples
+      samples_t : samples,
+      battery : t00_01, battery : t00_10, 
+      battery : t01_11, battery : t01_00, 
+      battery : t10_11, battery : t10_00,
+      battery : t11_10, battery : t11_01
   );
 
   guard(samples_t:tk(p01)==1 | tk(p10)==1 );
@@ -40,7 +44,8 @@ pn plks := {
   bigint n_arcs := num_arcs;
   stateset r := reachable;
 
-  stateset prop := !(potential(tk(p00)==1)) | EU(reachable, potential(tk(p11)==1) & 
+  stateset prop := (potential(tk(p00)==1)) -> EU(reachable, potential(tk(p11)==1) & 
+                                                (potential(tk(battery) > 0)) &
                                                 ((potential(dec_value(s_min1) & tk(samples)>0)) |
                                                  (potential(dec_value(s_min2) & tk(samples)>1))));
 

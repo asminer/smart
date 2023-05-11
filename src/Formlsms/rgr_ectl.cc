@@ -228,8 +228,6 @@ stateset* ectl_reachgraph::EU(bool revTime, const stateset* p, const stateset* q
 {
   if (0==q) return 0; // propogate an earlier error
 
-  em->cout() << "here\n";
-
   const expl_stateset* ep = dynamic_cast <const expl_stateset*> (p);
   const expl_stateset* eq = dynamic_cast <const expl_stateset*> (q);
 

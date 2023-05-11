@@ -1516,8 +1516,6 @@ void CTL_min_decision_cost_base::Compute(traverse_data &x, expr** pass, int np)
   decision_eval *eval = new decision_eval(dec_set);
   Q.push(eval);
 
-  int a = 0;
-
   while(!Q.empty()) { /// repeat loop until queue is empty
     em->cout() << "Queue size: " << Q.size() << "\n";
     /// pop eval from queue
@@ -1541,12 +1539,7 @@ void CTL_min_decision_cost_base::Compute(traverse_data &x, expr** pass, int np)
     /// how to dispatch to correct engine? (e.g., AG_base)
     /// ASNWER: call pass[1]->Compute(x)
     em->cout() << "Computing CTL expression\n";
-    if (a > 0){
-      ctl_expr->Compute(x);
-    } else {
-      ctl_expr->Compute(x);
-      a++;
-    }
+    ctl_expr->Compute(x);
     em->cout() << "done computing CTL\n";
     DCASSERT(x.answer->getPtr());
 
