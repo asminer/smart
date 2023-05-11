@@ -363,7 +363,7 @@ void constfunc::Compute(traverse_data &x)
       symbol* item = deplist->Item(i);
       DCASSERT(item);
       if (item->isComputed()) continue;
-      item->Compute(x);
+      item->Compute(x); // why does it exit here?
     } // for i
     delete deplist;
     deplist = 0;
@@ -377,7 +377,7 @@ void constfunc::Compute(traverse_data &x)
   }
   cache = *(x.answer);
   if (Type() != em->VOID) {
-    SetSubstitution(true);
+    SetSubstitution(false);
   }
 }
 

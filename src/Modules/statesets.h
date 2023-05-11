@@ -36,7 +36,7 @@ public:
 protected:
   virtual ~stateset();
 public:
-  inline const state_lldsm* getParent() const { return parent; }
+  inline const state_lldsm* getParent() const { DCASSERT(parent); return parent; }
 
   const hldsm* getGrandparent() const;
 

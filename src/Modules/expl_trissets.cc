@@ -39,8 +39,14 @@ expl_tri_stateset::expl_tri_stateset(const state_lldsm* p, stateset* t, stateset
 expl_tri_stateset::expl_tri_stateset(const state_lldsm* p, stateset* t) :  stateset(p)
 {
   trueset = dynamic_cast<expl_stateset*>(t);
-  falseset = trueset->DeepCopy();
-  falseset->Complement();
+  if (trueset) {
+    falseset = trueset->DeepCopy();
+    falseset->Complement();
+  } else {
+    expl_tri_stateset* tmp = dynamic_cast<expl_tri_stateset*>(t);
+    trueset = tmp->trueset->DeepCopy();
+    falseset = tmp->falseset->DeepCopy();
+  }
 }
 
 expl_tri_stateset::expl_tri_stateset(const state_lldsm* p, const expl_stateset* t) : stateset(p)

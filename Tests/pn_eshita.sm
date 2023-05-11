@@ -100,10 +100,12 @@ pn cruft(int n) := {
   //rules for compatibility to take design decisions; when to make design_D[i]:=T
   //how to add enable function;
 
+  // TODO: ask miner, this is getting recognized as a constant function?
+  //stateset test2 := potential(tk(I)>0 & dec_value(aa));
+  //bool min_cost := min_decision_cost(test2);
 
-  stateset test2 := reachable -> potential(tk(I)>0 & dec_value(aa));
-  bool min_cost := min_decision_cost(test2);
-  //bool min_cost := min_decision_cost(potential(tk(I)>0 & dec_value(aa)));
+  bool min_cost := min_decision_cost(potential(tk(I)>0 & dec_value(aa))); // works
+  //bool min_cost := min_decision_cost(reachable & potential(tk(I)>0 & dec_value(aa))); // works
 
 
   stateset rs := reachable;
@@ -130,7 +132,7 @@ pn cruft(int n) := {
   stateset prop5 := reachable & !EX(reachable);
 };
 
-print(cruft(5).min_cost);
+print(cruft(5).min_cost,"\n");
 //print("\n", cruft(5).test2, "\n");
 
 print("Reachable states:\n");

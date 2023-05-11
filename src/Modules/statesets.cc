@@ -26,6 +26,7 @@ bool stateset::print_indexes;
 
 stateset::stateset(const state_lldsm* p) : shared_object()
 {
+  DCASSERT(p);
   parent = p;
 }
 
@@ -370,7 +371,7 @@ stateset_union
  : summation(fn, line, exprman::aop_or, t, x, 0, n)
 {
 }
-
+#include <iostream>
 void stateset_union::Compute(traverse_data &x)
 {
   // to hack tri-stateset approach:
@@ -414,7 +415,8 @@ void stateset_union::Compute(traverse_data &x)
 
     bool ok = false;
     if (stateset::parentsMatch(this, "union", total, curr)) {
-      ok = is_tri ? total_tri->Union(this, "union", curr_tri) : total->Union(this, curr);
+      ok = is_tri ? total_tri->Union(this, "union", curr_tri ? curr_tri : curr) : 
+                    total->Union(this, curr);
     } 
     if (!ok) {
       Delete(total);

@@ -1516,6 +1516,8 @@ void CTL_min_decision_cost_base::Compute(traverse_data &x, expr** pass, int np)
   decision_eval *eval = new decision_eval(dec_set);
   Q.push(eval);
 
+  int a = 0;
+
   while(!Q.empty()) { /// repeat loop until queue is empty
     em->cout() << "Queue size: " << Q.size() << "\n";
     /// pop eval from queue
@@ -1524,7 +1526,6 @@ void CTL_min_decision_cost_base::Compute(traverse_data &x, expr** pass, int np)
     em->cout() << "Popping eval from Q\n";
     dec_set->setDecisions(eval);
     explored.insert(bitvectorToInt(eval->getBitvector()));
-    // em->cout() << bitvectorToInt(eval->getBitvector()) << "\n";
 
     em->cout() << "Eval: ";
     int i;
@@ -1540,7 +1541,13 @@ void CTL_min_decision_cost_base::Compute(traverse_data &x, expr** pass, int np)
     /// how to dispatch to correct engine? (e.g., AG_base)
     /// ASNWER: call pass[1]->Compute(x)
     em->cout() << "Computing CTL expression\n";
-    ctl_expr->Compute(x);
+    if (a > 0){
+      ctl_expr->Compute(x);
+    } else {
+      ctl_expr->Compute(x);
+      a++;
+    }
+    em->cout() << "done computing CTL\n";
     DCASSERT(x.answer->getPtr());
 
     res = dynamic_cast <expl_tri_stateset*> (x.answer->getPtr());
@@ -1551,8 +1558,8 @@ void CTL_min_decision_cost_base::Compute(traverse_data &x, expr** pass, int np)
     }
     DCASSERT(res);
 
-    // res->Print(em->cout(), 0);
-    // em->cout() << "\n";
+    res->Print(em->cout(), 0);
+    em->cout() << "\n";
 
     // check if all initial states are in trueset, or any in falseset
     // if all in trueset, found min cost eval, return (b/c sorted by cost)
@@ -1575,6 +1582,8 @@ void CTL_min_decision_cost_base::Compute(traverse_data &x, expr** pass, int np)
     falseset->Intersect(initset);
     if(!falseset->isEmpty()) {
       em->cout() << "Min cost eval is 'false'\n";
+      falseset->Print(em->cout(), 0);
+      em->cout() << "\n";
       continue;
     }
 

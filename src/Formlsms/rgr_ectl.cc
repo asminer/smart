@@ -228,6 +228,8 @@ stateset* ectl_reachgraph::EU(bool revTime, const stateset* p, const stateset* q
 {
   if (0==q) return 0; // propogate an earlier error
 
+  em->cout() << "here\n";
+
   const expl_stateset* ep = dynamic_cast <const expl_stateset*> (p);
   const expl_stateset* eq = dynamic_cast <const expl_stateset*> (q);
 
@@ -237,18 +239,16 @@ stateset* ectl_reachgraph::EU(bool revTime, const stateset* p, const stateset* q
   ;
 
   if ((0!=p && 0==ep) || 0==eq) {
+    // TODO: what about when p is not specified?
+    
     const expl_tri_stateset* etp = dynamic_cast <const expl_tri_stateset*> (p);
     const expl_tri_stateset* etq = dynamic_cast <const expl_tri_stateset*> (q);
 
-    if (0==etp) {
-      std::cout << "0==etp\n";
+    if (0!=p && 0==etp) {
       etp = new expl_tri_stateset(p->getParent(), ep);
-      std::cout << "0==etp\n";
-    } else if (0==etq) {
-      std::cout << "0==etq\n";
+    }
+    if (0==etq) {
       etq = new expl_tri_stateset(q->getParent(), eq);
-    } else {
-      return incompatibleOperand(CTLOP);
     }
 
     const intset& itq = etq->getTrueSet()->getExplicit(); 
@@ -279,6 +279,9 @@ stateset* ectl_reachgraph::EU(bool revTime, const stateset* p, const stateset* q
     TH->get_met_obligations(*answer);
     expl_stateset *trueset = new expl_stateset(q->getParent(), answer);
 
+    DCASSERT(etp);
+    DCASSERT(etq);
+
     expl_stateset *pset = etp->getFalseSet()->DeepCopy();
     pset->Complement();
     expl_stateset *qset = etq->getFalseSet()->DeepCopy();
@@ -288,7 +291,6 @@ stateset* ectl_reachgraph::EU(bool revTime, const stateset* p, const stateset* q
 
     return new expl_tri_stateset(p->getParent(), trueset, falseset);
   }
-
 
   const intset& iq = eq->getExplicit(); 
   if (!TH) TH = new CTL_traversal(iq.getSize());

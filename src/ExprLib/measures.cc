@@ -147,7 +147,7 @@ void measure::Affix()
     return;
   if (!isComputed())
     setComputed();
-  SetSubstitution(true);
+  SetSubstitution(false);
   if (model_debug.startReport())
   {
     model_debug.report() << "Measure " << Name() << " is computed\n";
