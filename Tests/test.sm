@@ -1,0 +1,59 @@
+
+/*
+dtmc test :={
+	state a,b,c,d,e;
+	init(a:1);
+	arcs(
+		a:b:1,
+		b:c:1,
+		c:d:1,
+		d:d:1,
+		d:e:1,
+		e:e:1
+		);
+	stateset abs := potential(is_absorbed);
+	stateset timed := !(EX(abs)| abs);
+
+  	stateprobs prop1 := reverse_tta(5,abs);
+  	stateprobs prop2:= reverse_tta_timed(2,5,!timed,timed);
+  	bool aa:=true;
+  	//stateset res:= gt(prop1,0.5);
+  	stateprobs res:= expected_timed(prop1,abs);
+
+};
+compute(test.res);
+print("test1:::::::::",test.prop1,"\n");
+print("test for filtering timed: ", test.timed, "\n");
+
+print("test2:::::::::",test.prop2,"\n");
+
+*/
+
+dtmc cond_test :={
+
+state s1,s2,s3,s4;
+init(s1:1);
+arcs(
+	
+s1:s1:0.729,
+s1:s2: 0.243,
+s1:s3:0.027,
+s1:s4:0.001,
+s2:s2: 0.81,
+s2:s3: 0.18,
+s2:s4: 0.01,
+s3:s3:1,
+s4:s4:1
+);	
+stateset abs := potential(is_absorbed);
+stateset bad := potential(in_state({s3,s4}));
+stateset good := !bad;
+stateset timed := !(EX(abs)| abs);
+stateprobs prop2:= conditional_tta(2,3,bad,good);
+
+};
+
+
+print("test for filtering timed: ", cond_test.bad, "\n");
+
+print("test2:::::::::",cond_test.prop2,"\n");

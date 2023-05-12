@@ -200,6 +200,13 @@ bool meddly_process::isTransient(long st) const
   return false;
 }
 
+bool meddly_process::isAbsorbing(long st) const
+{
+  DCASSERT(0);
+  return false;
+}
+
+
 statedist* meddly_process::getInitialDistribution() const
 {
   DCASSERT(0);

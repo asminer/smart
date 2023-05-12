@@ -14,6 +14,7 @@
 // #define DEBUG_ACCUMULATE
 // #define DEBUG_CTMCDIST
 // #define DEBUG_REACHES
+#define DEBUG_ESHITA
 
 //------------------------------------------------------------
 
@@ -38,6 +39,10 @@
 #endif
 
 #ifdef DEBUG_REACHES
+  #define USES_IOSTREAM
+#endif
+
+#ifdef DEBUG_ESHITA
   #define USES_IOSTREAM
 #endif
 
@@ -1101,6 +1106,536 @@ void MCLib::Markov_chain::reverseTransient(int t, double* p,
   }
 }
 
+// ******************************************************************
+
+namespace MCLib {
+  template <class MATRIX, class REAL>
+  void templ_dtmc_MTTA(MATRIX &Qdiag, MATRIX &Qoff, const REAL* diags,
+    int t, double* p, bool normalize,Markov_chain::DTMC_transient_options &opts)
+  {
+      DCASSERT(diags);
+
+      const long size = Qdiag.Size();
+      
+      //
+      // Set up auxiliary vectors if necessary
+      //
+      if (0== opts.vm_result) {
+        opts.vm_result = new double[size];
+      }
+      //double* m= opts.vm_result;
+      //zeroArray(m,size); 
+      double* acc = new double[size];
+      /*
+      for (long i =0; i< size; i++){
+        acc[i]=0;
+      }
+      */
+      
+      double* aux = opts.vm_result;
+      //opts.ssprec= 0.00000001;
+      for (opts.multiplications=1; opts.multiplications<=t; opts.multiplications++) {
+        // VM multiply
+        zeroArray(aux, size);
+        if(opts.multiplications==1){
+          //Qdiag.VectorMatrixMultiply(aux, p);
+          Qoff.VectorMatrixMultiply(aux, p);
+          //adjustDiagonals(aux, p, diags, size);
+        }
+        else{
+        Qdiag.VectorMatrixMultiply(aux, p);
+        Qoff.VectorMatrixMultiply(aux, p);
+        adjustDiagonals(aux, p, diags, size);
+        }
+
+        if (normalize) normalizeVector(aux, size);
+
+        // aux is now the distribution after one step.
+        // add (*(aux+i))*t to acc[s]
+        /*
+#ifdef DEBUG_ESHITA
+        std::cout << "time :" << opts.multiplications << '\n';
+        std::cout << "acc: [";
+#endif
+*/
+        for(long i=0; i < size; i++ ){
+          acc[i] += aux[i] * opts.multiplications;
+          /*
+          #ifdef DEBUG_ESHITA
+          if (i) std::cout << ", ";
+          std::cout << acc[i] ;
+          #endif
+          */
+        }
+        /*
+        #ifdef DEBUG_ESHITA
+        std::cout << "]\n";
+        #endif
+        */
+
+        // Check if we've hit steady state
+        if (vectorsWithinEpsilon(p, aux, size, opts.ssprec)) {
+          opts.multiplications++;
+          break;
+        }
+
+    
+        SWAP(aux, p);
+      } // for opts.multiplications
+
+      // we're done.  p is our answer.
+      //assiging acc[size] to p
+      
+     if (aux != opts.vm_result){
+      SWAP(aux,p);
+     }
+     //if h!=0, them compute MTTA on a different graph where b is not absorbing
+     /*
+     double* temp=opts.vm_result;
+     if (h!=0){
+        for (opts.multiplications=1;opts.multiplications<=h;opts.multiplications++){
+          zeroArray(temp,size);
+          Qdiag.VectorMatrixMultiply(temp, acc);
+          Qoff.VectorMatrixMultiply(temp, acc);
+          adjustDiagonals(temp, acc, diags, size);
+        } 
+     }
+      */
+      memcpy(p,acc,size*sizeof(double));
+      #ifdef DEBUG_ESHITA
+        std::cout << opts.multiplications <<"\n";
+        //std::cout <<"when to stop" << opts.ssprec << "\n";
+        #endif
+     //Dr. Miner's stuff
+      // Since we swapped pointers around, p might be different
+      // from the original p.  Check for that:
+      /*
+      if (aux != opts.vm_result) {
+        // aux is the original p.  Copy into p.
+        memcpy(aux, p, size * sizeof(double));
+      }
+      */
+     /*
+     #ifdef DEBUG_ESHITA
+        std::cout << "exiting\n";
+        std::cout << "p: [";
+        for(long i=0; i < size; i++ ){
+          if (i) std::cout << ", ";
+          std::cout << p[i] ;
+        }
+        std::cout << "]\n";
+        std::cout << "p ptr " << p << "\n";
+        #endif
+        */
+  }
+}
+
+
+// ******************************************************************
+
+void MCLib::Markov_chain::reverseMTTA_unbounded(int t, double* p, 
+  DTMC_transient_options &opts) const
+{
+  if (0==p) {
+    throw MCLib::error(MCLib::error::Null_Vector);
+  }
+  if (!isDiscrete()) {
+    throw MCLib::error(MCLib::error::Wrong_Type);
+  }
+
+  if (double_graphs) {
+    //
+    // Set up matrices (shallow copies here)
+    //
+    LS_CRS_Matrix_double Qdiag, Qoff;
+    graphToMatrix(G_bycols_diag, Qdiag);
+    graphToMatrix(G_bycols_off, Qoff);
+
+    //
+    // And pass everything to our nice template function :^)
+    //
+    templ_dtmc_MTTA(Qdiag, Qoff, selfloops_d, t, p, false, opts);
+  } else {
+    //
+    // Set up matrices (shallow copies here)
+    //
+    LS_CRS_Matrix_float Qdiag, Qoff;
+    graphToMatrix(G_bycols_diag, Qdiag);
+    graphToMatrix(G_bycols_off, Qoff);
+
+    //
+    // And pass everything to our nice template function :^)
+    //
+    templ_dtmc_MTTA(Qdiag, Qoff, selfloops_f, t,p, false, opts);
+  }
+}
+// ******************************************************************
+
+namespace MCLib {
+  template <class MATRIX, class REAL>
+  void templ_dtmc_MTTA_bounded(MATRIX &Qdiag, MATRIX &Qoff, const REAL* diags,
+    int h, int k, double* p,bool normalize, Markov_chain::DTMC_transient_options &opts)
+  {
+      DCASSERT(diags);
+
+      const long size = Qdiag.Size();
+      // save q because the values get changed
+      /*
+      double* qval= new double[size];
+      for (long i=0;i<size;i++){
+        qval[i] =q[i];
+      }
+      */
+      //
+      // Set up auxiliary vectors if necessary
+      //
+      if (0== opts.vm_result) {
+        opts.vm_result = new double[size];
+      }
+      //double* m= opts.vm_result;
+      //zeroArray(m,size); 
+      double* acc = new double[size];
+      
+      double* aux = opts.vm_result;
+
+      for (opts.multiplications=1; opts.multiplications<=(k-h); opts.multiplications++) {
+        // VM multiply
+        zeroArray(aux, size);
+        if(opts.multiplications==1){
+          //Qdiag.VectorMatrixMultiply(aux, p);
+          Qoff.VectorMatrixMultiply(aux, p);
+        //adjustDiagonals(aux, p, diags, size);
+        }
+        else{
+        Qdiag.VectorMatrixMultiply(aux, p);
+        Qoff.VectorMatrixMultiply(aux, p);
+        adjustDiagonals(aux, p, diags, size);
+        /*
+        #ifdef DEBUG_ESHITA
+        std::cout << "]\n";
+        #endif
+          Qoff.VectorMatrixMultiply(aux, p);
+          #ifdef DEBUG_ESHITA
+       std::cout << "q" << q << "\n";
+        std::cout << "initial filtering states after adjust diag"<< "\n";
+        //std::cout << "time :" << opts.multiplications << '\n';
+        std::cout << "q: [";
+#endif
+        for(long i=0; i < size; i++ ){
+          #ifdef DEBUG_ESHITA
+          //if (i)
+          std::cout << q[i] ;
+          std::cout << ", ";
+          #endif
+                
+        }
+        #ifdef DEBUG_ESHITA
+        std::cout << "]\n";
+        #endif
+        */
+        }
+
+        if (normalize) normalizeVector(aux, size);
+
+        // aux is now the distribution after one step.
+        // add (*(aux+i))*t to acc[s]
+#ifdef DEBUG_ESHITA
+        std::cout << "time :" << opts.multiplications << '\n';
+        std::cout << "acc: [";
+#endif
+        for(long i=0; i < size; i++ ){
+          acc[i] += aux[i] * opts.multiplications;
+          #ifdef DEBUG_ESHITA
+          if (i) std::cout << ", ";
+          std::cout << acc[i] ;
+          #endif
+          
+        }
+        #ifdef DEBUG_ESHITA
+        std::cout << "]\n";
+        #endif
+
+        // Check if we've hit steady state
+        if (vectorsWithinEpsilon(p, aux, size, opts.ssprec)) {
+          opts.multiplications++;
+          break;
+        }
+
+    
+        SWAP(aux, p);
+      } // for opts.multiplications
+
+      // we're done.  p is our answer.
+      //assiging acc[size] to p
+      //eshita
+      /*
+      for(long i=0;i<size;i++){
+        p[i]=acc[i];
+      }
+      */
+     if (aux != opts.vm_result){
+      SWAP(aux,p);
+     }
+     //if h!=0, them compute MTTA on a different graph where b is not absorbing
+     
+     /*
+     double* temp=opts.vm_result;
+     if (h!=0){
+        for (opts.multiplications=1;opts.multiplications<=h;opts.multiplications++){
+          zeroArray(temp,size);
+          Qdiag.VectorMatrixMultiply(temp, acc);
+          Qoff.VectorMatrixMultiply(temp, acc);
+          adjustDiagonals(temp, acc, diags, size);
+        } 
+     }
+      */
+      memcpy(p,acc,size*sizeof(double));
+      //memcpy(q,qval,size*sizeof(double));
+     //Dr. Miner's stuff
+      // Since we swapped pointers around, p might be different
+      // from the original p.  Check for that:
+      /*
+      if (aux != opts.vm_result) {
+        // aux is the original p.  Copy into p.
+        memcpy(aux, p, size * sizeof(double));
+      }
+      */
+     #ifdef DEBUG_ESHITA
+        std::cout << "exiting\n";
+        std::cout << "p: [";
+        for(long i=0; i < size; i++ ){
+          if (i) std::cout << ", ";
+          std::cout << p[i] ;
+        }
+        std::cout << "]\n";
+        /*
+        std::cout << "p ptr " << p << "\n";
+        std::cout << "exiting\n";
+        std::cout << "q: [";
+        for(long i=0; i < size; i++ ){
+          if (i) std::cout << ", ";
+          std::cout << q[i] ;
+        }
+        std::cout << "]\n";
+        */
+        #endif
+        
+  }
+}
+// ******************************************************************
+
+namespace MCLib {
+  template <class MATRIX, class REAL>
+  void templ_dtmc_MTTA_h(MATRIX &Qdiag, MATRIX &Qoff, const REAL* diags,
+    int h, double* p, double* q, bool normalize, Markov_chain::DTMC_transient_options &opts)
+  {
+      DCASSERT(diags);
+
+      const long size = Qdiag.Size();
+        // q[0]=1;
+        // q[1]=1;
+        // q[2]=1;
+        // q[3]=0;
+        // q[4]=0;
+       #ifdef DEBUG_ESHITA
+       std::cout << "q" << q << "\n";
+        std::cout << "initial filtering states"<< "\n";
+        //std::cout << "time :" << opts.multiplications << '\n';
+        std::cout << "q: [";
+#endif
+        for(long i=0; i < size; i++ ){
+          #ifdef DEBUG_ESHITA
+          //if (i)
+          std::cout << q[i] ;
+          std::cout << ", ";
+          #endif
+                
+        }
+        #ifdef DEBUG_ESHITA
+        std::cout << "]\n";
+        #endif
+      
+      double* qval = new double[size];
+      for(long i=0;i<size;i++){
+        qval[i] = q[i];
+      }
+      //
+      // Set up auxiliary vectors if necessary
+      //
+      if (0== opts.vm_result) {
+        opts.vm_result = new double[size];
+      }
+      //double* m= opts.vm_result;
+      //zeroArray(m,size); 
+      //double* acc = new double[size];
+      
+      double* aux = opts.vm_result;
+      /*
+      for (long i =0; i< size;i++){
+          if(!q[i]){
+            p[i]=0;
+          }
+        }
+        */
+      for (opts.multiplications=1; opts.multiplications<=h; opts.multiplications++) {
+        
+      
+        // VM multiply
+        zeroArray(aux, size);
+        if(opts.multiplications==1){
+          Qdiag.VectorMatrixMultiply(aux, p);
+          Qoff.VectorMatrixMultiply(aux, p);
+          adjustDiagonals(aux, p, diags, size);
+        }
+        else{
+        Qdiag.VectorMatrixMultiply(aux, p);
+        Qoff.VectorMatrixMultiply(aux, p);
+        adjustDiagonals(aux, p, diags, size);
+        }
+
+        if (normalize) normalizeVector(aux, size);
+
+        
+
+        // aux is now the distribution after one step.
+        // add (*(aux+i))*t to acc[s]
+
+
+        for(long i=0; i < size; i++ ){
+          //if(qval[i]!=0){
+            //std::cout << "q " << qval[i] << "\n";
+            aux[i]+=1;
+          //}   
+        }
+        #ifdef DEBUG_ESHITA
+        std::cout << "computing"<< "\n";
+        std::cout << "time :" << opts.multiplications << '\n';
+        std::cout << "aux: [";
+#endif
+        for(long i=0; i < size; i++ ){
+          #ifdef DEBUG_ESHITA
+          //if (i)
+          std::cout << aux[i] ;
+          std::cout << ", ";
+          #endif
+                
+        }
+        #ifdef DEBUG_ESHITA
+        std::cout << "]\n";
+        #endif
+        
+        // Check if we've hit steady state
+        if (vectorsWithinEpsilon(p, aux, size, opts.ssprec)) {
+          opts.multiplications++;
+          break;
+        }
+
+        
+        SWAP(aux, p);
+      } // for opts.multiplications
+
+      
+      // we're done.  p is our answer.
+      //assiging acc[size] to p
+      //eshita
+      /*
+      for(long i=0;i<size;i++){
+        p[i]=acc[i];
+      }
+      */
+     if (aux != opts.vm_result){
+      SWAP(aux,p);
+     }
+     //if h!=0, them compute MTTA on a different graph where b is not absorbing
+     
+     /*
+     double* temp=opts.vm_result;
+     if (h!=0){
+        for (opts.multiplications=1;opts.multiplications<=h;opts.multiplications++){
+          zeroArray(temp,size);
+          Qdiag.VectorMatrixMultiply(temp, acc);
+          Qoff.VectorMatrixMultiply(temp, acc);
+          adjustDiagonals(temp, acc, diags, size);
+        } 
+     }
+      */
+     for(long i=0; i < size; i++ ){
+          if(qval[i]!=1){
+            std::cout << "i for end" << i << "\n";
+            std::cout << "q for end" << q[i] << "\n";
+            p[i]=0;
+            std::cout<< "final aux " << p[i] <<"\n"; 
+          }   
+        }
+      memcpy(aux,p,size*sizeof(double));
+     //Dr. Miner's stuff
+      // Since we swapped pointers around, p might be different
+      // from the original p.  Check for that:
+      /*
+      if (aux != opts.vm_result) {
+        // aux is the original p.  Copy into p.
+        memcpy(aux, p, size * sizeof(double));
+      }
+      */
+     #ifdef DEBUG_ESHITA
+        std::cout << "exiting\n";
+        std::cout << "p: [";
+        for(long i=0; i < size; i++ ){
+          if (i) std::cout << ", ";
+          std::cout << p[i] ;
+        }
+        std::cout << "]\n";
+        std::cout << "p ptr " << p << "\n";
+        #endif
+  }
+}
+// ******************************************************************
+#include<iostream>
+void MCLib::Markov_chain::reverseMTTA_bounded(int h, int k, double* p, double* q,
+  DTMC_transient_options &opts) const
+{
+  if (0==p) {
+    throw MCLib::error(MCLib::error::Null_Vector);
+  }
+  if (!isDiscrete()) {
+    throw MCLib::error(MCLib::error::Wrong_Type);
+  }
+
+  if (double_graphs) {
+    //
+    // Set up matrices (shallow copies here)
+    //
+    LS_CRS_Matrix_double Qdiag, Qoff;
+    graphToMatrix(G_bycols_diag, Qdiag);
+    graphToMatrix(G_bycols_off, Qoff);
+
+    //
+    // And pass everything to our nice template function :^)
+    //
+    templ_dtmc_MTTA_bounded(Qdiag, Qoff, selfloops_d, h,k, p,false, opts);
+    std::cout << "weird q " << q[0] << q[1] << q[2]<< "\n";
+    templ_dtmc_MTTA_h(Qdiag,Qoff,selfloops_d,h, p, q, false, opts);
+  } else {
+    //
+    // Set up matrices (shallow copies here)
+    //
+    LS_CRS_Matrix_float Qdiag, Qoff;
+    graphToMatrix(G_bycols_diag, Qdiag);
+    graphToMatrix(G_bycols_off, Qoff);
+
+    //
+    // And pass everything to our nice template function :^)
+    //
+    templ_dtmc_MTTA_bounded(Qdiag, Qoff, selfloops_f, h, k, p, false, opts);
+
+    
+    //can I create another template function?
+    templ_dtmc_MTTA_h(Qdiag,Qoff,selfloops_f, h, p, q, false, opts);
+  }
+}
+
+
+
 
 // ******************************************************************
 
@@ -1282,7 +1817,225 @@ void MCLib::Markov_chain::reverseTransient(double t, double* p,
     templ_ctmc_transient(Qdiag, Qoff, rowsums, t, p, false, poisson_pdf, 1, opts);
   }
 }
+// ******************************************************************
+#include<iostream>
+namespace MCLib {
+  template <class MATRIX, class REAL>
+  void templ_dtmc_transient_prob(MATRIX &Qdiag, MATRIX &Qoff, const REAL* diags,
+    int h, double* p, double* q, bool normalize, Markov_chain::DTMC_transient_options &opts)
+  {
+      DCASSERT(diags);
+      const long size = Qdiag.Size();
+      //
+      // Set up auxiliary vectors if necessary
+      //
+      if (0== opts.vm_result) {
+        opts.vm_result = new double[size];
+      }
+      if (0== opts.accumulator) {
+        opts.accumulator = new double[size];
+      }
+      zeroArray(opts.accumulator, size);
 
+      double* aux = opts.vm_result;
+      double* myp = p;
+      double* acc = new double[size];
+      double* newQ = new double[size];
+      zeroArray(newQ, size);
+      for(long i=0;i<size;i++){
+          if(!q[i]){
+            newQ[i]=1;
+          }
+      }
+      
+
+      //addToVector(opts.accumulator, p, size);
+#ifdef DEBUG_ACCUMULATE
+      showAccStep(0, n, opts.accumulator, size);
+#endif
+      #ifdef DEBUG_ESHITA
+        std::cout << " vector in h \n p: [";
+        for(long i=0; i < size; i++ ){
+          if (i) std::cout << ", ";
+          std::cout << myp[i] ;
+        }
+        std::cout << "]\n";
+        #endif
+      for (opts.multiplications=1; opts.multiplications<=h; opts.multiplications++) {
+        //for(long time=1;time<=h;time++){
+        // VM multiply
+        #ifdef DEBUG_ESHITA
+        //std::cout << "time :" << opts.multiplications << '\n';
+        //std::cout << " h " << h<< "\n";
+        std::cout << " mults " << opts.multiplications<< "\n";
+        #endif
+        zeroArray(aux, size);
+        zeroArray(acc, size);
+        if(opts.multiplications==1){
+          Qdiag.VectorMatrixMultiply(aux, myp);
+          Qoff.VectorMatrixMultiply(aux, myp);
+          adjustDiagonals(aux, myp, diags, size);
+        }
+        else{
+        Qdiag.VectorMatrixMultiply(aux,myp);
+        Qoff.VectorMatrixMultiply(aux, myp);
+        adjustDiagonals(aux, myp, diags, size);
+        }
+
+        #ifdef DEBUG_ESHITA
+        std::cout <<"for round "<< opts.multiplications<< " aux: [";
+        for(long i=0; i < size; i++ ){
+          if (i) std::cout << ", ";
+          std::cout << aux[i] ;
+        }
+        std::cout << "]\n";
+        #endif
+        #ifdef DEBUG_ESHITA
+        //std::cout << "time :" << opts.multiplications << '\n';
+        std::cout << "first accumulator: [";
+        #endif
+        
+        for (long i=0;i<size;i++){
+          #ifdef DEBUG_ESHITA
+          if (i) std::cout << ", ";
+          std::cout << opts.accumulator[i] ;
+          #endif
+        }
+        #ifdef DEBUG_ESHITA
+          std::cout << "]\n" ;
+          #endif
+        if(opts.multiplications<h){
+          #ifdef DEBUG_ESHITA
+        
+        std::cout << "here \n";
+        #endif
+          Qdiag.VectorMatrixMultiply(acc,newQ);
+          Qoff.VectorMatrixMultiply(acc,newQ);
+
+          adjustDiagonals(acc, newQ, diags, size);
+          for(long i=0;i<size;i++){
+          if(!q[i]){
+            acc[i]=0;
+          }
+          }
+        addToVector(opts.accumulator, acc, size);
+          #ifdef DEBUG_ESHITA
+        //std::cout << "time :" << opts.multiplications << '\n';
+        std::cout << "modified accumulator: [";
+        #endif
+        
+        for (long i=0;i<size;i++){
+          #ifdef DEBUG_ESHITA
+          if (i) std::cout << ", ";
+          std::cout << opts.accumulator[i] ;
+          #endif
+        }
+        #ifdef DEBUG_ESHITA
+          std::cout << "]\n" ;
+          #endif
+          SWAP(acc,newQ);
+        }
+        if (normalize) normalizeVector(aux, size);
+        // aux is the probability after one step.
+        // Add it to the accumulator.
+        for (long i=0;i<size;i++){
+        #ifdef DEBUG_ESHITA
+        std::cout << "q :" << q[i] << '\n';
+        #endif
+        }
+        #ifdef DEBUG_ESHITA
+        std::cout << "time :" << opts.multiplications << '\n';
+        std::cout << "aux: [";
+        #endif
+        
+        for (long i=0;i<size;i++){
+
+          if(!q[i]){
+            aux[i]=0;
+          }
+          else{
+          aux[i]=aux[i]+1;
+          #ifdef DEBUG_ESHITA
+        std::cout << "\n is it adding the value ? " << '\n';
+        #endif
+          }
+          std:: cout<< aux[i] << ",";
+        }
+        #ifdef DEBUG_ESHITA
+          std::cout << "]\n" ;
+          #endif
+
+        // Check if we've hit steady state
+        /*
+        if (vectorsWithinEpsilon(p, aux, size, opts.ssprec)) {
+          opts.multiplications++;
+          break;
+        }
+        */
+        SWAP(aux,myp);
+      } 
+      
+      if(aux!=opts.vm_result){
+        SWAP(aux,myp);
+      }
+      
+      //divide the expected time with probability
+      for(long i=0;i<size;i++){
+        std::cout<< myp[i] << " expected time \n";
+        std::cout<< opts.accumulator[i] << " prob that goes to fail state \n";
+        myp[i] = myp[i]/(1-opts.accumulator[i]);
+        std::cout << "conditional expected time" << "\n";
+        std::cout<< myp[i] << "\n" ;
+      }
+      
+
+      // we're done.  accumulator is our answer.
+      // Copy it into p.
+      memcpy(p,myp, size * sizeof(double));
+  }
+}
+
+
+// ******************************************************************
+
+void MCLib::Markov_chain::reverseTransientConditional_TTA(int h, int k, double* p, double* q,
+   DTMC_transient_options &opts) const
+{
+  if (0==p) {
+    throw MCLib::error(MCLib::error::Null_Vector);
+  }
+  if (!isDiscrete()) {
+    throw MCLib::error(MCLib::error::Wrong_Type);
+  }
+
+  if (double_graphs) {
+    //
+    // Set up matrices (shallow copies here)
+    //
+    LS_CRS_Matrix_double Qdiag, Qoff;
+    graphToMatrix(G_bycols_diag, Qdiag);
+    graphToMatrix(G_bycols_off, Qoff);
+
+    //
+    // And pass everything to our nice template function :^)
+    //
+    templ_dtmc_MTTA_bounded(Qdiag,Qoff,selfloops_d,h,k,p,false,opts);
+    templ_dtmc_transient_prob(Qdiag, Qoff, selfloops_d, h, p, q, false, opts);
+  } else {
+    //
+    // Set up matrices (shallow copies here)
+    //
+    LS_CRS_Matrix_float Qdiag, Qoff;
+    graphToMatrix(G_bycols_diag, Qdiag);
+    graphToMatrix(G_bycols_off, Qoff);
+
+    //
+    // And pass everything to our nice template function :^)
+    //
+    templ_dtmc_MTTA_bounded(Qdiag,Qoff,selfloops_f,h,k,p,false,opts);
+    templ_dtmc_transient_prob(Qdiag, Qoff, selfloops_f, h, p, q, false, opts);
+  }
+}
 
 // ******************************************************************
 

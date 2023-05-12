@@ -37,10 +37,14 @@ class mclib_process : public markov_process {
     virtual void showClasses(OutputStream &os, state_lldsm::reachset* rss, 
         shared_state* st) const;
     virtual bool isTransient(long st) const;
+    virtual bool isAbsorbing(long st) const;
     virtual statedist* getInitialDistribution() const;
     virtual long getOutgoingWeights(long from, long* to, double* w, long n) const;
     virtual bool computeTransient(double t, double* probs, 
         double* aux, double* aux2) const;
+    virtual bool reverseTransientUnbounded(int t, double* probs, double* aux) const;
+    virtual bool reverseTransientBounded(int h, int k, double* probs,double* probs_t, double* aux) const;
+    virtual bool reverseTransientConditional(int h,int k, double* probs,double* probs_t,double* aux) const;
     virtual bool computeAccumulated(double t, const double* p0, double* n,
         double* aux, double* aux2) const;
     virtual bool computeSteadyState(double* probs) const;

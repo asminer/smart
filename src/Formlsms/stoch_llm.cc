@@ -129,7 +129,21 @@ long stochastic_lldsm::process::getOutgoingWeights(long from, long* to, double* 
   parent->bailOut(__FILE__, __LINE__, "Can't get outgoing weights");
   return 0;
 }
-
+bool stochastic_lldsm::process::reverseTransientUnbounded(int t, double* probs, double* aux) const
+{
+  parent->bailOut(__FILE__, __LINE__, "Can't compute reverse unbounded MTTA");
+  return false;
+};
+bool stochastic_lldsm::process::reverseTransientBounded(int h,int k, double* probs, double* probs_t, double* aux) const
+{
+  parent->bailOut(__FILE__, __LINE__, "Can't compute reverse bounded MTTA");
+  return false;
+};
+bool stochastic_lldsm::process::reverseTransientConditional(int h,int k, double* probs,double* probs_t, double* aux) const
+{
+  parent->bailOut(__FILE__, __LINE__, "Can't compute reverse conditional MTTA");
+  return false;
+};
 bool stochastic_lldsm::process::computeTransient(double t, double*, double*, double*) const
 {
   parent->bailOut(__FILE__, __LINE__, "Can't compute transient");

@@ -300,6 +300,17 @@ bool mclib_process::isTransient(long st) const
 
 // ******************************************************************
 
+bool mclib_process::isAbsorbing(long st) const
+{
+  DCASSERT(chain);
+  const GraphLib::static_classifier& C = chain->getStateClassification();
+  return C.isNodeInClass(st,1);
+
+  // return C.isNodeInClass(st, 0);
+}
+
+// ******************************************************************
+
 statedist* mclib_process::getInitialDistribution() const
 {
   return Share(initial);
@@ -420,9 +431,162 @@ bool mclib_process
     return false;
   }
 }
-
 // ******************************************************************
 
+bool mclib_process
+::reverseTransientUnbounded(int t, double* probs, double* aux) const
+{
+  if (0==chain || 0==probs)  return false;
+  DCASSERT(chain);
+
+  //
+  // Set x to be all zeroes, except for the accepting state
+  //
+  // for (long i=chain->getNumStates()-1; i>=0; i--) probs[i] = 0;
+
+  // long acc_state = getAcceptingState();
+  // if (acc_state < 0) {
+  //   // Degenerate case - no accepting state,
+  //   // so nothing will reach it
+  //   return true;
+  // }
+  // probs[acc_state] = 1;
+
+
+  try {
+    timer w;
+    if (is_discrete) {
+      MCLib::Markov_chain::DTMC_transient_options opts;
+      opts.vm_result = aux;
+      
+
+      int it = int(t);
+      startTransientReport(w, it);
+      chain->reverseMTTA_unbounded(it,probs,opts);
+      stopTransientReport(w, opts.multiplications);
+
+      opts.vm_result = 0;
+      opts.accumulator = 0;
+    } 
+    /*else {
+      MCLib::Markov_chain::CTMC_transient_options opts;
+      opts.vm_result = aux;
+
+      startTransientReport(w, t); 
+      chain->computeTransient(t, probs, opts);
+      stopTransientReport(w, opts.multiplications);
+
+      opts.vm_result = 0;
+      opts.accumulator = 0;
+    }*/
+    return true;
+  }
+  catch (MCLib::error e) {
+    if (em->startInternal(__FILE__, __LINE__)) {
+      em->noCause();
+      em->internal() << "Unexpected error: ";
+      em->internal() << e.getString();
+      em->stopIO();
+    }
+    return false;
+  }
+}
+
+// ******************************************************************
+// ******************************************************************
+
+bool mclib_process
+::reverseTransientBounded(int h, int k, double* probs, double* probs_t, double* aux) const
+{
+  if (0==chain || 0==probs || h>=k)  return false;
+  DCASSERT(chain);
+  
+  try {
+    timer w;
+    if (is_discrete) {
+      MCLib::Markov_chain::DTMC_transient_options opts;
+      opts.vm_result = aux;
+      
+
+      int it = int(h);
+      startTransientReport(w, it);
+      chain->reverseMTTA_bounded(h,k,probs,probs_t,opts);
+      stopTransientReport(w, opts.multiplications);
+
+      opts.vm_result = 0;
+      opts.accumulator = 0;
+    } 
+    /*else {
+      MCLib::Markov_chain::CTMC_transient_options opts;
+      opts.vm_result = aux;
+
+      startTransientReport(w, t); 
+      chain->computeTransient(t, probs, opts);
+      stopTransientReport(w, opts.multiplications);
+
+      opts.vm_result = 0;
+      opts.accumulator = 0;
+    }*/
+    return true;
+  }
+  catch (MCLib::error e) {
+    if (em->startInternal(__FILE__, __LINE__)) {
+      em->noCause();
+      em->internal() << "Unexpected error: ";
+      em->internal() << e.getString();
+      em->stopIO();
+    }
+    return false;
+  }
+}
+// ******************************************************************
+
+bool mclib_process
+::reverseTransientConditional(int h,int k, double* probs, double* probs_t, double* aux) const
+{
+  if (0==chain || 0==probs)  return false;
+  DCASSERT(chain);
+  
+  try {
+    timer w;
+    if (is_discrete) {
+      MCLib::Markov_chain::DTMC_transient_options opts;
+      opts.vm_result = aux;
+      
+
+      int it = int(h);
+      startTransientReport(w, it);
+      chain->reverseTransientConditional_TTA(h,k, probs, probs_t, opts);
+      stopTransientReport(w, opts.multiplications);
+
+      opts.vm_result = 0;
+      opts.accumulator = 0;
+    } 
+    /*else {
+      MCLib::Markov_chain::CTMC_transient_options opts;
+      opts.vm_result = aux;
+
+      startTransientReport(w, t); 
+      chain->computeTransient(t, probs, opts);
+      stopTransientReport(w, opts.multiplications);
+
+      opts.vm_result = 0;
+      opts.accumulator = 0;
+    }*/
+    return true;
+  }
+  catch (MCLib::error e) {
+    if (em->startInternal(__FILE__, __LINE__)) {
+      em->noCause();
+      em->internal() << "Unexpected error: ";
+      em->internal() << e.getString();
+      em->stopIO();
+    }
+    return false;
+  }
+}
+
+// ******************************************************************
 bool mclib_process::computeAccumulated(double t, const double* p0, double* n,
                                   double* aux, double* aux2) const
 {

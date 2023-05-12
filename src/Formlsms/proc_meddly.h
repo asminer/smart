@@ -46,6 +46,7 @@ class meddly_process : public markov_process {
     virtual void showClasses(OutputStream &os, state_lldsm::reachset* rss, 
       shared_state* st) const;
     virtual bool isTransient(long st) const;
+    virtual bool isAbsorbing(long st) const;
     virtual statedist* getInitialDistribution() const;
 
   private:

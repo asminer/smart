@@ -227,6 +227,7 @@ public:
   simple_type*  STATESET;
   simple_type*  STATEDIST;
   simple_type*  STATEPROBS;
+  simple_type*  STATEVECT;
   simple_type*  TEMPORAL;
   simple_type*  TRACE;
 

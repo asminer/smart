@@ -103,7 +103,7 @@ pn cruft(int n) := {
 
   //stateset test2 := potential(tk(I)>0 & dec_value(aa));
   //bool min_cost := min_decision_cost(test2);
-  //bool min_cost := min_decision_cost(potential(tk(I)>0 & dec_value(aa)));
+  bool min_cost := min_decision_cost(potential(tk(I)>0 & dec_value(aa)));
 
 
   stateset rs := reachable;
@@ -148,8 +148,9 @@ print("Should be {[A], [D], [K]}:\n          ", cruft(5).prop2, "\n");
 print("Should be {[B], [I], [J]}:\n          ", cruft(5).prop3, "\n");
 print(     "Should be {[G], [H]}:\n          ", cruft(5).prop4, "\n");
 print(          "Should be {[E]}:\n          ", cruft(5).prop5, "\n");
-print("test: ", cruft(5).prop0,"\n");
+print("test: ", cruft(5).min_cost,"\n");
 print("False set:::", cruft(5).FS,"\n");
+
 print("\nErrors:\n--------------------------------------------------\n");
 print(cruft(5).prop1 | cruft(5).prop1, "\n");
 print("\nDone!\n");

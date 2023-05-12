@@ -428,7 +428,22 @@ namespace MCLib {
       const;
 
 
+      /** Compute cumulative probability at time t, for all possible starting states.
+          Must be a DTMC.
+          Vectors are allocated so that x[s] is the total probability for the interval [0,t] when the
+          chain starts in state s, for any legal state handle s.
+          Specifically, we determine
 
+            x[s] = \sum _0^t (Prob [ f(state at time t) ]), given we start in state s
+
+          @param  t   Time
+
+          @param  p   On input: initial vector of probabilities at time 0.
+                      On output: vector of cumulatve probabilities for time interval [0,t].
+                      Given, the DTMC enters b state for the first time at t and stays in a state for time [0,t-1].
+      */
+      void reverseTransientConditional_TTA(int h, int k, double* p, double* q, DTMC_transient_options &opts)
+      const;
       /** Compute an expectation at time t, for all possible starting states.
           Must be a DTMC.
           Vectors are allocated so that x[s] is the expectation when the
@@ -437,14 +452,53 @@ namespace MCLib {
 
             x[s] = E [ f(state at time t) ], given we start in state s
 
-          @param  t   Time
+          @param  h   Starting Time
+          @param  k   End Time
 
           @param  x   On input: function f() to compute expectation over.
                       On output: expected value for each starting state.
       */
       void reverseTransient(int t, double* x, DTMC_transient_options &opts)
       const;
+      /** Compute an expectation at time t, for all possible starting states.
+          Must be a DTMC.
+          Vectors are allocated so that x[s] is the expectation when the
+          chain starts in state s, for any legal state handle s.
+          Specifically, we determine
 
+            m[s] = t * x[s] 
+            x[s]= E [ f(state at time t) ], given we start in state s
+
+          @param  t   Time
+
+          @param  x   On input: function f() to compute expectation over.
+                      On output: expected value for each starting state.
+                      (Will decide the output later!)
+      */
+      void reverseMTTA_unbounded(int h, double* x, DTMC_transient_options &opts) const;
+
+
+
+/** Compute an expectation at time t, for all possible starting states.
+          Must be a DTMC.
+          Vectors are allocated so that x[s] is the expectation when the
+          chain starts in state s, for any legal state handle s.
+          Specifically, we determine
+
+            m[s] = t * x[s] 
+            x[s]= E [ f(state at time t) ], given we start in state s
+
+          @param  t   Time
+
+          @param  x   On input: function f() to compute expectation over.
+                      On output: expected value for each starting state.
+                      (Will decide the output later!)
+      */
+      void reverseMTTA_bounded(int h,int k, double* x, double* y,DTMC_transient_options &opts) const;
+
+
+
+/////////have to add expected time for bounded until formulas 
       /** Compute an expectation at time t, for all possible starting states.
           Must be a CTMC.
           Vectors are allocated so that x[s] is the expectation when the
@@ -453,7 +507,8 @@ namespace MCLib {
 
             x[s] = E [ f(state at time t) ], given we start in state s
 
-          @param  t   Time
+          @param  h   start time
+          @param  k   end time
 
           @param  x   On input: function f() to compute expectation over.
                       On output: expected value for each starting state.

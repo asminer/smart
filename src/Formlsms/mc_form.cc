@@ -13,7 +13,8 @@
 #include "../ExprLib/mod_vars.h"
 
 #include "../include/splay.h"
-
+#include "../Modules/statevects.h"
+#include "../Modules/expl_ssets.h"
 #include "../Formlsms/phase_hlm.h"
 
 // Explicit Markov chain library
@@ -292,6 +293,8 @@ void markov_def::FinalizeModel(OutputStream &ds)
   if (ds.IsActive()) foo->dumpDot(ds);
   ConstructionSuccess(bar);
   mymc = 0;
+
+  //foo->getPROC()->computeTransient(...);
 }
 
 
@@ -660,6 +663,461 @@ void mc_tta::Compute(traverse_data &x, expr** pass, int np)
   phase_hlm* foo = makeTTA(is_disc, init, accept, 0, proc->copyPROC());
   x.answer->setPtr(foo);
 }
+// **************************************************************************
+// *                              mc_reverse_tta class                              *
+// **************************************************************************
+
+class mc_reverse_tta : public model_internal {
+  bool is_disc;
+public:
+  mc_reverse_tta(bool disc);
+  virtual void Compute(traverse_data &x, expr** pass, int np);
+
+  inline void ExtractParams(traverse_data &x, expr** pass, int np, 
+    stochastic_lldsm* &cruft, shared_object* &ss) {
+
+      DCASSERT(x.answer);
+      DCASSERT(3==np);
+
+      model_instance* mi = grabModelInstance(x, pass[0]);
+      DCASSERT(mi);
+      hldsm* foo = mi->GetCompiledModel();
+      DCASSERT(foo);
+      lldsm* bar = foo->GetProcess();
+      DCASSERT(bar);
+      cruft = smart_cast<stochastic_lldsm*>(bar);
+      DCASSERT(cruft);
+
+      // make set of states
+      ss = cruft->getPotential(pass[1]);
+  }
+};
+
+mc_reverse_tta::mc_reverse_tta(bool disc)
+: model_internal(
+    em->STATEPROBS, "reverse_tta", 3
+  )
+{
+  is_disc = disc;
+  SetFormal(1,em->INT,"time");
+  SetFormal(2, em->STATESET, "q");
+  SetDocumentation("Returns the expected time to the reach absorbing q state, when starting from the transient states.");
+}
+#include <iostream>
+void mc_reverse_tta::Compute(traverse_data &x, expr** pass, int np)
+{
+  stochastic_lldsm* proc = 0;
+  shared_object* accept = 0;
+  
+  pass[1]->Compute(x);
+  if (!x.answer->isNormal()) return ;
+  long time = x.answer->getInt();
+  std::cerr << "time: " << time << "\n";
+
+  ExtractParams(x, pass, np, proc, accept);
+  if (0==proc || 0==accept) {
+    x.answer->setNull();
+    return;
+  }
+  
+  SafeCompute(pass[2], x);
+  if (!x.answer->isNormal()) {
+    return;
+  }
+
+  stateset* ss = smart_cast <stateset*>(Share(x.answer->getPtr()));
+  expl_stateset* e = dynamic_cast <expl_stateset*>(ss);
+  if (!e) {
+  
+    if (em->startError()) {
+      em->causedBy(this);
+      em->cerr() << "Sorry, condition() requires explicit statesets (for now)";
+      em->stopIO();
+    }
+    //Delete(p);
+    Delete(accept);
+    x.answer->setNull();
+    return;
+  }
+  const intset& eis = e->getExplicit();
+  double* probs=new double[proc->getNumStates()];
+  for(long p = 0; p < proc->getPROC()->getNumStates(); ++p) {
+     probs[p] =0;
+  }
+  for(long i=0;i<proc->getPROC()->getNumStates();i++){
+    //how to assign the values to probs
+    if(eis.contains(i)){
+      probs[i]=1;
+    }
+  }
+
+  double* aux=0;
+  
+  //statedist* init = proc->getInitialDistribution();
+  //phase_hlm* foo = makeTTA(is_disc, init, accept, 0, proc->copyPROC());
+  //proc->getPROC()->getNumStates();
+  //
+  // Set x to be all zeroes, except for the accepting state
+  //
+  /*
+  for (long i=proc->getNumStates()-1; i>=0; i--){
+  //long acc_state = proc->getAcceptingState();
+  if(proc->getPROC()->isAbsorbing(i)){
+  // DCASSERT(acc_state>0);
+  // DCASSERT(acc_state<proc->getPROC()->getNumStates());
+      probs[i] = 1;
+    }
+    else {
+      probs[i] = 0;
+    }
+  }
+  for(long p = 0; p < proc->getPROC()->getNumStates(); ++p) {
+    std::cerr << probs[p] << "\n";
+  }
+  */
+  //FIND tr4
+  //FIX formal param // use compute
+  bool res= proc->getPROC()->reverseTransientUnbounded(time,probs,aux);
+
+  // for(long p = 0; p < proc->getPROC()->getNumStates(); ++p) {
+  //   std::cerr << probs[p] << "\n";
+  // }
+
+  // std::cerr << acc_state << " " << probs[5] << "\n";
+  //how to set the pointer ??
+  stateprobs* sp= new stateprobs(proc,probs,proc->getPROC()->getNumStates());
+  x.answer->setPtr(sp);
+  
+}
+
+// **************************************************************************
+// *                              mc_reverse_tta_timed class                              *
+// **************************************************************************
+
+class mc_reverse_tta_timed : public model_internal {
+  bool is_disc;
+public:
+  mc_reverse_tta_timed(bool disc);
+  virtual void Compute(traverse_data &x, expr** pass, int np);
+
+  inline void ExtractParams(traverse_data &x, expr** pass, int np, 
+    stochastic_lldsm* &cruft, shared_object* &ss) {
+
+      DCASSERT(x.answer);
+      DCASSERT(5==np);
+
+      model_instance* mi = grabModelInstance(x, pass[0]);
+      DCASSERT(mi);
+      hldsm* foo = mi->GetCompiledModel();
+      DCASSERT(foo);
+      lldsm* bar = foo->GetProcess();
+      DCASSERT(bar);
+      cruft = smart_cast<stochastic_lldsm*>(bar);
+      DCASSERT(cruft);
+
+      // make set of states
+      ss = cruft->getPotential(pass[1]);
+  }
+};
+
+mc_reverse_tta_timed::mc_reverse_tta_timed(bool disc)
+: model_internal(
+    em->STATEPROBS, "reverse_tta_timed", 5
+  )
+{
+  is_disc = disc;
+  SetFormal(1,em->INT,"h"); //start time
+  SetFormal(2,em->INT,"k"); //end time
+  SetFormal(3, em->STATESET, "q_abs");
+  SetFormal(4, em->STATESET, "q_timed");
+  SetDocumentation("Returns the expected time to the reach absorbing b state, when starting from the transient states and following a states for h times.");
+}
+#include <iostream>
+void mc_reverse_tta_timed::Compute(traverse_data &x, expr** pass, int np)
+{
+  stochastic_lldsm* proc = 0;
+  shared_object* accept = 0;
+  
+  pass[1]->Compute(x);
+  if (!x.answer->isNormal()) return ;
+  long h = x.answer->getInt();
+  pass[2]->Compute(x);
+  if (!x.answer->isNormal()) return ;
+  long k = x.answer->getInt();
+  //std::cerr << "time: " << time << "\n";
+
+  ExtractParams(x, pass, np, proc, accept);
+  if (0==proc || 0==accept) {
+    x.answer->setNull();
+    return;
+  }
+  SafeCompute(pass[3], x);
+  if (!x.answer->isNormal()) {
+    return;
+  }
+
+  stateset* ss = smart_cast <stateset*>(Share(x.answer->getPtr()));
+  expl_stateset* e = dynamic_cast <expl_stateset*>(ss);
+  if (!e) {
+  
+    if (em->startError()) {
+      em->causedBy(this);
+      em->cerr() << "Sorry, condition() requires explicit statesets (for now)";
+      em->stopIO();
+    }
+    //Delete(p);
+    Delete(accept);
+    x.answer->setNull();
+    return;
+  }
+  const intset& eis = e->getExplicit();
+  double* probs=new double[proc->getPROC()->getNumStates()];
+  for(long p = 0; p < proc->getPROC()->getNumStates(); ++p) {
+     probs[p] =0;
+  }
+  for(long i=0;i<proc->getPROC()->getNumStates();i++){
+    //how to assign the values to probs
+    if(eis.contains(i)){
+      probs[i]=1;
+    }
+  }
+  SafeCompute(pass[4], x);
+  if (!x.answer->isNormal()) {
+    return;
+  }
+
+  stateset* ss_t = smart_cast <stateset*>(Share(x.answer->getPtr()));
+  expl_stateset* et = dynamic_cast <expl_stateset*>(ss_t);
+  if (!e) {
+  
+    if (em->startError()) {
+      em->causedBy(this);
+      em->cerr() << "Sorry, condition() requires explicit statesets (for now)";
+      em->stopIO();
+    }
+    //Delete(p);
+    Delete(accept);
+    x.answer->setNull();
+    return;
+  }
+  const intset& etis = et->getExplicit();
+  double* probs_t=new double[proc->getPROC()->getNumStates()];
+  for(long p = 0; p < proc->getPROC()->getNumStates(); ++p) {
+     probs_t[p] =0;
+  }
+  for(long i=0;i<proc->getPROC()->getNumStates();i++){
+    //how to assign the values to probs
+    if(etis.contains(i)){
+      probs_t[i]=1;
+      
+    }
+  }
+   for(long i=0;i<proc->getPROC()->getNumStates();i++){
+    std::cout << "filter " << probs_t[i] << "\n";
+   }
+
+   double* aux=0;
+  //statedist* init = proc->getInitialDistribution();
+  //phase_hlm* foo = makeTTA(is_disc, init, accept, 0, proc->copyPROC());
+  //proc->getPROC()->getNumStates();
+  //
+  // Set x to be all zeroes, except for the accepting state
+  //
+  /*
+  for (long i=proc->getNumStates()-1; i>=0; i--){
+  //long acc_state = proc->getAcceptingState();
+  if(proc->getPROC()->isAbsorbing(i)){
+  // DCASSERT(acc_state>0);
+  // DCASSERT(acc_state<proc->getPROC()->getNumStates());
+      probs[i] = 1;
+    }
+    else {
+      probs[i] = 0;
+    }
+  }
+  */
+  // for(long p = 0; p < proc->getPROC()->getNumStates(); ++p) {
+  //   std::cerr << probs[p] << "\n";
+  // }
+  
+  bool res= proc->getPROC()->reverseTransientBounded(h,k,probs,probs_t,aux);
+
+  // for(long p = 0; p < proc->getPROC()->getNumStates(); ++p) {
+  //   std::cerr << probs[p] << "\n";
+  // }
+
+  // std::cerr << acc_state << " " << probs[5] << "\n";
+  //how to set the pointer ??
+  stateprobs* sp= new stateprobs(proc,probs,proc->getPROC()->getNumStates());
+  x.answer->setPtr(sp);
+  
+}
+// **************************************************************************
+// *                              mc_conditional_tta class                              *
+// **************************************************************************
+
+class mc_conditional_tta : public model_internal {
+  bool is_disc;
+public:
+  mc_conditional_tta(bool disc);
+  virtual void Compute(traverse_data &x, expr** pass, int np);
+
+  inline void ExtractParams(traverse_data &x, expr** pass, int np, 
+    stochastic_lldsm* &cruft, shared_object* &ss) {
+
+      DCASSERT(x.answer);
+      DCASSERT(5==np);
+
+      model_instance* mi = grabModelInstance(x, pass[0]);
+      DCASSERT(mi);
+      hldsm* foo = mi->GetCompiledModel();
+      DCASSERT(foo);
+      lldsm* bar = foo->GetProcess();
+      DCASSERT(bar);
+      cruft = smart_cast<stochastic_lldsm*>(bar);
+      DCASSERT(cruft);
+
+      // make set of states
+      ss = cruft->getPotential(pass[1]);
+    }
+
+};
+
+mc_conditional_tta::mc_conditional_tta(bool disc)
+: model_internal(
+    em->STATEPROBS, "conditional_tta", 5
+  )
+{
+  is_disc = disc;
+  SetFormal(1,em->INT,"h time");
+  SetFormal(2,em->INT,"k time");
+  SetFormal(3,em->STATESET,"unbounded exp time");
+  SetFormal(4, em->STATESET, "set of good states");
+  SetDocumentation("Returns the conditional expected time to the reach absorbing q state, when starting from the transient states.");
+}
+#include<iostream>
+void mc_conditional_tta::Compute(traverse_data &x, expr** pass, int np)
+{
+  stochastic_lldsm* proc = 0;
+  shared_object* accept = 0;
+  
+  pass[1]->Compute(x);
+  if (!x.answer->isNormal()) return ;
+  long h = x.answer->getInt();
+  std::cerr << "time: " << time << "\n";
+  pass[2]->Compute(x);
+  if (!x.answer->isNormal()) return ;
+  long k = x.answer->getInt();
+
+  ExtractParams(x, pass, np, proc, accept);
+  if (0==proc || 0==accept) {
+    x.answer->setNull();
+    return;
+  }
+  //FIX here to get the probs from thee stateset
+  SafeCompute(pass[3], x);
+  if (!x.answer->isNormal()) {
+    return;
+  }
+
+  stateset* ss = smart_cast <stateset*>(Share(x.answer->getPtr()));
+  expl_stateset* e = dynamic_cast <expl_stateset*>(ss);
+  if (!e) {
+  
+    if (em->startError()) {
+      em->causedBy(this);
+      em->cerr() << "Sorry, condition() requires explicit statesets (for now)";
+      em->stopIO();
+    }
+    //Delete(p);
+    Delete(accept);
+    x.answer->setNull();
+    return;
+  }
+  const intset& eis = e->getExplicit();
+  double* probs=new double[proc->getPROC()->getNumStates()];
+  for(long p = 0; p < proc->getPROC()->getNumStates(); ++p) {
+     probs[p] =0;
+  }
+  for(long i=0;i<proc->getPROC()->getNumStates();i++){
+    //how to assign the values to probs
+    if(eis.contains(i)){
+      probs[i]=1;
+    }
+  }
+  SafeCompute(pass[4], x);
+  if (!x.answer->isNormal()) {
+    return;
+  }
+
+  stateset* ss_t = smart_cast <stateset*>(Share(x.answer->getPtr()));
+  expl_stateset* et = dynamic_cast <expl_stateset*>(ss_t);
+  if (!e) {
+  
+    if (em->startError()) {
+      em->causedBy(this);
+      em->cerr() << "Sorry, condition() requires explicit statesets (for now)";
+      em->stopIO();
+    }
+    //Delete(p);
+    Delete(accept);
+    x.answer->setNull();
+    return;
+  }
+  const intset& etis = et->getExplicit();
+  double* probs_t=new double[proc->getPROC()->getNumStates()];
+  for(long p = 0; p < proc->getPROC()->getNumStates(); ++p) {
+     probs_t[p] =0;
+  }
+  for(long i=0;i<proc->getPROC()->getNumStates();i++){
+    //how to assign the values to probs
+    if(etis.contains(i)){
+      probs_t[i]=1;
+      
+    }
+  }
+
+  double* aux=0;
+  
+  //statedist* init = proc->getInitialDistribution();
+  //phase_hlm* foo = makeTTA(is_disc, init, accept, 0, proc->copyPROC());
+  //proc->getPROC()->getNumStates();
+  //
+  // Set x to be all zeroes, except for the accepting state
+  //
+/*
+  for (long i=proc->getNumStates()-1; i>=0; i--){
+  //long acc_state = proc->getAcceptingState();
+  if(proc->getPROC()->isAbsorbing(i)){
+  // DCASSERT(acc_state>0);
+  // DCASSERT(acc_state<proc->getPROC()->getNumStates());
+      probs[i] = 1;
+    }
+    else {
+      probs[i] = 0;
+    }
+  }
+  */
+  double arr[4]={1,1,0,0};
+  //probs=arr;
+
+  for(long p = 0; p < proc->getPROC()->getNumStates(); ++p) {
+    std::cerr << "is this " <<probs[p] << "\n";
+  }
+  //FIND tr4
+  //FIX formal param // use compute
+  bool res= proc->getPROC()->reverseTransientConditional(h, k, probs, probs_t, aux);
+
+  for(long p = 0; p < proc->getPROC()->getNumStates(); ++p) {
+    std::cerr << probs[p] << "\n";
+  }
+
+  // std::cerr << acc_state << " " << probs[5] << "\n";
+  //how to set the pointer ??
+  stateprobs* sp= new stateprobs(proc,probs,proc->getPROC()->getNumStates());
+  x.answer->setPtr(sp);
+  
+}
 
 
 // ******************************************************************
@@ -770,6 +1228,9 @@ void init_mcform::FillSymbolTable(bool disc, formalism* mc)
   static symbol*  absorbing = 0;
   static symbol*  dTTA = 0;
   static symbol*  cTTA = 0;
+  static symbol*  rev_dTTA=0;
+  static symbol*  rev_timed_dTTA=0;
+  static symbol*  rev_cond_dTTA=0;
 
   if (!init)      init = new mc_init;
   if (!arcs)      arcs = new mc_arcs;
@@ -788,6 +1249,12 @@ void init_mcform::FillSymbolTable(bool disc, formalism* mc)
   if (disc) {
     if (!dTTA)  dTTA = new mc_tta(true);
     mcsyms->AddSymbol(  dTTA    );
+    if(!rev_dTTA) rev_dTTA= new mc_reverse_tta(true);
+    mcsyms->AddSymbol(rev_dTTA);
+    if(!rev_timed_dTTA) rev_timed_dTTA= new mc_reverse_tta_timed(true);
+    mcsyms->AddSymbol(rev_timed_dTTA);
+    if(!rev_cond_dTTA) rev_cond_dTTA= new mc_conditional_tta(true);
+    mcsyms->AddSymbol(rev_cond_dTTA);
   } else {
     if (!cTTA)  cTTA = new mc_tta(false);
     mcsyms->AddSymbol(  cTTA    );

@@ -102,6 +102,11 @@ public:
                             another state j, where from j we cannot reach st.
         */
         virtual bool isTransient(long st) const = 0;
+        /** Is the given state "absorbing".
+              @param  st  State (index) we are interested in.
+              @return true, iff from this state is an absorbing state and can never leave the state.
+        */
+        virtual bool isAbsorbing(long st) const = 0;
 
         /** Get the initial (time 0) distribution.
               @return    Shallow copy of initial distribution, or 0 on error.
@@ -140,6 +145,50 @@ public:
         virtual bool computeTransient(double t, double* probs, 
               double* aux, double* aux2) const;
  
+        /** Backward computation of expected time to reach an absorbing state, until time t.
+            This must be provided in derived classes, the
+            default behavior here is to print an error message.
+              @param  t       Time.
+              @param  probs   On input: An array of dimension getNumStates(), holding
+                              the probability for each state at time 0.
+        
+                              On output: An array of dimension getNumStates(), holding
+                              the expected time to reach the target state starting from each state.
+              @param  aux     Auxiliary vector, dimension getNumStates().
+
+              @return    true on success, false otherwise.
+        */
+        virtual bool reverseTransientUnbounded(int t, double* probs,double* aux) const;
+        /** Backward computation of expected time to reach an absorbing state, until time t.
+            This must be provided in derived classes, the
+            default behavior here is to print an error message.
+              @param  h       Start Time.
+              @param  k       End Time.
+              @param  probs   On input: An array of dimension getNumStates(), holding
+                              the probability for each state at time 0.
+        
+                              On output: An array of dimension getNumStates(), holding
+                              the expected time to reach the target state starting from each state.
+                              The computation is ...h+E[T]
+              @param  aux     Auxiliary vector, dimension getNumStates().
+
+              @return    true on success, false otherwise.
+        */
+        virtual bool reverseTransientBounded(int h, int k, double* probs, double* probs_t,double* aux) const;
+        /** Backward computation of conditional expected time to reach an absorbing state, until time t.
+            This must be provided in derived classes, the
+            default behavior here is to print an error message.
+              @param  t       Time.
+              @param  probs   On input: An array of dimension getNumStates(), holding
+                              the probability for each state at time 0.
+        
+                              On output: An array of dimension getNumStates(), holding
+                              the expected time to reach the target state starting from each state.
+              @param  aux     Auxiliary vector, dimension getNumStates().
+
+              @return    true on success, false otherwise.
+        */
+        virtual bool reverseTransientConditional(int h, int k, double* probs, double* q, double* aux) const;
         /** Accumulate expected time spent in each state, until time t.
             This must be provided in derived classes, the
             default behavior here is to print an error message.
@@ -527,7 +576,10 @@ public:
     DCASSERT(PROC);
     return PROC->reachesAcceptBy(t, x);
   }
-  
+  virtual bool isAbsorbing(long st) const {
+    DCASSERT(PROC);
+    return PROC->isAbsorbing(st);
+  }
 
 private:
   process* PROC;

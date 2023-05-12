@@ -824,6 +824,21 @@ statemsrs_type::statemsrs_type() : simple_type("statemsrs", "Measures for states
 
 // ******************************************************************
 // *                                                                *
+// *                      statevect_type class                      *
+// *                                                                *
+// ******************************************************************
+
+class statevect_type : public simple_type {
+public:
+  statevect_type();
+};
+
+statevect_type::statevect_type() : simple_type("statevect", "Measures for states", "A vector of real--valued measures over states, specifying a measure for each state.")
+{
+  setPrintable();
+}
+// ******************************************************************
+// *                                                                *
 // *                                                                *
 // *                           Functions                            *
 // *                                                                *
@@ -1141,6 +1156,91 @@ void condition_si::Compute(traverse_data &x, expr** pass, int np)
   Delete(p);
   Delete(e);
 }
+// ******************************************************************
+// *                       expected_timed_si class                       *
+// ******************************************************************
+#include <iostream>
+class expected_timed_si : public simple_internal {
+public:
+  expected_timed_si();
+  virtual void Compute(traverse_data &x, expr** pass, int np);
+};
+
+expected_timed_si::expected_timed_si() : simple_internal(em->STATEPROBS, "expected_timed", 2)
+{
+  DCASSERT(em->STATESET);
+  DCASSERT(em->STATEPROBS);
+  SetFormal(0, em->STATEPROBS, "p");
+  SetFormal(1, em->STATESET, "e");
+  SetDocumentation("Given a vector of expected time, build a new vector based on the fact that a state belongs to the set e.  Will return null if the value (according to p) of e is 0.");
+}
+
+void expected_timed_si::Compute(traverse_data &x, expr** pass, int np)
+{
+  DCASSERT(x.answer);
+  DCASSERT(2==np);
+  DCASSERT(0==x.aggregate);
+
+  SafeCompute(pass[0], x);
+  if (!x.answer->isNormal()) return;
+
+  stateprobs* p = smart_cast <stateprobs*>(Share(x.answer->getPtr()));
+  DCASSERT(p);
+
+  SafeCompute(pass[1], x);
+  if (!x.answer->isNormal()) {
+    Delete(p);
+    return;
+  }
+
+  stateset* ss = smart_cast <stateset*>(Share(x.answer->getPtr()));
+  DCASSERT(ss);
+
+  if (p->getParent() != ss->getParent()) {
+    if (em->startError()) {
+      em->causedBy(this);
+      em->cerr() << "State probability and set parameters to condition()";
+      em->newLine();
+      em->cerr() << "are from different model instances";
+      em->stopIO();
+    }
+    Delete(p);
+    Delete(ss);
+    x.answer->setNull();
+    return;
+  }
+
+  expl_stateset* e = dynamic_cast <expl_stateset*>(ss);
+  if (!e) {
+  
+    if (em->startError()) {
+      em->causedBy(this);
+      em->cerr() << "Sorry, condition() requires explicit statesets (for now)";
+      em->stopIO();
+    }
+    Delete(p);
+    Delete(ss);
+    x.answer->setNull();
+    return;
+  }
+
+  //
+  // Ready to do actual computation
+  //
+  
+  stateprobs* q = new stateprobs(p->getParent(), 0, 0, 0);
+  const intset& eis = e->getExplicit();
+  q->copyRestricted(p, &eis);
+  std::cerr << "here" << "\n";
+  x.answer->setPtr(q);
+  
+
+  //
+  // Cleanup 
+  //
+  Delete(p);
+  Delete(e);
+}
 
 // ******************************************************************
 // *                         prob_si  class                         *
@@ -1339,6 +1439,9 @@ bool init_statevects::execute()
   simple_type* t_statemsrs = new statemsrs_type;
   em->registerType(t_statemsrs);
 
+  simple_type* t_statevecs = new statevect_type;
+  em->registerType(t_statevecs);
+
   em->setFundamentalTypes();
 
   // Operators
@@ -1378,7 +1481,7 @@ bool init_statevects::execute()
   st->AddSymbol(  new ge_si                     );
   st->AddSymbol(  new lt_si                     );
   st->AddSymbol(  new le_si                     );
-
+  st->AddSymbol(  new expected_timed_si              );
   st->AddSymbol(  new condition_si              );
   st->AddSymbol(  new prob_si                   );
   st->AddSymbol(  new expected_si(t_stateprobs) );

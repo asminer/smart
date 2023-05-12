@@ -10,6 +10,7 @@ dtmc univ := {
 
   init(fr:7, so:3);
 
+
   arcs(
     fr : fr : 1,
     fr : so : 8,
@@ -27,6 +28,8 @@ dtmc univ := {
 
   stateset F := potential(in_state(fail));
   stateset G := potential(in_state(grad));
+  stateset a := EU(F,G);
+  stateset b := EF(G);
 
   stateprobs gradprobs1 := PF(G, 1.0);
   stateprobs gradprobs2 := PF(G, 2.0);
@@ -35,6 +38,12 @@ dtmc univ := {
   stateprobs gradprobs5 := PF(G, 5.0);
   stateprobs gradprobs6 := PF(G, 6.0);
   stateprobs gradprobs := PF(G, infinity);
+  stateset rs:= reachable;
+  ph int tta:=tta(is_absorbed);
+
+  stateset abs := potential(is_absorbed);
+
+  stateprobs prop1 := reverse_tta(5,abs);
 
   stateprobs allones := PF(F | G, infinity);
 };
@@ -49,6 +58,11 @@ compute(univ.gradprobs5);
 compute(univ.gradprobs6);
 compute(univ.gradprobs);
 compute(univ.allones);
+//compute(univ.a);
+print("test:::::", univ.a,"\n");
+print("test2::::::",univ.b,"\n");
+print("test3:::::::::",univ.prop1,"\n");
+print("absorbed======>", univ.abs,"\n");
 
 
 /*
@@ -104,7 +118,6 @@ compute(moduniv.gradprobs5);
 compute(moduniv.gradprobs6);
 compute(moduniv.gradprobs);
 compute(moduniv.allones);
-
 
 print("Graduation probabilities: 1 year (orig)\n\t", univ.gradprobs1, "\n");
 print("Graduation probabilities: 1 year (mod) \n\t", moduniv.gradprobs1, "\n\n");
