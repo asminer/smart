@@ -11,17 +11,17 @@ INFILE=""
 
 #
 # Helper: use color tests
-# 
+#
 color_yes() {
-  OK=" [1;32m  PASS  [0;39m"
-  BAIL=" [1;33m  MISS  [0;39m"
-  CHANGE=" [1;33m CHANGE [0;39m"
-  FAILED=" [1;31m FAILED [0;39m"
+  OK=" [0;32m  PASS  [0;39m"
+  BAIL=" [0;33m  MISS  [0;39m"
+  CHANGE=" [0;33m CHANGE [0;39m"
+  FAILED=" [0;31m FAILED [0;39m"
 }
 
 #
 # Helper: do not use color tests
-# 
+#
 color_no() {
       OK="   PASS   "
     BAIL="   MISS   "
@@ -110,7 +110,7 @@ while [ $# -gt "0" ]; do
   if [ "$1" == "--" ]; then
     shift
     INFILE=$1
-    shift 
+    shift
     continue
   fi
   # everything else: unknown or ignored switch
@@ -118,7 +118,7 @@ while [ $# -gt "0" ]; do
 done
 
 #
-# Run program 
+# Run program
 #
 MACHINE="`gcc -dumpmachine`"
 ICP="`pwd`/../src/icp"

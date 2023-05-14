@@ -96,10 +96,10 @@ class token {
             SATISFIABLE = 502
 		};
     private:
-        location where;
-        type tokenID;
         shared_string*  attribute;
         const ::type*   type_attrib;
+        location where;
+        type tokenID;
         modifier        modif_attrib;
         bool            bool_const;
 
