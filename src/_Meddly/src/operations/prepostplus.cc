@@ -1,10 +1,9 @@
-
 /*
     Meddly: Multi-terminal and Edge-valued Decision Diagram LibrarY.
     Copyright (C) 2009, Iowa State University Research Foundation, Inc.
 
     This library is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Lesser General Public License as published 
+    it under the terms of the GNU Lesser General Public License as published
     by the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
@@ -17,9 +16,6 @@
     along with this library.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
 #include "../defines.h"
 #include "prepostplus.h"
 #include "apply_base.h"
@@ -42,20 +38,20 @@ namespace MEDDLY {
 
 class MEDDLY::prepostplus_evplus : public generic_binary_evplus {
   public:
-    prepostplus_evplus(const binary_opname* opcode, expert_forest* arg1,
+    prepostplus_evplus(binary_opname* opcode, expert_forest* arg1,
       expert_forest* arg2, expert_forest* res);
 
   protected:
-    virtual compute_table::entry_key* findResult(long aev, node_handle a,
+    virtual ct_entry_key* findResult(long aev, node_handle a,
       long bev, node_handle b, long& cev, node_handle &c);
-    virtual void saveResult(compute_table::entry_key* Key,
+    virtual void saveResult(ct_entry_key* Key,
       long aev, node_handle a, long bev, node_handle b, long cev, node_handle c);
 
     virtual bool checkTerminals(long aev, node_handle a, long bev, node_handle b,
       long& cev, node_handle& c);
 };
 
-MEDDLY::prepostplus_evplus::prepostplus_evplus(const binary_opname* opcode,
+MEDDLY::prepostplus_evplus::prepostplus_evplus(binary_opname* opcode,
   expert_forest* arg1, expert_forest* arg2, expert_forest* res)
   : generic_binary_evplus(opcode, arg1, arg2, res)
 {
@@ -65,10 +61,10 @@ MEDDLY::prepostplus_evplus::prepostplus_evplus(const binary_opname* opcode,
   operationCommutes();
 }
 
-MEDDLY::compute_table::entry_key* MEDDLY::prepostplus_evplus::findResult(long aev, node_handle a,
+MEDDLY::ct_entry_key* MEDDLY::prepostplus_evplus::findResult(long aev, node_handle a,
   long bev, node_handle b, long& cev, node_handle &c)
 {
-  compute_table::entry_key* CTsrch = CT0->useEntryKey(etype[0], 0);
+  ct_entry_key* CTsrch = CT0->useEntryKey(etype[0], 0);
   MEDDLY_DCASSERT(CTsrch);
   MEDDLY_DCASSERT(!can_commute);
   CTsrch->writeL(0);
@@ -87,7 +83,7 @@ MEDDLY::compute_table::entry_key* MEDDLY::prepostplus_evplus::findResult(long ae
   return 0;
 }
 
-void MEDDLY::prepostplus_evplus::saveResult(compute_table::entry_key* Key,
+void MEDDLY::prepostplus_evplus::saveResult(ct_entry_key* Key,
   long aev, node_handle a, long bev, node_handle b, long cev, node_handle c)
 {
   CTresult[0].reset();
@@ -121,13 +117,13 @@ bool MEDDLY::prepostplus_evplus::checkTerminals(long aev, node_handle a, long be
 
 class MEDDLY::preplus_evplus : public prepostplus_evplus {
   public:
-    preplus_evplus(const binary_opname* opcode, expert_forest* arg1,
+    preplus_evplus(binary_opname* opcode, expert_forest* arg1,
       expert_forest* arg2, expert_forest* res);
 
     virtual void compute(long aev, node_handle a, long bev, node_handle b, long& cev, node_handle &c);
 };
 
-MEDDLY::preplus_evplus::preplus_evplus(const binary_opname* opcode,
+MEDDLY::preplus_evplus::preplus_evplus(binary_opname* opcode,
   expert_forest* arg1, expert_forest* arg2, expert_forest* res)
   : prepostplus_evplus(opcode, arg1, arg2, res)
 {
@@ -139,7 +135,7 @@ void MEDDLY::preplus_evplus::compute(long aev, node_handle a, long bev, node_han
   if (checkTerminals(aev, a, bev, b, cev, c))
     return;
 
-  compute_table::entry_key* Key = findResult(aev, a, bev, b, cev, c);
+  ct_entry_key* Key = findResult(aev, a, bev, b, cev, c);
   if (0==Key) return;
 
   // Get level information
@@ -157,12 +153,12 @@ void MEDDLY::preplus_evplus::compute(long aev, node_handle a, long bev, node_han
   // Initialize readers
   unpacked_node *A = (aLevel < resultLevel)
     ? unpacked_node::newRedundant(arg1F, resultLevel, 0L, a, true)
-    : unpacked_node::newFromNode(arg1F, a, true)
+    : arg1F->newUnpacked(a, FULL_ONLY)
   ;
 
   unpacked_node *B = (bLevel < resultLevel)
     ? unpacked_node::newRedundant(arg2F, resultLevel, 0L, b, true)
-    : unpacked_node::newFromNode(arg2F, b, true)
+    : arg2F->newUnpacked(b, FULL_ONLY)
   ;
 
   // do computation
@@ -176,7 +172,7 @@ void MEDDLY::preplus_evplus::compute(long aev, node_handle a, long bev, node_han
     int dLevel = arg1F->getNodeLevel(A->d(i));
     unpacked_node *D = (dLevel != -resultLevel)
       ? unpacked_node::newIdentity(arg1F, -resultLevel, i, 0L, A->d(i), true)
-      : unpacked_node::newFromNode(arg1F, A->d(i), true);
+      : arg1F->newUnpacked(A->d(i), FULL_ONLY);
 
     unpacked_node* nb2 = unpacked_node::newFull(resF, -resultLevel, resultSize);
 
@@ -228,13 +224,13 @@ void MEDDLY::preplus_evplus::compute(long aev, node_handle a, long bev, node_han
 
 class MEDDLY::postplus_evplus : public prepostplus_evplus {
   public:
-    postplus_evplus(const binary_opname* opcode, expert_forest* arg1,
+    postplus_evplus(binary_opname* opcode, expert_forest* arg1,
       expert_forest* arg2, expert_forest* res);
 
     virtual void compute(long aev, node_handle a, long bev, node_handle b, long& cev, node_handle &c);
 };
 
-MEDDLY::postplus_evplus::postplus_evplus(const binary_opname* opcode,
+MEDDLY::postplus_evplus::postplus_evplus(binary_opname* opcode,
   expert_forest* arg1, expert_forest* arg2, expert_forest* res)
   : prepostplus_evplus(opcode, arg1, arg2, res)
 {
@@ -246,7 +242,7 @@ void MEDDLY::postplus_evplus::compute(long aev, node_handle a, long bev, node_ha
   if (checkTerminals(aev, a, bev, b, cev, c))
     return;
 
-  compute_table::entry_key* Key = findResult(aev, a, bev, b, cev, c);
+  ct_entry_key* Key = findResult(aev, a, bev, b, cev, c);
   if (0==Key) return;
 
   // Get level information
@@ -264,12 +260,12 @@ void MEDDLY::postplus_evplus::compute(long aev, node_handle a, long bev, node_ha
   // Initialize readers
   unpacked_node *A = (aLevel < resultLevel)
     ? unpacked_node::newRedundant(arg1F, resultLevel, 0L, a, true)
-    : unpacked_node::newFromNode(arg1F, a, true)
+    : arg1F->newUnpacked(a, FULL_ONLY)
   ;
 
   unpacked_node *B = (bLevel < resultLevel)
     ? unpacked_node::newRedundant(arg2F, resultLevel, 0L, b, true)
-    : unpacked_node::newFromNode(arg2F, b, true)
+    : arg2F->newUnpacked(b, FULL_ONLY)
   ;
 
   // do computation
@@ -283,7 +279,7 @@ void MEDDLY::postplus_evplus::compute(long aev, node_handle a, long bev, node_ha
     int dLevel = arg1F->getNodeLevel(A->d(i));
     unpacked_node *D = (dLevel != -resultLevel)
       ? unpacked_node::newIdentity(arg1F, -resultLevel, i, 0L, A->d(i), true)
-      : unpacked_node::newFromNode(arg1F, A->d(i), true);
+      : arg1F->newUnpacked(A->d(i), FULL_ONLY);
 
     unpacked_node* nb2 = unpacked_node::newFull(resF, -resultLevel, resultSize);
 
@@ -337,7 +333,7 @@ class MEDDLY::preplus_opname : public binary_opname {
   public:
     preplus_opname();
     virtual binary_operation* buildOperation(expert_forest* a1,
-      expert_forest* a2, expert_forest* r) const;
+      expert_forest* a2, expert_forest* r);
 };
 
 MEDDLY::preplus_opname::preplus_opname()
@@ -347,7 +343,7 @@ MEDDLY::preplus_opname::preplus_opname()
 
 MEDDLY::binary_operation*
 MEDDLY::preplus_opname::buildOperation(expert_forest* a1, expert_forest* a2,
-  expert_forest* r) const
+  expert_forest* r)
 {
   if (0==a1 || 0==a2 || 0==r) return 0;
 
@@ -360,9 +356,9 @@ MEDDLY::preplus_opname::buildOperation(expert_forest* a1, expert_forest* a2,
 
   // Exception: EV+MXD + EVMDD = EV+MXD
   if (
-    a1->getEdgeLabeling() == forest::EVPLUS ||
-    a2->getEdgeLabeling() == forest::EVPLUS ||
-    r->getEdgeLabeling() == forest::EVPLUS ||
+    a1->getEdgeLabeling() == edge_labeling::EVPLUS ||
+    a2->getEdgeLabeling() == edge_labeling::EVPLUS ||
+    r->getEdgeLabeling() == edge_labeling::EVPLUS ||
     a1->isForRelations() ||
     !a2->isForRelations() ||
     r->isForRelations()
@@ -383,7 +379,7 @@ class MEDDLY::postplus_opname : public binary_opname {
   public:
     postplus_opname();
     virtual binary_operation* buildOperation(expert_forest* a1,
-      expert_forest* a2, expert_forest* r) const;
+      expert_forest* a2, expert_forest* r);
 };
 
 MEDDLY::postplus_opname::postplus_opname()
@@ -393,7 +389,7 @@ MEDDLY::postplus_opname::postplus_opname()
 
 MEDDLY::binary_operation*
 MEDDLY::postplus_opname::buildOperation(expert_forest* a1, expert_forest* a2,
-  expert_forest* r) const
+  expert_forest* r)
 {
   if (0==a1 || 0==a2 || 0==r) return 0;
 
@@ -406,9 +402,9 @@ MEDDLY::postplus_opname::buildOperation(expert_forest* a1, expert_forest* a2,
 
   // Exception: EV+MXD + EVMDD = EV+MXD
   if (
-    a1->getEdgeLabeling() == forest::EVPLUS ||
-    a2->getEdgeLabeling() == forest::EVPLUS ||
-    r->getEdgeLabeling() == forest::EVPLUS ||
+    a1->getEdgeLabeling() == edge_labeling::EVPLUS ||
+    a2->getEdgeLabeling() == edge_labeling::EVPLUS ||
+    r->getEdgeLabeling() == edge_labeling::EVPLUS ||
     a1->isForRelations() ||
     !a2->isForRelations() ||
     r->isForRelations()

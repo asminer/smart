@@ -1,10 +1,9 @@
-
 /*
     Meddly: Multi-terminal and Edge-valued Decision Diagram LibrarY.
     Copyright (C) 2009, Iowa State University Research Foundation, Inc.
 
     This library is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Lesser General Public License as published 
+    it under the terms of the GNU Lesser General Public License as published
     by the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
@@ -17,10 +16,11 @@
     along with this library.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef CT_STYLES_H
-#define CT_STYLES_H
+#ifndef MEDDLY_CT_STYLES_H
+#define MEDDLY_CT_STYLES_H
 
-#include "../defines.h"
+#include "node_storage.h"
+#include "compute_table.h"
 
 
 // **********************************************************************
@@ -47,7 +47,7 @@ namespace MEDDLY {
 class MEDDLY::monolithic_chained_style : public compute_table_style {
   public:
     monolithic_chained_style();
-    virtual compute_table* create(const ct_initializer::settings &s) const;
+    virtual compute_table* create(const ct_settings &s) const;
     virtual bool usesMonolithic() const;
 };
 
@@ -60,7 +60,7 @@ class MEDDLY::monolithic_chained_style : public compute_table_style {
 class MEDDLY::monolithic_unchained_style : public compute_table_style {
   public:
     monolithic_unchained_style();
-    virtual compute_table* create(const ct_initializer::settings &s) const;
+    virtual compute_table* create(const ct_settings &s) const;
     virtual bool usesMonolithic() const;
 };
 
@@ -73,7 +73,7 @@ class MEDDLY::monolithic_unchained_style : public compute_table_style {
 class MEDDLY::operation_chained_style : public compute_table_style {
   public:
     operation_chained_style();
-    virtual compute_table* create(const ct_initializer::settings &s, 
+    virtual compute_table* create(const ct_settings &s,
       operation* op, unsigned slot) const;
     virtual bool usesMonolithic() const;
 };
@@ -87,7 +87,7 @@ class MEDDLY::operation_chained_style : public compute_table_style {
 class MEDDLY::operation_unchained_style : public compute_table_style {
   public:
     operation_unchained_style();
-    virtual compute_table* create(const ct_initializer::settings &s, 
+    virtual compute_table* create(const ct_settings &s,
       operation* op, unsigned slot) const;
     virtual bool usesMonolithic() const;
 };

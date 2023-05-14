@@ -1,10 +1,9 @@
-
 /*
     Meddly: Multi-terminal and Edge-valued Decision Diagram LibrarY.
     Copyright (C) 2009, Iowa State University Research Foundation, Inc.
 
     This library is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Lesser General Public License as published 
+    it under the terms of the GNU Lesser General Public License as published
     by the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
@@ -20,6 +19,14 @@
 
 
 #include "defines.h"
+#include "dd_edge.h"
+#include "forest.h"
+#include "encoders.h"
+#include "io.h"
+
+#include "opname.h"
+#include "oper_binary.h"
+#include "ops_builtin.h"
 
 // #define DEBUG_CLEANUP
 
@@ -160,25 +167,25 @@ void MEDDLY::dd_edge::setForest(forest* f)
 //void MEDDLY::dd_edge::getEdgeValue(int& ev) const
 //{
 //  MEDDLY_DCASSERT(parent);
-//  MEDDLY_DCASSERT(forest::MULTI_TERMINAL != parent->getEdgeLabeling());
-//  MEDDLY_DCASSERT(forest::INTEGER == parent->getRangeType());
+//  MEDDLY_DCASSERT(edge_labeling::MULTI_TERMINAL != parent->getEdgeLabeling());
+//  MEDDLY_DCASSERT(range_type::INTEGER == parent->getRangeType());
 //  expert_forest::EVencoder<int>::readValue(&raw_value, ev);
 //}
 
 void MEDDLY::dd_edge::getEdgeValue(long& ev) const
 {
   MEDDLY_DCASSERT(parent);
-  MEDDLY_DCASSERT(forest::MULTI_TERMINAL != parent->getEdgeLabeling());
-  MEDDLY_DCASSERT(forest::INTEGER == parent->getRangeType());
-  expert_forest::EVencoder<long>::readValue(&raw_value, ev);
+  MEDDLY_DCASSERT(edge_labeling::MULTI_TERMINAL != parent->getEdgeLabeling());
+  MEDDLY_DCASSERT(range_type::INTEGER == parent->getRangeType());
+  EVencoder<long>::readValue(&raw_value, ev);
 }
 
 void MEDDLY::dd_edge::getEdgeValue(float& ev) const
 {
   MEDDLY_DCASSERT(parent);
-  MEDDLY_DCASSERT(forest::MULTI_TERMINAL != parent->getEdgeLabeling());
-  MEDDLY_DCASSERT(forest::REAL == parent->getRangeType());
-  expert_forest::EVencoder<float>::readValue(&raw_value, ev);
+  MEDDLY_DCASSERT(edge_labeling::MULTI_TERMINAL != parent->getEdgeLabeling());
+  MEDDLY_DCASSERT(range_type::REAL == parent->getRangeType());
+  EVencoder<float>::readValue(&raw_value, ev);
 }
 
 int MEDDLY::dd_edge::getLevel() const
@@ -223,23 +230,30 @@ void MEDDLY::dd_edge::setEdgeValue(int value)
 void MEDDLY::dd_edge::setEdgeValue(long value)
 {
   MEDDLY_DCASSERT(parent);
-  MEDDLY_DCASSERT(forest::MULTI_TERMINAL != parent->getEdgeLabeling());
-  MEDDLY_DCASSERT(forest::INTEGER == parent->getRangeType());
-  expert_forest::EVencoder<long>::writeValue(&raw_value, value);
+  MEDDLY_DCASSERT(edge_labeling::MULTI_TERMINAL != parent->getEdgeLabeling());
+  MEDDLY_DCASSERT(range_type::INTEGER == parent->getRangeType());
+  EVencoder<long>::writeValue(&raw_value, value);
 }
 
 void MEDDLY::dd_edge::setEdgeValue(float value)
 {
   MEDDLY_DCASSERT(parent);
-  MEDDLY_DCASSERT(forest::MULTI_TERMINAL != parent->getEdgeLabeling());
-  MEDDLY_DCASSERT(forest::REAL == parent->getRangeType());
-  expert_forest::EVencoder<float>::writeValue(&raw_value, value);
+  MEDDLY_DCASSERT(edge_labeling::MULTI_TERMINAL != parent->getEdgeLabeling());
+  MEDDLY_DCASSERT(range_type::REAL == parent->getRangeType());
+  EVencoder<float>::writeValue(&raw_value, value);
 }
 
 void MEDDLY::dd_edge::setLabel(const char* L)
 {
   if (label) free(label);
   label = strdup(L);
+}
+
+double MEDDLY::dd_edge::getCardinality() const
+{
+  double c;
+  apply(CARDINALITY, *this, c);
+  return c;
 }
 
 unsigned MEDDLY::dd_edge::getNodeCount() const
@@ -256,62 +270,70 @@ unsigned MEDDLY::dd_edge::getEdgeCount(bool countZeroes) const
 // Operator +=
 MEDDLY::dd_edge& MEDDLY::dd_edge::operator+=(const dd_edge& e)
 {
-  if (opPlus == 0) {
-    if (parent->getRangeType() == forest::BOOLEAN)
-      opPlus = getOperation(UNION, *this, e, *this);
-    else
-      opPlus = getOperation(PLUS, *this, e, *this);
-    MEDDLY_DCASSERT(opPlus != 0);
-  }
-  opPlus->computeTemp(*this, e, *this);
-  // apply will call set() which in turn will set updateNeeded to true
-  return *this;
+    if (!opPlus) {
+        binary_opname* theop;
+        theop = (parent->getRangeType() == range_type::BOOLEAN)
+                    ? UNION()
+                    : PLUS();
+        MEDDLY_DCASSERT(theop);
+        opPlus = theop->getOperation(*this, e, *this);
+        MEDDLY_DCASSERT(opPlus);
+    }
+    opPlus->computeTemp(*this, e, *this);
+    // apply will call set() which in turn will set updateNeeded to true
+    return *this;
 }
 
 
 // Operator *=
 MEDDLY::dd_edge& MEDDLY::dd_edge::operator*=(const dd_edge& e)
 {
-  if (opStar == 0) {
-    if (parent->getRangeType() == forest::BOOLEAN)
-      opStar = getOperation(INTERSECTION, *this, e, *this);
-    else
-      opStar = getOperation(MULTIPLY, *this, e, *this);
-    MEDDLY_DCASSERT(opStar != 0);
-  }
-  opStar->computeTemp(*this, e, *this);
-  // apply will call set() which in turn will set updateNeeded to true
-  return *this;
+    if (!opStar) {
+        binary_opname* theop;
+        theop = (parent->getRangeType() == range_type::BOOLEAN)
+                    ? INTERSECTION()
+                    : MULTIPLY();
+        MEDDLY_DCASSERT(theop);
+        opStar = theop->getOperation(*this, e, *this);
+        MEDDLY_DCASSERT(opStar);
+    }
+    opStar->computeTemp(*this, e, *this);
+    // apply will call set() which in turn will set updateNeeded to true
+    return *this;
 }
 
 
 // Operator -=
 MEDDLY::dd_edge& MEDDLY::dd_edge::operator-=(const dd_edge& e)
 {
-  if (opMinus == 0) {
-    if (parent->getRangeType() == forest::BOOLEAN)
-      opMinus = getOperation(DIFFERENCE, *this, e, *this);
-    else
-      opMinus = getOperation(MINUS, *this, e, *this);
-    MEDDLY_DCASSERT(opMinus != 0);
-  }
-  opMinus->computeTemp(*this, e, *this);
-  // apply will call set() which in turn will set updateNeeded to true
-  return *this;
+    if (!opMinus) {
+        binary_opname* theop;
+        theop = (parent->getRangeType() == range_type::BOOLEAN)
+                    ? DIFFERENCE()
+                    : MINUS();
+        MEDDLY_DCASSERT(theop);
+        opMinus = theop->getOperation(*this, e, *this);
+        MEDDLY_DCASSERT(opMinus);
+    }
+    opMinus->computeTemp(*this, e, *this);
+    // apply will call set() which in turn will set updateNeeded to true
+    return *this;
 }
 
 
 // Operator /=
 MEDDLY::dd_edge& MEDDLY::dd_edge::operator/=(const dd_edge& e)
 {
-  if (opDivide == 0) {
-    opDivide = getOperation(DIVIDE, *this, e, *this);
-  }
-  opDivide->computeTemp(*this, e, *this);
-  // apply will call set() which in turn will set updateNeeded to true
-  return *this;
+    if (!opDivide) {
+        binary_opname* theop = DIVIDE();
+        MEDDLY_DCASSERT(theop);
+        opDivide = theop->getOperation(*this, e, *this);
+        MEDDLY_DCASSERT(opDivide);
+    }
+    opDivide->computeTemp(*this, e, *this);
+    // apply will call set() which in turn will set updateNeeded to true
+    return *this;
 }
-
 
 // Display the edge information.
 void MEDDLY::dd_edge::show(output &strm, int verbosity) const
@@ -321,11 +343,11 @@ void MEDDLY::dd_edge::show(output &strm, int verbosity) const
   strm << "(Forest Addr: ";
   strm.put_hex((unsigned long) parent);
   strm << ", ";
-  
+
   strm << "transparent: ";
   eParent->showTerminal(strm, eParent->getTransparentNode());
   strm << ", ";
-  
+
   if (eParent->isTerminalNode(node)) {
     strm << "node: ";
     eParent->showTerminal(strm, node);
@@ -335,7 +357,7 @@ void MEDDLY::dd_edge::show(output &strm, int verbosity) const
     strm << "node: " << long(node) << ", ";
   }
   if (!eParent->isMultiTerminal()) {
-    if (eParent->getRangeType() == forest::REAL) {
+    if (eParent->getRangeType() == range_type::REAL) {
       float ev;
       getEdgeValue(ev);
       strm << "value: " << ev << ", ";
@@ -354,7 +376,7 @@ void MEDDLY::dd_edge::show(output &strm, int verbosity) const
   if (verbosity == 2 || verbosity == 3) {
     if (eParent->isMultiTerminal()) {
       strm.put("MT");
-    } 
+    }
     if (eParent->isEVPlus()) {
       strm.put("EV+");
     }
@@ -436,3 +458,4 @@ void MEDDLY::dd_edge::writePicture(const char* filename, const char* extension) 
     eParent->writeNodeGraphPicture(filename, extension, &node, &label, 1);
   }
 }
+

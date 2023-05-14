@@ -4,7 +4,7 @@
     Copyright (C) 2009, Iowa State University Research Foundation, Inc.
 
     This library is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Lesser General Public License as published 
+    it under the terms of the GNU Lesser General Public License as published
     by the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
@@ -23,7 +23,6 @@
 */
 
 #include "../src/meddly.h"
-#include "../src/meddly_expert.h"
 #include "../src/timer.h"
 
 using namespace MEDDLY;
@@ -57,7 +56,7 @@ inline double factorial(int n)
 */
 void Exchange(int va, int vb, int N, dd_edge &answer)
 {
-  expert_forest* EF = (expert_forest*) answer.getForest(); 
+  expert_forest* EF = (expert_forest*) answer.getForest();
 
   /* We're doing this BY HAND which means a 4 levels of nodes */
 
@@ -65,7 +64,7 @@ void Exchange(int va, int vb, int N, dd_edge &answer)
   for (int ia=0; ia<N; ia++) {
     unpacked_node* nap = unpacked_node::newFull(EF, -va, N);
     for (int ja=0; ja<N; ja++) {
-      
+
       // WANT vb == va' and vb' == va, so...
 
       // Make a singleton for vb' == va (index ia)
@@ -87,7 +86,7 @@ void Exchange(int va, int vb, int N, dd_edge &answer)
 }
 
 /*
-    Build monolithic next-state relation, using "array values" 
+    Build monolithic next-state relation, using "array values"
     state variables.  The forest must be IDENTITY REDUCED.
 */
 void ValueNSF(int N, dd_edge &answer)
@@ -102,7 +101,7 @@ void ValueNSF(int N, dd_edge &answer)
 }
 
 /*
-    Build partitioned next-state relation, using "array values" 
+    Build partitioned next-state relation, using "array values"
     state variables.  The forest must be IDENTITY REDUCED.
 */
 void ValueNSF(int N, satpregen_opname::pregen_relation* nsf)
@@ -127,7 +126,7 @@ void ValueNSF(int N, satpregen_opname::pregen_relation* nsf)
 */
 void AltExchange(int pa, int pb, int N, int K, dd_edge &answer)
 {
-  expert_forest* EF = (expert_forest*) answer.getForest(); 
+  expert_forest* EF = (expert_forest*) answer.getForest();
 
   /*
       Do the same thing at every level:
@@ -165,7 +164,7 @@ void AltExchange(int pa, int pb, int N, int K, dd_edge &answer)
 }
 
 /*
-    Build monolithic next-state relation, using "array positions" 
+    Build monolithic next-state relation, using "array positions"
     state variables.  The forest must be IDENTITY REDUCED.
 */
 void PositionNSF(int N, dd_edge &answer)
@@ -180,7 +179,7 @@ void PositionNSF(int N, dd_edge &answer)
 }
 
 /*
-    Build partitioned next-state relation, using "array positions" 
+    Build partitioned next-state relation, using "array positions"
     state variables.  The forest must be IDENTITY REDUCED.
 */
 void PositionNSF(int N, satpregen_opname::pregen_relation* nsf)
@@ -206,7 +205,7 @@ void printStats(const char* who, const forest* f)
   ef->reportStats(meddlyout, "\t",
     expert_forest::HUMAN_READABLE_MEMORY  |
     expert_forest::BASIC_STATS | expert_forest::EXTRA_STATS |
-    expert_forest::STORAGE_STATS | expert_forest::HOLE_MANAGER_STATS | 
+    expert_forest::STORAGE_STATS | expert_forest::HOLE_MANAGER_STATS |
     expert_forest::HOLE_MANAGER_DETAILED
   );
   meddlyout.flush();
@@ -253,16 +252,16 @@ void runWithArgs(int N, char method, bool alternate)
   int* initial = new int[N+1];
   initial[0] = 0;
   for (int i=1; i<=N; i++) initial[i] = i-1;
-  forest::policies p(false);
-  forest* mdd = D->createForest(0, forest::BOOLEAN, forest::MULTI_TERMINAL, p);
+  policies p(false);
+  forest* mdd = D->createForest(0, range_type::BOOLEAN, edge_labeling::MULTI_TERMINAL, p);
   dd_edge init_state(mdd);
   mdd->createEdge(&initial, 1, init_state);
   delete[] initial;
-  
+
   /*
      Build next-state function
   */
-  forest* mxd = D->createForest(1, forest::BOOLEAN, forest::MULTI_TERMINAL);
+  forest* mxd = D->createForest(1, range_type::BOOLEAN, edge_labeling::MULTI_TERMINAL);
   dd_edge nsf(mxd);
   satpregen_opname::pregen_relation* ensf = 0;
   specialized_operation* sat = 0;
@@ -328,10 +327,10 @@ void runWithArgs(int N, char method, bool alternate)
         if ('k'==method)  printf(" by levels\n");
         else              printf(" by events\n");
         fflush(stdout);
-        if (0==SATURATION_FORWARD) {
+        if (!SATURATION_FORWARD()) {
           throw error(error::UNKNOWN_OPERATION, __FILE__, __LINE__);
         }
-        sat = SATURATION_FORWARD->buildOperation(ensf);
+        sat = SATURATION_FORWARD()->buildOperation(ensf);
         if (0==sat) {
           throw error(error::INVALID_OPERATION, __FILE__, __LINE__);
         }

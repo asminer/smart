@@ -1,10 +1,9 @@
-
 /*
     Meddly: Multi-terminal and Edge-valued Decision Diagram LibrarY.
     Copyright (C) 2009, Iowa State University Research Foundation, Inc.
 
     This library is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Lesser General Public License as published 
+    it under the terms of the GNU Lesser General Public License as published
     by the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
@@ -23,7 +22,13 @@
 
 #include "simple.h"
 
+#include "../defines.h"
 #include "../hash_stream.h"
+#include "../unpacked_node.h"
+#include "../memory.h"
+#include "../forest.h"
+
+#include <cassert>
 
 // #define DEBUG_ENCODING
 // #define DEBUG_DECODING
@@ -34,7 +39,7 @@
 // #define MEMORY_TRACE
 // #define DEEP_MEMORY_TRACE
 
-inline char slotsForBytes(int bytes) 
+inline char slotsForBytes(int bytes)
 {
   int sl = bytes / sizeof(MEDDLY::node_handle);
   if (bytes % sizeof(MEDDLY::node_handle)) sl++;
@@ -87,7 +92,7 @@ namespace MEDDLY {
                   {       : If sparse storage, there are -size pointers
                   {       : and entry i gives a pointer but the index
                   {       : corresponds to index[i], below.
-          
+
                   {       : Index entries.
                   {       : Unused for full storage.
       index ------{       : If sparse storage, entry i gives the
@@ -124,14 +129,14 @@ class MEDDLY::simple_separated : public node_storage {
     virtual void collectGarbage(bool shrink);
     virtual void reportStats(output &s, const char* pad, unsigned flags) const;
 
-    virtual node_address makeNode(node_handle p, const unpacked_node &nb, 
+    virtual node_address makeNode(node_handle p, const unpacked_node &nb,
         node_storage_flags opt);
 
     virtual void unlinkDownAndRecycle(node_address addr);
     virtual void markDownPointers(node_address addr);
 
     virtual bool areDuplicates(node_address addr, const unpacked_node &nr) const;
-    virtual void fillUnpacked(unpacked_node &nr, node_address addr, unpacked_node::storage_style) const;
+    virtual void fillUnpacked(unpacked_node &nr, node_address addr, node_storage_flags) const;
 
     virtual unsigned hashNode(int level, node_address addr) const;
     virtual int getSingletonIndex(node_address addr, node_handle &down) const;
@@ -150,7 +155,7 @@ class MEDDLY::simple_separated : public node_storage {
     virtual void updateData(node_handle* d);
     virtual node_address firstNodeAddress() const;
     virtual void dumpInternalInfo(output &) const;
-    virtual node_address 
+    virtual node_address
     dumpInternalNode(output &, node_address addr, unsigned flags) const;
     virtual void dumpInternalTail(output &) const;
 
@@ -160,7 +165,7 @@ class MEDDLY::simple_separated : public node_storage {
   private:
       /// How many int slots would be required for a node with given size.
       ///   @param  sz      Number of downward pointers.
-      ///   @param  sparse  True for sparse storage, otherwise full. 
+      ///   @param  sparse  True for sparse storage, otherwise full.
       inline int slotsForNode(int sz, bool sparse) const {
         int node_slots = sparse ? (2+slots_per_edge) * sz : (1+slots_per_edge) * sz;
         return extra_slots + unhashed_slots + hashed_slots + node_slots;
@@ -175,7 +180,7 @@ class MEDDLY::simple_separated : public node_storage {
       inline static unsigned int getRawSize(int size, bool sparse, bool extensible) {
         return (((unsigned int)(size) << 2) | (sparse? 2U: 0) | (extensible? 1U: 0));
       }
-      inline static unsigned int getSize(unsigned int raw_size) { 
+      inline static unsigned int getSize(unsigned int raw_size) {
         return ((unsigned int)raw_size) >> 2;
       }
       inline static bool isSparse(unsigned int raw_size) {
@@ -233,7 +238,7 @@ class MEDDLY::simple_separated : public node_storage {
             @param  nb    Node data is copied from here.
             @return       The "address" of the new node.
       */
-      node_address makeSparseNode(node_handle p, int size, 
+      node_address makeSparseNode(node_handle p, int size,
         const unpacked_node &nb);
 
   private:
@@ -296,10 +301,10 @@ void MEDDLY::simple_separated::collectGarbage(bool shrink)
   // TBD
 }
 
-void MEDDLY::simple_separated::reportStats(output &s, const char* pad, 
+void MEDDLY::simple_separated::reportStats(output &s, const char* pad,
   unsigned flags) const
 {
-  static unsigned STORAGE = 
+  static unsigned STORAGE =
     expert_forest::STORAGE_STATS | expert_forest::STORAGE_DETAILED;
 
   if (flags & STORAGE) {
@@ -311,7 +316,7 @@ void MEDDLY::simple_separated::reportStats(output &s, const char* pad,
     expert_forest::HOLE_MANAGER_STATS | expert_forest::HOLE_MANAGER_DETAILED;
 
   if (flags & HOLEMAN) {
-    MM->reportStats(s, pad, 
+    MM->reportStats(s, pad,
       flags & expert_forest::HUMAN_READABLE_MEMORY,
       flags & expert_forest::HOLE_MANAGER_DETAILED);
   }
@@ -375,12 +380,12 @@ MEDDLY::node_address MEDDLY::simple_separated
 
   node_address addr = 0;
 
-  if (0==(forest::policies::ALLOW_SPARSE_STORAGE & opt)) {
+  if (FULL_ONLY == opt) {
     //
     // Sparse nodes disabled?  Just build a full one
     //
     addr = makeFullNode(p, truncsize, nb);
-  } else if (0==(forest::policies::ALLOW_FULL_STORAGE & opt)) {
+  } else if (SPARSE_ONLY == opt) {
     //
     // Full nodes disabled?  Just build a sparse one
     //
@@ -423,7 +428,7 @@ void MEDDLY::simple_separated::unlinkDownAndRecycle(node_address addr)
 #endif
   const node_handle* chunk = getChunkAddress(addr);
   MEDDLY_DCASSERT(chunk);
-  
+
   const unsigned int raw_size = getRawSize(chunk);
   const unsigned int size = getSize(raw_size);
   const unsigned int is_sparse = isSparse(raw_size);
@@ -464,7 +469,7 @@ void MEDDLY::simple_separated::markDownPointers(node_address addr)
 #endif
   const node_handle* chunk = getChunkAddress(addr);
   MEDDLY_DCASSERT(chunk);
-  
+
   const unsigned int raw_size = getRawSize(chunk);
   const unsigned int size = getSize(raw_size);
 
@@ -488,7 +493,7 @@ bool MEDDLY::simple_separated
   MEDDLY_DCASSERT(chunk);
 
   MEDDLY_DCASSERT( n.hasEdges() == (slots_per_edge>0) );
-  
+
   //
   // Compare any extra header information
   //
@@ -500,7 +505,7 @@ bool MEDDLY::simple_separated
     if (memcmp(chunk + hashed_start, n.HHptr(), n.HHbytes())) return false;
   }
 
-  
+
   //
   // Compare edges
   //
@@ -535,7 +540,7 @@ bool MEDDLY::simple_separated
       for (unsigned int z=0; z<nnz; z++) {
         if (index[z] >= n.getSize()) return false;  // too large
         // loop - skipped edges must be transparent
-        for (; i<index[z]; i++) { 
+        for (; i<index[z]; i++) {
           if (n.d(i)!=tv) return false;
         } // for
         // compare this[z] with n[i]
@@ -645,7 +650,7 @@ bool MEDDLY::simple_separated
 
 
 void MEDDLY::simple_separated
-::fillUnpacked(unpacked_node &nr, node_address addr, unpacked_node::storage_style st2) const
+::fillUnpacked(unpacked_node &nr, node_address addr, node_storage_flags st2) const
 {
 #ifdef DEBUG_DECODING
   FILE_output out(stdout);
@@ -683,9 +688,9 @@ void MEDDLY::simple_separated
      Set the unpacked node storage style based on settings
      */
   switch (st2) {
-    case unpacked_node::FULL_NODE:     nr.bind_as_full(true);    break;
-    case unpacked_node::SPARSE_NODE:   nr.bind_as_full(false);   break;
-    case unpacked_node::AS_STORED:     nr.bind_as_full(is_sparse); break;
+    case FULL_ONLY:         nr.bind_as_full(true);    break;
+    case SPARSE_ONLY:       nr.bind_as_full(false);   break;
+    case FULL_OR_SPARSE:    nr.bind_as_full(is_sparse); break;
 
     default:            assert(0);
   };
@@ -693,7 +698,7 @@ void MEDDLY::simple_separated
   // if (is_extensible) nr.markAsExtensible(); else nr.markAsNotExtensible();
   if (is_extensible && getParent()->isExtensibleLevel(nr.getLevel()))
     nr.markAsExtensible();
-  else 
+  else
     nr.markAsNotExtensible();
 
   // Make sure that when an extensible node is unpacked that the trailing edges
@@ -789,7 +794,7 @@ void MEDDLY::simple_separated
           memcpy(nr.eptr_write(i), edge + i*slots_per_edge, nr.edgeBytes());
         }
       }
-      if (unpacked_node::AS_STORED == st2 && is_extensible == nr.isExtensible()) {
+      if (FULL_OR_SPARSE == st2 && is_extensible == nr.isExtensible()) {
         nr.shrinkFull(size);
       } else {
         const int ext_d = is_extensible? down[size-1]: tv;
@@ -885,7 +890,7 @@ unsigned MEDDLY::simple_separated::hashNode(int level, node_address addr) const
   //
   // Hash the node itself
   //
-  
+
   const unsigned int raw_size = getRawSize(chunk);
   const unsigned int size = getSize(raw_size);
   const bool is_sparse = isSparse(raw_size);
@@ -955,8 +960,8 @@ int MEDDLY::simple_separated
     if (size != 1) return -1;
     down = chunk[0 + down_start];       // 0+ stops a compiler warning
     return chunk[down_start + size];    // size is number of nonzeroes
-  } 
-  
+  }
+
   //
   // full node
   //
@@ -994,7 +999,7 @@ MEDDLY::simple_separated
 }
 
 
-MEDDLY::node_handle 
+MEDDLY::node_handle
 MEDDLY::simple_separated
 ::getDownPtr(node_address addr, int i) const
 {
@@ -1210,14 +1215,14 @@ void MEDDLY::simple_separated::dumpInternalTail(output &s) const
 }
 
 
-MEDDLY::node_address 
+MEDDLY::node_address
 MEDDLY::simple_separated::firstNodeAddress() const
 {
   return MM->getFirstAddress();
 }
 
 
-MEDDLY::node_address 
+MEDDLY::node_address
 MEDDLY::simple_separated
 ::dumpInternalNode(output &s, node_address a, unsigned flags) const
 {
@@ -1284,7 +1289,7 @@ MEDDLY::simple_separated
   //
   // hashed header if any
   //
-  
+
   if (show_node && hashed_slots) {
     s.put(" hh ");
     s.put_hex(long(chunk[0+hashed_start]));
@@ -1440,7 +1445,7 @@ MEDDLY::node_address MEDDLY::simple_separated
       // There's edge values
       //
       MEDDLY_DCASSERT(nb.hasEdges());
-      char* edge = (char*) (down + size); 
+      char* edge = (char*) (down + size);
       int edge_bytes = bytesForSlots(slots_per_edge);
       if (nb.isSparse()) {
         for (int i=0; i<size; i++) {
@@ -1561,7 +1566,7 @@ MEDDLY::node_address MEDDLY::simple_separated
       // There's edge values
       //
       MEDDLY_DCASSERT(nb.hasEdges());
-      char* edge = (char*) (index + size); 
+      char* edge = (char*) (index + size);
       int edge_bytes = bytesForSlots(slots_per_edge);
       if (nb.isSparse()) {
         for (int z=0; z<size; z++) {

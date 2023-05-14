@@ -1,4 +1,3 @@
-
 /*
     Meddly: Multi-terminal and Edge-valued Decision Diagram LibrarY.
     Copyright (C) 2009, Iowa State University Research Foundation, Inc.
@@ -24,11 +23,15 @@
 #include <fstream>
 #include <sstream>
 #include "defines.h"
+#include "initializer.h"
 #include "unique_table.h"
+#include "relation_node.h"
 #include "impl_unique_table.h"
 #include "hash_stream.h"
 // #include "storage/bytepack.h"
 #include "reordering/reordering_factory.h"
+
+#include "oper.h"
 
 // for timestamps.
 // to do - check during configuration that these are present,
@@ -70,54 +73,6 @@
 // *                                                                *
 // *                                                                *
 // ******************************************************************
-
-// ******************************************************************
-// *                                                                *
-// *                    forest::policies methods                    *
-// *                                                                *
-// ******************************************************************
-
-const unsigned char MEDDLY::forest::policies::ALLOW_FULL_STORAGE    = 0x01;
-const unsigned char MEDDLY::forest::policies::ALLOW_SPARSE_STORAGE  = 0x02;
-
-MEDDLY::forest::policies::policies()
-{
-  nodemm = 0;   //
-  nodestor = 0; // should cause an exception later
-}
-
-MEDDLY::forest::policies::policies(bool rel)
-{
-  useDefaults(rel);
-}
-
-void MEDDLY::forest::policies::useDefaults(bool rel)
-{
-  reduction = rel ? IDENTITY_REDUCED : FULLY_REDUCED;
-  storage_flags = ALLOW_FULL_STORAGE | ALLOW_SPARSE_STORAGE;
-  deletion = OPTIMISTIC_DELETION;
-  // compact_min = 100;
-  // compact_max = 1000000;
-  // compact_frac = 40;
-  // zombieTrigger = 1000000;
-  // orphanTrigger = 500000;
-  // compactAfterGC = false;
-  // compactBeforeExpand = true;
-
-  useReferenceCounts = true;
-
-  // nodemm = ORIGINAL_GRID;
-  nodemm = ARRAY_PLUS_GRID;
-  // nodemm = MALLOC_MANAGER;
-  // nodemm = HEAP_MANAGER;
-
-  nodestor = SIMPLE_STORAGE;
-  //nodestor = PATTERN_STORAGE;
-  //nodestor = BEST_STORAGE;
-
-  reorder = reordering_type::SINK_DOWN;
-  swap = variable_swap_type::VAR;
-}
 
 // ******************************************************************
 // *                                                                *
@@ -210,8 +165,9 @@ void MEDDLY::forest::logger::currentTime(long &sec, long &usec)
 
 unsigned MEDDLY::forest::gfid = 0;
 
-MEDDLY::forest::policies MEDDLY::forest::mddDefaults;
-MEDDLY::forest::policies MEDDLY::forest::mxdDefaults;
+MEDDLY::policies MEDDLY::forest::mddDefaults;
+MEDDLY::policies MEDDLY::forest::mxdDefaults;
+
 
 MEDDLY::forest
 ::forest(unsigned ds, domain* _d, bool rel, range_type t, edge_labeling ev,
@@ -288,7 +244,7 @@ MEDDLY::forest
 
   // check policies
   if (!isRelation) {
-    if (policies::IDENTITY_REDUCED == deflt.reduction)
+    if (reduction_rule::IDENTITY_REDUCED == deflt.reduction)
       throw error(error::INVALID_POLICY, __FILE__, __LINE__);
 
     for(int i=1;i<=d->getNumVariables();i++)
@@ -646,71 +602,6 @@ MEDDLY::forest::edge_visitor::~edge_visitor()
 // *                                                                *
 // ******************************************************************
 
-// ******************************************************************
-// *                                                                *
-// *                 expert_forest encoder  methods                 *
-// *                                                                *
-// ******************************************************************
-
-void MEDDLY::expert_forest::bool_Tencoder::show(output &s, node_handle h)
-{
-  s.put(handle2value(h) ? 'T' : 'F');
-}
-
-void MEDDLY::expert_forest::bool_Tencoder::write(output &s, node_handle h)
-{
-  s.put(handle2value(h) ? 'T' : 'F');
-}
-
-MEDDLY::node_handle MEDDLY::expert_forest::bool_Tencoder::read(input &s)
-{
-  s.stripWS();
-  int c = s.get_char();
-  if ('T' == c) return value2handle(true);
-  if ('F' == c) return value2handle(false);
-  throw error(error::INVALID_FILE, __FILE__, __LINE__);
-}
-
-// ******************************************************************
-
-void MEDDLY::expert_forest::int_Tencoder::show(output &s, node_handle h)
-{
-  s << "t" << handle2value(h);
-}
-
-void MEDDLY::expert_forest::int_Tencoder::write(output &s, node_handle h)
-{
-  s << "t" << handle2value(h);
-}
-
-MEDDLY::node_handle MEDDLY::expert_forest::int_Tencoder::read(input &s)
-{
-  s.stripWS();
-  int c = s.get_char();
-  if ('t' != c) throw error(error::INVALID_FILE, __FILE__, __LINE__);
-  return value2handle(s.get_integer());
-}
-
-// ******************************************************************
-
-void MEDDLY::expert_forest::float_Tencoder::show(output &s, node_handle h)
-{
-  s << "t" << handle2value(h);
-}
-
-void MEDDLY::expert_forest::float_Tencoder::write(output &s, node_handle h)
-{
-  s.put('t');
-  s.put(handle2value(h), 8, 8, 'e');
-}
-
-MEDDLY::node_handle MEDDLY::expert_forest::float_Tencoder::read(input &s)
-{
-  s.stripWS();
-  int c = s.get_char();
-  if ('t' != c) throw error(error::INVALID_FILE, __FILE__, __LINE__);
-  return value2handle(s.get_real());
-}
 
 // ******************************************************************
 // *                                                                *
@@ -967,7 +858,7 @@ void MEDDLY::expert_forest::validateIncounts(bool exact)
     // add to reference counts
     for (int z=0; z<P.getNNZs(); z++) {
       if (isTerminalNode(P.d(z))) continue;
-      MEDDLY_CHECK_RANGE(0, P.d(z), sz);
+      MEDDLY::CHECK_RANGE(__FILE__, __LINE__, 0, P.d(z), sz);
       in_validate[P.d(z)]++;
     }
   } // for i
@@ -1111,15 +1002,15 @@ MEDDLY::expert_forest
     inList[root[i]] = true;
   }
 
-  unpacked_node *M = unpacked_node::useUnpackedNode();
+  unpacked_node *M = unpacked_node::New();
 
   // Breadth-first search
   for (int mexpl=0; mexpl<mlen; mexpl++) {
     // explore node marked[mexpl]
-    M->initFromNode(this, marked[mexpl], false);
+    unpackNode(M, marked[mexpl], SPARSE_ONLY);
     for (unsigned i=0; i<M->getNNZs(); i++) {
       if (isTerminalNode(M->d(i))) continue;
-      MEDDLY_CHECK_RANGE(0, M->d(i)-1, a_last);
+      MEDDLY::CHECK_RANGE(__FILE__, __LINE__, 0, M->d(i)-1, a_last);
       if (inList[M->d(i)]) continue;
       // add dn to list
       if (mlen+1 >= msize) {
@@ -1189,9 +1080,9 @@ long MEDDLY::expert_forest::getEdgeCount(node_handle p, bool countZeroes) const
   node_handle* list = markNodesInSubgraph(&p, 1, true);
   if (0==list) return 0;
   long ec=0;
-  unpacked_node *M = unpacked_node::useUnpackedNode();
+  unpacked_node *M = unpacked_node::New();
   for (long i=0; list[i]; i++) {
-    M->initFromNode(this, list[i], countZeroes);
+    unpackNode(M, list[i], countZeroes ? FULL_ONLY : SPARSE_ONLY);
     ec += countZeroes ? M->getSize() : M->getNNZs();
   }
   unpacked_node::recycle(M);
@@ -1202,68 +1093,62 @@ long MEDDLY::expert_forest::getEdgeCount(node_handle p, bool countZeroes) const
 bool MEDDLY::expert_forest
 ::showNode(output &s, node_handle p, unsigned int flags) const
 {
-    /*
-        Deal with cases where nothing will be displayed.
-    */
-    bool isReachable;
-    if (isTerminalNode(p)) {
-        isReachable = true;
-    } else {
-        isReachable = deflt.useReferenceCounts
-            ? (getNodeInCount(p))
-            : (hasReachableBit(p)) ;
-    }
+  /*
+    Deal with cases where nothing will be displayed.
+  */
+  bool isReachable =
+    deflt.useReferenceCounts ? (getNodeInCount(p)) : (hasReachableBit(p)) ;
 
-    if (isTerminalNode(p)) {
-        if (!(flags & SHOW_TERMINALS))  return false;
-    } else
-    if (isDeletedNode(p)) {
-        if (!(flags & SHOW_DELETED))    return false;
-    } else
-    if (!isReachable) {
-        if (!(flags & SHOW_UNREACHABLE))     return false;
-    }
+  if (isTerminalNode(p)) {
+    if (!(flags & SHOW_TERMINALS))  return false;
+  } else
+  if (isDeletedNode(p)) {
+    if (!(flags & SHOW_DELETED))    return false;
+  } else
+  if (!isReachable) {
+    if (!(flags & SHOW_UNREACHABLE))     return false;
+  }
 
-    /*
-        Show the node index, if selected.
-    */
-    if (flags & SHOW_INDEX) {
-        int nwidth = digits(nodeHeaders.lastUsedHandle());
-        s.put(long(p), nwidth);
-        s.put('\t');
-    }
+  /*
+    Show the node index, if selected.
+  */
+  if (flags & SHOW_INDEX) {
+    int nwidth = digits(nodeHeaders.lastUsedHandle());
+    s.put(long(p), nwidth);
+    s.put('\t');
+  }
 
-    /*
-        Deal with special cases
-    */
-    if (isTerminalNode(p)) {
-        s << "(terminal)";
-        return true;
-    }
-    if (isDeletedNode(p)) {
-        s << "DELETED";
-        return true;
-    }
-    if (!isReachable) {
-        s << "Unreachable ";
-    }
-
-    /*
-        Ordinary node
-    */
-    if (flags & SHOW_DETAILS) {
-        // node: was already written.
-        nodeHeaders.showHeader(s, p);
-    } else {
-        s << "node: " << long(p);
-    }
-
-    s.put(' ');
-    unpacked_node* un = unpacked_node::newFromNode(this, p, unpacked_node::AS_STORED);
-    un->show(s, flags & SHOW_DETAILS);
-    unpacked_node::recycle(un);
-
+  /*
+    Deal with special cases
+  */
+  if (isTerminalNode(p)) {
+    s << "(terminal)";
     return true;
+  }
+  if (isDeletedNode(p)) {
+    s << "DELETED";
+    return true;
+  }
+  if (!isReachable) {
+    s << "Unreachable ";
+  }
+
+  /*
+    Ordinary node
+  */
+  if (flags & SHOW_DETAILS) {
+    // node: was already written.
+    nodeHeaders.showHeader(s, p);
+  } else {
+    s << "node: " << long(p);
+  }
+
+  s.put(' ');
+  unpacked_node* un = newUnpacked(p, FULL_OR_SPARSE);
+  un->show(s, flags & SHOW_DETAILS);
+  unpacked_node::recycle(un);
+
+  return true;
 }
 
 void MEDDLY::expert_forest
@@ -1317,6 +1202,7 @@ void MEDDLY::expert_forest
   node_handle* list = markNodesInSubgraph(p, n, true);
   if (0==list) return;
 
+  unpacked_node *un = unpacked_node::New();
   std::string dot_fn(filename);
   dot_fn += ".dot";
   std::ofstream s(dot_fn.c_str());
@@ -1384,7 +1270,7 @@ void MEDDLY::expert_forest
         if (getNodeLevel(list[i]) != k) continue;
 
         s << " s" << list[i] << " [label=\"";
-        unpacked_node* un = unpacked_node::newFromNode(this, list[i], unpacked_node::SPARSE_NODE);
+        unpackNode(un, list[i], SPARSE_ONLY);
 
         // print index pointers
         MEDDLY_DCASSERT(isMultiTerminal());
@@ -1406,7 +1292,6 @@ void MEDDLY::expert_forest
           s << " [samehead = true];\n";
         }
 
-        unpacked_node::recycle(un);
       }
     }
 
@@ -1443,6 +1328,7 @@ void MEDDLY::expert_forest
 
   free(list);
   s.close();
+  unpacked_node::recycle(un);
 
   // convert dot file to extension
   std::stringstream cmd;
@@ -1546,7 +1432,7 @@ void MEDDLY::expert_forest
   node_handle* index2output = new node_handle[maxnode+1];
   for (int i=0; i<maxnode; i++) index2output[i] = 0;
   for (int i=0; output2index[i]; i++) {
-    MEDDLY_CHECK_RANGE(1, output2index[i], maxnode+1);
+      MEDDLY::CHECK_RANGE(__FILE__, __LINE__, 1, output2index[i], maxnode+1);
     index2output[output2index[i]] = i+1;
   }
 
@@ -1571,10 +1457,10 @@ void MEDDLY::expert_forest
   const char* block = codeChars();
   s << block << " " << num_nodes << "\n";
 
-  unpacked_node* un = unpacked_node::useUnpackedNode();
+  unpacked_node* un = unpacked_node::New();
   for (int i=0; output2index[i]; i++) {
     s << getNodeLevel(output2index[i]) << " ";
-    un->initFromNode(this, output2index[i], unpacked_node::AS_STORED);
+    unpackNode(un, output2index[i], FULL_OR_SPARSE);
     un->write(s, index2output);
   }
   unpacked_node::recycle(un);
@@ -2016,7 +1902,7 @@ void MEDDLY::expert_forest::deleteNode(node_handle p)
   unsigned h = hashNode(p);
 #ifdef DEVELOPMENT_CODE
   if (!isExtensible(p) || isExtensibleLevel(getNodeLevel(p))) {
-    unpacked_node* key = unpacked_node::newFromNode(this, p, false);
+    unpacked_node* key = newUnpacked(p, SPARSE_ONLY);
     key->computeHash();
     if (unique->find(*key, getVarByLevel(key->getLevel())) != p) {
       fprintf(stderr, "Error in deleteNode\nFind: %ld\np: %ld\n",
@@ -2063,6 +1949,8 @@ void MEDDLY::expert_forest::deleteNode(node_handle p)
 MEDDLY::node_handle MEDDLY::expert_forest
 ::createReducedHelper(int in, unpacked_node &nb)
 {
+    nb.computeHash();
+
 #ifdef DEVELOPMENT_CODE
   validateDownPointers(nb);
 #endif
@@ -2200,7 +2088,7 @@ MEDDLY::node_handle MEDDLY::expert_forest
   unique->add(nb.hash(), p);
 
 #ifdef DEVELOPMENT_CODE
-  unpacked_node* key = unpacked_node::newFromNode(this, p, false);
+  unpacked_node* key = newUnpacked(p, SPARSE_ONLY);
   key->computeHash();
   MEDDLY_DCASSERT(key->hash() == nb.hash());
   node_handle f = unique->find(*key, getVarByLevel(key->getLevel()));
@@ -2378,7 +2266,7 @@ MEDDLY::node_handle MEDDLY::expert_forest
   unique->add(nb.hash(), p);
 
 #ifdef DEVELOPMENT_CODE
-  unpacked_node* key = unpacked_node::newFromNode(this, p, false);
+  unpacked_node* key = newUnpacked(p, SPARSE_ONLY);
   key->computeHash();
   MEDDLY_DCASSERT(key->hash() == nb.hash());
   node_handle f = unique->find(*key, getVarByLevel(key->getLevel()));
@@ -2421,7 +2309,7 @@ MEDDLY::node_handle MEDDLY::expert_forest::modifyReducedNodeInPlace(unpacked_nod
   unique->add(un->hash(), p);
 
 #ifdef DEVELOPMENT_CODE
-  unpacked_node* key = unpacked_node::newFromNode(this, p, false);
+  unpacked_node* key = newUnpacked(p, SPARSE_ONLY);
   key->computeHash();
   MEDDLY_DCASSERT(key->hash() == un->hash());
   node_handle f = unique->find(*key, getVarByLevel(key->getLevel()));
@@ -2442,8 +2330,8 @@ MEDDLY::node_handle MEDDLY::expert_forest::modifyReducedNodeInPlace(unpacked_nod
 void MEDDLY::expert_forest::validateDownPointers(const unpacked_node &nb) const
 {
   switch (getReductionRule()) {
-    case policies::IDENTITY_REDUCED:
-    case policies::FULLY_REDUCED:
+    case reduction_rule::IDENTITY_REDUCED:
+    case reduction_rule::FULLY_REDUCED:
       if (nb.isSparse()) {
         for (unsigned z=0; z<nb.getNNZs(); z++) {
           if (isTerminalNode(nb.d(z))) continue;
@@ -2471,7 +2359,7 @@ void MEDDLY::expert_forest::validateDownPointers(const unpacked_node &nb) const
       }
       break;
 
-    case policies::QUASI_REDUCED:
+    case reduction_rule::QUASI_REDUCED:
 #ifdef DEVELOPMENT_CODE
       int nextLevel;
       if (isForRelations())
@@ -2498,5 +2386,42 @@ void MEDDLY::expert_forest::validateDownPointers(const unpacked_node &nb) const
 
 }
 
+void MEDDLY::expert_forest::recycle(unpacked_node* n)
+{
+    unpacked_node::recycle(n);
+}
+
+//
+// Stuff that used to be inlined but now can't
+//
+
+void
+MEDDLY::expert_forest::unpackNode(MEDDLY::unpacked_node* un,
+    MEDDLY::node_handle node, node_storage_flags st2) const
+{
+    MEDDLY_DCASSERT(un);
+    const int level = getNodeLevel(node);
+    MEDDLY_DCASSERT(0 != level);
+    un->bind_to_forest(this, level, unsigned(getLevelSize(level)), true);
+    MEDDLY_DCASSERT(getNodeAddress(node));
+    nodeMan->fillUnpacked(*un, getNodeAddress(node), st2);
+}
+
+//----------------------------------------------------------------------
+// front end - create and destroy objects
+//----------------------------------------------------------------------
+
+
+void MEDDLY::destroyForest(MEDDLY::forest* &f)
+{
+  if (0==f) return;
+  if (!initializer_list::libraryIsRunning()) {
+      throw error(error::UNINITIALIZED, __FILE__, __LINE__);
+  }
+  f->markForDeletion();
+  operation::purgeAllMarked();
+  delete f;
+  f = 0;
+}
 
 

@@ -1,10 +1,9 @@
-
 /*
     Meddly: Multi-terminal and Edge-valued Decision Diagram LibrarY.
     Copyright (C) 2009, Iowa State University Research Foundation, Inc.
 
     This library is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Lesser General Public License as published 
+    it under the terms of the GNU Lesser General Public License as published
     by the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
@@ -17,9 +16,6 @@
     along with this library.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
 #include "../defines.h"
 #include "plus.h"
 #include "apply_base.h"
@@ -41,14 +37,14 @@ namespace MEDDLY {
 
 class MEDDLY::plus_mdd : public generic_binary_mdd {
   public:
-    plus_mdd(const binary_opname* opcode, expert_forest* arg1,
+    plus_mdd(binary_opname* opcode, expert_forest* arg1,
       expert_forest* arg2, expert_forest* res);
 
   protected:
     virtual bool checkTerminals(node_handle a, node_handle b, node_handle& c);
 };
 
-MEDDLY::plus_mdd::plus_mdd(const binary_opname* opcode, 
+MEDDLY::plus_mdd::plus_mdd(binary_opname* opcode,
   expert_forest* arg1, expert_forest* arg2, expert_forest* res)
   : generic_binary_mdd(opcode, arg1, arg2, res)
 {
@@ -58,13 +54,13 @@ MEDDLY::plus_mdd::plus_mdd(const binary_opname* opcode,
 bool MEDDLY::plus_mdd::checkTerminals(node_handle a, node_handle b, node_handle& c)
 {
   if (arg1F->isTerminalNode(a) && arg2F->isTerminalNode(b)) {
-    if (resF->getRangeType() == forest::INTEGER) {
+    if (resF->getRangeType() == range_type::INTEGER) {
       int av, bv;
       arg1F->getValueFromHandle(a, av);
       arg2F->getValueFromHandle(b, bv);
       c = resF->handleForValue(av + bv);
     } else {
-      MEDDLY_DCASSERT(resF->getRangeType() == forest::REAL);
+      MEDDLY_DCASSERT(resF->getRangeType() == range_type::REAL);
       float av, bv;
       arg1F->getValueFromHandle(a, av);
       arg2F->getValueFromHandle(b, bv);
@@ -99,14 +95,14 @@ bool MEDDLY::plus_mdd::checkTerminals(node_handle a, node_handle b, node_handle&
 
 class MEDDLY::plus_mxd : public generic_binary_mxd {
   public:
-    plus_mxd(const binary_opname* opcode, expert_forest* arg1,
+    plus_mxd(binary_opname* opcode, expert_forest* arg1,
       expert_forest* arg2, expert_forest* res);
 
   protected:
     virtual bool checkTerminals(node_handle a, node_handle b, node_handle& c);
 };
 
-MEDDLY::plus_mxd::plus_mxd(const binary_opname* opcode, 
+MEDDLY::plus_mxd::plus_mxd(binary_opname* opcode,
   expert_forest* arg1, expert_forest* arg2, expert_forest* res)
   : generic_binary_mxd(opcode, arg1, arg2, res)
 {
@@ -116,13 +112,13 @@ MEDDLY::plus_mxd::plus_mxd(const binary_opname* opcode,
 bool MEDDLY::plus_mxd::checkTerminals(node_handle a, node_handle b, node_handle& c)
 {
   if (arg1F->isTerminalNode(a) && arg2F->isTerminalNode(b)) {
-    if (resF->getRangeType() == forest::INTEGER) {
+    if (resF->getRangeType() == range_type::INTEGER) {
       int av, bv;
       arg1F->getValueFromHandle(a, av);
       arg2F->getValueFromHandle(b, bv);
       c = resF->handleForValue(av + bv);
     } else {
-      MEDDLY_DCASSERT(resF->getRangeType() == forest::REAL);
+      MEDDLY_DCASSERT(resF->getRangeType() == range_type::REAL);
       float av, bv;
       arg1F->getValueFromHandle(a, av);
       arg2F->getValueFromHandle(b, bv);
@@ -142,30 +138,30 @@ bool MEDDLY::plus_mxd::checkTerminals(node_handle a, node_handle b, node_handle&
 
 class MEDDLY::plus_evplus : public generic_binary_evplus {
   public:
-    plus_evplus(const binary_opname* opcode, expert_forest* arg1,
+    plus_evplus(binary_opname* opcode, expert_forest* arg1,
       expert_forest* arg2, expert_forest* res);
 
   protected:
-    virtual compute_table::entry_key* findResult(long aev, node_handle a,
+    virtual ct_entry_key* findResult(long aev, node_handle a,
       long bev, node_handle b, long& cev, node_handle &c);
-    virtual void saveResult(compute_table::entry_key* key,
+    virtual void saveResult(ct_entry_key* key,
       long aev, node_handle a, long bev, node_handle b, long cev, node_handle c);
 
     virtual bool checkTerminals(long aev, node_handle a, long bev, node_handle b,
       long& cev, node_handle& c);
 };
 
-MEDDLY::plus_evplus::plus_evplus(const binary_opname* opcode, 
+MEDDLY::plus_evplus::plus_evplus(binary_opname* opcode,
   expert_forest* arg1, expert_forest* arg2, expert_forest* res)
   : generic_binary_evplus(opcode, arg1, arg2, res)
 {
   operationCommutes();
 }
 
-MEDDLY::compute_table::entry_key* MEDDLY::plus_evplus::findResult(long aev, node_handle a,
+MEDDLY::ct_entry_key* MEDDLY::plus_evplus::findResult(long aev, node_handle a,
   long bev, node_handle b, long& cev, node_handle &c)
 {
-  compute_table::entry_key* CTsrch = CT0->useEntryKey(etype[0], 0);
+  ct_entry_key* CTsrch = CT0->useEntryKey(etype[0], 0);
   MEDDLY_DCASSERT(CTsrch);
   if (can_commute && a > b) {
     CTsrch->writeL(0);
@@ -192,7 +188,7 @@ MEDDLY::compute_table::entry_key* MEDDLY::plus_evplus::findResult(long aev, node
   return 0;
 }
 
-void MEDDLY::plus_evplus::saveResult(compute_table::entry_key* key,
+void MEDDLY::plus_evplus::saveResult(ct_entry_key* key,
   long aev, node_handle a, long bev, node_handle b, long cev, node_handle c)
 {
   CTresult[0].reset();
@@ -232,22 +228,22 @@ bool MEDDLY::plus_evplus::checkTerminals(long aev, node_handle a, long bev, node
 
 class MEDDLY::plus_evtimes : public generic_binary_evtimes {
   public:
-    plus_evtimes(const binary_opname* opcode, expert_forest* arg1,
+    plus_evtimes(binary_opname* opcode, expert_forest* arg1,
       expert_forest* arg2, expert_forest* res);
 
   protected:
-    virtual bool checkTerminals(float aev, node_handle a, float bev, node_handle b, 
+    virtual bool checkTerminals(float aev, node_handle a, float bev, node_handle b,
       float& cev, node_handle& c);
 };
 
-MEDDLY::plus_evtimes::plus_evtimes(const binary_opname* opcode, 
+MEDDLY::plus_evtimes::plus_evtimes(binary_opname* opcode,
   expert_forest* arg1, expert_forest* arg2, expert_forest* res)
   : generic_binary_evtimes(opcode, arg1, arg2, res)
 {
   operationCommutes();
 }
 
-bool MEDDLY::plus_evtimes::checkTerminals(float aev, node_handle a, 
+bool MEDDLY::plus_evtimes::checkTerminals(float aev, node_handle a,
   float bev, node_handle b, float& cev, node_handle& c)
 {
   if (arg1F->isTerminalNode(a) && arg2F->isTerminalNode(b)) {
@@ -290,8 +286,8 @@ bool MEDDLY::plus_evtimes::checkTerminals(float aev, node_handle a,
 class MEDDLY::plus_opname : public binary_opname {
   public:
     plus_opname();
-    virtual binary_operation* buildOperation(expert_forest* a1, 
-      expert_forest* a2, expert_forest* r) const;
+    virtual binary_operation* buildOperation(expert_forest* a1,
+      expert_forest* a2, expert_forest* r);
 };
 
 MEDDLY::plus_opname::plus_opname()
@@ -299,15 +295,15 @@ MEDDLY::plus_opname::plus_opname()
 {
 }
 
-MEDDLY::binary_operation* 
-MEDDLY::plus_opname::buildOperation(expert_forest* a1, expert_forest* a2, 
-  expert_forest* r) const
+MEDDLY::binary_operation*
+MEDDLY::plus_opname::buildOperation(expert_forest* a1, expert_forest* a2,
+  expert_forest* r)
 {
   if (0==a1 || 0==a2 || 0==r) return 0;
 
-  if (  
-    (a1->getDomain() != r->getDomain()) || 
-    (a2->getDomain() != r->getDomain()) 
+  if (
+    (a1->getDomain() != r->getDomain()) ||
+    (a2->getDomain() != r->getDomain())
   )
     throw error(error::DOMAIN_MISMATCH, __FILE__, __LINE__);
 
@@ -316,11 +312,11 @@ MEDDLY::plus_opname::buildOperation(expert_forest* a1, expert_forest* a2,
     (a2->isForRelations() != r->isForRelations()) ||
     (a1->getEdgeLabeling() != r->getEdgeLabeling()) ||
     (a2->getEdgeLabeling() != r->getEdgeLabeling()) ||
-    (r->getRangeType() == forest::BOOLEAN)
+    (r->getRangeType() == range_type::BOOLEAN)
   )
     throw error(error::TYPE_MISMATCH, __FILE__, __LINE__);
 
-  if (r->getEdgeLabeling() == forest::MULTI_TERMINAL) {
+  if (r->getEdgeLabeling() == edge_labeling::MULTI_TERMINAL) {
     if (r->isForRelations())
       return new plus_mxd(this, a1, a2, r);
     else
@@ -329,15 +325,15 @@ MEDDLY::plus_opname::buildOperation(expert_forest* a1, expert_forest* a2,
 
   if (
     (a1->getRangeType() != r->getRangeType()) ||
-    (a2->getRangeType() != r->getRangeType()) 
+    (a2->getRangeType() != r->getRangeType())
   )
     throw error(error::TYPE_MISMATCH, __FILE__, __LINE__);
 
 
-  if (r->getEdgeLabeling() == forest::EVPLUS)
+  if (r->getEdgeLabeling() == edge_labeling::EVPLUS)
     return new plus_evplus(this, a1, a2, r);
 
-  if (r->getEdgeLabeling() == forest::EVTIMES)
+  if (r->getEdgeLabeling() == edge_labeling::EVTIMES)
     return new plus_evtimes(this, a1, a2, r);
 
   throw error(error::NOT_IMPLEMENTED, __FILE__, __LINE__);

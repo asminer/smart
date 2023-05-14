@@ -4,7 +4,7 @@
     Copyright (C) 2009, Iowa State University Research Foundation, Inc.
 
     This library is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Lesser General Public License as published 
+    it under the terms of the GNU Lesser General Public License as published
     by the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
@@ -25,18 +25,18 @@
 
 	The model has 6 square faces with 9 squares (of the same color) in each face
 	for a total of 54 squares.
-  
+
 	These 54 squares can be grouped together as some of them move together.
 
 	Type 1: Single square (6 such squares)  ,  6 * 1 =  6
 	Type 2: Two squares (12 such L-corners) , 12 * 2 = 24
 	Type 3: Three squares (8 such corners)  ,  8 * 3 = 24
-	
+
 	The model thus has 26 components and 26 component locations.
 	Each component location is represented as a MDD level. The size of the MDD
 	level depends on the number of components that can fit into that location.
 	For example, Type 2 component locations are of size 12.
-  
+
 	Level 0        : Terminals
 	Level 01 - 12  : Type 2 component locations (size 12)
 	Level 13 - 20  : Type 3 component locations (size 8)
@@ -70,9 +70,9 @@
 #include <cstdlib>
 #include <cstring>
 #include <vector>
+#include <cassert>
 
 #include "../src/meddly.h"
-#include "../src/meddly_expert.h"
 #include "../src/timer.h"
 
 using namespace std;
@@ -189,7 +189,7 @@ void Init()
   // node size for each level
   sizes = (int *) malloc(num_levels * sizeof(int));
   assert(sizes != NULL);
-  
+
   assert(num_levels == 20);
   for (int i = 0; i < num_levels; i++) {
     sizes[i] = getLevelSize(i+1);
@@ -437,7 +437,7 @@ dd_edge BuildMoveHelper(
   }
   free(from);
   free(to);
-  
+
   return result;
 }
 
@@ -633,7 +633,7 @@ dd_edge BuildFlipMoveHelper(
   }
   free(from);
   free(to);
-  
+
   return result;
 }
 
@@ -792,7 +792,7 @@ void buildOverallNextStateFunction(const moves& m,
     satpregen_opname::pregen_relation& ensf, bool split)
 {
   // Build each move using BuildMove().
-  
+
   // Clock-wise moves
   if (m.FCW) ensf.addToRelation(BuildMove(F, CW));
   if (m.BCW) ensf.addToRelation(BuildMove(B, CW));
@@ -830,7 +830,7 @@ void buildOverallNextStateFunction(const moves& m,
 dd_edge buildOverallNextStateFunction(const moves& m)
 {
   // Build each move using BuildMove() and combine using union.
-  
+
   dd_edge result(relation);
   dd_edge temp(relation);
 
@@ -996,8 +996,10 @@ int doDfs(const moves& m, char saturation_type, bool split)
 
   // Perform Reacability via "saturation".
   if (ensf) {
-    if (0==SATURATION_FORWARD) throw error(error::UNKNOWN_OPERATION, __FILE__, __LINE__);
-    specialized_operation *sat = SATURATION_FORWARD->buildOperation(ensf);
+    if (!SATURATION_FORWARD()) {
+        throw error(error::UNKNOWN_OPERATION, __FILE__, __LINE__);
+    }
+    specialized_operation *sat = SATURATION_FORWARD()->buildOperation(ensf);
     if (0==sat) throw error(error::INVALID_OPERATION, __FILE__, __LINE__);
     sat->compute(initial, initial);
   } else {
@@ -1338,8 +1340,8 @@ int main(int argc, char *argv[])
   }
 
   // Create forests
-  states = d->createForest(false, forest::BOOLEAN, forest::MULTI_TERMINAL);
-  relation = d->createForest(true, forest::BOOLEAN, forest::MULTI_TERMINAL);
+  states = d->createForest(false, range_type::BOOLEAN, edge_labeling::MULTI_TERMINAL);
+  relation = d->createForest(true, range_type::BOOLEAN, edge_labeling::MULTI_TERMINAL);
 
   if (NULL == states) {
     fprintf(stderr, "Couldn't create forest of states\n");

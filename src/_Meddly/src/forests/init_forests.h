@@ -1,10 +1,9 @@
-
 /*
     Meddly: Multi-terminal and Edge-valued Decision Diagram LibrarY.
     Copyright (C) 2009, Iowa State University Research Foundation, Inc.
 
     This library is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Lesser General Public License as published 
+    it under the terms of the GNU Lesser General Public License as published
     by the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
@@ -17,6 +16,9 @@
     along with this library.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#ifndef MEDDLY_INIT_FORESTS_H
+#define MEDDLY_INIT_FORESTS_H
+
 namespace MEDDLY {
   class forest_initializer;
 };
@@ -28,3 +30,5 @@ class MEDDLY::forest_initializer : public initializer_list {
     virtual void setup();
     virtual void cleanup();
 };
+
+#endif

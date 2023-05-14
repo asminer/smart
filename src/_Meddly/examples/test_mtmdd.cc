@@ -4,7 +4,7 @@
     Copyright (C) 2009, Iowa State University Research Foundation, Inc.
 
     This library is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Lesser General Public License as published 
+    it under the terms of the GNU Lesser General Public License as published
     by the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
@@ -28,14 +28,14 @@
 
 #include <iostream>
 #include <string.h>
+#include <cassert>
 #include "../src/meddly.h"
-#include "../src/meddly_expert.h"
 
 using namespace MEDDLY;
 
 // Only include this file if referring to operations that are not
-// available via the mddlib interface. 
-// 
+// available via the mddlib interface.
+//
 // Also, include this file if you would like to create a custom
 // operation by deriving one of the existing operations.
 // #include "operation_ext.h"
@@ -57,14 +57,14 @@ const int verbose = 1;
 
 #if 0
 // Given a forest and an op_code returns the corresponding op_info.
-// 
+//
 // This is only valid for operations of the form C = A op B,
 // where A, B and C belong to the same forest.
 op_info* getOp(forest* f, compute_manager::op_code op)
 {
   static const int nForests = 3;
   static op_param plist[nForests];
-  static expert_compute_manager* ecm = 
+  static expert_compute_manager* ecm =
     static_cast<expert_compute_manager*>(getComputeManager());
   assert(ecm != 0);
   assert(f != 0);
@@ -78,14 +78,14 @@ op_info* getOp(forest* f, compute_manager::op_code op)
 
 // Given a forest and an instance of an operation returns
 // the corresponding op_info.
-// 
+//
 // This is only valid for operations of the form C = A op B,
 // where A, B and C belong to the same forest.
 op_info* getOp(forest* f, old_operation* op)
 {
   static const int nForests = 3;
   static op_param plist[nForests];
-  static expert_compute_manager* ecm = 
+  static expert_compute_manager* ecm =
     static_cast<expert_compute_manager*>(getComputeManager());
   assert(ecm != 0);
   assert(f != 0);
@@ -101,7 +101,7 @@ op_info* getOp(forest* f, old_operation* op)
 // Tests a mtmdd operation on the elements provided.
 // This function assumes that each element[i] represents
 // an element in the given MTMDD.
-dd_edge test_mtmdd(forest* mtmdd, const binary_opname* opCode,
+dd_edge test_mtmdd(forest* mtmdd, binary_handle opCode,
     int** element, element_type* terms, int nElements)
 {
   // A = first nElements/2 elements combined using +.
@@ -228,14 +228,14 @@ int main(int argc, char *argv[])
   assert(d != 0);
 
   // Create a MTMDD forest in this domain
-  forest::policies p(false);
+  policies p(false);
   p.setPessimistic();
 #if USE_REALS
   forest* mtmdd =
-    d->createForest(false, forest::REAL, forest::MULTI_TERMINAL, p);
+    d->createForest(false, range_type::REAL, edge_labeling::MULTI_TERMINAL, p);
 #else
   forest* mtmdd =
-    d->createForest(false, forest::INTEGER, forest::MULTI_TERMINAL, p);
+    d->createForest(false, range_type::INTEGER, edge_labeling::MULTI_TERMINAL, p);
 #endif
   assert(mtmdd != 0);
 
@@ -272,7 +272,7 @@ int main(int argc, char *argv[])
 #if 0
   // Convert mtmdd to mdd
   forest* mdd =
-    d->createForest(false, forest::BOOLEAN, forest::MULTI_TERMINAL);
+    d->createForest(false, range_type::BOOLEAN, edge_labeling::MULTI_TERMINAL);
 
   dd_edge toMdd(mdd);
   printf("\n\nConversion MTMDD to MDD: ");

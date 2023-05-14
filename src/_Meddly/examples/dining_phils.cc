@@ -4,7 +4,7 @@
     Copyright (C) 2009, Iowa State University Research Foundation, Inc.
 
     This library is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Lesser General Public License as published 
+    it under the terms of the GNU Lesser General Public License as published
     by the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
@@ -25,7 +25,7 @@
   The model has 2 philosophers and 2 forks.
 
   Each philosopher can be in state {I, W, L, R, E} where
-  
+
   I:    idle philosopher
   WB:   philosopher is waiting for both forks
   HL:   philosopher has left fork
@@ -33,14 +33,14 @@
   E:    philosopher is eating
 
   Each fork can be in state {A, NA} where
-  
+
   A:    fork is available
   NA:   fork is not available
 
   Philosphers can move from one state to another as:
-  
+
   I -> WB
- 
+
   The synchronization between philosopher 1 and the forks:
 
   WB1 ->  HR1
@@ -86,6 +86,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <cassert>
 #include <fstream>
 
 #include "../config.h"
@@ -94,7 +95,6 @@
 #endif
 
 #include "../src/meddly.h"
-#include "../src/meddly_expert.h"
 #include "../src/timer.h"
 #include "../src/loggers.h"
 
@@ -181,7 +181,7 @@ class model2var {
     inline int numLevels() const {
       return 2*nPhils;
     }
-  
+
   private:
     varorder vord;
     int nPhils;
@@ -376,7 +376,7 @@ void printStats(const char* who, const forest* f)
   ef->reportStats(mout, "\t",
     expert_forest::HUMAN_READABLE_MEMORY  |
     expert_forest::BASIC_STATS | expert_forest::EXTRA_STATS |
-    expert_forest::STORAGE_STATS | expert_forest::STORAGE_DETAILED | 
+    expert_forest::STORAGE_STATS | expert_forest::STORAGE_DETAILED |
     expert_forest::HOLE_MANAGER_STATS | expert_forest::HOLE_MANAGER_DETAILED
   );
 }
@@ -393,7 +393,7 @@ variable** initializeVariables(const model2var &M2V)
 #ifdef NAME_VARIABLES
   char buffer[32];
 #endif
-  
+
   for (int i=0; i<M2V.numPhils(); i++) {
 
     /*
@@ -497,24 +497,24 @@ domain* runWithOptions(int nPhilosophers, const switches &sw, forest::logger* LO
   assert(d != NULL);
 
   // Set up MDD options
-  forest::policies pmdd(false);
+  policies pmdd(false);
   if (sw.pessimistic) pmdd.setPessimistic();
   else                pmdd.setOptimistic();
 
   // Create an MDD forest in this domain (to store states)
   forest* mdd =
-    d->createForest(false, forest::BOOLEAN, forest::MULTI_TERMINAL, pmdd);
+    d->createForest(false, range_type::BOOLEAN, edge_labeling::MULTI_TERMINAL, pmdd);
   assert(mdd != NULL);
   mdd->setLogger(LOG, "MDD");
 
   // Set up MXD options
-  forest::policies pmxd(true);
+  policies pmxd(true);
   if (sw.pessimistic) pmdd.setPessimistic();
   else                pmdd.setOptimistic();
 
   // Create a MXD forest in domain (to store transition diagrams)
-  forest* mxd = 
-    d->createForest(true, forest::BOOLEAN, forest::MULTI_TERMINAL, pmxd);
+  forest* mxd =
+    d->createForest(true, range_type::BOOLEAN, edge_labeling::MULTI_TERMINAL, pmxd);
   assert(mxd != NULL);
   mxd->setLogger(LOG, "MxD");
 
@@ -526,7 +526,7 @@ domain* runWithOptions(int nPhilosophers, const switches &sw, forest::logger* LO
   mdd->createEdge(reinterpret_cast<int**>(addrInitSt), 1, initialStates);
 
   if (LOG) LOG->newPhase(mxd, "Building next-state function");
-  printf("Building next-state function for %d dining philosophers\n", 
+  printf("Building next-state function for %d dining philosophers\n",
           nPhilosophers);
   fflush(stdout);
   start.note_time();
@@ -616,10 +616,10 @@ domain* runWithOptions(int nPhilosophers, const switches &sw, forest::logger* LO
         if ('k'==sw.method) printf(" by levels\n");
         else                printf(" by events\n");
         fflush(stdout);
-        if (0==SATURATION_FORWARD) {
+        if (!SATURATION_FORWARD()) {
           throw error(error::UNKNOWN_OPERATION);
         }
-        sat = SATURATION_FORWARD->buildOperation(ensf);
+        sat = SATURATION_FORWARD()->buildOperation(ensf);
         if (0==sat) {
           throw error(error::INVALID_OPERATION);
         }
@@ -646,7 +646,7 @@ domain* runWithOptions(int nPhilosophers, const switches &sw, forest::logger* LO
 
   // Show stats for rs construction
   printStats("MDD", mdd);
-  
+
   operation::showAllComputeTables(meddlyout, 3);
 
   double c;
@@ -670,7 +670,7 @@ domain* runWithOptions(int nPhilosophers, const switches &sw, forest::logger* LO
   if (sw.printReachableStates) {
     // Create a EV+MDD forest in this domain (to store index set)
     forest* evplusmdd =
-      d->createForest(false, forest::INTEGER, forest::INDEX_SET);
+      d->createForest(false, range_type::INTEGER, edge_labeling::INDEX_SET);
     assert(evplusmdd != NULL);
 
     // Test Convert MDD to Index Set EV+MDD
@@ -694,7 +694,7 @@ domain* runWithOptions(int nPhilosophers, const switches &sw, forest::logger* LO
   if (false) {
     start.note_time();
     unsigned counter = 0;
-    for (enumerator iter(reachableStates); 
+    for (enumerator iter(reachableStates);
         iter; ++iter, ++counter)
     {
       const int* element = iter.getAssignments();
@@ -882,7 +882,7 @@ int main(int argc, char *argv[])
       LOG->recordNodeCounts();
       LOG->recordTimeStamps();
       char comment[80];
-      snprintf(comment, 80, "Automatically generated by dining_phils (N=%d)", 
+      snprintf(comment, 80, "Automatically generated by dining_phils (N=%d)",
         nPhilosophers);
       LOG->addComment(comment);
     }

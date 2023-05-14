@@ -1,10 +1,9 @@
-
 /*
     Meddly: Multi-terminal and Edge-valued Decision Diagram LibrarY.
     Copyright (C) 2009, Iowa State University Research Foundation, Inc.
 
     This library is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Lesser General Public License as published 
+    it under the terms of the GNU Lesser General Public License as published
     by the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
@@ -18,6 +17,7 @@
  */
 
 #include "unique_table.h"
+#include "forest.h"
 
 MEDDLY::unique_table::unique_table(expert_forest* ef)
 : parent(ef)
@@ -210,7 +210,7 @@ MEDDLY::node_handle MEDDLY::unique_table::subtable::remove(unsigned hash, node_h
 {
   unsigned h = hash%size;
 
-  MEDDLY_CHECK_RANGE(0, h, size);
+  MEDDLY::CHECK_RANGE(__FILE__, __LINE__, 0, h, size);
 
   node_handle prev = 0;
   for (node_handle ptr = table[h]; ptr!=0; ptr = parent->getNext(ptr)) {

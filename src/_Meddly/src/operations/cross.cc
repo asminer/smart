@@ -1,10 +1,9 @@
-
 /*
     Meddly: Multi-terminal and Edge-valued Decision Diagram LibrarY.
     Copyright (C) 2009, Iowa State University Research Foundation, Inc.
 
     This library is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Lesser General Public License as published 
+    it under the terms of the GNU Lesser General Public License as published
     by the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
@@ -17,11 +16,12 @@
     along with this library.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
 #include "../defines.h"
 #include "cross.h"
+
+#include "../ct_entry_result.h"
+#include "../compute_table.h"
+#include "../oper_binary.h"
 
 // #define TRACE_ALL_OPS
 // #define DEBUG_CROSS
@@ -39,7 +39,7 @@ namespace MEDDLY {
 
 class MEDDLY::cross_bool : public binary_operation {
   public:
-    cross_bool(const binary_opname* oc, expert_forest* a1,
+    cross_bool(binary_opname* oc, expert_forest* a1,
       expert_forest* a2, expert_forest* res);
 
     virtual void computeDDEdge(const dd_edge& a, const dd_edge& b, dd_edge &c, bool userFlag);
@@ -48,11 +48,11 @@ class MEDDLY::cross_bool : public binary_operation {
     node_handle compute_un(int ht, node_handle a, node_handle b);
 };
 
-MEDDLY::cross_bool::cross_bool(const binary_opname* oc, expert_forest* a1,
-  expert_forest* a2, expert_forest* res) 
+MEDDLY::cross_bool::cross_bool(binary_opname* oc, expert_forest* a1,
+  expert_forest* a2, expert_forest* res)
 : binary_operation(oc, 1, a1, a2, res)
 {
-  compute_table::entry_type* et = new compute_table::entry_type(oc->getName(), "INN:N");
+  ct_entry_type* et = new ct_entry_type(oc->getName(), "INN:N");
   et->setForestForSlot(1, a1);
   et->setForestForSlot(2, a2);
   et->setForestForSlot(4, res);
@@ -76,11 +76,11 @@ MEDDLY::node_handle MEDDLY::cross_bool::compute_un(int k, node_handle a, node_ha
   MEDDLY_DCASSERT(k>=0);
   if (0==a || 0==b) return 0;
   if (0==k) {
-    return a; 
+    return a;
   }
 
   // check compute table
-  compute_table::entry_key* CTsrch = CT0->useEntryKey(etype[0], 0);
+  ct_entry_key* CTsrch = CT0->useEntryKey(etype[0], 0);
   MEDDLY_DCASSERT(CTsrch);
   CTsrch->writeI(k);
   CTsrch->writeN(a);
@@ -92,11 +92,11 @@ MEDDLY::node_handle MEDDLY::cross_bool::compute_un(int k, node_handle a, node_ha
   }
 
   // Initialize unpacked node
-  unpacked_node *A = unpacked_node::useUnpackedNode();
+  unpacked_node *A = unpacked_node::New();
   if (arg1F->getNodeLevel(a) < k) {
     A->initRedundant(arg1F, k, a, true);
   } else {
-    A->initFromNode(arg1F, a, true);
+    arg1F->unpackNode(A, a, FULL_ONLY);
   }
 
   const unsigned resultSize = unsigned(resF->getLevelSize(k));
@@ -130,14 +130,14 @@ MEDDLY::node_handle MEDDLY::cross_bool::compute_pr(unsigned in, int k, node_hand
   MEDDLY_DCASSERT(k<0);
   if (0==a || 0==b) return 0;
 
-  // DON'T check compute table 
+  // DON'T check compute table
 
   // Initialize unpacked node
-  unpacked_node *B = unpacked_node::useUnpackedNode();
+  unpacked_node *B = unpacked_node::New();
   if (arg2F->getNodeLevel(b) < -k) {
     B->initRedundant(arg2F, -k, b, true);
   } else {
-    B->initFromNode(arg2F, b, true);
+    arg2F->unpackNode(B, b, FULL_ONLY);
   }
 
   const unsigned resultSize = unsigned(resF->getLevelSize(k));
@@ -171,8 +171,8 @@ MEDDLY::node_handle MEDDLY::cross_bool::compute_pr(unsigned in, int k, node_hand
 class MEDDLY::cross_opname : public binary_opname {
   public:
     cross_opname();
-    virtual binary_operation* buildOperation(expert_forest* a1, 
-      expert_forest* a2, expert_forest* r) const;
+    virtual binary_operation* buildOperation(expert_forest* a1,
+      expert_forest* a2, expert_forest* r);
 };
 
 MEDDLY::cross_opname::cross_opname()
@@ -180,28 +180,28 @@ MEDDLY::cross_opname::cross_opname()
 {
 }
 
-MEDDLY::binary_operation* 
-MEDDLY::cross_opname::buildOperation(expert_forest* a1, expert_forest* a2, 
-  expert_forest* r) const
+MEDDLY::binary_operation*
+MEDDLY::cross_opname::buildOperation(expert_forest* a1, expert_forest* a2,
+  expert_forest* r)
 {
   if (0==a1 || 0==a2 || 0==r) return 0;
 
-  if (  
-    (a1->getDomain() != r->getDomain()) || 
-    (a2->getDomain() != r->getDomain()) 
+  if (
+    (a1->getDomain() != r->getDomain()) ||
+    (a2->getDomain() != r->getDomain())
   )
     throw error(error::DOMAIN_MISMATCH, __FILE__, __LINE__);
 
   if (
     a1->isForRelations()  ||
-    (a1->getRangeType() != forest::BOOLEAN) ||
-    (a1->getEdgeLabeling() != forest::MULTI_TERMINAL) ||
+    (a1->getRangeType() != range_type::BOOLEAN) ||
+    (a1->getEdgeLabeling() != edge_labeling::MULTI_TERMINAL) ||
     a2->isForRelations()  ||
-    (a2->getRangeType() != forest::BOOLEAN) ||
-    (a2->getEdgeLabeling() != forest::MULTI_TERMINAL) ||
+    (a2->getRangeType() != range_type::BOOLEAN) ||
+    (a2->getEdgeLabeling() != edge_labeling::MULTI_TERMINAL) ||
     (!r->isForRelations())  ||
-    (r->getRangeType() != forest::BOOLEAN) ||
-    (r->getEdgeLabeling() != forest::MULTI_TERMINAL)
+    (r->getRangeType() != range_type::BOOLEAN) ||
+    (r->getEdgeLabeling() != edge_labeling::MULTI_TERMINAL)
   )
     throw error(error::TYPE_MISMATCH, __FILE__, __LINE__);
 

@@ -1,10 +1,9 @@
-
 /*
     Meddly: Multi-terminal and Edge-valued Decision Diagram LibrarY.
     Copyright (C) 2009, Iowa State University Research Foundation, Inc.
 
     This library is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Lesser General Public License as published 
+    it under the terms of the GNU Lesser General Public License as published
     by the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
@@ -17,8 +16,8 @@
     along with this library.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef MTMXD_H
-#define MTMXD_H
+#ifndef MEDDLY_MTMXD_H
+#define MEDDLY_MTMXD_H
 
 #include "mt.h"
 
@@ -37,23 +36,23 @@ class MEDDLY::mtmxd_forest : public mt_forest {
     virtual void dynamicReorderVariables(int top, int bottom);
     void sifting(int var, int top, int bottom);
 
-    virtual enumerator::iterator* makeFullIter() const 
+    virtual enumerator::iterator* makeFullIter() const
     {
       return new mtmxd_iterator(this);
     }
 
-    virtual enumerator::iterator* makeFixedRowIter() const 
+    virtual enumerator::iterator* makeFixedRowIter() const
     {
       return new mtmxd_fixedrow_iter(this);
     }
 
-    virtual enumerator::iterator* makeFixedColumnIter() const 
+    virtual enumerator::iterator* makeFixedColumnIter() const
     {
       return new mtmxd_fixedcol_iter(this);
     }
 
   protected:
-      inline node_handle evaluateRaw(const dd_edge &f, const int* vlist, 
+      inline node_handle evaluateRaw(const dd_edge &f, const int* vlist,
         const int* vplist) const
       {
         node_handle p = f.getNode();
@@ -61,7 +60,7 @@ class MEDDLY::mtmxd_forest : public mt_forest {
           int k = getNodeLevel(p);
           int i = (k<0) ? vplist[-k] : vlist[k];
           p = getDownPtr(p, i);
-        } 
+        }
         return p;
       }
 
@@ -123,9 +122,9 @@ namespace MEDDLY {
       int K;
       binary_operation* unionOp;
     public:
-      mtmxd_edgemaker(mtmxd_forest* f, 
-        const int* const* mt, const int* const* mp, const T* v, int* o, int n, 
-        int k, binary_operation* unOp) 
+      mtmxd_edgemaker(mtmxd_forest* f,
+        const int* const* mt, const int* const* mp, const T* v, int* o, int n,
+        int k, binary_operation* unOp)
       {
         F = f;
         vulist = mt;
@@ -176,7 +175,7 @@ namespace MEDDLY {
       node_handle createEdgeUn(int k, int start, int stop) {
         MEDDLY_DCASSERT(k>=0);
         MEDDLY_DCASSERT(stop > start);
-        // 
+        //
         // Fast special case
         //
         if (1==stop-start) {
@@ -228,7 +227,7 @@ namespace MEDDLY {
             }
             dch++;
           }
-        } 
+        }
 
         //
         // Process "don't care, don't change" pairs, if any
@@ -263,7 +262,7 @@ namespace MEDDLY {
         unsigned z = 0; // number of opaque edges in our sparse node
 
         //
-        // For each value v, 
+        // For each value v,
         //  (1) move those values to the front
         //  (2) process them, if any
         // Then when we are done, union with any don't cares
@@ -370,14 +369,14 @@ namespace MEDDLY {
         unpacked_node* nb = unpacked_node::newSparse(F, k, lastV + (add_extensible_edge? 1: 0));
 
         //
-        // For each value v, 
+        // For each value v,
         //  (1) move those values to the front
         //  (2) process them, if any
         //  (3) union with don't cares
         //
-        for (unsigned v = (dontcares.getNode()) ? 0 : nextV; 
-             v<lastV; 
-             v = (dontcares.getNode()) ? v+1 : nextV) 
+        for (unsigned v = (dontcares.getNode()) ? 0 : nextV;
+             v<lastV;
+             v = (dontcares.getNode()) ? v+1 : nextV)
         {
           nextV = lastV;
           //
@@ -408,14 +407,14 @@ namespace MEDDLY {
           dd_edge these(F);
           if (batchP > start) {
             these.set( createEdgeUn(F->downLevel(k), start, batchP) );
-          } 
+          }
 
           //
           // (3) union with don't cares
           //
           MEDDLY_DCASSERT(unionOp);
           unionOp->computeTemp(dontcares, these, these);
-    
+
           node_handle total = F->linkNode(these);
           these.set(0);
 
@@ -571,7 +570,7 @@ namespace MEDDLY {
           // process unprimed level
           //
           if (DONT_CARE == _vlist[i]) {
-            if (F->isFullyReduced()) { 
+            if (F->isFullyReduced()) {
               next=nextpr;
               continue;
             }

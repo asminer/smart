@@ -1,4 +1,3 @@
-
 /*
     Meddly: Multi-terminal and Edge-valued Decision Diagram LibrarY.
     Copyright (C) 2009, Iowa State University Research Foundation, Inc.
@@ -20,8 +19,13 @@
 #include <deque>
 #include <vector>
 
-#include "defines.h"
+#include "../defines.h"
 #include "constrained.h"
+
+#include "../ct_entry_result.h"
+#include "../compute_table.h"
+#include "../oper_binary.h"
+#include "../ops_builtin.h"
 
 // ******************************************************************
 // *                                                                *
@@ -29,7 +33,7 @@
 // *                                                                *
 // ******************************************************************
 
-MEDDLY::common_constrained::common_constrained(const constrained_opname* code,
+MEDDLY::common_constrained::common_constrained(constrained_opname* code,
   unsigned slots,
   expert_forest* cons, expert_forest* arg, expert_forest* trans, expert_forest* res)
   : specialized_operation(code, slots)
@@ -76,7 +80,7 @@ MEDDLY::constrained_bfs_opname::constrained_bfs_opname(bool fwd)
   forward = fwd;
 }
 
-MEDDLY::specialized_operation* MEDDLY::constrained_bfs_opname::buildOperation(arguments* a) const
+MEDDLY::specialized_operation* MEDDLY::constrained_bfs_opname::buildOperation(arguments* a)
 {
   constrained_opname::constrained_args* args = dynamic_cast<constrained_opname::constrained_args*>(a);
   specialized_operation* op = 0;
@@ -99,11 +103,11 @@ MEDDLY::specialized_operation* MEDDLY::constrained_bfs_opname::buildOperation(ar
 // *                                                                *
 // ******************************************************************
 
-MEDDLY::constrained_bckwd_bfs_evplus::constrained_bckwd_bfs_evplus(const constrained_opname* code,
+MEDDLY::constrained_bckwd_bfs_evplus::constrained_bckwd_bfs_evplus(constrained_opname* code,
   expert_forest* cons, expert_forest* arg, expert_forest* trans, expert_forest* res)
   : common_constrained(code, 0, cons, arg, trans, res)
 {
-  if (resF->getRangeType() == forest::INTEGER) {
+  if (resF->getRangeType() == range_type::INTEGER) {
     plusOp = getOperation(PLUS, resF, consF, resF);
     minOp = getOperation(UNION, resF, resF, resF);
   } else {
@@ -116,7 +120,7 @@ void MEDDLY::constrained_bckwd_bfs_evplus::compute(const dd_edge& a, const dd_ed
 {
   MEDDLY_DCASSERT(res.getForest() == resF);
 
-  if (resF->getRangeType() == forest::INTEGER) {
+  if (resF->getRangeType() == range_type::INTEGER) {
     plusOp = getOperation(PLUS, resF, consF, resF);
     minOp = getOperation(UNION, resF, resF, resF);
   } else {
@@ -183,7 +187,7 @@ MEDDLY::constrained_dfs_opname::constrained_dfs_opname(bool fwd)
   forward = fwd;
 }
 
-MEDDLY::specialized_operation* MEDDLY::constrained_dfs_opname::buildOperation(arguments* a) const
+MEDDLY::specialized_operation* MEDDLY::constrained_dfs_opname::buildOperation(arguments* a)
 {
   constrained_opname::constrained_args* args = dynamic_cast<constrained_opname::constrained_args*>(a);
   specialized_operation* op = 0;
@@ -231,7 +235,7 @@ MEDDLY::specialized_operation* MEDDLY::constrained_dfs_opname::buildOperation(ar
 // *                                                                *
 // ******************************************************************
 
-MEDDLY::constrained_dfs_mt::constrained_dfs_mt(const constrained_opname* code,
+MEDDLY::constrained_dfs_mt::constrained_dfs_mt(constrained_opname* code,
   expert_forest* cons, expert_forest* arg, expert_forest* trans, expert_forest* res)
   : common_constrained(code, 1, cons, arg, trans, res)
 {
@@ -246,7 +250,7 @@ MEDDLY::constrained_dfs_mt::constrained_dfs_mt(const constrained_opname* code,
 
   splits = nullptr;
 
-  compute_table::entry_type* et = new compute_table::entry_type(code->getName(), "NNN:N");
+  ct_entry_type* et = new ct_entry_type(code->getName(), "NNN:N");
   et->setForestForSlot(0, cons);
   et->setForestForSlot(1, arg);
   et->setForestForSlot(2, trans);
@@ -255,10 +259,10 @@ MEDDLY::constrained_dfs_mt::constrained_dfs_mt(const constrained_opname* code,
   buildCTs();
 }
 
-MEDDLY::compute_table::entry_key* MEDDLY::constrained_dfs_mt::findResult(
+MEDDLY::ct_entry_key* MEDDLY::constrained_dfs_mt::findResult(
     node_handle a, node_handle b, node_handle r, node_handle &c)
 {
-  compute_table::entry_key* key = CT0->useEntryKey(etype[0], 0);
+  ct_entry_key* key = CT0->useEntryKey(etype[0], 0);
   MEDDLY_DCASSERT(key);
   key->writeN(a);
   key->writeN(b);
@@ -275,7 +279,7 @@ MEDDLY::compute_table::entry_key* MEDDLY::constrained_dfs_mt::findResult(
   return 0;
 }
 
-void MEDDLY::constrained_dfs_mt::saveResult(compute_table::entry_key* key,
+void MEDDLY::constrained_dfs_mt::saveResult(ct_entry_key* key,
   node_handle a, node_handle b, node_handle r, node_handle c)
 {
   CTresult[0].reset();
@@ -309,7 +313,7 @@ void MEDDLY::constrained_dfs_mt::splitMxd(const dd_edge& mxd)
     // Initialize readers
     unpacked_node* Ru = isLevelAbove(level, mxdLevel)
       ? unpacked_node::newRedundant(transF, level, root.getNode(), true)
-      : unpacked_node::newFromNode(transF, root.getNode(), true);
+      : transF->newUnpacked(root.getNode(), FULL_ONLY);
 
     bool first = true;
 
@@ -319,7 +323,7 @@ void MEDDLY::constrained_dfs_mt::splitMxd(const dd_edge& mxd)
       int mxdPLevel = transF->getNodeLevel(Ru->d(i));
       unpacked_node* Rp = isLevelAbove(-level, mxdPLevel)
         ? unpacked_node::newIdentity(transF, -level, i, Ru->d(i), true)
-        : unpacked_node::newFromNode(transF, Ru->d(i), true);
+        : transF->newUnpacked(Ru->d(i), FULL_ONLY);
 
       // Intersect along the diagonal
       if (first) {
@@ -390,7 +394,7 @@ void MEDDLY::constrained_dfs_mt::_compute(node_handle a, node_handle b, node_han
 // *                                                                *
 // ******************************************************************
 
-MEDDLY::constrained_forwd_dfs_mt::constrained_forwd_dfs_mt(const constrained_opname* code,
+MEDDLY::constrained_forwd_dfs_mt::constrained_forwd_dfs_mt(constrained_opname* code,
   expert_forest* cons, expert_forest* arg, expert_forest* trans, expert_forest* res)
   : constrained_dfs_mt(code, cons, arg, trans, res)
 {
@@ -411,11 +415,11 @@ void MEDDLY::constrained_forwd_dfs_mt::saturateHelper(node_handle a, unpacked_no
   // Initialize mxd readers, note we might skip the unprimed level
   unpacked_node* Ru = (mxdLevel < 0)
     ? unpacked_node::newRedundant(transF, nb.getLevel(), mxd.getNode(), true)
-    : unpacked_node::newFromNode(transF, mxd.getNode(), true);
+    : transF->newUnpacked(mxd.getNode(), FULL_ONLY);
 
   unpacked_node* A = isLevelAbove(nb.getLevel(), consF->getNodeLevel(a))
     ? unpacked_node::newRedundant(consF, nb.getLevel(), a, true)
-    : unpacked_node::newFromNode(consF, a, true);
+    : consF->newUnpacked(a, FULL_ONLY);
 
   dd_edge nbdj(resF), newst(resF);
 
@@ -436,7 +440,7 @@ void MEDDLY::constrained_forwd_dfs_mt::saturateHelper(node_handle a, unpacked_no
     }
     else {
       Rps[i] = (transF->getNodeLevel(Ru->d(i)) == -nb.getLevel())
-        ? unpacked_node::newFromNode(transF, Ru->d(i), false)
+        ? transF->newUnpacked(Ru->d(i), SPARSE_ONLY)
         : unpacked_node::newIdentity(transF, -nb.getLevel(), i, Ru->d(i), false);
     }
   }
@@ -523,7 +527,7 @@ void MEDDLY::constrained_forwd_dfs_mt::recFire(node_handle a, node_handle b, nod
   }
 
   // check the cache
-  compute_table::entry_key* key = findResult(a, b, r, c);
+  ct_entry_key* key = findResult(a, b, r, c);
   if (key == 0) {
     return;
   }
@@ -540,10 +544,10 @@ void MEDDLY::constrained_forwd_dfs_mt::recFire(node_handle a, node_handle b, nod
   // Initialize evmdd reader
   unpacked_node* A = isLevelAbove(level, aLevel)
     ? unpacked_node::newRedundant(consF, level, a, true)
-    : unpacked_node::newFromNode(consF, a, true);
+    : consF->newUnpacked(a, FULL_ONLY);
   unpacked_node* B = isLevelAbove(level, bLevel)
     ? unpacked_node::newRedundant(argF, level, b, true)
-    : unpacked_node::newFromNode(argF, b, true);
+    : argF->newUnpacked(b, FULL_ONLY);
 
   unpacked_node* T = unpacked_node::newFull(resF, level, size);
   if (ABS(rLevel) < level) {
@@ -569,7 +573,7 @@ void MEDDLY::constrained_forwd_dfs_mt::recFire(node_handle a, node_handle b, nod
     // Initialize mxd readers, note we might skip the unprimed level
     unpacked_node* Ru = (rLevel < 0)
       ? unpacked_node::newRedundant(transF, -rLevel, r, false)
-      : unpacked_node::newFromNode(transF, r, false);
+      : transF->newUnpacked(r, SPARSE_ONLY);
 
     // loop over mxd "rows"
     for (int iz = 0; iz < Ru->getNNZs(); iz++) {
@@ -577,7 +581,7 @@ void MEDDLY::constrained_forwd_dfs_mt::recFire(node_handle a, node_handle b, nod
 
       unpacked_node* Rp = isLevelAbove(-level, transF->getNodeLevel(Ru->d(iz)))
         ? unpacked_node::newIdentity(transF, -level, i, Ru->d(iz), false)
-        : unpacked_node::newFromNode(transF, Ru->d(iz), false);
+        : transF->newUnpacked(Ru->d(iz), SPARSE_ONLY);
 
       // loop over mxd "columns"
       for (int jz = 0; jz < Rp->getNNZs(); jz++) {
@@ -630,7 +634,7 @@ void MEDDLY::constrained_forwd_dfs_mt::recFire(node_handle a, node_handle b, nod
 // *                                                                *
 // ******************************************************************
 
-MEDDLY::constrained_bckwd_dfs_mt::constrained_bckwd_dfs_mt(const constrained_opname* code,
+MEDDLY::constrained_bckwd_dfs_mt::constrained_bckwd_dfs_mt(constrained_opname* code,
   expert_forest* cons, expert_forest* arg, expert_forest* trans, expert_forest* res)
   : constrained_dfs_mt(code, cons, arg, trans, res)
 {
@@ -651,11 +655,11 @@ void MEDDLY::constrained_bckwd_dfs_mt::saturateHelper(node_handle a, unpacked_no
   // Initialize mxd readers, note we might skip the unprimed level
   unpacked_node* Ru = (mxdLevel < 0)
     ? unpacked_node::newRedundant(transF, nb.getLevel(), mxd.getNode(), false)
-    : unpacked_node::newFromNode(transF, mxd.getNode(), false);
+    : transF->newUnpacked(mxd.getNode(), SPARSE_ONLY);
 
   unpacked_node* A = isLevelAbove(nb.getLevel(), consF->getNodeLevel(a))
     ? unpacked_node::newRedundant(consF, nb.getLevel(), a, true)
-    : unpacked_node::newFromNode(consF, a, true);
+    : consF->newUnpacked(a, FULL_ONLY);
 
   dd_edge nbdi(resF), newst(resF);
 
@@ -677,7 +681,7 @@ void MEDDLY::constrained_bckwd_dfs_mt::saturateHelper(node_handle a, unpacked_no
     }
     else {
       Rps[iz] = (transF->getNodeLevel(Ru->d(iz)) == -nb.getLevel())
-        ? unpacked_node::newFromNode(transF, Ru->d(iz), true)
+        ? transF->newUnpacked(Ru->d(iz), FULL_ONLY)
         : unpacked_node::newIdentity(transF, -nb.getLevel(), i, Ru->d(iz), true);
     }
   }
@@ -764,7 +768,7 @@ void MEDDLY::constrained_bckwd_dfs_mt::recFire(node_handle a, node_handle b, nod
   }
 
   // check the cache
-  compute_table::entry_key* key = findResult(a, b, r, c);
+  ct_entry_key* key = findResult(a, b, r, c);
   if (key == 0) {
     return;
   }
@@ -779,10 +783,10 @@ void MEDDLY::constrained_bckwd_dfs_mt::recFire(node_handle a, node_handle b, nod
   // Initialize evmdd reader
   unpacked_node* A = isLevelAbove(level, aLevel)
     ? unpacked_node::newRedundant(consF, level, a, true)
-    : unpacked_node::newFromNode(consF, a, true);
+    : consF->newUnpacked(a, FULL_ONLY);
   unpacked_node* B = isLevelAbove(level, bLevel)
     ? unpacked_node::newRedundant(argF, level, b, true)
-    : unpacked_node::newFromNode(argF, b, true);
+    : argF->newUnpacked(b, FULL_ONLY);
 
   dd_edge Tdi(resF), newst(resF);
 
@@ -810,7 +814,7 @@ void MEDDLY::constrained_bckwd_dfs_mt::recFire(node_handle a, node_handle b, nod
     // Initialize mxd readers, note we might skip the unprimed level
     unpacked_node* Ru = (rLevel < 0)
       ? unpacked_node::newRedundant(transF, -rLevel, r, false)
-      : unpacked_node::newFromNode(transF, r, false);
+      : transF->newUnpacked(r, SPARSE_ONLY);
 
     // loop over mxd "rows"
     for (int iz = 0; iz < Ru->getNNZs(); iz++) {
@@ -821,7 +825,7 @@ void MEDDLY::constrained_bckwd_dfs_mt::recFire(node_handle a, node_handle b, nod
 
       unpacked_node* Rp = isLevelAbove(-level, transF->getNodeLevel(Ru->d(iz)))
         ? unpacked_node::newIdentity(transF, -level, i, Ru->d(iz), false)
-        : unpacked_node::newFromNode(transF, Ru->d(iz), false);
+        : transF->newUnpacked(Ru->d(iz), SPARSE_ONLY);
 
       // loop over mxd "columns"
       for (int jz = 0; jz < Rp->getNNZs(); jz++) {
@@ -888,16 +892,16 @@ MEDDLY::constrained_saturation_mt::constrained_saturation_mt(constrained_dfs_mt*
   registerInForest(argF);
   registerInForest(resF);
 
-  compute_table::entry_type* et;
+  ct_entry_type* et;
 
   if (argF->isFullyReduced()) {
     // CT entry includes level info
-    et = new compute_table::entry_type("constrained_saturation_mt", "NNI:N");
+    et = new ct_entry_type("constrained_saturation_mt", "NNI:N");
     et->setForestForSlot(0, cons);
     et->setForestForSlot(1, arg);
     et->setForestForSlot(4, res);
   } else {
-    et = new compute_table::entry_type("constrained_saturation_mt", "NN:N");
+    et = new ct_entry_type("constrained_saturation_mt", "NN:N");
     et->setForestForSlot(0, cons);
     et->setForestForSlot(1, arg);
     et->setForestForSlot(3, res);
@@ -931,10 +935,10 @@ bool MEDDLY::constrained_saturation_mt::checkTerminals(node_handle a, node_handl
   return false;
 }
 
-MEDDLY::compute_table::entry_key* MEDDLY::constrained_saturation_mt::findResult(
+MEDDLY::ct_entry_key* MEDDLY::constrained_saturation_mt::findResult(
     node_handle a, node_handle b, int level, node_handle &c)
 {
-  compute_table::entry_key* key = CT0->useEntryKey(etype[0], 0);
+  ct_entry_key* key = CT0->useEntryKey(etype[0], 0);
   MEDDLY_DCASSERT(key);
   key->writeN(a);
   key->writeN(b);
@@ -951,7 +955,7 @@ MEDDLY::compute_table::entry_key* MEDDLY::constrained_saturation_mt::findResult(
   return 0;
 }
 
-void MEDDLY::constrained_saturation_mt::saveResult(compute_table::entry_key* key,
+void MEDDLY::constrained_saturation_mt::saveResult(ct_entry_key* key,
   node_handle a, node_handle b, int level, node_handle c)
 {
   CTresult[0].reset();
@@ -970,7 +974,7 @@ void MEDDLY::constrained_saturation_mt::saturate(node_handle a, node_handle b, i
     return;
   }
 
-  compute_table::entry_key* key = findResult(a, b, level, c);
+  ct_entry_key* key = findResult(a, b, level, c);
   if (key == 0) {
     return;
   }
@@ -981,10 +985,10 @@ void MEDDLY::constrained_saturation_mt::saturate(node_handle a, node_handle b, i
 
   unpacked_node* A = (aLevel < level)
     ? unpacked_node::newRedundant(consF, level, a, true)
-    : unpacked_node::newFromNode(consF, a, true);
+    : consF->newUnpacked(a, FULL_ONLY);
   unpacked_node* B = (bLevel < level)
     ? unpacked_node::newRedundant(argF, level, b, true)
-    : unpacked_node::newFromNode(argF, b, true);
+    : argF->newUnpacked(b, FULL_ONLY);
 
   // Do computation
   unpacked_node* T = unpacked_node::newFull(resF, level, sz);
@@ -1017,7 +1021,7 @@ void MEDDLY::constrained_saturation_mt::saturate(node_handle a, node_handle b, i
 // *                                                                *
 // ******************************************************************
 
-MEDDLY::constrained_bckwd_dfs_evplus::constrained_bckwd_dfs_evplus(const constrained_opname* code,
+MEDDLY::constrained_bckwd_dfs_evplus::constrained_bckwd_dfs_evplus(constrained_opname* code,
   expert_forest* cons, expert_forest* arg, expert_forest* trans, expert_forest* res)
   : common_constrained(code, 1, cons, arg, trans, res)
 {
@@ -1032,7 +1036,7 @@ MEDDLY::constrained_bckwd_dfs_evplus::constrained_bckwd_dfs_evplus(const constra
 
   splits = nullptr;
 
-  compute_table::entry_type* et = new compute_table::entry_type(code->getName(), "LNNN:LN");
+  ct_entry_type* et = new ct_entry_type(code->getName(), "LNNN:LN");
   et->setForestForSlot(1, cons);
   et->setForestForSlot(2, arg);
   et->setForestForSlot(3, trans);
@@ -1041,10 +1045,10 @@ MEDDLY::constrained_bckwd_dfs_evplus::constrained_bckwd_dfs_evplus(const constra
   buildCTs();
 }
 
-MEDDLY::compute_table::entry_key* MEDDLY::constrained_bckwd_dfs_evplus::findResult(long aev, node_handle a,
+MEDDLY::ct_entry_key* MEDDLY::constrained_bckwd_dfs_evplus::findResult(long aev, node_handle a,
     long bev, node_handle b, node_handle r, long& cev, node_handle &c)
 {
-  compute_table::entry_key* key = CT0->useEntryKey(etype[0], 0);
+  ct_entry_key* key = CT0->useEntryKey(etype[0], 0);
   MEDDLY_DCASSERT(key);
   key->writeL(aev);
   key->writeN(a);
@@ -1070,7 +1074,7 @@ MEDDLY::compute_table::entry_key* MEDDLY::constrained_bckwd_dfs_evplus::findResu
   return 0;
 }
 
-void MEDDLY::constrained_bckwd_dfs_evplus::saveResult(compute_table::entry_key* key,
+void MEDDLY::constrained_bckwd_dfs_evplus::saveResult(ct_entry_key* key,
   long aev, node_handle a, long bev, node_handle b, node_handle r, long cev, node_handle c)
 {
   CTresult[0].reset();
@@ -1111,7 +1115,7 @@ void MEDDLY::constrained_bckwd_dfs_evplus::splitMxd(const dd_edge& mxd)
     // Initialize readers
     unpacked_node* Ru = isLevelAbove(level, mxdLevel)
       ? unpacked_node::newRedundant(transF, level, root.getNode(), true)
-      : unpacked_node::newFromNode(transF, root.getNode(), true);
+      : transF->newUnpacked(root.getNode(), FULL_ONLY);
 
     bool first = true;
 
@@ -1121,7 +1125,7 @@ void MEDDLY::constrained_bckwd_dfs_evplus::splitMxd(const dd_edge& mxd)
       int mxdPLevel = transF->getNodeLevel(Ru->d(i));
       unpacked_node* Rp = isLevelAbove(-level, mxdPLevel)
         ? unpacked_node::newIdentity(transF, -level, i, Ru->d(i), true)
-        : unpacked_node::newFromNode(transF, Ru->d(i), true);
+        : transF->newUnpacked(Ru->d(i), FULL_ONLY);
 
       // Intersect along the diagonal
       if (first) {
@@ -1203,11 +1207,11 @@ void MEDDLY::constrained_bckwd_dfs_evplus::saturateHelper(long aev, node_handle 
   // Initialize mxd readers, note we might skip the unprimed level
   unpacked_node* Ru = (mxdLevel < 0)
     ? unpacked_node::newRedundant(transF, nb.getLevel(), mxd.getNode(), false)
-    : unpacked_node::newFromNode(transF, mxd.getNode(), false);
+    : transF->newUnpacked(mxd.getNode(), SPARSE_ONLY);
 
   unpacked_node* A = isLevelAbove(nb.getLevel(), consF->getNodeLevel(a))
     ? unpacked_node::newRedundant(consF, nb.getLevel(), 0L, a, true)
-    : unpacked_node::newFromNode(consF, a, true);
+    : consF->newUnpacked(a, FULL_ONLY);
 
   // indices to explore
   std::deque<int> queue;
@@ -1227,7 +1231,7 @@ void MEDDLY::constrained_bckwd_dfs_evplus::saturateHelper(long aev, node_handle 
     }
     else {
       Rps[iz] = (transF->getNodeLevel(Ru->d(iz)) == -nb.getLevel())
-        ? unpacked_node::newFromNode(transF, Ru->d(iz), true)
+        ? transF->newUnpacked(Ru->d(iz), FULL_ONLY)
         : unpacked_node::newIdentity(transF, -nb.getLevel(), i, Ru->d(iz), true);
     }
   }
@@ -1344,7 +1348,7 @@ void MEDDLY::constrained_bckwd_dfs_evplus::recFire(long aev, node_handle a, long
   }
 
   // check the cache
-  compute_table::entry_key* key = findResult(aev, a, bev, b, r, cev, c);
+  ct_entry_key* key = findResult(aev, a, bev, b, r, cev, c);
   if (key == 0) {
     MEDDLY_DCASSERT(cev >= 0);
     return;
@@ -1360,10 +1364,10 @@ void MEDDLY::constrained_bckwd_dfs_evplus::recFire(long aev, node_handle a, long
   // Initialize evmdd reader
   unpacked_node* A = isLevelAbove(level, aLevel)
     ? unpacked_node::newRedundant(consF, level, 0L, a, true)
-    : unpacked_node::newFromNode(consF, a, true);
+    : consF->newUnpacked(a, FULL_ONLY);
   unpacked_node* B = isLevelAbove(level, bLevel)
     ? unpacked_node::newRedundant(argF, level, 0L, b, true)
-    : unpacked_node::newFromNode(argF, b, true);
+    : argF->newUnpacked(b, FULL_ONLY);
 
   unpacked_node* T = unpacked_node::newFull(resF, level, size);
   if (ABS(rLevel) < level) {
@@ -1394,7 +1398,7 @@ void MEDDLY::constrained_bckwd_dfs_evplus::recFire(long aev, node_handle a, long
     // Initialize mxd readers, note we might skip the unprimed level
     unpacked_node* Ru = (rLevel < 0)
       ? unpacked_node::newRedundant(transF, -rLevel, r, false)
-      : unpacked_node::newFromNode(transF, r, false);
+      : transF->newUnpacked(r, SPARSE_ONLY);
 
     // loop over mxd "rows"
     for (int iz = 0; iz < Ru->getNNZs(); iz++) {
@@ -1406,7 +1410,7 @@ void MEDDLY::constrained_bckwd_dfs_evplus::recFire(long aev, node_handle a, long
 
       unpacked_node* Rp = isLevelAbove(-level, transF->getNodeLevel(Ru->d(iz)))
         ? unpacked_node::newIdentity(transF, -level, i, Ru->d(iz), false)
-        : unpacked_node::newFromNode(transF, Ru->d(iz), false);
+        : transF->newUnpacked(Ru->d(iz), SPARSE_ONLY);
 
       // loop over mxd "columns"
       for (int jz = 0; jz < Rp->getNNZs(); jz++) {
@@ -1491,16 +1495,16 @@ MEDDLY::constrained_saturation_evplus::constrained_saturation_evplus(constrained
   registerInForest(argF);
   registerInForest(resF);
 
-  compute_table::entry_type* et;
+  ct_entry_type* et;
 
   if (argF->isFullyReduced()) {
     // CT entry includes level info
-    et = new compute_table::entry_type("constrained_saturation_evplus", "LNNI:LN");
+    et = new ct_entry_type("constrained_saturation_evplus", "LNNI:LN");
     et->setForestForSlot(1, cons);
     et->setForestForSlot(2, arg);
     et->setForestForSlot(6, res);
   } else {
-    et = new compute_table::entry_type("constrained_saturation_evplus", "LNN:LN");
+    et = new ct_entry_type("constrained_saturation_evplus", "LNN:LN");
     et->setForestForSlot(1, cons);
     et->setForestForSlot(2, arg);
     et->setForestForSlot(5, res);
@@ -1540,10 +1544,10 @@ bool MEDDLY::constrained_saturation_evplus::checkTerminals(int aev, node_handle 
   return false;
 }
 
-MEDDLY::compute_table::entry_key* MEDDLY::constrained_saturation_evplus::findResult(long aev, node_handle a,
+MEDDLY::ct_entry_key* MEDDLY::constrained_saturation_evplus::findResult(long aev, node_handle a,
     long bev, node_handle b, int level, long& cev, node_handle &c)
 {
-  compute_table::entry_key* key = CT0->useEntryKey(etype[0], 0);
+  ct_entry_key* key = CT0->useEntryKey(etype[0], 0);
   MEDDLY_DCASSERT(key);
   key->writeL(aev);
   key->writeN(a);
@@ -1570,7 +1574,7 @@ MEDDLY::compute_table::entry_key* MEDDLY::constrained_saturation_evplus::findRes
   return 0;
 }
 
-void MEDDLY::constrained_saturation_evplus::saveResult(compute_table::entry_key* key,
+void MEDDLY::constrained_saturation_evplus::saveResult(ct_entry_key* key,
   long aev, node_handle a, long bev, node_handle b, int level, long cev, node_handle c)
 {
   CTresult[0].reset();
@@ -1597,7 +1601,7 @@ void MEDDLY::constrained_saturation_evplus::saturate(int aev, node_handle a, int
     return;
   }
 
-  compute_table::entry_key* key = findResult(aev, a, bev, b, level, cev, c);
+  ct_entry_key* key = findResult(aev, a, bev, b, level, cev, c);
   if (key == 0) {
     return;
   }
@@ -1608,10 +1612,10 @@ void MEDDLY::constrained_saturation_evplus::saturate(int aev, node_handle a, int
 
   unpacked_node* A = (aLevel < level)
     ? unpacked_node::newRedundant(consF, level, 0L, a, true)
-    : unpacked_node::newFromNode(consF, a, true);
+    : consF->newUnpacked(a, FULL_ONLY);
   unpacked_node* B = (bLevel < level)
     ? unpacked_node::newRedundant(argF, level, 0L, b, true)
-    : unpacked_node::newFromNode(argF, b, true);
+    : argF->newUnpacked(b, FULL_ONLY);
 
   // Do computation
   unpacked_node* T = unpacked_node::newFull(resF, level, sz);

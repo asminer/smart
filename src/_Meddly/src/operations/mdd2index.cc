@@ -1,10 +1,9 @@
-
 /*
     Meddly: Multi-terminal and Edge-valued Decision Diagram LibrarY.
     Copyright (C) 2009, Iowa State University Research Foundation, Inc.
 
     This library is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Lesser General Public License as published 
+    it under the terms of the GNU Lesser General Public License as published
     by the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
@@ -17,11 +16,12 @@
     along with this library.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
 #include "../defines.h"
 #include "mdd2index.h"
+
+#include "../ct_entry_result.h"
+#include "../compute_table.h"
+#include "../oper_unary.h"
 
 // #define TRACE_ALL_OPS
 
@@ -38,7 +38,7 @@ namespace MEDDLY {
 
 class MEDDLY::mdd2index_operation : public unary_operation {
   public:
-    mdd2index_operation(const unary_opname* oc, expert_forest* arg, 
+    mdd2index_operation(unary_opname* oc, expert_forest* arg,
       expert_forest* res);
 
     virtual void computeDDEdge(const dd_edge &arg, dd_edge &res, bool userFlag);
@@ -46,13 +46,13 @@ class MEDDLY::mdd2index_operation : public unary_operation {
     void compute_r(int k, node_handle a, node_handle &bdn, long &bcard);
 };
 
-MEDDLY::mdd2index_operation::mdd2index_operation(const unary_opname* oc, 
+MEDDLY::mdd2index_operation::mdd2index_operation(unary_opname* oc,
   expert_forest* arg, expert_forest* res)
   : unary_operation(oc, 1, arg, res)
 {
   // answer[0] : node
   // answer[1] : cardinality
-  compute_table::entry_type* et = new compute_table::entry_type(oc->getName(), "N:NL");
+  ct_entry_type* et = new ct_entry_type(oc->getName(), "N:NL");
   et->setForestForSlot(0, arg);
   et->setForestForSlot(2, res);
   registerEntryType(0, et);
@@ -86,7 +86,7 @@ MEDDLY::mdd2index_operation
     return;
   }
   if (0 == k) {
-    bdn = expert_forest::bool_Tencoder::value2handle(true);
+    bdn = bool_Tencoder::value2handle(true);
     bcard = 1;
     return;
   }
@@ -95,7 +95,7 @@ MEDDLY::mdd2index_operation
   MEDDLY_DCASSERT(aLevel <= k);
 
   // Check compute table
-  compute_table::entry_key* CTsrch = 0;
+  ct_entry_key* CTsrch = 0;
   if (aLevel == k) {
     CTsrch = CT0->useEntryKey(etype[0], 0);
     MEDDLY_DCASSERT(CTsrch);
@@ -116,13 +116,13 @@ MEDDLY::mdd2index_operation
   // Initialize node builder
   const unsigned size = unsigned(resF->getLevelSize(k));
   unpacked_node* nb = unpacked_node::newFull(resF, k, size);
-  
+
   // Initialize node reader
-  unpacked_node *A = unpacked_node::useUnpackedNode();
+  unpacked_node *A = unpacked_node::New();
   if (aLevel < k) {
     A->initRedundant(argF, k, a, true);
   } else {
-    A->initFromNode(argF, a, true);
+    argF->unpackNode(A, a, FULL_ONLY);
   }
 
   // recurse
@@ -171,8 +171,8 @@ MEDDLY::mdd2index_operation
 class MEDDLY::mdd2index_opname : public unary_opname {
   public:
     mdd2index_opname();
-    virtual unary_operation* 
-      buildOperation(expert_forest* ar, expert_forest* res) const;
+    virtual unary_operation*
+      buildOperation(expert_forest* ar, expert_forest* res);
 };
 
 MEDDLY::mdd2index_opname::mdd2index_opname()
@@ -182,19 +182,19 @@ MEDDLY::mdd2index_opname::mdd2index_opname()
 
 MEDDLY::unary_operation*
 MEDDLY::mdd2index_opname
-::buildOperation(expert_forest* arg, expert_forest* res) const
+::buildOperation(expert_forest* arg, expert_forest* res)
 {
   if (0==arg || 0==res) return 0;
 
   if (arg->getDomain() != res->getDomain())
     throw error(error::DOMAIN_MISMATCH, __FILE__, __LINE__);
 
-  if (arg->isForRelations() || 
-      arg->getRangeType() != forest::BOOLEAN ||
-      arg->getEdgeLabeling() != forest::MULTI_TERMINAL ||
+  if (arg->isForRelations() ||
+      arg->getRangeType() != range_type::BOOLEAN ||
+      arg->getEdgeLabeling() != edge_labeling::MULTI_TERMINAL ||
       res->isForRelations() ||
-      res->getRangeType() != forest::INTEGER ||
-      res->getEdgeLabeling() != forest::INDEX_SET
+      res->getRangeType() != range_type::INTEGER ||
+      res->getEdgeLabeling() != edge_labeling::INDEX_SET
   ) throw error(error::TYPE_MISMATCH, __FILE__, __LINE__);
 
   return new mdd2index_operation(this, arg, res);

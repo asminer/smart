@@ -1,10 +1,9 @@
-
 /*
     Meddly: Multi-terminal and Edge-valued Decision Diagram LibrarY.
     Copyright (C) 2009, Iowa State University Research Foundation, Inc.
 
     This library is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Lesser General Public License as published 
+    it under the terms of the GNU Lesser General Public License as published
     by the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
@@ -24,6 +23,7 @@
 
 #include "hole_base.h"
 #include "heap_manager.h"
+#include "../io.h"
 
 namespace MEDDLY {
 
@@ -78,7 +78,7 @@ namespace MEDDLY {
           Find and return the hole at position id in the heap.
           The root node is position 1.
           If a node has position n, it's parent has position n/2,
-          its left child has position 2n, 
+          its left child has position 2n,
           and its right child has position 2n+1.
             @param  id    Position number to find
             @param  Address of hole at that position, or 0 if none.
@@ -92,14 +92,14 @@ namespace MEDDLY {
           and the rightmost node at the bottom level.
       */
       node_address removeLastHeapNode();
-      
+
       /**
           Remove the node corresponding to the given address.
       */
       void removeHeapNode(node_address n);
 
       /**
-          Up heap operation starting at node n. 
+          Up heap operation starting at node n.
           Move n up in the heap, while its size
           is larger than its parent's size.
       */
@@ -151,7 +151,7 @@ namespace MEDDLY {
           hole_manager<INT>::refSlot(R, 1) = h;
         }
       }
-      
+
       inline static INT smallestChunk() {
         return 5;
       }
@@ -334,7 +334,7 @@ namespace MEDDLY {
           //
           setLeft(replace, Left(heap_root));
           setRight(replace, Right(heap_root));
-          makeRoot(replace); 
+          makeRoot(replace);
 
           //
           // Put new root node in proper position
@@ -363,7 +363,7 @@ namespace MEDDLY {
       printf("\t %lu remaining slots in current\n", leftover_slots);
 #endif
       if (leftover_slots > 0) {
-        // 
+        //
         // Note - we even recycle holes of size 1,
         // because they can be merged to the left or right,
         // depending on who is recycled first
@@ -381,8 +381,8 @@ namespace MEDDLY {
 #ifdef MEMORY_TRACE_DETAILS
         printf("\tcurrent hole too small to track\n");
 #endif
-      } 
-       
+      }
+
 #ifdef MEMORY_TRACE_DETAILS
       printf("requestChunk(%lu) grabbed from current, returned hole %ld\n", numSlots, h);
 #endif
@@ -422,7 +422,7 @@ namespace MEDDLY {
 
     setHoleSize(h, numSlots);
 
-    // 
+    //
     // Check to the left for another hole
     //
     if (isHole(h-1)) {
@@ -439,7 +439,7 @@ namespace MEDDLY {
           removeHeapNode(hleft);
         }
       }
-      numSlots += getHoleSize(hleft); 
+      numSlots += getHoleSize(hleft);
       h = hleft;
       setHoleSize(h, numSlots);
     }
@@ -635,12 +635,12 @@ namespace MEDDLY {
     //
     node_address n = heap_root;
     for (;;) {
-      if (0==--bit) return n; 
+      if (0==--bit) return n;
       two2b >>= 1;
       node_address child = (id & two2b) ? Right(n) : Left(n);
       MEDDLY_DCASSERT(child);
       n = child;
-    } // for 
+    } // for
     return 0;   // We never get here; keep compilers happy
   }
 
@@ -795,7 +795,7 @@ namespace MEDDLY {
     MEDDLY_DCASSERT(n);
 
     for (;;) {
-        
+
       node_address l = Left(n);
       node_address r = Right(n);
 
@@ -884,7 +884,7 @@ MEDDLY::heap_style::~heap_style()
 }
 
 MEDDLY::memory_manager*
-MEDDLY::heap_style::initManager(unsigned char granularity, 
+MEDDLY::heap_style::initManager(unsigned char granularity,
   unsigned char minsize, memstats &stats) const
 {
   if (sizeof(int) == granularity) {

@@ -4,7 +4,7 @@
     Copyright (C) 2011, Iowa State University Research Foundation, Inc.
 
     This library is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Lesser General Public License as published 
+    it under the terms of the GNU Lesser General Public License as published
     by the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
@@ -44,9 +44,9 @@ const char* kanban[] = {
   "X.............-.+"   // Tg4
 };
 
-long expected[] = { 
-  1, 160, 4600, 58400, 454475, 2546432, 11261376, 
-  41644800, 133865325, 384392800, 1005927208 
+long expected[] = {
+  1, 160, 4600, 58400, 454475, 2546432, 11261376,
+  41644800, 133865325, 384392800, 1005927208
 };
 
 const int nstart = 1;
@@ -65,7 +65,7 @@ long buildReachset(int N, bool useSat)
   int* initial = new int[17];
   for (int i=16; i; i--) initial[i] = 0;
   initial[1] = initial[5] = initial[9] = initial[13] = N;
-  forest* mdd = d->createForest(0, forest::BOOLEAN, forest::MULTI_TERMINAL);
+  forest* mdd = d->createForest(0, range_type::BOOLEAN, edge_labeling::MULTI_TERMINAL);
   dd_edge init_state(mdd);
   mdd->createEdge(&initial, 1, init_state);
   delete[] initial;
@@ -76,9 +76,9 @@ long buildReachset(int N, bool useSat)
 #endif
 
   // Build next-state function
-  forest* mxd = d->createForest(1, forest::BOOLEAN, forest::MULTI_TERMINAL);
+  forest* mxd = d->createForest(1, range_type::BOOLEAN, edge_labeling::MULTI_TERMINAL);
   dd_edge nsf(mxd);
-  buildNextStateFunction(kanban, 16, mxd, nsf); 
+  buildNextStateFunction(kanban, 16, mxd, nsf);
 
 #ifdef PROGRESS
   fputc('n', stdout);
@@ -105,7 +105,7 @@ long buildReachset(int N, bool useSat)
 #endif
 
   destroyDomain(d);
-  
+
 #ifdef PROGRESS
   fputc(' ', stdout);
   fflush(stdout);

@@ -1,10 +1,9 @@
-
 /*
     Meddly: Multi-terminal and Edge-valued Decision Diagram LibrarY.
     Copyright (C) 2009, Iowa State University Research Foundation, Inc.
 
     This library is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Lesser General Public License as published 
+    it under the terms of the GNU Lesser General Public License as published
     by the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
@@ -17,18 +16,18 @@
     along with this library.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef MTMDDREAL_H
-#define MTMDDREAL_H
+#ifndef MEDDLY_MTMDDREAL_H
+#define MEDDLY_MTMDDREAL_H
 
 #include "mtmdd.h"
 
 namespace MEDDLY {
-  class mt_mdd_real; 
+  class mt_mdd_real;
 };
 
 // ******************************************************************
 
-/** 
+/**
     Forest for multi-terminal, mdd, real range.
 */
 class MEDDLY::mt_mdd_real : public mtmdd_forest {

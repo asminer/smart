@@ -1,4 +1,3 @@
-
 /*
     Meddly: Multi-terminal and Edge-valued Decision Diagram LibrarY.
     Copyright (C) 2009, Iowa State University Research Foundation, Inc.
@@ -20,6 +19,10 @@
 #include "../defines.h"
 #include "cycle.h"
 
+#include "../ct_entry_result.h"
+#include "../compute_table.h"
+#include "../oper_unary.h"
+
 namespace MEDDLY {
   class cycle_opname;
 
@@ -35,17 +38,17 @@ namespace MEDDLY {
 // Extract cycles (EV+MDD) from transitive closure (EV+MxD).
 class MEDDLY::cycle_EV2EV : public unary_operation {
   public:
-    cycle_EV2EV(const unary_opname* oc, expert_forest* arg, expert_forest* res);
+    cycle_EV2EV(unary_opname* oc, expert_forest* arg, expert_forest* res);
 
     virtual void computeDDEdge(const dd_edge &arg, dd_edge &res, bool userFlag);
 
   protected:
     virtual void compute_r(long aev, node_handle a, int k, long& bev, node_handle& b);
 
-    inline compute_table::entry_key*
+    inline ct_entry_key*
     findResult(long aev, node_handle a, long& bev, node_handle &b)
     {
-      compute_table::entry_key* CTsrch = CT0->useEntryKey(etype[0], 0);
+      ct_entry_key* CTsrch = CT0->useEntryKey(etype[0], 0);
       MEDDLY_DCASSERT(CTsrch);
       CTsrch->writeN(a);
       CT0->find(CTsrch, CTresult[0]);
@@ -58,7 +61,7 @@ class MEDDLY::cycle_EV2EV : public unary_operation {
       CT0->recycle(CTsrch);
       return 0;
     }
-    inline node_handle saveResult(compute_table::entry_key* Key,
+    inline node_handle saveResult(ct_entry_key* Key,
       long aev, node_handle a, long bev, node_handle b)
     {
       CTresult[0].reset();
@@ -69,13 +72,13 @@ class MEDDLY::cycle_EV2EV : public unary_operation {
     }
 };
 
-MEDDLY::cycle_EV2EV::cycle_EV2EV(const unary_opname* oc, expert_forest* arg, expert_forest* res)
+MEDDLY::cycle_EV2EV::cycle_EV2EV(unary_opname* oc, expert_forest* arg, expert_forest* res)
   : unary_operation(oc, 1, arg, res)
 {
   MEDDLY_DCASSERT(argF->isEVPlus() && argF->isForRelations());
   MEDDLY_DCASSERT(resF->isEVPlus() && !resF->isForRelations());
 
-  compute_table::entry_type* et = new compute_table::entry_type(oc->getName(), "LN:LN");
+  ct_entry_type* et = new ct_entry_type(oc->getName(), "LN:LN");
   et->setForestForSlot(1, arg);
   et->setForestForSlot(4, res);
   registerEntryType(0, et);
@@ -122,7 +125,7 @@ void MEDDLY::cycle_EV2EV::compute_r(long aev, node_handle a, int k, long& bev, n
   }
 
   // check the cache
-  compute_table::entry_key* key = findResult(aev, a, bev, b);
+  ct_entry_key* key = findResult(aev, a, bev, b);
   if (key == 0) {
     return;
   }
@@ -133,14 +136,14 @@ void MEDDLY::cycle_EV2EV::compute_r(long aev, node_handle a, int k, long& bev, n
 
   unpacked_node* A = aLevel < 0
     ? unpacked_node::newRedundant(argF, level, 0L, a, true)
-    : unpacked_node::newFromNode(argF, a, true);
+    : argF->newUnpacked(a, FULL_ONLY);
   unpacked_node* T = unpacked_node::newFull(resF, level, size);
   for (int i = 0; i < size; i++) {
     unpacked_node* B = isLevelAbove(-level, argF->getNodeLevel(A->d(i)))
       ? (argF->isIdentityReduced()
         ? unpacked_node::newIdentity(argF, -level, i, 0L, A->d(i), true)
         : unpacked_node::newRedundant(argF, -level, 0L, A->d(i), true))
-      : unpacked_node::newFromNode(argF, A->d(i), true);
+      : argF->newUnpacked(A->d(i), FULL_ONLY);
 
     long tev = Inf<long>();
     node_handle t = 0;
@@ -166,7 +169,7 @@ void MEDDLY::cycle_EV2EV::compute_r(long aev, node_handle a, int k, long& bev, n
 class MEDDLY::cycle_opname : public unary_opname {
 public:
   cycle_opname();
-  virtual unary_operation* buildOperation(expert_forest* arg, expert_forest* res) const;
+  virtual unary_operation* buildOperation(expert_forest* arg, expert_forest* res);
 };
 
 MEDDLY::cycle_opname::cycle_opname()
@@ -175,7 +178,7 @@ MEDDLY::cycle_opname::cycle_opname()
 }
 
 MEDDLY::unary_operation* MEDDLY::cycle_opname::buildOperation(
-  expert_forest* arg, expert_forest* res) const
+  expert_forest* arg, expert_forest* res)
 {
   unary_operation* op = 0;
   if (arg->isEVPlus() && arg->isForRelations() && res->isEVPlus() && !res->isForRelations()) {

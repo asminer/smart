@@ -1,10 +1,9 @@
-
 /*
     Meddly: Multi-terminal and Edge-valued Decision Diagram LibrarY.
     Copyright (C) 2009, Iowa State University Research Foundation, Inc.
 
     This library is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Lesser General Public License as published 
+    it under the terms of the GNU Lesser General Public License as published
     by the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
@@ -137,8 +136,7 @@ void MEDDLY::mtmxd_forest::swapAdjacentVariablesByVarSwap(int level)
     for (const auto& n : t) {
       MEDDLY_DCASSERT(getNodeLevel(n) == (level+1));
 
-      unpacked_node* nr = unpacked_node::useUnpackedNode();
-      nr->initFromNode(this, n, true);
+      unpacked_node* nr = newUnpacked(n, FULL_ONLY);
       bool update = false;
       for (int i = 0; i < hsize; i++) {
         if (dup.find(nr->d(i)) != dup.end()) {
@@ -187,8 +185,7 @@ void MEDDLY::mtmxd_forest::swapAdjacentVariablesByVarSwap(int level)
   for (int i = 0; i < phnum; i++) {
     MEDDLY_DCASSERT(isActiveNode(phnodes[i]));
 
-    unpacked_node* nr = unpacked_node::useUnpackedNode();
-    nr->initFromNode(this, phnodes[i], true);
+    unpacked_node* nr = newUnpacked(phnodes[i], FULL_ONLY);
     bool skip = true;
     for (int j = 0; j < hsize; j++){
       if (!isLevelAbove(-level, getNodeLevel(nr->d(j)))) {
@@ -229,8 +226,7 @@ void MEDDLY::mtmxd_forest::swapAdjacentVariablesByVarSwap(int level)
     for (const auto& n : t) {
       MEDDLY_DCASSERT(getNodeLevel(n)==(level+1));
 
-      unpacked_node* nr = unpacked_node::useUnpackedNode();
-      nr->initFromNode(this, n, true);
+      unpacked_node* nr = newUnpacked(n, FULL_ONLY);
 
       bool update = false;
       for (int i = 0; i < hsize; i++) {
@@ -616,7 +612,7 @@ bool MEDDLY::mtmxd_forest::mtmxd_iterator::next()
 
   int k = -1;
   node_handle down = 0;
-  for (;;) { 
+  for (;;) {
     nzp[k]++;
     if (nzp[k] < path[k].getNNZs()) {
       index[k] = path[k].i(nzp[k]);
@@ -663,7 +659,7 @@ bool MEDDLY::mtmxd_forest::mtmxd_iterator::first(int k, node_handle down)
         path[k].initIdentity(F, k, index[-k], down, false);
       }
     } else {
-      path[k].initFromNode(F, down, false);
+      F->unpackNode(path+k, down, SPARSE_ONLY);
     }
     nzp[k] = 0;
     index[k] = path[k].i(0);
@@ -712,7 +708,7 @@ bool MEDDLY::mtmxd_forest::mtmxd_fixedrow_iter::next()
 
   node_handle down = 0;
   // Only try to advance the column, because the row is fixed.
-  for (int k=-1; k>=-maxLevel; k--) { 
+  for (int k=-1; k>=-maxLevel; k--) {
     for (nzp[k]++; nzp[k] < path[k].getNNZs(); nzp[k]++) {
       index[k] = path[k].i(nzp[k]);
       down = path[k].d(nzp[k]);
@@ -771,12 +767,12 @@ bool MEDDLY::mtmxd_forest::mtmxd_fixedrow_iter::first(int k, node_handle down)
       path[k].initIdentity(F, k, index[k], cdown, false);
     }
     return true;
-  } 
+  }
 
   // Proper node here.
-  // cycle through it and recurse... 
+  // cycle through it and recurse...
 
-  path[k].initFromNode(F, cdown, false);
+  F->unpackNode(path+k, cdown, SPARSE_ONLY);
 
   for (unsigned z=0; z<path[k].getNNZs(); z++) {
     if (first(downLevel(k), path[k].d(z))) {
@@ -811,7 +807,7 @@ bool MEDDLY::mtmxd_forest::mtmxd_fixedcol_iter
   if (F != e.getForest()) {
     throw error(error::FOREST_MISMATCH, __FILE__, __LINE__);
   }
-  
+
   for (int k=1; k<=maxLevel; k++) {
     index[-k] = minterm[k];
   }
@@ -829,7 +825,7 @@ bool MEDDLY::mtmxd_forest::mtmxd_fixedcol_iter::next()
 
   node_handle down = 0;
   // Only try to advance the row, because the column is fixed.
-  for (int k=1; k<=maxLevel; k++) { 
+  for (int k=1; k<=maxLevel; k++) {
     for (nzp[k]++; nzp[k] < path[k].getNNZs(); nzp[k]++) {
       index[k] = path[k].i(nzp[k]);
       down = path[k].d(nzp[k]);
@@ -905,8 +901,8 @@ bool MEDDLY::mtmxd_forest::mtmxd_fixedcol_iter::first(int k, node_handle down)
   }
 
   // Level is not skipped.
-  path[k].initFromNode(F, down, false);
-  
+  F->unpackNode(path+k, down, SPARSE_ONLY);
+
   for (unsigned z=0; z<path[k].getNNZs(); z++) {
     index[k] = path[k].i(z);
     if (first(downLevel(k), path[k].d(z))) {

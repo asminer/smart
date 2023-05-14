@@ -4,7 +4,7 @@
     Copyright (C) 2011, Iowa State University Research Foundation, Inc.
 
     This library is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Lesser General Public License as published 
+    it under the terms of the GNU Lesser General Public License as published
     by the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
@@ -49,9 +49,9 @@ const char* kanban[] = {
   "X.............-.+"   // Tg4
 };
 
-long expected[] = { 
-  1, 160, 4600, 58400, 454475, 2546432, 11261376, 
-  41644800, 133865325, 384392800, 1005927208 
+long expected[] = {
+  1, 160, 4600, 58400, 454475, 2546432, 11261376,
+  41644800, 133865325, 384392800, 1005927208
 };
 
 using namespace MEDDLY;
@@ -85,7 +85,7 @@ long writeReachset(FILE* s, int N)
   domain* d = buildKanbanDomain(N);
 
   // Build initial state
-  forest* mdd = d->createForest(0, forest::BOOLEAN, forest::MULTI_TERMINAL);
+  forest* mdd = d->createForest(0, range_type::BOOLEAN, edge_labeling::MULTI_TERMINAL);
   dd_edge init_state(mdd);
   buildInitial(N, mdd, init_state);
 
@@ -95,9 +95,9 @@ long writeReachset(FILE* s, int N)
 #endif
 
   // Build next-state function
-  forest* mxd = d->createForest(1, forest::BOOLEAN, forest::MULTI_TERMINAL);
+  forest* mxd = d->createForest(1, range_type::BOOLEAN, edge_labeling::MULTI_TERMINAL);
   dd_edge nsf(mxd);
-  buildNextStateFunction(kanban, 16, mxd, nsf); 
+  buildNextStateFunction(kanban, 16, mxd, nsf);
 
 #ifdef PROGRESS
   fputc('n', stdout);
@@ -114,7 +114,7 @@ long writeReachset(FILE* s, int N)
 #endif
 
   // Build index set for reachable states
-  forest* evmdd = d->createForest(0, forest::INTEGER, forest::INDEX_SET);
+  forest* evmdd = d->createForest(0, range_type::INTEGER, edge_labeling::INDEX_SET);
   dd_edge reach_index(evmdd);
   apply(CONVERT_TO_INDEX_SET, reachable, reach_index);
 
@@ -150,7 +150,7 @@ long writeReachset(FILE* s, int N)
 #endif
 
   destroyDomain(d);
-  
+
   return c;
 }
 
@@ -165,21 +165,21 @@ bool generateAndRead(FILE* s, int N)
   domain* d = buildKanbanDomain(N);
 
   // Build initial state
-  forest* mdd = d->createForest(0, forest::BOOLEAN, forest::MULTI_TERMINAL);
+  forest* mdd = d->createForest(0, range_type::BOOLEAN, edge_labeling::MULTI_TERMINAL);
   dd_edge init_state(mdd);
   buildInitial(N, mdd, init_state);
 
   // Build next-state function
-  forest* mxd = d->createForest(1, forest::BOOLEAN, forest::MULTI_TERMINAL);
+  forest* mxd = d->createForest(1, range_type::BOOLEAN, edge_labeling::MULTI_TERMINAL);
   dd_edge nsf(mxd);
-  buildNextStateFunction(kanban, 16, mxd, nsf); 
+  buildNextStateFunction(kanban, 16, mxd, nsf);
 
   // Build reachable states
   dd_edge reachable(mdd);
   apply(REACHABLE_STATES_DFS, init_state, nsf, reachable);
 
   // Build index set for reachable states
-  forest* evmdd = d->createForest(0, forest::INTEGER, forest::INDEX_SET);
+  forest* evmdd = d->createForest(0, range_type::INTEGER, edge_labeling::INDEX_SET);
   dd_edge reach_index(evmdd);
   apply(CONVERT_TO_INDEX_SET, reachable, reach_index);
 
@@ -232,9 +232,9 @@ bool readAndGenerate(FILE* s, int N)
   domain* d = buildKanbanDomain(N);
 
   // Build (empty) forests
-  forest* mdd = d->createForest(0, forest::BOOLEAN, forest::MULTI_TERMINAL);
-  forest* mxd = d->createForest(1, forest::BOOLEAN, forest::MULTI_TERMINAL);
-  forest* evmdd = d->createForest(0, forest::INTEGER, forest::INDEX_SET);
+  forest* mdd = d->createForest(0, range_type::BOOLEAN, edge_labeling::MULTI_TERMINAL);
+  forest* mxd = d->createForest(1, range_type::BOOLEAN, edge_labeling::MULTI_TERMINAL);
+  forest* evmdd = d->createForest(0, range_type::INTEGER, edge_labeling::INDEX_SET);
 
   dd_edge mxdfile;
   dd_edge mddfile[2];
@@ -256,7 +256,7 @@ bool readAndGenerate(FILE* s, int N)
 
   // Build next-state function
   dd_edge nsf(mxd);
-  buildNextStateFunction(kanban, 16, mxd, nsf); 
+  buildNextStateFunction(kanban, 16, mxd, nsf);
 
   // Build reachable states
   dd_edge reachable(mdd);
@@ -306,7 +306,7 @@ int main()
 
   char filename[20];
   strcpy(filename, "kan_io.data.XXXXXX");
-  mktemp(filename);
+  mkstemp(filename);
 #ifdef DEBUG_FILE
   printf("Creating file %s\n", filename);
 #endif
@@ -365,7 +365,7 @@ int main()
     }
     fclose(s);
 
-  
+
     // Cleanup
 #ifndef DEBUG_FILE
     remove(filename);

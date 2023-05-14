@@ -4,7 +4,7 @@
     Copyright (C) 2011, Iowa State University Research Foundation, Inc.
 
     This library is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Lesser General Public License as published 
+    it under the terms of the GNU Lesser General Public License as published
     by the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
@@ -59,12 +59,12 @@ void buildNextStateFunction(const char* const* events, int nEvents,
 
 #ifdef TEST_EVTIMES
   forest* mtmxd = d->createForest(
-    true, forest::REAL, forest::EVTIMES
+    true, range_type::REAL, edge_labeling::EVTIMES
   );
   float* temp = new float[maxBound];
 #else
   forest* mtmxd = d->createForest(
-    true, forest::INTEGER, forest::MULTI_TERMINAL
+    true, range_type::INTEGER, edge_labeling::MULTI_TERMINAL
   );
   long* temp = new long[maxBound];
 #endif
@@ -121,7 +121,7 @@ void buildNextStateFunction(const char* const* events, int nEvents,
 #ifdef VERBOSE
     fprintf(stderr, " : ");
 #endif
-    
+
     //
     // 'and' with the "do care" levels
     //

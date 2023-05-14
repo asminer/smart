@@ -1,4 +1,3 @@
-
 /*
     Meddly: Multi-terminal and Edge-valued Decision Diagram LibrarY.
     Copyright (C) 2009, Iowa State University Research Foundation, Inc.
@@ -20,8 +19,14 @@
 #include <deque>
 #include <vector>
 
-#include "defines.h"
+#include "../defines.h"
 #include "transitive_closure.h"
+
+#include "../ct_entry_result.h"
+#include "../compute_table.h"
+#include "../oper_binary.h"
+#include "../opname_satur.h"
+#include "../ops_builtin.h"
 
 // ******************************************************************
 // *                                                                *
@@ -29,7 +34,7 @@
 // *                                                                *
 // ******************************************************************
 
-MEDDLY::common_transitive_closure::common_transitive_closure(const constrained_opname* code,
+MEDDLY::common_transitive_closure::common_transitive_closure(constrained_opname* code,
   unsigned slots,
   expert_forest* cons, expert_forest* tc, expert_forest* trans, expert_forest* res)
   : specialized_operation(code, slots)
@@ -75,11 +80,11 @@ bool MEDDLY::common_transitive_closure::checkForestCompatibility() const
 // *                                                                *
 // ******************************************************************
 
-MEDDLY::transitive_closure_forwd_bfs::transitive_closure_forwd_bfs(const constrained_opname* code,
+MEDDLY::transitive_closure_forwd_bfs::transitive_closure_forwd_bfs(constrained_opname* code,
   expert_forest* cons, expert_forest* tc, expert_forest* trans, expert_forest* res)
   : common_transitive_closure(code, 0, cons, tc, trans, res)
 {
-  if (resF->getRangeType() == forest::INTEGER && resF->isForRelations()) {
+  if (resF->getRangeType() == range_type::INTEGER && resF->isForRelations()) {
     plusOp = getOperation(POST_PLUS, resF, consF, resF);
     minOp = getOperation(UNION, resF, resF, resF);
   } else {
@@ -162,7 +167,7 @@ MEDDLY::transitive_closure_dfs_opname::transitive_closure_dfs_opname()
 {
 }
 
-MEDDLY::specialized_operation* MEDDLY::transitive_closure_dfs_opname::buildOperation(arguments* a) const
+MEDDLY::specialized_operation* MEDDLY::transitive_closure_dfs_opname::buildOperation(arguments* a)
 {
   constrained_opname::constrained_args* args = dynamic_cast<constrained_opname::constrained_args*>(a);
   return new transitive_closure_forwd_dfs(this,
@@ -178,7 +183,7 @@ MEDDLY::specialized_operation* MEDDLY::transitive_closure_dfs_opname::buildOpera
 // *                                                                *
 // ******************************************************************
 
-MEDDLY::transitive_closure_dfs::transitive_closure_dfs(const constrained_opname* code,
+MEDDLY::transitive_closure_dfs::transitive_closure_dfs(constrained_opname* code,
   expert_forest* cons, expert_forest* tc, expert_forest* trans, expert_forest* res)
   : common_transitive_closure(code, 1, cons, tc, trans, res)
 {
@@ -188,7 +193,7 @@ MEDDLY::transitive_closure_dfs::transitive_closure_dfs(const constrained_opname*
 
   splits = nullptr;
 
-  compute_table::entry_type* et = new compute_table::entry_type(code->getName(), "LNNN:LN");
+  ct_entry_type* et = new ct_entry_type(code->getName(), "LNNN:LN");
   et->setForestForSlot(1, cons);
   et->setForestForSlot(2, tc);
   et->setForestForSlot(3, trans);
@@ -213,10 +218,10 @@ bool MEDDLY::transitive_closure_dfs::checkTerminals(int aev, node_handle a, int 
   return false;
 }
 
-MEDDLY::compute_table::entry_key* MEDDLY::transitive_closure_dfs::findResult(long aev, node_handle a,
+MEDDLY::ct_entry_key* MEDDLY::transitive_closure_dfs::findResult(long aev, node_handle a,
     long bev, node_handle b, node_handle c, long& dev, node_handle &d)
 {
-  compute_table::entry_key* key = CT0->useEntryKey(etype[0], 0);
+  ct_entry_key* key = CT0->useEntryKey(etype[0], 0);
   MEDDLY_DCASSERT(key);
   key->writeL(aev);
   key->writeN(a);
@@ -243,7 +248,7 @@ MEDDLY::compute_table::entry_key* MEDDLY::transitive_closure_dfs::findResult(lon
   return 0;
 }
 
-void MEDDLY::transitive_closure_dfs::saveResult(compute_table::entry_key* key,
+void MEDDLY::transitive_closure_dfs::saveResult(ct_entry_key* key,
   long aev, node_handle a, long bev, node_handle b, node_handle c, long dev, node_handle d)
 {
   CTresult[0].reset();
@@ -286,7 +291,7 @@ void MEDDLY::transitive_closure_dfs::splitMxd(const dd_edge& mxd)
     // Initialize readers
     unpacked_node* Ru = isLevelAbove(level, mxdLevel)
       ? unpacked_node::newRedundant(transF, level, root.getNode(), true)
-      : unpacked_node::newFromNode(transF, root.getNode(), true);
+      : transF->newUnpacked(root.getNode(), FULL_ONLY);
 
     bool first = true;
 
@@ -296,7 +301,7 @@ void MEDDLY::transitive_closure_dfs::splitMxd(const dd_edge& mxd)
       int mxdPLevel = transF->getNodeLevel(Ru->d(i));
       unpacked_node* Rp = isLevelAbove(-level, mxdPLevel)
         ? unpacked_node::newIdentity(transF, -level, i, Ru->d(i), true)
-        : unpacked_node::newFromNode(transF, Ru->d(i), true);
+        : transF->newUnpacked(Ru->d(i), FULL_ONLY);
 
       // Intersect along the diagonal
       if (first) {
@@ -377,7 +382,7 @@ void MEDDLY::transitive_closure_dfs::_compute(int aev, node_handle a, int bev, n
 // *                                                                *
 // ******************************************************************
 
-MEDDLY::transitive_closure_forwd_dfs::transitive_closure_forwd_dfs(const constrained_opname* code,
+MEDDLY::transitive_closure_forwd_dfs::transitive_closure_forwd_dfs(constrained_opname* code,
   expert_forest* cons, expert_forest* tc, expert_forest* trans, expert_forest* res)
   : transitive_closure_dfs(code, cons, tc, trans, res)
 {
@@ -401,12 +406,12 @@ void MEDDLY::transitive_closure_forwd_dfs::saturateHelper(long aev, node_handle 
   // Initialize mxd readers, note we might skip the unprimed level
   unpacked_node* Ru = (mxdLevel < 0)
     ? unpacked_node::newRedundant(transF, -nb.getLevel(), mxd.getNode(), true)
-    : unpacked_node::newFromNode(transF, mxd.getNode(), true);
-  unpacked_node* Rp = unpacked_node::useUnpackedNode();
+    : transF->newUnpacked(mxd.getNode(), FULL_ONLY);
+  unpacked_node* Rp = unpacked_node::New();
 
   unpacked_node* A = isLevelAbove(-nb.getLevel(), consF->getNodeLevel(a))
     ? unpacked_node::newRedundant(consF, -nb.getLevel(), 0L, a, true)
-    : unpacked_node::newFromNode(consF, a, true);
+    : consF->newUnpacked(a, FULL_ONLY);
 
   dd_edge nbdj(resF), newst(resF);
 
@@ -432,7 +437,7 @@ void MEDDLY::transitive_closure_forwd_dfs::saturateHelper(long aev, node_handle 
 
     const int dlevel = transF->getNodeLevel(Ru->d(ip));
     if (dlevel == -Ru->getLevel()) {
-      Rp->initFromNode(transF, Ru->d(ip), false);
+      transF->unpackNode(Rp, Ru->d(ip), SPARSE_ONLY);
     }
     else {
       Rp->initIdentity(transF, -Ru->getLevel(), ip, Ru->d(ip), false);
@@ -536,7 +541,7 @@ void MEDDLY::transitive_closure_forwd_dfs::recFire(long aev, node_handle a, long
   }
 
   // check the cache
-  compute_table::entry_key* key = findResult(aev, a, bev, b, r, cev, c);
+  ct_entry_key* key = findResult(aev, a, bev, b, r, cev, c);
   if (key == 0) {
     MEDDLY_DCASSERT(cev >= 0);
     return;
@@ -555,12 +560,12 @@ void MEDDLY::transitive_closure_forwd_dfs::recFire(long aev, node_handle a, long
   // Initialize evmdd reader
   unpacked_node* A = isLevelAbove(level, aLevel)
     ? unpacked_node::newRedundant(consF, level, 0L, a, true)
-    : unpacked_node::newFromNode(consF, a, true);
+    : consF->newUnpacked(a, FULL_ONLY);
   // Initialize evmxd reader
   unpacked_node* B = isLevelAbove(level, bLevel)
     ? unpacked_node::newRedundant(tcF, level, 0L, b, true)
-    : unpacked_node::newFromNode(tcF, b, true);
-  unpacked_node* D = unpacked_node::useUnpackedNode();
+    : tcF->newUnpacked(b, FULL_ONLY);
+  unpacked_node* D = unpacked_node::New();
 
   unpacked_node* T = unpacked_node::newFull(resF, level, size);
 
@@ -575,7 +580,7 @@ void MEDDLY::transitive_closure_forwd_dfs::recFire(long aev, node_handle a, long
       D->initIdentity(tcF, -level, i, 0L, B->d(i), true);
     }
     else {
-      D->initFromNode(tcF, B->d(i), true);
+      tcF->unpackNode(D, B->d(i), FULL_ONLY);
     }
 
     unpacked_node* Tp = unpacked_node::newFull(resF, -level, size);
@@ -606,8 +611,8 @@ void MEDDLY::transitive_closure_forwd_dfs::recFire(long aev, node_handle a, long
       // Initialize mxd readers, note we might skip the unprimed level
       unpacked_node* Ru = (rLevel < 0)
         ? unpacked_node::newRedundant(transF, level, r, false)
-        : unpacked_node::newFromNode(transF, r, false);
-      unpacked_node* Rp = unpacked_node::useUnpackedNode();
+        : transF->newUnpacked(r, SPARSE_ONLY);
+      unpacked_node* Rp = unpacked_node::New();
 
       // loop over mxd "rows"
       for (int ipz = 0; ipz < Ru->getNNZs(); ipz++) {
@@ -620,7 +625,7 @@ void MEDDLY::transitive_closure_forwd_dfs::recFire(long aev, node_handle a, long
           Rp->initIdentity(transF, -level, ip, Ru->d(ipz), false);
         }
         else {
-          Rp->initFromNode(transF, Ru->d(ipz), false);
+          transF->unpackNode(Rp, Ru->d(ipz), SPARSE_ONLY);
         }
 
         // loop over mxd "columns"
@@ -718,16 +723,16 @@ MEDDLY::transitive_closure_evplus::transitive_closure_evplus(transitive_closure_
   registerInForest(tcF);
   registerInForest(resF);
 
-  compute_table::entry_type* et;
+  ct_entry_type* et;
 
   if (tcF->isFullyReduced() || tcF->isIdentityReduced()) {
     // CT entry includes level info
-    et = new compute_table::entry_type("transitive_closure_evplus", "LNNI:LN");
+    et = new ct_entry_type("transitive_closure_evplus", "LNNI:LN");
     et->setForestForSlot(1, cons);
     et->setForestForSlot(2, tc);
     et->setForestForSlot(6, res);
   } else {
-    et = new compute_table::entry_type("transitive_closure_evplus", "LNN:LN");
+    et = new ct_entry_type("transitive_closure_evplus", "LNN:LN");
     et->setForestForSlot(1, cons);
     et->setForestForSlot(2, tc);
     et->setForestForSlot(5, res);
@@ -767,10 +772,10 @@ bool MEDDLY::transitive_closure_evplus::checkTerminals(int aev, node_handle a, i
   return false;
 }
 
-MEDDLY::compute_table::entry_key* MEDDLY::transitive_closure_evplus::findResult(long aev, node_handle a,
+MEDDLY::ct_entry_key* MEDDLY::transitive_closure_evplus::findResult(long aev, node_handle a,
     long bev, node_handle b, int level, long& cev, node_handle &c)
 {
-  compute_table::entry_key* key = CT0->useEntryKey(etype[0], 0);
+  ct_entry_key* key = CT0->useEntryKey(etype[0], 0);
   MEDDLY_DCASSERT(key);
   key->writeL(aev);
   key->writeN(a);
@@ -796,7 +801,7 @@ MEDDLY::compute_table::entry_key* MEDDLY::transitive_closure_evplus::findResult(
   return 0;
 }
 
-void MEDDLY::transitive_closure_evplus::saveResult(compute_table::entry_key* key,
+void MEDDLY::transitive_closure_evplus::saveResult(ct_entry_key* key,
   long aev, node_handle a, long bev, node_handle b, int level, long cev, node_handle c)
 {
   CTresult[0].reset();
@@ -825,7 +830,7 @@ void MEDDLY::transitive_closure_evplus::saturate(int aev, node_handle a, int bev
     return;
   }
 
-  compute_table::entry_key* key = findResult(aev, a, bev, b, level, cev, c);
+  ct_entry_key* key = findResult(aev, a, bev, b, level, cev, c);
   if (key == 0) {
     return;
   }
@@ -838,10 +843,10 @@ void MEDDLY::transitive_closure_evplus::saturate(int aev, node_handle a, int bev
 
   unpacked_node* A = isLevelAbove(level, aLevel)
     ? unpacked_node::newRedundant(consF, level, 0L, a, true)
-    : unpacked_node::newFromNode(consF, a, true);
+    : consF->newUnpacked(a, FULL_ONLY);
   unpacked_node* B = isLevelAbove(level, bLevel)
     ? unpacked_node::newRedundant(tcF, level, 0L, b, true)
-    : unpacked_node::newFromNode(tcF, b, true);
+    : tcF->newUnpacked(b, FULL_ONLY);
 
   // Do computation
   unpacked_node* T = unpacked_node::newFull(resF, level, sz);
@@ -854,7 +859,7 @@ void MEDDLY::transitive_closure_evplus::saturate(int aev, node_handle a, int bev
     else {
       unpacked_node* D = isLevelAbove(-level, tcF->getNodeLevel(B->d(i)))
         ? unpacked_node::newIdentity(tcF, -level, i, 0L, B->d(i), true)
-        : unpacked_node::newFromNode(tcF, B->d(i), true);
+        : tcF->newUnpacked(B->d(i), FULL_ONLY);
       unpacked_node* Tp = unpacked_node::newFull(resF, -level, sz);
       for (int j = 0; j < sz; j++) {
         if (A->d(j) == 0 || D->d(j) == 0) {

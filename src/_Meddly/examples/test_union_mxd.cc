@@ -4,7 +4,7 @@
     Copyright (C) 2009, Iowa State University Research Foundation, Inc.
 
     This library is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Lesser General Public License as published 
+    it under the terms of the GNU Lesser General Public License as published
     by the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
@@ -26,6 +26,7 @@
  */
 
 #include <iostream>
+#include <cassert>
 #include "../src/meddly.h"
 #include "../src/timer.h"
 
@@ -125,7 +126,7 @@ int main(int argc, char *argv[])
   assert(d != 0);
 
   // Create an MXD forest in this domain (to store a relation)
-  forest* xd = d->createForest(true, forest::BOOLEAN, forest::MULTI_TERMINAL);
+  forest* xd = d->createForest(true, range_type::BOOLEAN, edge_labeling::MULTI_TERMINAL);
   assert(xd != 0);
 
   dd_edge initial_state(xd);

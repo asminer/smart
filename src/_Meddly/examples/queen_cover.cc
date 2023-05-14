@@ -4,7 +4,7 @@
     Copyright (C) 2009, Iowa State University Research Foundation, Inc.
 
     This library is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Lesser General Public License as published 
+    it under the terms of the GNU Lesser General Public License as published
     by the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
@@ -18,14 +18,14 @@
 */
 
 /*
-    Builds the set of solutions to the queen cover problem for 
+    Builds the set of solutions to the queen cover problem for
     user-specified board size NxN.
 
     In other words, finds all possible ways to put queens onto
     an NxN chessboard so that every square either contains a queen,
     or is attached by a queen.
 
-    State: 
+    State:
       For each square, does it hold a queen.
 
     Constraints:
@@ -36,9 +36,9 @@
 
 #include <cstdlib>
 #include <fstream>
+#include <cassert>
 
 #include "../src/meddly.h"
-#include "../src/meddly_expert.h"
 #include "../src/loggers.h"
 #include "../src/timer.h"
 
@@ -57,22 +57,22 @@ dd_edge** qidp;
 dd_edge** qidm;
 
 
-forest* buildQueenForest(forest::policies &p)
+forest* buildQueenForest(policies &p)
 {
   printf("Initializing domain and forest\n");
   const char* ndp = "unknown node deletion";
   if (!p.useReferenceCounts) {
     ndp = "mark and sweep node deletion";
   } else switch (p.deletion) {
-    case forest::policies::NEVER_DELETE:
+      case policies::node_deletion::NEVER:
         ndp = "never delete";
         break;
 
-    case forest::policies::OPTIMISTIC_DELETION:
+      case policies::node_deletion::OPTIMISTIC:
         ndp = "optimistic node deletion";
         break;
 
-    case forest::policies::PESSIMISTIC_DELETION:
+      case policies::node_deletion::PESSIMISTIC:
         ndp = "pessimistic node deletion";
         break;
   }
@@ -85,8 +85,8 @@ forest* buildQueenForest(forest::policies &p)
   }
   domain* d = createDomainBottomUp(vars, N*N);
   assert(d);
-  forest* f = 
-    d->createForest(false, forest::INTEGER, forest::MULTI_TERMINAL, p);
+  forest* f =
+    d->createForest(false, range_type::INTEGER, edge_labeling::MULTI_TERMINAL, p);
   assert(f);
 
   delete[] vars;
@@ -247,7 +247,7 @@ int main(int argc, const char** argv)
   }
   initialize(INIT);
 
-  forest::policies p(false);
+  policies p(false);
   if (mark_sweep) {
     p.useReferenceCounts = false;
   } else if (pessimistic) {
@@ -265,7 +265,7 @@ int main(int argc, const char** argv)
   printf("\nDetermining queen covers for %dx%d chessboard.\n", N, N);
 
   forest* f = buildQueenForest(p);
-  
+
   std::ofstream log;
   forest::logger* LOG = 0;
   if (lfile) {
@@ -357,7 +357,7 @@ int main(int argc, const char** argv)
   } // for q
   } // try
   catch (MEDDLY::error e) {
-    printf("\n\nCaught error: %s (from %s line %d)\n\n", 
+    printf("\n\nCaught error: %s (from %s line %d)\n\n",
       e.getName(), e.getFile(), e.getLine()
     );
   };
@@ -377,10 +377,10 @@ int main(int argc, const char** argv)
   printf("Forest stats:\n");
   FILE_output myout(stdout);
   expert_forest* ef = (expert_forest*)f;
-  ef->reportStats(myout, "\t", 
+  ef->reportStats(myout, "\t",
     expert_forest::HUMAN_READABLE_MEMORY  |
     expert_forest::BASIC_STATS | expert_forest::EXTRA_STATS |
-    expert_forest::STORAGE_STATS | expert_forest::STORAGE_DETAILED | 
+    expert_forest::STORAGE_STATS | expert_forest::STORAGE_DETAILED |
     expert_forest::HOLE_MANAGER_STATS | expert_forest::HOLE_MANAGER_DETAILED
   );
   operation::showAllComputeTables(myout, 3);
@@ -392,7 +392,7 @@ int main(int argc, const char** argv)
 
   if (outfile) {
     printf("Writing solutions to file %s\n", argv[2]);
-  
+
     fprintf(outfile, "%d # Board dimension\n\n", N);
     // show the solutions
     enumerator iter(solutions);

@@ -4,7 +4,7 @@
     Copyright (C) 2009, Iowa State University Research Foundation, Inc.
 
     This library is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Lesser General Public License as published 
+    it under the terms of the GNU Lesser General Public License as published
     by the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
@@ -23,9 +23,9 @@
 
 
 #include <string.h>
+#include <cassert>
 
 #include "../src/meddly.h"
-#include "../src/meddly_expert.h"
 
 // #define SHOW_INDEXES
 // #define SHOW_MATRIX
@@ -75,7 +75,7 @@ bool build_oz(forest* indf, forest* mxd, dd_edge &ss, dd_edge &P)
     0.5,  0.25, 0.25, 0.5,  0.5,  0.25, 0.25, 0.5
   };
 
-  try { 
+  try {
     mxd->createEdge(fromlist, tolist, problist, 8, P);
   }
   catch (MEDDLY::error fe) {
@@ -157,9 +157,9 @@ bool impl_xA_check(dd_edge &x, const dd_edge &P)
       printf("Couldn't multiply: %s\n", ce.getName());
       return false;
     }
-    
+
     // determine product by hand
-    exP[0] = exP[1] = exP[2] = 0; 
+    exP[0] = exP[1] = exP[2] = 0;
     by_hand_oz_xA(exP, ex);
 
     // Compare!
@@ -178,7 +178,7 @@ bool expl_xA_check(const dd_edge &ss, const dd_edge &P)
   double q_alt[3];
   p[0] = 0; p[1] = 1; p[2] = 0;
   printf("xA multiplications (explicit):\n");
-  specialized_operation* VM = EXPLVECT_MATR_MULT->buildOperation(ss, P, ss);
+  specialized_operation* VM = EXPLVECT_MATR_MULT()->buildOperation(ss, P, ss);
   for (i=0; i<9; i++) {
     printf("p%d: [%lf, %lf, %lf]\n", i, p[0], p[1], p[2]);
     q[0] = q[1] = q[2] = 0;
@@ -228,9 +228,9 @@ bool impl_Ax_check(dd_edge &x, const dd_edge &P)
       printf("Couldn't multiply: %s\n", ce.getName());
       return false;
     }
-    
+
     // determine product by hand
-    exP[0] = exP[1] = exP[2] = 0; 
+    exP[0] = exP[1] = exP[2] = 0;
     by_hand_oz_Ax(exP, ex);
 
     // Compare!
@@ -249,7 +249,7 @@ bool expl_Ax_check(const dd_edge &ss, const dd_edge &P)
   double q_alt[3];
   p[0] = 0; p[1] = 1; p[2] = 0;
   printf("Ax multiplications (explicit):\n");
-  specialized_operation* MV = MATR_EXPLVECT_MULT->buildOperation(ss, P, ss);
+  specialized_operation* MV = MATR_EXPLVECT_MULT()->buildOperation(ss, P, ss);
   for (i=0; i<9; i++) {
     printf("p%d: [%lf, %lf, %lf]\n", i, p[0], p[1], p[2]);
     q[0] = q[1] = q[2] = 0;
@@ -278,11 +278,11 @@ int main(int argc, const char** argv)
 
   domain* ozd = createDomainBottomUp(vars, 3);
   assert(ozd);
-  forest* evpmdds = ozd->createForest(0, forest::INTEGER, forest::EVPLUS);
+  forest* evpmdds = ozd->createForest(0, range_type::INTEGER, edge_labeling::EVPLUS);
   assert(evpmdds);
-  forest* mtmxds = ozd->createForest(1, forest::REAL, forest::MULTI_TERMINAL);
+  forest* mtmxds = ozd->createForest(1, range_type::REAL, edge_labeling::MULTI_TERMINAL);
   assert(mtmxds);
-  forest* mtmdds = ozd->createForest(0, forest::REAL, forest::MULTI_TERMINAL);
+  forest* mtmdds = ozd->createForest(0, range_type::REAL, edge_labeling::MULTI_TERMINAL);
   assert(mtmdds);
 
   dd_edge ss(evpmdds);

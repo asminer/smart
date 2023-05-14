@@ -1,10 +1,9 @@
-
 /*
     Meddly: Multi-terminal and Edge-valued Decision Diagram LibrarY.
     Copyright (C) 2009, Iowa State University Research Foundation, Inc.
 
     This library is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Lesser General Public License as published 
+    it under the terms of the GNU Lesser General Public License as published
     by the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
@@ -17,11 +16,12 @@
     along with this library.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
 #include "../defines.h"
 #include "maxmin_range.h"
+
+#include "../ct_entry_result.h"
+#include "../compute_table.h"
+#include "../oper_unary.h"
 
 namespace MEDDLY {
 
@@ -47,13 +47,13 @@ namespace MEDDLY {
 /// Abstract base class: max or min range that returns an integer.
 class MEDDLY::range_int : public unary_operation {
   public:
-    range_int(const unary_opname* oc, expert_forest* arg);
+    range_int(unary_opname* oc, expert_forest* arg);
 
   protected:
-    inline compute_table::entry_key* 
-    findResult(node_handle a, int &b) 
+    inline ct_entry_key*
+    findResult(node_handle a, int &b)
     {
-      compute_table::entry_key* CTsrch = CT0->useEntryKey(etype[0], 0);
+      ct_entry_key* CTsrch = CT0->useEntryKey(etype[0], 0);
       MEDDLY_DCASSERT(CTsrch);
       CTsrch->writeN(a);
       CT0->find(CTsrch, CTresult[0]);
@@ -62,8 +62,8 @@ class MEDDLY::range_int : public unary_operation {
       CT0->recycle(CTsrch);
       return 0;
     }
-    inline long saveResult(compute_table::entry_key* Key, 
-      node_handle a, int &b) 
+    inline long saveResult(ct_entry_key* Key,
+      node_handle a, int &b)
     {
       CTresult[0].reset();
       CTresult[0].writeI(b);
@@ -72,10 +72,10 @@ class MEDDLY::range_int : public unary_operation {
     }
 };
 
-MEDDLY::range_int::range_int(const unary_opname* oc, expert_forest* arg)
+MEDDLY::range_int::range_int(unary_opname* oc, expert_forest* arg)
  : unary_operation(oc, 1, arg, opnd_type::INTEGER)
 {
-  compute_table::entry_type* et = new compute_table::entry_type(oc->getName(), "N:I");
+  ct_entry_type* et = new ct_entry_type(oc->getName(), "N:I");
   et->setForestForSlot(0, arg);
   registerEntryType(0, et);
   buildCTs();
@@ -90,11 +90,11 @@ MEDDLY::range_int::range_int(const unary_opname* oc, expert_forest* arg)
 /// Abstract base class: max or min range that returns a real.
 class MEDDLY::range_real : public unary_operation {
   public:
-    range_real(const unary_opname* oc, expert_forest* arg);
+    range_real(unary_opname* oc, expert_forest* arg);
 
   protected:
-    inline compute_table::entry_key* findResult(node_handle a, float &b) {
-      compute_table::entry_key* CTsrch = CT0->useEntryKey(etype[0], 0);
+    inline ct_entry_key* findResult(node_handle a, float &b) {
+      ct_entry_key* CTsrch = CT0->useEntryKey(etype[0], 0);
       MEDDLY_DCASSERT(CTsrch);
       CTsrch->writeN(a);
       CT0->find(CTsrch, CTresult[0]);
@@ -103,8 +103,8 @@ class MEDDLY::range_real : public unary_operation {
       CT0->recycle(CTsrch);
       return 0;
     }
-    inline float saveResult(compute_table::entry_key* Key, 
-      node_handle a, float &b) 
+    inline float saveResult(ct_entry_key* Key,
+      node_handle a, float &b)
     {
       CTresult[0].reset();
       CTresult[0].writeF(b);
@@ -113,10 +113,10 @@ class MEDDLY::range_real : public unary_operation {
     }
 };
 
-MEDDLY::range_real::range_real(const unary_opname* oc, expert_forest* arg)
+MEDDLY::range_real::range_real(unary_opname* oc, expert_forest* arg)
  : unary_operation(oc, 1, arg, opnd_type::REAL)
 {
-  compute_table::entry_type* et = new compute_table::entry_type(oc->getName(), "N:F");
+  ct_entry_type* et = new ct_entry_type(oc->getName(), "N:F");
   et->setForestForSlot(0, arg);
   registerEntryType(0, et);
   buildCTs();
@@ -131,7 +131,7 @@ MEDDLY::range_real::range_real(const unary_opname* oc, expert_forest* arg)
 /// Max range, returns an integer
 class MEDDLY::maxrange_int : public range_int {
 public:
-  maxrange_int(const unary_opname* oc, expert_forest* arg)
+  maxrange_int(unary_opname* oc, expert_forest* arg)
     : range_int(oc, arg) { }
   virtual void compute(const dd_edge &arg, long &res) {
     res = compute_r(arg.getNode());
@@ -142,15 +142,15 @@ public:
 int MEDDLY::maxrange_int::compute_r(node_handle a)
 {
   // Terminal case
-  if (argF->isTerminalNode(a)) return expert_forest::int_Tencoder::handle2value(a);
-  
+  if (argF->isTerminalNode(a)) return int_Tencoder::handle2value(a);
+
   // Check compute table
   int max;
-  compute_table::entry_key* Key = findResult(a, max);
+  ct_entry_key* Key = findResult(a, max);
   if (0==Key) return max;
 
   // Initialize node reader
-  unpacked_node* A = unpacked_node::newFromNode(argF, a, false);
+  unpacked_node* A = argF->newUnpacked(a, SPARSE_ONLY);
 
   // recurse
   max = compute_r(A->d(0));
@@ -174,7 +174,7 @@ int MEDDLY::maxrange_int::compute_r(node_handle a)
 /// Min range, returns an integer
 class MEDDLY::minrange_int : public range_int {
 public:
-  minrange_int(const unary_opname* oc, expert_forest* arg)
+  minrange_int(unary_opname* oc, expert_forest* arg)
     : range_int(oc, arg) { }
   virtual void compute(const dd_edge &arg, long &res) {
     res = compute_r(arg.getNode());
@@ -185,15 +185,15 @@ public:
 int MEDDLY::minrange_int::compute_r(node_handle a)
 {
   // Terminal case
-  if (argF->isTerminalNode(a)) return expert_forest::int_Tencoder::handle2value(a);
-  
+  if (argF->isTerminalNode(a)) return int_Tencoder::handle2value(a);
+
   // Check compute table
   int min;
-  compute_table::entry_key* Key = findResult(a, min);
+  ct_entry_key* Key = findResult(a, min);
   if (0==Key) return min;
 
   // Initialize node reader
-  unpacked_node* A = unpacked_node::newFromNode(argF, a, false);
+  unpacked_node* A = argF->newUnpacked(a, SPARSE_ONLY);
 
   // recurse
   min = compute_r(A->d(0));
@@ -219,7 +219,7 @@ int MEDDLY::minrange_int::compute_r(node_handle a)
 /// Max range, returns a real
 class MEDDLY::maxrange_real : public range_real {
 public:
-  maxrange_real(const unary_opname* oc, expert_forest* arg)
+  maxrange_real(unary_opname* oc, expert_forest* arg)
     : range_real(oc, arg) { }
   virtual void compute(const dd_edge &arg, double &res) {
     res = compute_r(arg.getNode());
@@ -230,15 +230,15 @@ public:
 float MEDDLY::maxrange_real::compute_r(node_handle a)
 {
   // Terminal case
-  if (argF->isTerminalNode(a)) return expert_forest::float_Tencoder::handle2value(a);
-  
+  if (argF->isTerminalNode(a)) return float_Tencoder::handle2value(a);
+
   // Check compute table
   float max;
-  compute_table::entry_key* Key = findResult(a, max);
+  ct_entry_key* Key = findResult(a, max);
   if (0==Key) return max;
 
   // Initialize node reader
-  unpacked_node* A = unpacked_node::newFromNode(argF, a, false);
+  unpacked_node* A = argF->newUnpacked(a, SPARSE_ONLY);
 
   // recurse
   max = compute_r(A->d(0));
@@ -264,7 +264,7 @@ float MEDDLY::maxrange_real::compute_r(node_handle a)
 /// Min range, returns a real
 class MEDDLY::minrange_real : public range_real {
 public:
-  minrange_real(const unary_opname* oc, expert_forest* arg)
+  minrange_real(unary_opname* oc, expert_forest* arg)
     : range_real(oc, arg) { }
   virtual void compute(const dd_edge &arg, double &res) {
     res = compute_r(arg.getNode());
@@ -275,15 +275,15 @@ public:
 float MEDDLY::minrange_real::compute_r(node_handle a)
 {
   // Terminal case
-  if (argF->isTerminalNode(a)) return expert_forest::float_Tencoder::handle2value(a);
-  
+  if (argF->isTerminalNode(a)) return float_Tencoder::handle2value(a);
+
   // Check compute table
   float min;
-  compute_table::entry_key* Key = findResult(a, min);
+  ct_entry_key* Key = findResult(a, min);
   if (0==Key) return min;
 
   // Initialize node reader
-  unpacked_node* A = unpacked_node::newFromNode(argF, a, false);
+  unpacked_node* A = argF->newUnpacked(a, SPARSE_ONLY);
 
   // recurse
   min = compute_r(A->d(0));
@@ -310,7 +310,7 @@ class MEDDLY::maxrange_opname : public unary_opname {
   public:
     maxrange_opname();
     virtual unary_operation*
-      buildOperation(expert_forest* ar, opnd_type res) const;
+      buildOperation(expert_forest* ar, opnd_type res);
 };
 
 MEDDLY::maxrange_opname::maxrange_opname() : unary_opname("Max_range")
@@ -318,21 +318,21 @@ MEDDLY::maxrange_opname::maxrange_opname() : unary_opname("Max_range")
 }
 
 MEDDLY::unary_operation*
-MEDDLY::maxrange_opname::buildOperation(expert_forest* ar, opnd_type res) const
+MEDDLY::maxrange_opname::buildOperation(expert_forest* ar, opnd_type res)
 {
   if (0==ar) return 0;
 
-  if (ar->getEdgeLabeling() != forest::MULTI_TERMINAL)
+  if (ar->getEdgeLabeling() != edge_labeling::MULTI_TERMINAL)
     throw error(error::NOT_IMPLEMENTED, __FILE__, __LINE__);
 
   switch (res) {
     case opnd_type::INTEGER:
-      if (forest::INTEGER != ar->getRangeType())
+      if (range_type::INTEGER != ar->getRangeType())
         throw error(error::TYPE_MISMATCH, __FILE__, __LINE__);
       return new maxrange_int(this,  ar);
 
     case opnd_type::REAL:
-      if (forest::REAL != ar->getRangeType())
+      if (range_type::REAL != ar->getRangeType())
         throw error(error::TYPE_MISMATCH, __FILE__, __LINE__);
       return new maxrange_real(this,  ar);
 
@@ -353,7 +353,7 @@ class MEDDLY::minrange_opname : public unary_opname {
   public:
     minrange_opname();
     virtual unary_operation*
-      buildOperation(expert_forest* ar, opnd_type res) const;
+      buildOperation(expert_forest* ar, opnd_type res);
 };
 
 MEDDLY::minrange_opname::minrange_opname() : unary_opname("Min_range")
@@ -361,21 +361,21 @@ MEDDLY::minrange_opname::minrange_opname() : unary_opname("Min_range")
 }
 
 MEDDLY::unary_operation*
-MEDDLY::minrange_opname::buildOperation(expert_forest* ar, opnd_type res) const
+MEDDLY::minrange_opname::buildOperation(expert_forest* ar, opnd_type res)
 {
   if (0==ar) return 0;
 
-  if (ar->getEdgeLabeling() != forest::MULTI_TERMINAL)
+  if (ar->getEdgeLabeling() != edge_labeling::MULTI_TERMINAL)
     throw error(error::NOT_IMPLEMENTED, __FILE__, __LINE__);
 
   switch (res) {
     case opnd_type::INTEGER:
-      if (forest::INTEGER != ar->getRangeType())
+      if (range_type::INTEGER != ar->getRangeType())
         throw error(error::TYPE_MISMATCH, __FILE__, __LINE__);
       return new minrange_int(this,  ar);
 
     case opnd_type::REAL:
-      if (forest::REAL != ar->getRangeType())
+      if (range_type::REAL != ar->getRangeType())
         throw error(error::TYPE_MISMATCH, __FILE__, __LINE__);
       return new minrange_real(this,  ar);
 

@@ -4,7 +4,7 @@
     Copyright (C) 2009, Iowa State University Research Foundation, Inc.
 
     This library is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Lesser General Public License as published 
+    it under the terms of the GNU Lesser General Public License as published
     by the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
@@ -25,18 +25,18 @@
 
 	The model has 6 square faces with 9 squares (of the same color) in each face
 	for a total of 54 squares.
-  
+
 	These 54 squares can be grouped together as some of them move together.
 
 	Type 1: Single square (6 such squares)  ,  6 * 1 =  6
 	Type 2: Two squares (12 such L-corners) , 12 * 2 = 24
 	Type 3: Three squares (8 such corners)  ,  8 * 3 = 24
-	
+
 	The model thus has 26 components and 26 component locations.
 	Each component location is represented as a MDD level. The size of the MDD
 	level depends on the number of components that can fit into that location.
 	For example, Type 2 component locations are of size 12.
-  
+
 	Level 0        : Terminals
 	Level 01 - 12  : Type 2 component locations (size 12)
 	Level 13 - 20  : Type 3 component locations (size 8)
@@ -66,7 +66,6 @@
 #include <cassert>
 
 #include "../src/meddly.h"
-#include "../src/meddly_expert.h"
 #include "../src/timer.h"
 
 using namespace std;
@@ -595,10 +594,10 @@ void RubiksCubeModel::destroy()
 
 void RubiksCubeModel::buildForests()
 {
-  forest::policies p(false);
+  policies p(false);
   p.setSinkDown();
 
-  _state = _domain->createForest(false, forest::BOOLEAN, forest::MULTI_TERMINAL, p);
+  _state = _domain->createForest(false, range_type::BOOLEAN, edge_labeling::MULTI_TERMINAL, p);
   if (_state == nullptr) {
     cerr << "Couldn't create forest of states" << endl;
     exit(1);
@@ -606,7 +605,7 @@ void RubiksCubeModel::buildForests()
   cout << "Created forest of states" << endl;
 
   for (int i = 0; i < _config.num_phases; i++) {
-    forest* relation = _domain->createForest(true, forest::BOOLEAN, forest::MULTI_TERMINAL);
+    forest* relation = _domain->createForest(true, range_type::BOOLEAN, edge_labeling::MULTI_TERMINAL);
     if (relation == nullptr) {
       cerr << "Couldn't create forest of relations" << endl;
       exit(1);

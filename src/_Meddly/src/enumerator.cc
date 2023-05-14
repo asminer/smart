@@ -1,10 +1,9 @@
-
 /*
     Meddly: Multi-terminal and Edge-valued Decision Diagram LibrarY.
     Copyright (C) 2009, Iowa State University Research Foundation, Inc.
 
     This library is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Lesser General Public License as published 
+    it under the terms of the GNU Lesser General Public License as published
     by the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
@@ -20,6 +19,8 @@
 
 
 #include "defines.h"
+#include "enumerator.h"
+#include "forest.h"
 
 // #define DEBUG_CLEANUP
 
@@ -98,7 +99,7 @@ const int* MEDDLY::enumerator::iterator::getPrimedAssignments()
   for (int k=maxLevel; k; k--) {
     prindex[k] = index[-k];
   }
-  return prindex; 
+  return prindex;
 }
 
 void MEDDLY::enumerator::iterator::getValue(int &) const
@@ -182,7 +183,7 @@ void MEDDLY::enumerator::init(type t, const forest* f)
   if (I->build_error()) {
     delete I;
     I = 0;
-  } 
+  }
 }
 
 void MEDDLY::enumerator::start(const dd_edge &e)

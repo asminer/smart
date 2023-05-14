@@ -4,7 +4,7 @@
     Copyright (C) 2009, Iowa State University Research Foundation, Inc.
 
     This library is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Lesser General Public License as published 
+    it under the terms of the GNU Lesser General Public License as published
     by the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
@@ -30,13 +30,9 @@
 #include <algorithm>
 #include <random>
 #include <chrono>
+#include <cassert>
 
 #include "../src/meddly.h"
-
-// #define USE_EXPERT_INTERFACE
-#ifdef USE_EXPERT_INTERFACE
-#include "../src/meddly_expert.h"
-#endif
 
 using namespace MEDDLY;
 
@@ -64,14 +60,14 @@ FILE_output meddlyout(stdout);
 #ifdef USE_EXPERT_INTERFACE
 
 // Given a forest and an op_code returns the corresponding op_info.
-// 
+//
 // This is only valid for operations of the form C = A op B,
 // where A, B and C belong to the same forest.
 op_info* getOp(forest* f, compute_manager::op_code op)
 {
   static const int nForests = 3;
   static forest* forests[nForests];
-  static expert_compute_manager* ecm = 
+  static expert_compute_manager* ecm =
     static_cast<expert_compute_manager*>(getComputeManager());
   assert(ecm != 0);
   assert(f != 0);
@@ -85,14 +81,14 @@ op_info* getOp(forest* f, compute_manager::op_code op)
 
 // Given a forest and an instance of an operation returns
 // the corresponding op_info.
-// 
+//
 // This is only valid for operations of the form C = A op B,
 // where A, B and C belong to the same forest.
 op_info* getOp(forest* f, operation* op)
 {
   static const int nForests = 3;
   static forest* forests[nForests];
-  static expert_compute_manager* ecm = 
+  static expert_compute_manager* ecm =
     static_cast<expert_compute_manager*>(getComputeManager());
   assert(ecm != 0);
   assert(f != 0);
@@ -109,7 +105,7 @@ op_info* getOp(forest* f, operation* op)
 // Tests a evmdd operation on the elements provided.
 // This function assumes that each element[i] represents
 // an element in the given MTMDD.
-dd_edge test_evmdd(forest* evmdd, const binary_opname* opCode,
+dd_edge test_evmdd(forest* evmdd, binary_handle opCode,
     int** element, element_type* terms, int nElements)
 {
   // A = first nElements/2 elements combined using +.
@@ -128,7 +124,7 @@ dd_edge test_evmdd(forest* evmdd, const binary_opname* opCode,
 #ifdef USE_EXPERT_INTERFACE
   binary_operation* op = getOperation(opCode, A, B, C);
   assert(op != NULL);
-  op->compute(op, A, B, C);
+  op->compute(A, B, C);
 #else
   apply(opCode, A, B, C);
 #endif
@@ -313,12 +309,12 @@ int main(int argc, char *argv[])
   assert(d != 0);
 
   // Create a MTMDD forest in this domain
-  forest::policies p1(false);
+  policies p1(false);
   p1.setPessimistic();
 #if USE_REALS
-  forest* evmdd = d->createForest(false, forest::REAL, forest::EVTIMES, p1);
+  forest* evmdd = d->createForest(false, range_type::REAL, edge_labeling::EVTIMES, p1);
 #else
-  forest* evmdd = d->createForest(false, forest::INTEGER, forest::EVPLUS, p1);
+  forest* evmdd = d->createForest(false, range_type::INTEGER, edge_labeling::EVPLUS, p1);
 #endif
   assert(evmdd != 0);
 

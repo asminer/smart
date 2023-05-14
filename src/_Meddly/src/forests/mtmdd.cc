@@ -1,4 +1,3 @@
-
 /*
     Meddly: Multi-terminal and Edge-valued Decision Diagram LibrarY.
     Copyright (C) 2009, Iowa State University Research Foundation, Inc.
@@ -59,8 +58,7 @@ void MEDDLY::mtmdd_forest::swapAdjacentVariables(int level)
   int num = 0;
   // Renumber the level of nodes for the variable to be moved down
   for (int i = 0; i < hnum; i++) {
-    unpacked_node* nr = unpacked_node::useUnpackedNode();
-    nr->initFromNode(this, hnodes[i], true);
+    unpacked_node* nr = newUnpacked(hnodes[i], FULL_ONLY);
 
     MEDDLY_DCASSERT(nr->getLevel() == level + 1);
     MEDDLY_DCASSERT(nr->getSize() == hsize);
@@ -96,8 +94,7 @@ void MEDDLY::mtmdd_forest::swapAdjacentVariables(int level)
   for (int i = 0; i < hnum; i++) {
     MEDDLY_DCASSERT(isActiveNode(hnodes[i]));
 
-    unpacked_node* high_nr = unpacked_node::useUnpackedNode();
-    high_nr->initFromNode(this, hnodes[i], true);
+    unpacked_node* high_nr = newUnpacked(hnodes[i], FULL_ONLY);
 
     unpacked_node* high_nb = unpacked_node::newFull(this, level + 1, lsize);
     for (int j = 0; j < hsize; j++) {
@@ -107,8 +104,7 @@ void MEDDLY::mtmdd_forest::swapAdjacentVariables(int level)
         }
       }
       else {
-        unpacked_node* nr = unpacked_node::useUnpackedNode();
-        nr->initFromNode(this, high_nr->d(j), true);
+        unpacked_node* nr = newUnpacked(high_nr->d(j), FULL_ONLY);
 
         MEDDLY_DCASSERT(nr->getSize() == lsize);
         for (int k = 0; k < lsize; k++) {
@@ -312,8 +308,8 @@ void MEDDLY::mtmdd_forest::sifting(int var, int top, int bottom)
 // *                                                                *
 // ******************************************************************
 
-MEDDLY::mtmdd_forest::mtmdd_iterator::mtmdd_iterator(const expert_forest *F)
- : mt_iterator(F)
+MEDDLY::mtmdd_forest::mtmdd_iterator::mtmdd_iterator(const expert_forest *_F)
+ : mt_iterator(_F)
 {
 }
 
@@ -371,7 +367,7 @@ bool MEDDLY::mtmdd_forest::mtmdd_iterator::first(int k, node_handle down)
     int kdn = F->getNodeLevel(down);
     MEDDLY_DCASSERT(kdn <= k);
     if (kdn < k)  path[k].initRedundant(F, k, down, false);
-    else          path[k].initFromNode(F, down, false);
+    else          F->unpackNode(path + k, down, SPARSE_ONLY);
     nzp[k] = 0;
     index[k] = path[k].i(0);
     down = path[k].d(0);

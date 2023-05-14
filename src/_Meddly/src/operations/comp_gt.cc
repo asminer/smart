@@ -1,10 +1,9 @@
-
 /*
     Meddly: Multi-terminal and Edge-valued Decision Diagram LibrarY.
     Copyright (C) 2009, Iowa State University Research Foundation, Inc.
 
     This library is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Lesser General Public License as published 
+    it under the terms of the GNU Lesser General Public License as published
     by the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
@@ -17,9 +16,6 @@
     along with this library.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
 #include "../defines.h"
 #include "comp_gt.h"
 #include "apply_base.h"
@@ -40,7 +36,7 @@ namespace MEDDLY {
 template <typename T>
 class morethan_mdd : public generic_binary_mdd {
   public:
-    morethan_mdd(const binary_opname* opcode, expert_forest* arg1,
+    morethan_mdd(binary_opname* opcode, expert_forest* arg1,
       expert_forest* arg2, expert_forest* res)
       : generic_binary_mdd(opcode, arg1, arg2, res) { }
 
@@ -75,7 +71,7 @@ namespace MEDDLY {
 template <typename T>
 class morethan_mxd : public generic_binbylevel_mxd {
   public:
-    morethan_mxd(const binary_opname* opcode, expert_forest* arg1,
+    morethan_mxd(binary_opname* opcode, expert_forest* arg1,
       expert_forest* arg2, expert_forest* res)
       : generic_binbylevel_mxd(opcode, arg1, arg2, res) { }
 
@@ -108,8 +104,8 @@ bool morethan_mxd<T>
 class MEDDLY::morethan_opname : public binary_opname {
   public:
     morethan_opname();
-    virtual binary_operation* buildOperation(expert_forest* a1, 
-      expert_forest* a2, expert_forest* r) const;
+    virtual binary_operation* buildOperation(expert_forest* a1,
+      expert_forest* a2, expert_forest* r);
 };
 
 MEDDLY::morethan_opname::morethan_opname()
@@ -117,15 +113,15 @@ MEDDLY::morethan_opname::morethan_opname()
 {
 }
 
-MEDDLY::binary_operation* 
-MEDDLY::morethan_opname::buildOperation(expert_forest* a1, expert_forest* a2, 
-  expert_forest* r) const
+MEDDLY::binary_operation*
+MEDDLY::morethan_opname::buildOperation(expert_forest* a1, expert_forest* a2,
+  expert_forest* r)
 {
   if (0==a1 || 0==a2 || 0==r) return 0;
 
-  if (  
-    (a1->getDomain() != r->getDomain()) || 
-    (a2->getDomain() != r->getDomain()) 
+  if (
+    (a1->getDomain() != r->getDomain()) ||
+    (a2->getDomain() != r->getDomain())
   )
     throw error(error::DOMAIN_MISMATCH, __FILE__, __LINE__);
 
@@ -138,9 +134,9 @@ MEDDLY::morethan_opname::buildOperation(expert_forest* a1, expert_forest* a2,
     throw error(error::TYPE_MISMATCH, __FILE__, __LINE__);
 
   bool use_reals = (
-    a1->getRangeType() == forest::REAL || a2->getRangeType() == forest::REAL 
+    a1->getRangeType() == range_type::REAL || a2->getRangeType() == range_type::REAL
   );
-  if (r->getEdgeLabeling() == forest::MULTI_TERMINAL) {
+  if (r->getEdgeLabeling() == edge_labeling::MULTI_TERMINAL) {
     if (use_reals) {
       if (r->isForRelations())
         return new morethan_mxd<float>(this, a1, a2, r);

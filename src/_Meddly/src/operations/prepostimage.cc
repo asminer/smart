@@ -1,10 +1,9 @@
-
 /*
     Meddly: Multi-terminal and Edge-valued Decision Diagram LibrarY.
     Copyright (C) 2009, Iowa State University Research Foundation, Inc.
 
     This library is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Lesser General Public License as published 
+    it under the terms of the GNU Lesser General Public License as published
     by the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
@@ -17,12 +16,13 @@
     along with this library.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
 #include "../defines.h"
 #include "prepostimage.h"
+
+#include "../ct_entry_result.h"
+#include "../compute_table.h"
+#include "../oper_binary.h"
+#include "../ops_builtin.h"
 
 // #define TRACE_ALL_OPS
 
@@ -64,13 +64,13 @@ namespace MEDDLY {
 /// Abstract base class for all MT-based pre/post image operations.
 class MEDDLY::image_op : public binary_operation {
   public:
-    image_op(const binary_opname* opcode, expert_forest* arg1,
+    image_op(binary_opname* opcode, expert_forest* arg1,
       expert_forest* arg2, expert_forest* res, binary_operation* acc);
 
-    inline compute_table::entry_key* 
-    findResult(node_handle a, node_handle b, node_handle &c) 
+    inline ct_entry_key*
+    findResult(node_handle a, node_handle b, node_handle &c)
     {
-      compute_table::entry_key* CTsrch = CT0->useEntryKey(etype[0], 0);
+      ct_entry_key* CTsrch = CT0->useEntryKey(etype[0], 0);
       MEDDLY_DCASSERT(CTsrch);
       CTsrch->writeN(a);
       CTsrch->writeN(b);
@@ -80,8 +80,8 @@ class MEDDLY::image_op : public binary_operation {
       CT0->recycle(CTsrch);
       return 0;
     }
-    inline node_handle saveResult(compute_table::entry_key* Key, 
-      node_handle a, node_handle b, node_handle c) 
+    inline node_handle saveResult(ct_entry_key* Key,
+      node_handle a, node_handle b, node_handle c)
     {
       CTresult[0].reset();
       CTresult[0].writeN(c);
@@ -98,7 +98,7 @@ class MEDDLY::image_op : public binary_operation {
     expert_forest* argM;
 };
 
-MEDDLY::image_op::image_op(const binary_opname* oc, expert_forest* a1,
+MEDDLY::image_op::image_op(binary_opname* oc, expert_forest* a1,
   expert_forest* a2, expert_forest* res, binary_operation* acc)
 : binary_operation(oc, 1, a1, a2, res)
 {
@@ -114,7 +114,7 @@ MEDDLY::image_op::image_op(const binary_opname* oc, expert_forest* a1,
     if (!a2->isForRelations()) throw error(error::MISCELLANEOUS, __FILE__, __LINE__);
   }
 
-  compute_table::entry_type* et = new compute_table::entry_type(oc->getName(), "NN:N");
+  ct_entry_type* et = new ct_entry_type(oc->getName(), "NN:N");
   et->setForestForSlot(0, argV);
   et->setForestForSlot(1, argM);
   et->setForestForSlot(3, res);
@@ -164,7 +164,7 @@ MEDDLY::node_handle MEDDLY::image_op::compute(node_handle a, node_handle b)
 */
 class MEDDLY::relXset_mdd : public image_op {
   public:
-    relXset_mdd(const binary_opname* opcode, expert_forest* arg1,
+    relXset_mdd(binary_opname* opcode, expert_forest* arg1,
       expert_forest* arg2, expert_forest* res, binary_operation* acc);
 
   protected:
@@ -172,7 +172,7 @@ class MEDDLY::relXset_mdd : public image_op {
     virtual node_handle processTerminals(node_handle mdd, node_handle mxd) = 0;
 };
 
-MEDDLY::relXset_mdd::relXset_mdd(const binary_opname* oc, expert_forest* a1,
+MEDDLY::relXset_mdd::relXset_mdd(binary_opname* oc, expert_forest* a1,
   expert_forest* a2, expert_forest* res, binary_operation* acc)
 : image_op(oc, a1, a2, res, acc)
 {
@@ -193,7 +193,7 @@ MEDDLY::node_handle MEDDLY::relXset_mdd::compute_rec(node_handle mdd, node_handl
 
   // check the cache
   node_handle result = 0;
-  compute_table::entry_key* Key = findResult(mdd, mxd, result);
+  ct_entry_key* Key = findResult(mdd, mxd, result);
   if (0==Key) return result;
 
   // check if mxd and mdd are at the same level
@@ -204,11 +204,11 @@ MEDDLY::node_handle MEDDLY::relXset_mdd::compute_rec(node_handle mdd, node_handl
   unpacked_node* C = unpacked_node::newFull(resF, rLevel, rSize);
 
   // Initialize mdd reader
-  unpacked_node *A = unpacked_node::useUnpackedNode();
+  unpacked_node *A = unpacked_node::New();
   if (mddLevel < rLevel) {
     A->initRedundant(argV, rLevel, mdd, true);
   } else {
-    A->initFromNode(argV, mdd, true);
+    argV->unpackNode(A, mdd, FULL_ONLY);
   }
 
   if (mddLevel > ABS(mxdLevel)) {
@@ -219,7 +219,7 @@ MEDDLY::node_handle MEDDLY::relXset_mdd::compute_rec(node_handle mdd, node_handl
       C->d_ref(i) = compute_rec(A->d(i), mxd);
     }
   } else {
-    // 
+    //
     // Need to process this level in the MXD.
     MEDDLY_DCASSERT(ABS(mxdLevel) >= mddLevel);
 
@@ -227,12 +227,12 @@ MEDDLY::node_handle MEDDLY::relXset_mdd::compute_rec(node_handle mdd, node_handl
     for (unsigned i=0; i<rSize; i++) C->d_ref(i) = 0;
 
     // Initialize mxd readers, note we might skip the unprimed level
-    unpacked_node *Ru = unpacked_node::useUnpackedNode();
-    unpacked_node *Rp = unpacked_node::useUnpackedNode();
+    unpacked_node *Ru = unpacked_node::New();
+    unpacked_node *Rp = unpacked_node::New();
     if (mxdLevel < 0) {
       Ru->initRedundant(argM, rLevel, mxd, false);
     } else {
-      Ru->initFromNode(argM, mxd, false);
+      argM->unpackNode(Ru, mxd, SPARSE_ONLY);
     }
 
     dd_edge newstatesE(resF), cdi(resF);
@@ -243,14 +243,14 @@ MEDDLY::node_handle MEDDLY::relXset_mdd::compute_rec(node_handle mdd, node_handl
       if (isLevelAbove(-rLevel, argM->getNodeLevel(Ru->d(iz)))) {
         Rp->initIdentity(argM, rLevel, i, Ru->d(iz), false);
       } else {
-        Rp->initFromNode(argM, Ru->d(iz), false);
+        argM->unpackNode(Rp, Ru->d(iz), SPARSE_ONLY);
       }
 
       // loop over mxd "columns"
       for (unsigned jz=0; jz<Rp->getNNZs(); jz++) {
         unsigned j = Rp->i(jz);
         MEDDLY_DCASSERT(0<=j && j < A->getSize());
-        if (0==A->d(j))   continue; 
+        if (0==A->d(j))   continue;
         // ok, there is an i->j "edge".
         // determine new states to be added (recursively)
         // and add them
@@ -266,7 +266,7 @@ MEDDLY::node_handle MEDDLY::relXset_mdd::compute_rec(node_handle mdd, node_handl
         accumulateOp->computeTemp(newstatesE, cdi, cdi);
         C->set_d(i, cdi);
       } // for j
-  
+
     } // for i
 
     unpacked_node::recycle(Rp);
@@ -280,7 +280,7 @@ MEDDLY::node_handle MEDDLY::relXset_mdd::compute_rec(node_handle mdd, node_handl
 #ifdef TRACE_ALL_OPS
   printf("computed relXset(%d, %d) = %d\n", mdd, mxd, result);
 #endif
-  return saveResult(Key, mdd, mxd, result); 
+  return saveResult(Key, mdd, mxd, result);
 }
 
 
@@ -296,7 +296,7 @@ MEDDLY::node_handle MEDDLY::relXset_mdd::compute_rec(node_handle mdd, node_handl
 */
 class MEDDLY::setXrel_mdd : public image_op {
   public:
-    setXrel_mdd(const binary_opname* opcode, expert_forest* arg1,
+    setXrel_mdd(binary_opname* opcode, expert_forest* arg1,
       expert_forest* arg2, expert_forest* res, binary_operation* acc);
 
   protected:
@@ -304,7 +304,7 @@ class MEDDLY::setXrel_mdd : public image_op {
     virtual node_handle processTerminals(node_handle mdd, node_handle mxd) = 0;
 };
 
-MEDDLY::setXrel_mdd::setXrel_mdd(const binary_opname* oc, 
+MEDDLY::setXrel_mdd::setXrel_mdd(binary_opname* oc,
   expert_forest* a1, expert_forest* a2, expert_forest* res, binary_operation* acc)
 : image_op(oc, a1, a2, res, acc)
 {
@@ -325,7 +325,7 @@ MEDDLY::node_handle MEDDLY::setXrel_mdd::compute_rec(node_handle mdd, node_handl
 
   // check the cache
   node_handle result = 0;
-  compute_table::entry_key* Key = findResult(mdd, mxd, result);
+  ct_entry_key* Key = findResult(mdd, mxd, result);
   if (0==Key) {
 #ifdef TRACE_ALL_OPS
     printf("computing new setXrel(%d, %d), got %d from cache\n", mdd, mxd, result);
@@ -347,11 +347,11 @@ MEDDLY::node_handle MEDDLY::setXrel_mdd::compute_rec(node_handle mdd, node_handl
   unpacked_node* C = unpacked_node::newFull(resF, rLevel, rSize);
 
   // Initialize mdd reader
-  unpacked_node *A = unpacked_node::useUnpackedNode();
+  unpacked_node *A = unpacked_node::New();
   if (mddLevel < rLevel) {
     A->initRedundant(argV, rLevel, mdd, true);
   } else {
-    A->initFromNode(argV, mdd, true);
+    argV->unpackNode(A, mdd, FULL_ONLY);
   }
 
   if (mddLevel > ABS(mxdLevel)) {
@@ -362,7 +362,7 @@ MEDDLY::node_handle MEDDLY::setXrel_mdd::compute_rec(node_handle mdd, node_handl
       C->d_ref(i) = compute_rec(A->d(i), mxd);
     }
   } else {
-    // 
+    //
     // Need to process this level in the MXD.
     MEDDLY_DCASSERT(ABS(mxdLevel) >= mddLevel);
 
@@ -370,12 +370,12 @@ MEDDLY::node_handle MEDDLY::setXrel_mdd::compute_rec(node_handle mdd, node_handl
     for (unsigned i=0; i<rSize; i++) C->d_ref(i) = 0;
 
     // Initialize mxd readers, note we might skip the unprimed level
-    unpacked_node *Ru = unpacked_node::useUnpackedNode();
-    unpacked_node *Rp = unpacked_node::useUnpackedNode();
+    unpacked_node *Ru = unpacked_node::New();
+    unpacked_node *Rp = unpacked_node::New();
     if (mxdLevel < 0) {
       Ru->initRedundant(argM, rLevel, mxd, false);
     } else {
-      Ru->initFromNode(argM, mxd, false);
+      argM->unpackNode(Ru, mxd, SPARSE_ONLY);
     }
 
     dd_edge newstatesE(resF), cdj(resF);
@@ -383,11 +383,11 @@ MEDDLY::node_handle MEDDLY::setXrel_mdd::compute_rec(node_handle mdd, node_handl
     // loop over mxd "rows"
     for (unsigned iz=0; iz<Ru->getNNZs(); iz++) {
       unsigned i = Ru->i(iz);
-      if (0==A->d(i))   continue; 
+      if (0==A->d(i))   continue;
       if (isLevelAbove(-rLevel, argM->getNodeLevel(Ru->d(iz)))) {
         Rp->initIdentity(argM, rLevel, i, Ru->d(iz), false);
       } else {
-        Rp->initFromNode(argM, Ru->d(iz), false);
+        argM->unpackNode(Rp, Ru->d(iz), SPARSE_ONLY);
       }
 
       // loop over mxd "columns"
@@ -408,7 +408,7 @@ MEDDLY::node_handle MEDDLY::setXrel_mdd::compute_rec(node_handle mdd, node_handl
         accumulateOp->computeTemp(newstatesE, cdj, cdj);
         C->set_d(j, cdj);
       } // for j
-  
+
     } // for i
 
     unpacked_node::recycle(Rp);
@@ -422,7 +422,7 @@ MEDDLY::node_handle MEDDLY::setXrel_mdd::compute_rec(node_handle mdd, node_handl
 #ifdef TRACE_ALL_OPS
   printf("computed new setXrel(%d, %d) = %d\n", mdd, mxd, result);
 #endif
-  return saveResult(Key, mdd, mxd, result); 
+  return saveResult(Key, mdd, mxd, result);
 }
 
 // ******************************************************************
@@ -442,7 +442,7 @@ namespace MEDDLY {
   template <typename RTYPE>
   class mtmatr_mtvect : public relXset_mdd {
     public:
-      mtmatr_mtvect(const binary_opname* opcode, expert_forest* arg1,
+      mtmatr_mtvect(binary_opname* opcode, expert_forest* arg1,
         expert_forest* arg2, expert_forest* res, binary_operation* acc)
         : relXset_mdd(opcode, arg1, arg2, res, acc) { }
 
@@ -463,7 +463,7 @@ namespace MEDDLY {
   template <>
   class mtmatr_mtvect<bool> : public relXset_mdd {
     public:
-      mtmatr_mtvect(const binary_opname* opcode, expert_forest* arg1,
+      mtmatr_mtvect(binary_opname* opcode, expert_forest* arg1,
         expert_forest* arg2, expert_forest* res, binary_operation* acc)
         : relXset_mdd(opcode, arg1, arg2, res, acc) { }
 
@@ -500,7 +500,7 @@ namespace MEDDLY {
   template <typename RTYPE>
   class mtvect_mtmatr : public setXrel_mdd {
     public:
-      mtvect_mtmatr(const binary_opname* opcode, expert_forest* arg1,
+      mtvect_mtmatr(binary_opname* opcode, expert_forest* arg1,
         expert_forest* arg2, expert_forest* res, binary_operation* acc)
         : setXrel_mdd(opcode, arg1, arg2, res, acc) { }
 
@@ -521,7 +521,7 @@ namespace MEDDLY {
   template <>
   class mtvect_mtmatr<bool> : public setXrel_mdd {
     public:
-      mtvect_mtmatr(const binary_opname* opcode, expert_forest* arg1,
+      mtvect_mtmatr(binary_opname* opcode, expert_forest* arg1,
         expert_forest* arg2, expert_forest* res, binary_operation* acc)
         : setXrel_mdd(opcode, arg1, arg2, res, acc) { }
 
@@ -549,13 +549,13 @@ namespace MEDDLY {
 /// Abstract base class for all MT-based pre/post image operations.
 class MEDDLY::image_op_evplus : public binary_operation {
   public:
-    image_op_evplus(const binary_opname* opcode, expert_forest* arg1,
+    image_op_evplus(binary_opname* opcode, expert_forest* arg1,
       expert_forest* arg2, expert_forest* res, binary_operation* acc);
 
-    inline compute_table::entry_key*
+    inline ct_entry_key*
     findResult(long ev, node_handle evmdd, node_handle mxd, long& resEv, node_handle &resEvmdd)
     {
-      compute_table::entry_key* CTsrch = CT0->useEntryKey(etype[0], 0);
+      ct_entry_key* CTsrch = CT0->useEntryKey(etype[0], 0);
       MEDDLY_DCASSERT(CTsrch);
       CTsrch->writeN(evmdd);
       CTsrch->writeN(mxd);
@@ -569,7 +569,7 @@ class MEDDLY::image_op_evplus : public binary_operation {
       CT0->recycle(CTsrch);
       return 0;
     }
-    inline void saveResult(compute_table::entry_key* Key,
+    inline void saveResult(ct_entry_key* Key,
       long ev, node_handle evmdd, node_handle mxd, long resEv, node_handle resEvmdd)
     {
       CTresult[0].reset();
@@ -588,7 +588,7 @@ class MEDDLY::image_op_evplus : public binary_operation {
 };
 
 
-MEDDLY::image_op_evplus::image_op_evplus(const binary_opname* oc, expert_forest* a1,
+MEDDLY::image_op_evplus::image_op_evplus(binary_opname* oc, expert_forest* a1,
   expert_forest* a2, expert_forest* res, binary_operation* acc)
 : binary_operation(oc, 1, a1, a2, res)
 {
@@ -597,7 +597,7 @@ MEDDLY::image_op_evplus::image_op_evplus(const binary_opname* oc, expert_forest*
   argV = a1;
   argM = a2;
 
-  compute_table::entry_type* et = new compute_table::entry_type(oc->getName(), "NN:LN");
+  ct_entry_type* et = new ct_entry_type(oc->getName(), "NN:LN");
   et->setForestForSlot(0, a1);
   et->setForestForSlot(1, a2);
   et->setForestForSlot(4, res);
@@ -639,7 +639,7 @@ void MEDDLY::image_op_evplus::compute(long ev, node_handle evmdd, node_handle mx
 */
 class MEDDLY::relXset_evplus : public image_op_evplus {
   public:
-    relXset_evplus(const binary_opname* opcode, expert_forest* arg1,
+    relXset_evplus(binary_opname* opcode, expert_forest* arg1,
       expert_forest* arg2, expert_forest* res, binary_operation* acc);
 
   protected:
@@ -647,7 +647,7 @@ class MEDDLY::relXset_evplus : public image_op_evplus {
     virtual void processTerminals(long ev, node_handle mdd, node_handle mxd, long& resEv, node_handle& resEvmdd) = 0;
 };
 
-MEDDLY::relXset_evplus::relXset_evplus(const binary_opname* oc,
+MEDDLY::relXset_evplus::relXset_evplus(binary_opname* oc,
   expert_forest* a1, expert_forest* a2, expert_forest* res, binary_operation* acc)
 : image_op_evplus(oc, a1, a2, res, acc)
 {
@@ -675,7 +675,7 @@ void MEDDLY::relXset_evplus::compute_rec(long ev, node_handle evmdd, node_handle
   }
 
   // check the cache
-  compute_table::entry_key* Key = findResult(ev, evmdd, mxd, resEv, resEvmdd);
+  ct_entry_key* Key = findResult(ev, evmdd, mxd, resEv, resEvmdd);
   if (0==Key) {
     return;
   }
@@ -690,7 +690,7 @@ void MEDDLY::relXset_evplus::compute_rec(long ev, node_handle evmdd, node_handle
   // Initialize evmdd reader
   unpacked_node *A = (evmddLevel < rLevel)
     ? unpacked_node::newRedundant(argV, rLevel, 0L, evmdd, true)
-    : unpacked_node::newFromNode(argV, evmdd, true);
+    : argV->newUnpacked(evmdd, FULL_ONLY);
 
   if (evmddLevel > ABS(mxdLevel)) {
     //
@@ -716,12 +716,12 @@ void MEDDLY::relXset_evplus::compute_rec(long ev, node_handle evmdd, node_handle
     }
 
     // Initialize mxd readers, note we might skip the unprimed level
-    unpacked_node *Ru = unpacked_node::useUnpackedNode();
-    unpacked_node *Rp = unpacked_node::useUnpackedNode();
+    unpacked_node *Ru = unpacked_node::New();
+    unpacked_node *Rp = unpacked_node::New();
     if (mxdLevel < 0) {
       Ru->initRedundant(argM, rLevel, mxd, false);
     } else {
-      Ru->initFromNode(argM, mxd, false);
+      argM->unpackNode(Ru, mxd, SPARSE_ONLY);
     }
 
     dd_edge newstatesE(resF), cdi(resF);
@@ -732,7 +732,7 @@ void MEDDLY::relXset_evplus::compute_rec(long ev, node_handle evmdd, node_handle
       if (isLevelAbove(-rLevel, argM->getNodeLevel(Ru->d(iz)))) {
         Rp->initIdentity(argM, rLevel, i, Ru->d(iz), false);
       } else {
-        Rp->initFromNode(argM, Ru->d(iz), false);
+        argM->unpackNode(Rp, Ru->d(iz), SPARSE_ONLY);
       }
 
       // loop over mxd "columns"
@@ -787,7 +787,7 @@ void MEDDLY::relXset_evplus::compute_rec(long ev, node_handle evmdd, node_handle
 */
 class MEDDLY::setXrel_evplus : public image_op_evplus {
   public:
-    setXrel_evplus(const binary_opname* opcode, expert_forest* arg1,
+    setXrel_evplus(binary_opname* opcode, expert_forest* arg1,
       expert_forest* arg2, expert_forest* res, binary_operation* acc);
 
   protected:
@@ -795,7 +795,7 @@ class MEDDLY::setXrel_evplus : public image_op_evplus {
     virtual void processTerminals(long ev, node_handle mdd, node_handle mxd, long& resEv, node_handle& resEvmdd) = 0;
 };
 
-MEDDLY::setXrel_evplus::setXrel_evplus(const binary_opname* oc,
+MEDDLY::setXrel_evplus::setXrel_evplus(binary_opname* oc,
   expert_forest* a1, expert_forest* a2, expert_forest* res, binary_operation* acc)
 : image_op_evplus(oc, a1, a2, res, acc)
 {
@@ -823,7 +823,7 @@ void MEDDLY::setXrel_evplus::compute_rec(long ev, node_handle evmdd, node_handle
   }
 
   // check the cache
-  compute_table::entry_key* Key = findResult(ev, evmdd, mxd, resEv, resEvmdd);
+  ct_entry_key* Key = findResult(ev, evmdd, mxd, resEv, resEvmdd);
   if (0==Key) {
     return;
   }
@@ -838,7 +838,7 @@ void MEDDLY::setXrel_evplus::compute_rec(long ev, node_handle evmdd, node_handle
   // Initialize evmdd reader
   unpacked_node *A = (evmddLevel < rLevel)
     ? unpacked_node::newRedundant(argV, rLevel, 0L, evmdd, true)
-    : unpacked_node::newFromNode(argV, evmdd, true);
+    : argV->newUnpacked(evmdd, FULL_ONLY);
 
   if (evmddLevel > ABS(mxdLevel)) {
     //
@@ -864,12 +864,12 @@ void MEDDLY::setXrel_evplus::compute_rec(long ev, node_handle evmdd, node_handle
     }
 
     // Initialize mxd readers, note we might skip the unprimed level
-    unpacked_node *Ru = unpacked_node::useUnpackedNode();
-    unpacked_node *Rp = unpacked_node::useUnpackedNode();
+    unpacked_node *Ru = unpacked_node::New();
+    unpacked_node *Rp = unpacked_node::New();
     if (mxdLevel < 0) {
       Ru->initRedundant(argM, rLevel, mxd, false);
     } else {
-      Ru->initFromNode(argM, mxd, false);
+      argM->unpackNode(Ru, mxd, SPARSE_ONLY);
     }
 
     dd_edge newstatesE(resF), cdj(resF);
@@ -881,7 +881,7 @@ void MEDDLY::setXrel_evplus::compute_rec(long ev, node_handle evmdd, node_handle
       if (isLevelAbove(-rLevel, argM->getNodeLevel(Ru->d(iz)))) {
         Rp->initIdentity(argM, rLevel, i, Ru->d(iz), false);
       } else {
-        Rp->initFromNode(argM, Ru->d(iz), false);
+        argM->unpackNode(Rp, Ru->d(iz), SPARSE_ONLY);
       }
 
       // loop over mxd "columns"
@@ -940,7 +940,7 @@ namespace MEDDLY {
   template <typename RTYPE>
   class mtmatr_evplusvect : public relXset_evplus {
     public:
-    mtmatr_evplusvect(const binary_opname* opcode, expert_forest* arg1,
+    mtmatr_evplusvect(binary_opname* opcode, expert_forest* arg1,
         expert_forest* arg2, expert_forest* res, binary_operation* acc)
         : relXset_evplus(opcode, arg1, arg2, res, acc) { }
 
@@ -976,7 +976,7 @@ namespace MEDDLY {
   template <typename RTYPE>
   class evplusvect_mtmatr : public setXrel_evplus {
     public:
-    evplusvect_mtmatr(const binary_opname* opcode, expert_forest* arg1,
+    evplusvect_mtmatr(binary_opname* opcode, expert_forest* arg1,
         expert_forest* arg2, expert_forest* res, binary_operation* acc)
         : setXrel_evplus(opcode, arg1, arg2, res, acc) { }
 
@@ -1007,7 +1007,7 @@ namespace MEDDLY {
 */
 class MEDDLY::tcXrel_evplus : public image_op_evplus {
   public:
-    tcXrel_evplus(const binary_opname* opcode, expert_forest* tc,
+    tcXrel_evplus(binary_opname* opcode, expert_forest* tc,
       expert_forest* trans, expert_forest* res, binary_operation* acc);
 
   protected:
@@ -1015,7 +1015,7 @@ class MEDDLY::tcXrel_evplus : public image_op_evplus {
     virtual void processTerminals(long ev, node_handle evmxd, node_handle mxd, long& resEv, node_handle& resEvmxd);
 };
 
-MEDDLY::tcXrel_evplus::tcXrel_evplus(const binary_opname* oc,
+MEDDLY::tcXrel_evplus::tcXrel_evplus(binary_opname* oc,
   expert_forest* tc, expert_forest* trans, expert_forest* res, binary_operation* acc)
 : image_op_evplus(oc, tc, trans, res, acc)
 {
@@ -1043,7 +1043,7 @@ void MEDDLY::tcXrel_evplus::compute_rec(long ev, node_handle evmxd, node_handle 
   }
 
   // check the cache
-  compute_table::entry_key* Key = findResult(ev, evmxd, mxd, resEv, resEvmdd);
+  ct_entry_key* Key = findResult(ev, evmxd, mxd, resEv, resEvmdd);
   if (0==Key) {
     return;
   }
@@ -1058,13 +1058,13 @@ void MEDDLY::tcXrel_evplus::compute_rec(long ev, node_handle evmxd, node_handle 
   // Initialize evmdd reader
   unpacked_node* A = isLevelAbove(rLevel, evmxdLevel)
     ? unpacked_node::newRedundant(argV, rLevel, 0L, evmxd, true)
-    : unpacked_node::newFromNode(argV, evmxd, true);
+    : argV->newUnpacked(evmxd, FULL_ONLY);
 
   for (unsigned i = 0; i < rSize; i++) {
     int pLevel = argV->getNodeLevel(A->d(i));
     unpacked_node* B = isLevelAbove(-rLevel, pLevel)
       ? unpacked_node::newIdentity(argV, -rLevel, i, 0L, A->d(i), true)
-      : unpacked_node::newFromNode(argV, A->d(i), true);
+      : argV->newUnpacked(A->d(i), FULL_ONLY);
 
     unpacked_node* D = unpacked_node::newFull(resF, -rLevel, rSize);
     if (rLevel > ABS(mxdLevel)) {
@@ -1092,12 +1092,12 @@ void MEDDLY::tcXrel_evplus::compute_rec(long ev, node_handle evmxd, node_handle 
       }
 
       // Initialize mxd readers, note we might skip the unprimed level
-      unpacked_node *Ru = unpacked_node::useUnpackedNode();
-      unpacked_node *Rp = unpacked_node::useUnpackedNode();
+      unpacked_node *Ru = unpacked_node::New();
+      unpacked_node *Rp = unpacked_node::New();
       if (mxdLevel < 0) {
         Ru->initRedundant(argM, rLevel, mxd, false);
       } else {
-        Ru->initFromNode(argM, mxd, false);
+        argM->unpackNode(Ru, mxd, SPARSE_ONLY);
       }
 
       dd_edge newstatesE(resF), djp(resF);
@@ -1112,7 +1112,7 @@ void MEDDLY::tcXrel_evplus::compute_rec(long ev, node_handle evmxd, node_handle 
         if (isLevelAbove(-rLevel, argM->getNodeLevel(Ru->d(jz)))) {
           Rp->initIdentity(argM, rLevel, j, Ru->d(jz), false);
         } else {
-          Rp->initFromNode(argM, Ru->d(jz), false);
+          argM->unpackNode(Rp, Ru->d(jz), SPARSE_ONLY);
         }
 
         // loop over mxd "columns"
@@ -1196,8 +1196,8 @@ void MEDDLY::tcXrel_evplus::processTerminals(long ev, node_handle evmxd, node_ha
 class MEDDLY::preimage_opname : public binary_opname {
   public:
     preimage_opname();
-    virtual binary_operation* buildOperation(expert_forest* a1, 
-      expert_forest* a2, expert_forest* r) const;
+    virtual binary_operation* buildOperation(expert_forest* a1,
+      expert_forest* a2, expert_forest* r);
 };
 
 MEDDLY::preimage_opname::preimage_opname()
@@ -1205,15 +1205,15 @@ MEDDLY::preimage_opname::preimage_opname()
 {
 }
 
-MEDDLY::binary_operation* 
-MEDDLY::preimage_opname::buildOperation(expert_forest* a1, expert_forest* a2, 
-  expert_forest* r) const
+MEDDLY::binary_operation*
+MEDDLY::preimage_opname::buildOperation(expert_forest* a1, expert_forest* a2,
+  expert_forest* r)
 {
   if (0==a1 || 0==a2 || 0==r) return 0;
 
-  if (  
-    (a1->getDomain() != r->getDomain()) || 
-    (a2->getDomain() != r->getDomain()) 
+  if (
+    (a1->getDomain() != r->getDomain()) ||
+    (a2->getDomain() != r->getDomain())
   )
     throw error(error::DOMAIN_MISMATCH, __FILE__, __LINE__);
 
@@ -1222,21 +1222,25 @@ MEDDLY::preimage_opname::buildOperation(expert_forest* a1, expert_forest* a2,
     !a2->isForRelations()   ||
     r->isForRelations()     ||
     (a1->getEdgeLabeling() != r->getEdgeLabeling()) ||
-    (a2->getEdgeLabeling() != forest::MULTI_TERMINAL)
+    (a2->getEdgeLabeling() != edge_labeling::MULTI_TERMINAL)
   )
     throw error(error::TYPE_MISMATCH, __FILE__, __LINE__);
 
-  binary_operation* acc = 0;
-  if (a1->getEdgeLabeling() == forest::EVPLUS || r->getRangeType() == forest::BOOLEAN) {
-    acc = getOperation(UNION, r, r, r);
+  binary_opname* accop = nullptr;
+  if (a1->getEdgeLabeling() == edge_labeling::EVPLUS || r->getRangeType() == range_type::BOOLEAN) {
+    accop = UNION();
   } else {
-    acc = getOperation(MAXIMUM, r, r, r);
+    accop = MAXIMUM();
   }
+  MEDDLY_DCASSERT(accop);
 
-  if (a1->getEdgeLabeling() == forest::MULTI_TERMINAL) {
+  dd_edge er(r);
+  binary_operation* acc = accop->getOperation(er, er, er);
+
+  if (a1->getEdgeLabeling() == edge_labeling::MULTI_TERMINAL) {
     return new mtmatr_mtvect<bool>(this, a1, a2, r, acc);
   }
-  else if (a1->getEdgeLabeling() == forest::EVPLUS) {
+  else if (a1->getEdgeLabeling() == edge_labeling::EVPLUS) {
     return new mtmatr_evplusvect<int>(this, a1, a2, r, acc);
   }
   else {
@@ -1254,8 +1258,8 @@ MEDDLY::preimage_opname::buildOperation(expert_forest* a1, expert_forest* a2,
 class MEDDLY::postimage_opname : public binary_opname {
   public:
     postimage_opname();
-    virtual binary_operation* buildOperation(expert_forest* a1, 
-      expert_forest* a2, expert_forest* r) const;
+    virtual binary_operation* buildOperation(expert_forest* a1,
+      expert_forest* a2, expert_forest* r);
 };
 
 MEDDLY::postimage_opname::postimage_opname()
@@ -1263,15 +1267,15 @@ MEDDLY::postimage_opname::postimage_opname()
 {
 }
 
-MEDDLY::binary_operation* 
-MEDDLY::postimage_opname::buildOperation(expert_forest* a1, expert_forest* a2, 
-  expert_forest* r) const
+MEDDLY::binary_operation*
+MEDDLY::postimage_opname::buildOperation(expert_forest* a1, expert_forest* a2,
+  expert_forest* r)
 {
   if (0==a1 || 0==a2 || 0==r) return 0;
 
-  if (  
-    (a1->getDomain() != r->getDomain()) || 
-    (a2->getDomain() != r->getDomain()) 
+  if (
+    (a1->getDomain() != r->getDomain()) ||
+    (a2->getDomain() != r->getDomain())
   )
     throw error(error::DOMAIN_MISMATCH, __FILE__, __LINE__);
 
@@ -1280,21 +1284,25 @@ MEDDLY::postimage_opname::buildOperation(expert_forest* a1, expert_forest* a2,
     !a2->isForRelations()   ||
     r->isForRelations()     ||
     (a1->getEdgeLabeling() != r->getEdgeLabeling()) ||
-    (a2->getEdgeLabeling() != forest::MULTI_TERMINAL)
+    (a2->getEdgeLabeling() != edge_labeling::MULTI_TERMINAL)
   )
     throw error(error::TYPE_MISMATCH, __FILE__, __LINE__);
 
-  binary_operation* acc = 0;
-  if (a1->getEdgeLabeling() == forest::EVPLUS || r->getRangeType() == forest::BOOLEAN) {
-    acc = getOperation(UNION, r, r, r);
+  binary_opname* accop = nullptr;
+  if (a1->getEdgeLabeling() == edge_labeling::EVPLUS || r->getRangeType() == range_type::BOOLEAN) {
+    accop = UNION();
   } else {
-    acc = getOperation(MAXIMUM, r, r, r);
+    accop = MAXIMUM();
   }
+  MEDDLY_DCASSERT(accop);
 
-  if (a1->getEdgeLabeling() == forest::MULTI_TERMINAL) {
+  dd_edge er(r);
+  binary_operation* acc = accop->getOperation(er, er, er);
+
+  if (a1->getEdgeLabeling() == edge_labeling::MULTI_TERMINAL) {
     return new mtvect_mtmatr<bool>(this, a1, a2, r, acc);
   }
-  else if(a1->getEdgeLabeling() == forest::EVPLUS) {
+  else if(a1->getEdgeLabeling() == edge_labeling::EVPLUS) {
       return new evplusvect_mtmatr<int>(this, a1, a2, r, acc);
   }
   else {
@@ -1312,7 +1320,7 @@ class MEDDLY::transitive_closure_postimage_opname : public binary_opname {
   public:
   transitive_closure_postimage_opname();
     virtual binary_operation* buildOperation(expert_forest* a1,
-      expert_forest* a2, expert_forest* r) const;
+      expert_forest* a2, expert_forest* r);
 };
 
 MEDDLY::transitive_closure_postimage_opname::transitive_closure_postimage_opname()
@@ -1322,7 +1330,7 @@ MEDDLY::transitive_closure_postimage_opname::transitive_closure_postimage_opname
 
 MEDDLY::binary_operation*
 MEDDLY::transitive_closure_postimage_opname::buildOperation(expert_forest* a1, expert_forest* a2,
-  expert_forest* r) const
+  expert_forest* r)
 {
   if (0==a1 || 0==a2 || 0==r) return 0;
 
@@ -1336,13 +1344,16 @@ MEDDLY::transitive_closure_postimage_opname::buildOperation(expert_forest* a1, e
     !a1->isForRelations()    ||
     !a2->isForRelations()   ||
     !r->isForRelations()     ||
-    (a1->getEdgeLabeling() != forest::EVPLUS) ||
-    (a2->getEdgeLabeling() != forest::MULTI_TERMINAL) ||
-    (r->getEdgeLabeling() != forest::EVPLUS)
+    (a1->getEdgeLabeling() != edge_labeling::EVPLUS) ||
+    (a2->getEdgeLabeling() != edge_labeling::MULTI_TERMINAL) ||
+    (r->getEdgeLabeling() != edge_labeling::EVPLUS)
   )
     throw error(error::TYPE_MISMATCH);
 
-  binary_operation* acc = getOperation(UNION, r, r, r);
+  binary_opname* accop = UNION();
+  MEDDLY_DCASSERT(accop);
+  dd_edge er(r);
+  binary_operation* acc = accop->getOperation(er, er, er);
   return new tcXrel_evplus(this, a1, a2, r, acc);
 }
 
@@ -1355,8 +1366,8 @@ MEDDLY::transitive_closure_postimage_opname::buildOperation(expert_forest* a1, e
 class MEDDLY::VMmult_opname : public binary_opname {
   public:
     VMmult_opname();
-    virtual binary_operation* buildOperation(expert_forest* a1, 
-      expert_forest* a2, expert_forest* r) const;
+    virtual binary_operation* buildOperation(expert_forest* a1,
+      expert_forest* a2, expert_forest* r);
 };
 
 MEDDLY::VMmult_opname::VMmult_opname()
@@ -1364,40 +1375,43 @@ MEDDLY::VMmult_opname::VMmult_opname()
 {
 }
 
-MEDDLY::binary_operation* 
-MEDDLY::VMmult_opname::buildOperation(expert_forest* a1, expert_forest* a2, 
-  expert_forest* r) const
+MEDDLY::binary_operation*
+MEDDLY::VMmult_opname::buildOperation(expert_forest* a1, expert_forest* a2,
+  expert_forest* r)
 {
   if (0==a1 || 0==a2 || 0==r) return 0;
 
-  if (  
-    (a1->getDomain() != r->getDomain()) || 
-    (a2->getDomain() != r->getDomain()) 
+  if (
+    (a1->getDomain() != r->getDomain()) ||
+    (a2->getDomain() != r->getDomain())
   )
     throw error(error::DOMAIN_MISMATCH, __FILE__, __LINE__);
 
   if (
-    (a1->getRangeType() == forest::BOOLEAN) ||
-    (a2->getRangeType() == forest::BOOLEAN) ||
-    (r->getRangeType() == forest::BOOLEAN) ||
+    (a1->getRangeType() == range_type::BOOLEAN) ||
+    (a2->getRangeType() == range_type::BOOLEAN) ||
+    (r->getRangeType() == range_type::BOOLEAN) ||
     a1->isForRelations()    ||
     !a2->isForRelations()   ||
     r->isForRelations()     ||
-    (a1->getEdgeLabeling() != forest::MULTI_TERMINAL) ||
-    (a2->getEdgeLabeling() != forest::MULTI_TERMINAL) ||
-    (r->getEdgeLabeling() != forest::MULTI_TERMINAL) 
+    (a1->getEdgeLabeling() != edge_labeling::MULTI_TERMINAL) ||
+    (a2->getEdgeLabeling() != edge_labeling::MULTI_TERMINAL) ||
+    (r->getEdgeLabeling() != edge_labeling::MULTI_TERMINAL)
   )
     throw error(error::TYPE_MISMATCH, __FILE__, __LINE__);
 
-  binary_operation* acc = getOperation(PLUS, r, r, r);
+  binary_opname* accop = PLUS();
+  MEDDLY_DCASSERT(accop);
+  dd_edge er(r);
+  binary_operation* acc = accop->getOperation(er, er, er);
 
   switch (r->getRangeType()) {
-    case forest::INTEGER:
+    case range_type::INTEGER:
       return new mtvect_mtmatr<int>(this, a1, a2, r, acc);
 
-    case forest::REAL:
+    case range_type::REAL:
       return new mtvect_mtmatr<float>(this, a1, a2, r, acc);
-      
+
     default:
       throw error(error::TYPE_MISMATCH, __FILE__, __LINE__);
   }
@@ -1412,8 +1426,8 @@ MEDDLY::VMmult_opname::buildOperation(expert_forest* a1, expert_forest* a2,
 class MEDDLY::MVmult_opname : public binary_opname {
   public:
     MVmult_opname();
-    virtual binary_operation* buildOperation(expert_forest* a1, 
-      expert_forest* a2, expert_forest* r) const;
+    virtual binary_operation* buildOperation(expert_forest* a1,
+      expert_forest* a2, expert_forest* r);
 };
 
 MEDDLY::MVmult_opname::MVmult_opname()
@@ -1421,44 +1435,47 @@ MEDDLY::MVmult_opname::MVmult_opname()
 {
 }
 
-MEDDLY::binary_operation* 
-MEDDLY::MVmult_opname::buildOperation(expert_forest* a1, expert_forest* a2, 
-  expert_forest* r) const
+MEDDLY::binary_operation*
+MEDDLY::MVmult_opname::buildOperation(expert_forest* a1, expert_forest* a2,
+  expert_forest* r)
 {
   if (0==a1 || 0==a2 || 0==r) return 0;
 
-  if (  
-    (a1->getDomain() != r->getDomain()) || 
-    (a2->getDomain() != r->getDomain()) 
+  if (
+    (a1->getDomain() != r->getDomain()) ||
+    (a2->getDomain() != r->getDomain())
   )
     throw error(error::DOMAIN_MISMATCH, __FILE__, __LINE__);
 
   if (
-    (a1->getRangeType() == forest::BOOLEAN) ||
-    (a2->getRangeType() == forest::BOOLEAN) ||
-    (r->getRangeType() == forest::BOOLEAN) ||
+    (a1->getRangeType() == range_type::BOOLEAN) ||
+    (a2->getRangeType() == range_type::BOOLEAN) ||
+    (r->getRangeType() == range_type::BOOLEAN) ||
     !a1->isForRelations()    ||
     a2->isForRelations()   ||
     r->isForRelations()     ||
-    (a1->getEdgeLabeling() != forest::MULTI_TERMINAL) ||
-    (a2->getEdgeLabeling() != forest::MULTI_TERMINAL) ||
-    (r->getEdgeLabeling() != forest::MULTI_TERMINAL) 
+    (a1->getEdgeLabeling() != edge_labeling::MULTI_TERMINAL) ||
+    (a2->getEdgeLabeling() != edge_labeling::MULTI_TERMINAL) ||
+    (r->getEdgeLabeling() != edge_labeling::MULTI_TERMINAL)
   )
     throw error(error::TYPE_MISMATCH, __FILE__, __LINE__);
 
-  binary_operation* acc = getOperation(PLUS, r, r, r);
+  binary_opname* accop = PLUS();
+  MEDDLY_DCASSERT(accop);
+  dd_edge er(r);
+  binary_operation* acc = accop->getOperation(er, er, er);
 
   //
   // We're switching the order of the arguments
   //
 
   switch (r->getRangeType()) {
-    case forest::INTEGER:
+    case range_type::INTEGER:
       return new mtmatr_mtvect<int>(this, a2, a1, r, acc);
 
-    case forest::REAL:
+    case range_type::REAL:
       return new mtmatr_mtvect<float>(this, a2, a1, r, acc);
-      
+
     default:
       throw error(error::TYPE_MISMATCH, __FILE__, __LINE__);
   }

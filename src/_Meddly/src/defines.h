@@ -1,10 +1,9 @@
-
 /*
     Meddly: Multi-terminal and Edge-valued Decision Diagram LibrarY.
     Copyright (C) 2009, Iowa State University Research Foundation, Inc.
 
     This library is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Lesser General Public License as published 
+    it under the terms of the GNU Lesser General Public License as published
     by the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
@@ -17,24 +16,8 @@
     along with this library.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-
-
-/** @name defines.h
-    @type File
-    @args \ 
-
-  The base of all files.  So if you change this, everything gets to recompile.
-
-  This file is for good global defines, such as ASSERT and TRACE and crud.
-
-  Since this file is only intended for global definitions, there is no
-  associated defines.c or defines.cc file.
- */
-
-//@{
-
-#ifndef DEFINES_H
-#define DEFINES_H
+#ifndef MEDDLY_DEFINES_H
+#define MEDDLY_DEFINES_H
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -43,25 +26,7 @@
 // #define DEBUG_SLOW
 // #define TRACE_ALL_OPS
 
-// Things that everyone will need
-#include <cstdlib>
-#include <cassert>
-#include <cstring>
-#include <cstdarg>
 #include <limits>
-
-// Meddly
-#include "meddly.h"
-#include "meddly_expert.h"
-
-// Macro to handle extern "C"
-#ifdef __cplusplus
-#  define BEGIN_C_DECLS extern "C" {
-#  define END_C_DECLS   }
-#else /* !__cplusplus */
-#  define BEGIN_C_DECLS  
-#  define END_C_DECLS  
-#endif /* __cplusplus */
 
 // Handy Constants
 
@@ -109,97 +74,6 @@ namespace MEDDLY {
     return k1 > k2;
   }
 
-  /// Print human-readable memory usage
-  /*
-  inline void fprintmem(FILE* s, unsigned long m, bool human) {
-    if ((!human) || (m<1024)) {
-      fprintf(s, "%lu bytes", m);
-      return;
-    }
-    double approx = m;
-    approx /= 1024;
-    if (approx < 1024) {
-      fprintf(s, "%3.2lf Kbytes", approx);
-      return;
-    }
-    approx /= 1024;
-    if (approx < 1024) {
-      fprintf(s, "%3.2lf Mbytes", approx);
-      return;
-    }
-    approx /= 1024;
-    if (approx < 1024) {
-      fprintf(s, "%3.2lf Gbytes", approx);
-      return;
-    }
-    approx /= 1024;
-    fprintf(s, "%3.2lf Tbytes", approx);
-  }
-  */
-
-  /// throw wrapper around fputc
-  /*
-  inline void th_fputc(int c, FILE* s) {
-    if (EOF==fputc(c, s)) throw error(error::COULDNT_WRITE);
-  }
-  */
-
-  /// throw wrapper around fprintf
-  /*
-  inline void th_fprintf(FILE* s, const char* fmt, ...) {
-    va_list argptr;
-    va_start(argptr, fmt);
-    if (vfprintf(s, fmt, argptr)<0) throw error(error::COULDNT_WRITE);
-    va_end(argptr);
-  }
-  */
-
-  /// throw wrapper around fscanf
-  /*
-  inline void th_fscanf(int n, FILE* s, const char* fmt, ...) {
-    va_list argptr;
-    va_start(argptr, fmt);
-    if (vfscanf(s, fmt, argptr)!=n) throw error(error::INVALID_FILE);
-    va_end(argptr);
-  }
-  */
-
-  /// Consume whitespace (if any) from a file stream
-  /// including comments of the form #....\n
-  /*
-  inline void stripWS(FILE* s) {
-    bool comment = false;
-    for (;;) {
-      int c = fgetc(s);
-      if (EOF == c) throw error(error::INVALID_FILE);
-      if ('\n'== c) {
-        comment = false;
-        continue;
-      }
-      if (comment) continue;
-      if (' ' == c) continue;
-      if ('\t' == c) continue;
-      if ('\r' == c) continue;
-      if ('#' == c) {
-        comment = true;
-        continue;
-      }
-      // not whitespace
-      ungetc(c, s);
-      return;
-    }
-  }
-  */
-
-  /// Consume a keyword from a file stream
-  /*
-  inline void consumeKeyword(FILE* s, const char* keyword) {
-    for ( ; *keyword; keyword++) {
-      int c = fgetc(s);
-      if (c != *keyword) throw error(error::INVALID_FILE);
-    }
-  }
-  */
 }
 
 /*
@@ -207,11 +81,11 @@ namespace MEDDLY {
    There are now two modes of code generation:
    "DEVELOPMENT_CODE" and "RELEASE_CODE".
 
-   If "DEVELOPMENT_CODE" is defined (usually done in the makefile) then 
+   If "DEVELOPMENT_CODE" is defined (usually done in the makefile) then
    debugging macros and assertions will be turned on.  Otherwise we assume
    that we have "RELEASE_CODE" and they are turned off.
 
-   Macros useful for debugging "development code" that are turned off 
+   Macros useful for debugging "development code" that are turned off
    for release code (for speed):
 
    MEDDLY_DCASSERT()
@@ -237,8 +111,89 @@ namespace MEDDLY {
 #endif
 
 
-
+// Flags for development version only. Significant reduction in performance.
+#ifdef DEVELOPMENT_CODE
+#define RANGE_CHECK_ON
+#define DCASSERTS_ON
 #endif
 
-//@}
+// #define TRACK_DELETIONS
+// #define TRACK_CACHECOUNT
+// #define TRACK_UNREACHABLE_NODES
+
+
+// Use this for assertions that will fail only when your
+// code is wrong.  Handy for debugging.
+#ifdef DCASSERTS_ON
+#include <cassert>
+#define MEDDLY_DCASSERT(X) assert(X)
+#else
+#define MEDDLY_DCASSERT(X)
+#endif
+
+// Use this for range checking assertions that should succeed.
+#ifdef RANGE_CHECK_ON
+#include <cassert>
+#include <iostream>
+namespace MEDDLY {
+    template <class INT>
+    inline void CHECK_RANGE(const char* fn, unsigned ln,
+            long min, long value, INT max)
+    {
+        if (value < min || (unsigned long) value >= (unsigned long) max ) {
+            std::cerr << "Check range at " << fn << " line " << ln;
+            std::cerr << " failed:\n    min: " << min;
+            std::cerr << "\n    val: " << value;
+            std::cerr << "\n    max: " << max << '\n';
+            assert(false);
+        }
+    }
+}
+#define MEDDLY_CHECK_RANGE(MIN, VALUE, MAX) { assert(VALUE < MAX); assert(VALUE >= MIN); }
+#else
+namespace MEDDLY {
+    template <class INT>
+    inline void CHECK_RANGE(const char*, unsigned, long, long, INT)
+    {
+    }
+}
+
+#define MEDDLY_CHECK_RANGE(MIN, VALUE, MAX)
+#endif
+
+
+//
+// Typedefs and constants
+//
+
+namespace MEDDLY {
+
+    /** Handles for nodes.
+        This should be either int or long, and effectively limits
+        the number of possible nodes per forest.
+        As an int, we get 2^32-1 possible nodes per forest,
+        which should be enough for most applications.
+        As a long on a 64-bit machine, we get 2^64-1 possible nodes
+        per forest, at the expense of nearly doubling the memory used.
+        This also specifies the incoming count range for each node.
+    */
+    typedef int  node_handle;
+
+    /** Handles for relation nodes.
+        TBD: can we just use node_handle everywhere?
+     */
+    typedef int  rel_node_handle;
+
+    /** Node addresses.
+        This is used for internal storage of a node,
+        and should probably not be changed.
+        The typedef is given simply to clarify the code
+        (hopefully :^)
+    */
+    typedef unsigned long node_address;
+
+};
+
+
+#endif // #include guard
 

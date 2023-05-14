@@ -1,10 +1,9 @@
-
 /*
     Meddly: Multi-terminal and Edge-valued Decision Diagram LibrarY.
     Copyright (C) 2009, Iowa State University Research Foundation, Inc.
 
     This library is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Lesser General Public License as published 
+    it under the terms of the GNU Lesser General Public License as published
     by the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
@@ -17,8 +16,13 @@
     along with this library.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef APPLY_BASE_H
-#define APPLY_BASE_H
+#ifndef MEDDLY_APPLY_BASE_H
+#define MEDDLY_APPLY_BASE_H
+
+#include "../ct_entry_key.h"
+#include "../ct_entry_result.h"
+#include "../compute_table.h"
+#include "../oper_binary.h"
 
 /*
     Useful base classes for binary apply operations.
@@ -38,7 +42,7 @@ namespace MEDDLY {
 
 class MEDDLY::generic_binary_mdd : public binary_operation {
   public:
-    generic_binary_mdd(const binary_opname* code, expert_forest* arg1, 
+    generic_binary_mdd(binary_opname* code, expert_forest* arg1,
       expert_forest* arg2, expert_forest* res);
 
   protected:
@@ -52,10 +56,10 @@ class MEDDLY::generic_binary_mdd : public binary_operation {
     virtual node_handle compute_ext(node_handle a, node_handle b);
 
   protected:
-    inline compute_table::entry_key* 
-    findResult(node_handle a, node_handle b, node_handle &c) 
+    inline ct_entry_key*
+    findResult(node_handle a, node_handle b, node_handle &c)
     {
-      compute_table::entry_key* CTsrch = CT0->useEntryKey(etype[0], 0);
+      ct_entry_key* CTsrch = CT0->useEntryKey(etype[0], 0);
       MEDDLY_DCASSERT(CTsrch);
       if (can_commute && a > b) {
         CTsrch->writeN(b);
@@ -71,8 +75,8 @@ class MEDDLY::generic_binary_mdd : public binary_operation {
       return 0;
     }
 
-    inline void saveResult(compute_table::entry_key* K, 
-      node_handle a, node_handle b, node_handle c) 
+    inline void saveResult(ct_entry_key* K,
+      node_handle a, node_handle b, node_handle c)
     {
       CTresult[0].reset();
       CTresult[0].writeN(c);
@@ -83,14 +87,14 @@ class MEDDLY::generic_binary_mdd : public binary_operation {
     // If terminal condition is reached, returns true and the result in c.
     // Must be provided in derived classes.
     virtual bool checkTerminals(node_handle a, node_handle b, node_handle& c) = 0;
-    
+
 };
 
 // ******************************************************************
 
 class MEDDLY::generic_binary_mxd : public binary_operation {
   public:
-    generic_binary_mxd(const binary_opname* code, expert_forest* arg1, 
+    generic_binary_mxd(binary_opname* code, expert_forest* arg1,
       expert_forest* arg2, expert_forest* res);
 
   protected:
@@ -109,10 +113,10 @@ class MEDDLY::generic_binary_mxd : public binary_operation {
     node_handle compute_r_ext(int i, int k, node_handle a, node_handle b);
 
   protected:
-    inline compute_table::entry_key* 
-    findResult(node_handle a, node_handle b, node_handle &c) 
+    inline ct_entry_key*
+    findResult(node_handle a, node_handle b, node_handle &c)
     {
-      compute_table::entry_key* CTsrch = CT0->useEntryKey(etype[0], 0);
+      ct_entry_key* CTsrch = CT0->useEntryKey(etype[0], 0);
       MEDDLY_DCASSERT(CTsrch);
       if (can_commute && a > b) {
         CTsrch->writeN(b);
@@ -128,8 +132,8 @@ class MEDDLY::generic_binary_mxd : public binary_operation {
       return 0;
     }
 
-    inline void saveResult(compute_table::entry_key* Key, 
-      node_handle a, node_handle b, node_handle c) 
+    inline void saveResult(ct_entry_key* Key,
+      node_handle a, node_handle b, node_handle c)
     {
       CTresult[0].reset();
       CTresult[0].writeN(c);
@@ -146,7 +150,7 @@ class MEDDLY::generic_binary_mxd : public binary_operation {
 
 class MEDDLY::generic_binbylevel_mxd : public binary_operation {
   public:
-    generic_binbylevel_mxd(const binary_opname* code, expert_forest* arg1, 
+    generic_binbylevel_mxd(binary_opname* code, expert_forest* arg1,
       expert_forest* arg2, expert_forest* res);
 
   protected:
@@ -158,10 +162,10 @@ class MEDDLY::generic_binbylevel_mxd : public binary_operation {
     virtual node_handle compute(int level, node_handle a, node_handle b);
 
   protected:
-    inline compute_table::entry_key* 
-    findResult(int k, node_handle a, node_handle b, node_handle &c) 
+    inline ct_entry_key*
+    findResult(int k, node_handle a, node_handle b, node_handle &c)
     {
-      compute_table::entry_key* CTsrch = CT0->useEntryKey(etype[0], 0);
+      ct_entry_key* CTsrch = CT0->useEntryKey(etype[0], 0);
       MEDDLY_DCASSERT(CTsrch);
       CTsrch->writeI(k);
       if (can_commute && a > b) {
@@ -178,8 +182,8 @@ class MEDDLY::generic_binbylevel_mxd : public binary_operation {
       return 0;
     }
 
-    inline void saveResult(compute_table::entry_key* Key,
-      int k, node_handle a, node_handle b, node_handle c) 
+    inline void saveResult(ct_entry_key* Key,
+      int k, node_handle a, node_handle b, node_handle c)
     {
       CTresult[0].reset();
       CTresult[0].writeN(c);
@@ -193,13 +197,13 @@ class MEDDLY::generic_binbylevel_mxd : public binary_operation {
     // Must be provided in derived classes.
     virtual bool checkTerminals(node_handle a, node_handle b, node_handle& c) = 0;
 };
-    
+
 
 // ******************************************************************
 
 class MEDDLY::generic_binary_ev : public binary_operation {
   public:
-    generic_binary_ev(const binary_opname* code, expert_forest* arg1, 
+    generic_binary_ev(binary_opname* code, expert_forest* arg1,
       expert_forest* arg2, expert_forest* res);
 
   protected:
@@ -211,7 +215,7 @@ class MEDDLY::generic_binary_ev : public binary_operation {
 
 class MEDDLY::generic_binary_evplus : public generic_binary_ev {
   public:
-    generic_binary_evplus(const binary_opname* code, expert_forest* arg1, 
+    generic_binary_evplus(binary_opname* code, expert_forest* arg1,
       expert_forest* arg2, expert_forest* res);
 
   protected:
@@ -223,10 +227,10 @@ class MEDDLY::generic_binary_evplus : public generic_binary_ev {
     virtual void compute(long aev, node_handle a, long bev, node_handle b, long& cev, node_handle &c);
 
   protected:
-    virtual compute_table::entry_key* findResult(long aev, node_handle a,
+    virtual ct_entry_key* findResult(long aev, node_handle a,
       long bev, node_handle b, long& cev, node_handle &c)
     {
-      compute_table::entry_key* CTsrch = CT0->useEntryKey(etype[0], 0);
+      ct_entry_key* CTsrch = CT0->useEntryKey(etype[0], 0);
       MEDDLY_DCASSERT(CTsrch);
       if (can_commute && a > b) {
         CTsrch->writeL(bev);
@@ -247,7 +251,7 @@ class MEDDLY::generic_binary_evplus : public generic_binary_ev {
       return 0;
     }
 
-    virtual void saveResult(compute_table::entry_key* Key,
+    virtual void saveResult(ct_entry_key* Key,
       long aev, node_handle a, long bev, node_handle b, long cev, node_handle c)
     {
       CTresult[0].reset();
@@ -267,7 +271,7 @@ class MEDDLY::generic_binary_evplus : public generic_binary_ev {
 
 class MEDDLY::generic_binary_evplus_mxd : public generic_binary_ev {
   public:
-    generic_binary_evplus_mxd(const binary_opname* code, expert_forest* arg1,
+    generic_binary_evplus_mxd(binary_opname* code, expert_forest* arg1,
       expert_forest* arg2, expert_forest* res);
 
   protected:
@@ -282,10 +286,10 @@ class MEDDLY::generic_binary_evplus_mxd : public generic_binary_ev {
     void compute_r(int in, int level, long aev, node_handle a, long bev, node_handle b, long& cev, node_handle &c);
 
   protected:
-    virtual compute_table::entry_key* findResult(long aev, node_handle a,
+    virtual ct_entry_key* findResult(long aev, node_handle a,
       long bev, node_handle b, long& cev, node_handle &c)
     {
-      compute_table::entry_key* CTsrch = CT0->useEntryKey(etype[0], 0);
+      ct_entry_key* CTsrch = CT0->useEntryKey(etype[0], 0);
       MEDDLY_DCASSERT(CTsrch);
       if (can_commute && a > b) {
         CTsrch->writeL(bev);
@@ -306,7 +310,7 @@ class MEDDLY::generic_binary_evplus_mxd : public generic_binary_ev {
       return 0;
     }
 
-    virtual void saveResult(compute_table::entry_key* Key,
+    virtual void saveResult(ct_entry_key* Key,
       long aev, node_handle a, long bev, node_handle b, long cev, node_handle c)
     {
       CTresult[0].reset();
@@ -326,7 +330,7 @@ class MEDDLY::generic_binary_evplus_mxd : public generic_binary_ev {
 
 class MEDDLY::generic_binary_evtimes : public generic_binary_ev {
   public:
-    generic_binary_evtimes(const binary_opname* code, expert_forest* arg1, 
+    generic_binary_evtimes(binary_opname* code, expert_forest* arg1,
       expert_forest* arg2, expert_forest* res);
 
   protected:
@@ -335,17 +339,17 @@ class MEDDLY::generic_binary_evtimes : public generic_binary_ev {
   public:
     virtual void computeDDEdge(const dd_edge& a, const dd_edge& b, dd_edge &c, bool userFlag);
 
-    virtual void compute(float aev, node_handle a, float bev, node_handle b, 
+    virtual void compute(float aev, node_handle a, float bev, node_handle b,
       float& cev, node_handle &c);
 
     virtual void compute_k(int in, int k, float aev, node_handle a,
       float bev, node_handle b, float& cev, node_handle& c);
 
   protected:
-    inline compute_table::entry_key* findResult(float aev, node_handle a, 
-      float bev, node_handle b, float& cev, node_handle &c) 
+    inline ct_entry_key* findResult(float aev, node_handle a,
+      float bev, node_handle b, float& cev, node_handle &c)
     {
-      compute_table::entry_key* CTsrch = CT0->useEntryKey(etype[0], 0);
+      ct_entry_key* CTsrch = CT0->useEntryKey(etype[0], 0);
       MEDDLY_DCASSERT(CTsrch);
       if (can_commute && a > b) {
         CTsrch->writeF(bev);
@@ -366,8 +370,8 @@ class MEDDLY::generic_binary_evtimes : public generic_binary_ev {
       return 0;
     }
 
-    inline void saveResult(compute_table::entry_key* Key, float aev, 
-      node_handle a, float bev, node_handle b, float cev, node_handle c) 
+    inline void saveResult(ct_entry_key* Key, float aev,
+      node_handle a, float bev, node_handle b, float cev, node_handle c)
     {
       CTresult[0].reset();
       CTresult[0].writeF(cev);

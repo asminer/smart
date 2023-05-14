@@ -1,10 +1,9 @@
-
 /*
     Meddly: Multi-terminal and Edge-valued Decision Diagram LibrarY.
     Copyright (C) 2009, Iowa State University Research Foundation, Inc.
 
     This library is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Lesser General Public License as published 
+    it under the terms of the GNU Lesser General Public License as published
     by the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
@@ -23,10 +22,14 @@
 //TODO: add a mechanism to mt_forest so that reduction rule can
 //      be set after instantiation of the mt_forest.
 
-#ifndef MT_FOREST
-#define MT_FOREST
+#ifndef MEDDLY_MT_FOREST
+#define MEDDLY_MT_FOREST
 
 #include "../defines.h"
+#include "../minterms.h"
+#include "../forest.h"
+#include "../oper_binary.h"
+#include "../ops_builtin.h"
 
 namespace MEDDLY {
   class mt_forest;
@@ -53,11 +56,11 @@ class MEDDLY::mt_forest : public expert_forest {
 
     /// Add redundant nodes from level k to the given node.
     node_handle makeNodeAtLevel(int k, node_handle d);
-  
+
   protected:
     /// make a node at the top level
-    inline node_handle makeNodeAtTop(node_handle d) {
-      return makeNodeAtLevel(getDomain()->getNumVariables(), d);
+    inline node_handle makeNodeAtTop(node_handle p) {
+      return makeNodeAtLevel(getDomain()->getNumVariables(), p);
     }
 
     /**
@@ -71,7 +74,7 @@ class MEDDLY::mt_forest : public expert_forest {
         }
         if (maxv < 1) continue;
         if (maxv >= getDomain()->getVariableBound(k, primed)) {
-          expert_variable* vh = useExpertDomain()->getExpertVar(k);
+          variable* vh = useExpertDomain()->getExpertVar(k);
           if (vh->isExtensible())
             vh->enlargeBound(primed, -(maxv+1));
           else
@@ -89,9 +92,9 @@ class MEDDLY::mt_forest : public expert_forest {
       */
       if (vh < 0 || vh > getNumVariables())
           throw error(error::INVALID_VARIABLE, __FILE__, __LINE__);
-      if (result.getForest() != this) 
+      if (result.getForest() != this)
           throw error(error::INVALID_OPERATION, __FILE__, __LINE__);
-      if (!isForRelations() && pr) 
+      if (!isForRelations() && pr)
           throw error(error::INVALID_ASSIGNMENT, __FILE__, __LINE__);
 
       int level = getLevelByVar(vh);
@@ -113,7 +116,7 @@ class MEDDLY::mt_forest : public expert_forest {
       */
       unpacked_node* nb = unpacked_node::newFull(this, k, sz);
       for (unsigned i=0; i<sz; i++) {
-        nb->d_ref(i) = makeNodeAtLevel(km1, 
+        nb->d_ref(i) = makeNodeAtLevel(km1,
           ENCODER::value2handle(vals ? vals[i] : i)
         );
       }
@@ -122,7 +125,7 @@ class MEDDLY::mt_forest : public expert_forest {
           Reduce, add redundant as necessary, and set answer
       */
       node_handle node = createReducedNode(-1, nb);
-      node = makeNodeAtTop(node); 
+      node = makeNodeAtTop(node);
       result.set(node);
     }
 

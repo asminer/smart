@@ -4,7 +4,7 @@
     Copyright (C) 2009, Iowa State University Research Foundation, Inc.
 
     This library is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Lesser General Public License as published 
+    it under the terms of the GNU Lesser General Public License as published
     by the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
@@ -58,8 +58,8 @@
 
 #include <iostream>
 #include <string.h>
+#include <cassert>
 #include "../src/meddly.h"
-#include "../src/meddly_expert.h"
 
 using namespace MEDDLY;
 
@@ -90,8 +90,8 @@ int main(int argv, char *argc[])
   // Create a forest in the above domain
   forest* mdd = d->createForest(
       false,                    // this is not a relation
-      forest::BOOLEAN,          // terminals are either true or false
-      forest::MULTI_TERMINAL    // disables edge-labeling
+      range_type::BOOLEAN,          // terminals are either true or false
+      edge_labeling::MULTI_TERMINAL    // disables edge-labeling
       );
   assert(mdd != 0);
 

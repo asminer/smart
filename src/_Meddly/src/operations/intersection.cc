@@ -1,10 +1,9 @@
-
 /*
     Meddly: Multi-terminal and Edge-valued Decision Diagram LibrarY.
     Copyright (C) 2009, Iowa State University Research Foundation, Inc.
 
     This library is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Lesser General Public License as published 
+    it under the terms of the GNU Lesser General Public License as published
     by the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
@@ -17,9 +16,6 @@
     along with this library.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
 #include "../defines.h"
 #include "intersection.h"
 #include "apply_base.h"
@@ -41,14 +37,14 @@ namespace MEDDLY {
 
 class MEDDLY::inter_mdd : public generic_binary_mdd {
   public:
-    inter_mdd(const binary_opname* opcode, expert_forest* arg1,
+    inter_mdd(binary_opname* opcode, expert_forest* arg1,
       expert_forest* arg2, expert_forest* res);
 
   protected:
     virtual bool checkTerminals(node_handle a, node_handle b, node_handle& c);
 };
 
-MEDDLY::inter_mdd::inter_mdd(const binary_opname* opcode, 
+MEDDLY::inter_mdd::inter_mdd(binary_opname* opcode,
   expert_forest* arg1, expert_forest* arg2, expert_forest* res)
   : generic_binary_mdd(opcode, arg1, arg2, res)
 {
@@ -102,7 +98,7 @@ bool MEDDLY::inter_mdd::checkTerminals(node_handle a, node_handle b, node_handle
 
 class MEDDLY::inter_mxd : public generic_binary_mxd {
   public:
-    inter_mxd(const binary_opname* opcode, expert_forest* arg1,
+    inter_mxd(binary_opname* opcode, expert_forest* arg1,
       expert_forest* arg2, expert_forest* res);
 
   protected:
@@ -110,7 +106,7 @@ class MEDDLY::inter_mxd : public generic_binary_mxd {
     virtual MEDDLY::node_handle compute_ext(node_handle a, node_handle b);
 };
 
-MEDDLY::inter_mxd::inter_mxd(const binary_opname* opcode, 
+MEDDLY::inter_mxd::inter_mxd(binary_opname* opcode,
   expert_forest* arg1, expert_forest* arg2, expert_forest* res)
   : generic_binary_mxd(opcode, arg1, arg2, res)
 {
@@ -146,30 +142,30 @@ bool MEDDLY::inter_mxd::checkTerminals(node_handle a, node_handle b, node_handle
 
 class MEDDLY::inter_max_evplus : public generic_binary_evplus {
   public:
-    inter_max_evplus(const binary_opname* opcode, expert_forest* arg1,
+    inter_max_evplus(binary_opname* opcode, expert_forest* arg1,
       expert_forest* arg2, expert_forest* res);
 
   protected:
-    virtual compute_table::entry_key* findResult(long aev, node_handle a,
+    virtual ct_entry_key* findResult(long aev, node_handle a,
       long bev, node_handle b, long& cev, node_handle &c);
-    virtual void saveResult(compute_table::entry_key* key,
+    virtual void saveResult(ct_entry_key* key,
       long aev, node_handle a, long bev, node_handle b, long cev, node_handle c);
 
     virtual bool checkTerminals(long aev, node_handle a, long bev, node_handle b,
         long& cev, node_handle& c);
 };
 
-MEDDLY::inter_max_evplus::inter_max_evplus(const binary_opname* opcode,
+MEDDLY::inter_max_evplus::inter_max_evplus(binary_opname* opcode,
   expert_forest* arg1, expert_forest* arg2, expert_forest* res)
   : generic_binary_evplus(opcode, arg1, arg2, res)
 {
   operationCommutes();
 }
 
-MEDDLY::compute_table::entry_key* MEDDLY::inter_max_evplus::findResult(long aev, node_handle a,
+MEDDLY::ct_entry_key* MEDDLY::inter_max_evplus::findResult(long aev, node_handle a,
   long bev, node_handle b, long& cev, node_handle &c)
 {
-  compute_table::entry_key* CTsrch = CT0->useEntryKey(etype[0], 0);
+  ct_entry_key* CTsrch = CT0->useEntryKey(etype[0], 0);
   MEDDLY_DCASSERT(CTsrch);
   if (can_commute && a > b) {
     CTsrch->writeL(0);
@@ -196,7 +192,7 @@ MEDDLY::compute_table::entry_key* MEDDLY::inter_max_evplus::findResult(long aev,
   return 0;
 }
 
-void MEDDLY::inter_max_evplus::saveResult(compute_table::entry_key* key,
+void MEDDLY::inter_max_evplus::saveResult(ct_entry_key* key,
   long aev, node_handle a, long bev, node_handle b, long cev, node_handle c)
 {
   if (c == 0) {
@@ -250,8 +246,8 @@ bool MEDDLY::inter_max_evplus::checkTerminals(long aev, node_handle a, long bev,
   return false;
 }
 
-MEDDLY::node_handle 
-MEDDLY::inter_mxd::compute_ext(node_handle a, node_handle b) 
+MEDDLY::node_handle
+MEDDLY::inter_mxd::compute_ext(node_handle a, node_handle b)
 {
   // Get level information
   const int aLevel = arg1F->getNodeLevel(a);
@@ -262,9 +258,9 @@ MEDDLY::inter_mxd::compute_ext(node_handle a, node_handle b)
   MEDDLY_DCASSERT(resF->isExtensibleLevel(resultLevel));
 
   // Initialize readers
-  unpacked_node *A = (aLevel < resultLevel) 
+  unpacked_node *A = (aLevel < resultLevel)
     ? unpacked_node::newRedundant(arg1F, resultLevel, a, false)
-    : unpacked_node::newFromNode(arg1F, a, false)
+    : arg1F->newUnpacked(a, SPARSE_ONLY)
     ;
   const node_handle A_ext_d = A->isExtensible()? A->ext_d(): 0;
   int last_nz = int(A->getNNZs())-1;
@@ -274,7 +270,7 @@ MEDDLY::inter_mxd::compute_ext(node_handle a, node_handle b)
 
   unpacked_node *B = (bLevel < resultLevel)
     ? unpacked_node::newRedundant(arg2F, resultLevel, b, false)
-    : unpacked_node::newFromNode(arg2F, b, false)
+    : arg2F->newUnpacked(b, SPARSE_ONLY)
     ;
   const node_handle B_ext_d = B->isExtensible()? B->ext_d(): 0;
   last_nz = int(B->getNNZs())-1;
@@ -380,8 +376,8 @@ MEDDLY::inter_mxd::compute_ext(node_handle a, node_handle b)
 class MEDDLY::inter_opname : public binary_opname {
   public:
     inter_opname();
-    virtual binary_operation* buildOperation(expert_forest* a1, 
-      expert_forest* a2, expert_forest* r) const;
+    virtual binary_operation* buildOperation(expert_forest* a1,
+      expert_forest* a2, expert_forest* r);
 };
 
 MEDDLY::inter_opname::inter_opname()
@@ -389,15 +385,15 @@ MEDDLY::inter_opname::inter_opname()
 {
 }
 
-MEDDLY::binary_operation* 
-MEDDLY::inter_opname::buildOperation(expert_forest* a1, expert_forest* a2, 
-  expert_forest* r) const
+MEDDLY::binary_operation*
+MEDDLY::inter_opname::buildOperation(expert_forest* a1, expert_forest* a2,
+  expert_forest* r)
 {
   if (0==a1 || 0==a2 || 0==r) return 0;
 
-  if (  
-    (a1->getDomain() != r->getDomain()) || 
-    (a2->getDomain() != r->getDomain()) 
+  if (
+    (a1->getDomain() != r->getDomain()) ||
+    (a2->getDomain() != r->getDomain())
   )
     throw error(error::DOMAIN_MISMATCH, __FILE__, __LINE__);
 
@@ -409,14 +405,14 @@ MEDDLY::inter_opname::buildOperation(expert_forest* a1, expert_forest* a2,
   )
     throw error(error::TYPE_MISMATCH, __FILE__, __LINE__);
 
-  if (r->getEdgeLabeling() == forest::MULTI_TERMINAL) {
+  if (r->getEdgeLabeling() == edge_labeling::MULTI_TERMINAL) {
     if (r->isForRelations())
       return new inter_mxd(this, a1, a2, r);
     else
       return new inter_mdd(this, a1, a2, r);
   }
 
-  if (r->getEdgeLabeling() == forest::EVPLUS) {
+  if (r->getEdgeLabeling() == edge_labeling::EVPLUS) {
     if (r->isForRelations()) {
       throw error(error::NOT_IMPLEMENTED);
     }

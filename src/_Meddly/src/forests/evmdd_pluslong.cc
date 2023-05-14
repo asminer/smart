@@ -1,12 +1,9 @@
-
-// $Id$
-
 /*
     Meddly: Multi-terminal and Edge-valued Decision Diagram LibrarY.
     Copyright (C) 2009, Iowa State University Research Foundation, Inc.
 
     This library is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Lesser General Public License as published 
+    it under the terms of the GNU Lesser General Public License as published
     by the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
@@ -34,7 +31,9 @@
 
 MEDDLY::evmdd_pluslong
  ::evmdd_pluslong(unsigned dsl, domain *d, const policies &p, int* level_reduction_rule, bool index_set)
- : evmdd_forest(dsl, d, INTEGER, index_set ? INDEX_SET : EVPLUS, p, level_reduction_rule)
+ : evmdd_forest(dsl, d, range_type::INTEGER,
+         index_set ? edge_labeling::INDEX_SET : edge_labeling::EVPLUS,
+         p, level_reduction_rule)
 {
   setEdgeSize(sizeof(long), true);
   if (index_set) setUnhashedSize(sizeof(long));
@@ -174,8 +173,7 @@ void MEDDLY::evmdd_pluslong::swapAdjacentVariables(int level)
   int num = 0;
   // Renumber the level of nodes for the variable to be moved down
   for (int i = 0; i < hnum; i++) {
-    unpacked_node* nr = unpacked_node::useUnpackedNode();
-    nr->initFromNode(this, hnodes[i], true);
+    unpacked_node* nr = newUnpacked(hnodes[i], FULL_ONLY);
 
     MEDDLY_DCASSERT(nr->getLevel() == level + 1);
     MEDDLY_DCASSERT(nr->getSize() == hsize);
@@ -211,8 +209,7 @@ void MEDDLY::evmdd_pluslong::swapAdjacentVariables(int level)
 
   // Process the rest of nodes for the variable to be moved down
   for (int i = 0; i < hnum; i++) {
-    unpacked_node* high_nr = unpacked_node::useUnpackedNode();
-    high_nr->initFromNode(this, hnodes[i], true);
+    unpacked_node* high_nr = newUnpacked(hnodes[i], FULL_ONLY);
 
     unpacked_node* high_nb = unpacked_node::newFull(this, level + 1, lsize);
     for (int j = 0; j < hsize; j++) {
@@ -226,8 +223,7 @@ void MEDDLY::evmdd_pluslong::swapAdjacentVariables(int level)
         }
       }
       else {
-        unpacked_node* nr = unpacked_node::useUnpackedNode();
-        nr->initFromNode(this, high_nr->d(j), true);
+        unpacked_node* nr = newUnpacked(high_nr->d(j), FULL_ONLY);
 
         MEDDLY_DCASSERT(nr->getSize() == lsize);
         for (int k = 0; k < lsize; k++) {
@@ -437,7 +433,7 @@ bool MEDDLY::evmdd_pluslong::evpimdd_iterator::first(int k, node_handle down)
     int kdn = F->getNodeLevel(down);
     MEDDLY_DCASSERT(kdn <= k);
     if (kdn < k)  path[k].initRedundant(F, k, 0, down, false);
-    else          path[k].initFromNode(F, down, false);
+    else          F->unpackNode(path+k, down, SPARSE_ONLY);
     nzp[k] = 0;
     index[k] = path[k].i(0);
     down = path[k].d(0);
@@ -458,8 +454,8 @@ bool MEDDLY::evmdd_pluslong::evpimdd_iterator::first(int k, node_handle down)
 // *                                                                *
 // ******************************************************************
 
-MEDDLY::evmdd_index_set_long::evmdd_index_set_long(unsigned dsl, domain *d, const policies &p, int* level_reduction_rule)
- : evmdd_pluslong(dsl, d, p, level_reduction_rule, true)
+MEDDLY::evmdd_index_set_long::evmdd_index_set_long(unsigned dsl, domain *_d, const policies &p, int* level_reduction_rule)
+ : evmdd_pluslong(dsl, _d, p, level_reduction_rule, true)
 { }
 
 MEDDLY::evmdd_index_set_long::~evmdd_index_set_long()
@@ -481,7 +477,7 @@ void MEDDLY::evmdd_index_set_long::getElement(const dd_edge &a, long index, int*
     return;
   }
   int p = a.getNode();
-  unpacked_node* R = unpacked_node::useUnpackedNode();
+  unpacked_node* R = unpacked_node::New();
   for (int k = getNumVariables(); k > 0; k--) {
 	int var = getVarByLevel(k);
 
@@ -490,7 +486,7 @@ void MEDDLY::evmdd_index_set_long::getElement(const dd_edge &a, long index, int*
       e[var] = 0;
       continue;
     }
-    R->initFromNode(this, p, false);
+    unpackNode(R, p, SPARSE_ONLY);
     MEDDLY_DCASSERT(R->getLevel() <= k);
     if (R->getLevel() < k) {
       e[var] = 0;

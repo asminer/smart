@@ -1,4 +1,3 @@
-
 /*
     Meddly: Multi-terminal and Edge-valued Decision Diagram LibrarY.
     Copyright (C) 2009, Iowa State University Research Foundation, Inc.
@@ -17,11 +16,12 @@
     along with this library.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef SAT_CONSTRAINED_H
-#define SAT_CONSTRAINED_H
+#ifndef MEDDLY_SAT_CONSTRAINED_H
+#define MEDDLY_SAT_CONSTRAINED_H
 
-#include "meddly.h"
-#include "meddly_expert.h"
+#include "../opname_satur.h"
+#include "../oper_special.h"
+#include "../ct_entry_key.h"
 
 namespace MEDDLY {
   class common_constrained;
@@ -55,7 +55,7 @@ protected:
   virtual bool checkForestCompatibility() const;
 
 public:
-  common_constrained(const constrained_opname* code, unsigned slots,
+  common_constrained(constrained_opname* code, unsigned slots,
     expert_forest* cons, expert_forest* arg, expert_forest* trans, expert_forest* res);
   ~common_constrained();
 };
@@ -67,7 +67,7 @@ protected:
 public:
   constrained_bfs_opname(bool fwd);
 
-  virtual specialized_operation* buildOperation(arguments* a) const;
+  virtual specialized_operation* buildOperation(arguments* a);
 };
 
 class MEDDLY::constrained_bckwd_bfs_evplus: public common_constrained
@@ -81,7 +81,7 @@ protected:
   void iterate(const dd_edge& a, const dd_edge& b, const dd_edge& r, dd_edge& c);
 
 public:
-  constrained_bckwd_bfs_evplus(const constrained_opname* code,
+  constrained_bckwd_bfs_evplus(constrained_opname* code,
     expert_forest* cons, expert_forest* arg, expert_forest* trans, expert_forest* res);
 
   virtual void compute(const dd_edge& a, const dd_edge& b, const dd_edge& r, dd_edge& res);
@@ -94,7 +94,7 @@ protected:
 public:
   constrained_dfs_opname(bool fwd);
 
-  virtual specialized_operation* buildOperation(arguments* a) const;
+  virtual specialized_operation* buildOperation(arguments* a);
 };
 
 class MEDDLY::constrained_dfs_mt: public common_constrained
@@ -106,14 +106,14 @@ protected:
 
   dd_edge* splits;
 
-  compute_table::entry_key* findResult(node_handle a, node_handle b, node_handle r, node_handle& c);
-  void saveResult(compute_table::entry_key* key,
+  ct_entry_key* findResult(node_handle a, node_handle b, node_handle r, node_handle& c);
+  void saveResult(ct_entry_key* key,
     node_handle a, node_handle b, node_handle r, node_handle c);
 
   void splitMxd(const dd_edge& mxd);
 
 public:
-  constrained_dfs_mt(const constrained_opname* code,
+  constrained_dfs_mt(constrained_opname* code,
     expert_forest* cons, expert_forest* arg, expert_forest* trans, expert_forest* res);
 
   virtual void compute(const dd_edge& a, const dd_edge& b, const dd_edge& r, dd_edge& res);
@@ -128,7 +128,7 @@ protected:
   void recFire(node_handle a, node_handle b, node_handle r, node_handle& c);
 
 public:
-  constrained_forwd_dfs_mt(const constrained_opname* code,
+  constrained_forwd_dfs_mt(constrained_opname* code,
     expert_forest* cons, expert_forest* arg, expert_forest* trans, expert_forest* res);
 
   virtual void saturateHelper(node_handle a, unpacked_node& nb) override;
@@ -140,7 +140,7 @@ protected:
   void recFire(node_handle a, node_handle b, node_handle r, node_handle& c);
 
 public:
-  constrained_bckwd_dfs_mt(const constrained_opname* code,
+  constrained_bckwd_dfs_mt(constrained_opname* code,
     expert_forest* cons, expert_forest* arg, expert_forest* trans, expert_forest* res);
 
   virtual void saturateHelper(node_handle a, unpacked_node& nb) override;
@@ -162,8 +162,8 @@ protected:
 
   bool checkTerminals(node_handle a, node_handle b, node_handle& c);
 
-  compute_table::entry_key* findResult(node_handle a, node_handle b, int level, node_handle &c);
-  void saveResult(compute_table::entry_key* Key,
+  ct_entry_key* findResult(node_handle a, node_handle b, int level, node_handle &c);
+  void saveResult(ct_entry_key* Key,
     node_handle a, node_handle b, int level, node_handle c);
 
 public:
@@ -188,16 +188,16 @@ protected:
 
   dd_edge* splits;
 
-  compute_table::entry_key* findResult(long aev, node_handle a,
+  ct_entry_key* findResult(long aev, node_handle a,
     long bev, node_handle b, node_handle r, long& dev, node_handle& d);
-  void saveResult(compute_table::entry_key* key,
+  void saveResult(ct_entry_key* key,
     long aev, node_handle a, long bev, node_handle b, node_handle r, long dev, node_handle d);
 
   void splitMxd(const dd_edge& mxd);
   void recFire(long aev, node_handle a, long bev, node_handle b, node_handle r, long& cev, node_handle& c);
 
 public:
-  constrained_bckwd_dfs_evplus(const constrained_opname* code,
+  constrained_bckwd_dfs_evplus(constrained_opname* code,
     expert_forest* cons, expert_forest* arg, expert_forest* trans, expert_forest* res);
 
   virtual void compute(const dd_edge& a, const dd_edge& b, const dd_edge& r, dd_edge& res);
@@ -222,9 +222,9 @@ protected:
 
   bool checkTerminals(int aev, node_handle a, int bev, node_handle b, long& cev, node_handle& c);
 
-  compute_table::entry_key* findResult(long aev, node_handle a,
+  ct_entry_key* findResult(long aev, node_handle a,
     long bev, node_handle b, int level, long& cev, node_handle &c);
-  void saveResult(compute_table::entry_key* Key,
+  void saveResult(ct_entry_key* Key,
     long aev, node_handle a, long bev, node_handle b, int level, long cev, node_handle c);
 
 public:

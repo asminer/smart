@@ -4,7 +4,7 @@
     Copyright (C) 2009, Iowa State University Research Foundation, Inc.
 
     This library is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Lesser General Public License as published 
+    it under the terms of the GNU Lesser General Public License as published
     by the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
@@ -28,7 +28,6 @@
 */
 
 #include "../src/meddly.h"
-#include "../src/meddly_expert.h"
 #include "../src/timer.h"
 
 // #define DEBUG_EVENTS
@@ -125,7 +124,7 @@ void exchangeMove(bool left, dd_edge &answer)
         nk->d_ref(i) = 0;
         continue;
       }
-      
+
       if ((i%12>5) == left) {
         // exchange this piece
         // i -> (i+12)%24
@@ -152,7 +151,7 @@ void exchangeMove(bool left, dd_edge &answer)
 */
 void Square1NSF(dd_edge &answer)
 {
-  dd_edge topl(answer), topr(answer), botl(answer), botr(answer), 
+  dd_edge topl(answer), topr(answer), botl(answer), botr(answer),
           exchl(answer), exchr(answer);
   int rot[24];
 
@@ -236,7 +235,7 @@ void printStats(const char* who, const forest* f)
   ef->reportStats(meddlyout, "\t",
     expert_forest::HUMAN_READABLE_MEMORY  |
     expert_forest::BASIC_STATS | expert_forest::EXTRA_STATS |
-    expert_forest::STORAGE_STATS | expert_forest::HOLE_MANAGER_STATS | 
+    expert_forest::STORAGE_STATS | expert_forest::HOLE_MANAGER_STATS |
     expert_forest::HOLE_MANAGER_DETAILED
   );
 }
@@ -280,12 +279,12 @@ int main()
   } // for i
 
   domain* D = createDomainBottomUp(scratch, Vars);
- 
+
   //
   // Build NSF for possible "1-step" moves
   //
   timer watch;
-  forest* mxd = D->createForest(true, forest::BOOLEAN, forest::MULTI_TERMINAL);
+  forest* mxd = D->createForest(true, range_type::BOOLEAN, edge_labeling::MULTI_TERMINAL);
   dd_edge nsf(mxd);
   watch.note_time();
   Square1NSF(nsf);
@@ -299,9 +298,9 @@ int main()
   //
   // Build initial configuration
   //
-  forest::policies p(true);
+  policies p(true);
 //  p.setPessimistic();
-  forest* mdd = D->createForest(false, forest::BOOLEAN, forest::MULTI_TERMINAL);
+  forest* mdd = D->createForest(false, range_type::BOOLEAN, edge_labeling::MULTI_TERMINAL);
   dd_edge initial(mdd);
   int perm = 0;
   for (int i=1; i<=Vars; i++) {

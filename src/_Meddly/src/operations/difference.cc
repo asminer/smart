@@ -1,10 +1,9 @@
-
 /*
     Meddly: Multi-terminal and Edge-valued Decision Diagram LibrarY.
     Copyright (C) 2009, Iowa State University Research Foundation, Inc.
 
     This library is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Lesser General Public License as published 
+    it under the terms of the GNU Lesser General Public License as published
     by the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
@@ -17,9 +16,6 @@
     along with this library.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
 #include "../defines.h"
 #include "difference.h"
 #include "apply_base.h"
@@ -39,14 +35,14 @@ namespace MEDDLY {
 
 class MEDDLY::diffr_mdd : public generic_binary_mdd {
   public:
-    diffr_mdd(const binary_opname* opcode, expert_forest* arg1,
+    diffr_mdd(binary_opname* opcode, expert_forest* arg1,
       expert_forest* arg2, expert_forest* res);
 
   protected:
     virtual bool checkTerminals(node_handle a, node_handle b, node_handle& c);
 };
 
-MEDDLY::diffr_mdd::diffr_mdd(const binary_opname* opcode, 
+MEDDLY::diffr_mdd::diffr_mdd(binary_opname* opcode,
   expert_forest* arg1, expert_forest* arg2, expert_forest* res)
   : generic_binary_mdd(opcode, arg1, arg2, res)
 {
@@ -92,14 +88,14 @@ bool MEDDLY::diffr_mdd::checkTerminals(node_handle a, node_handle b, node_handle
 
 class MEDDLY::diffr_mxd : public generic_binary_mxd {
   public:
-    diffr_mxd(const binary_opname* opcode, expert_forest* arg1,
+    diffr_mxd(binary_opname* opcode, expert_forest* arg1,
       expert_forest* arg2, expert_forest* res);
 
   protected:
     virtual bool checkTerminals(node_handle a, node_handle b, node_handle& c);
 };
 
-MEDDLY::diffr_mxd::diffr_mxd(const binary_opname* opcode, 
+MEDDLY::diffr_mxd::diffr_mxd(binary_opname* opcode,
   expert_forest* arg1, expert_forest* arg2, expert_forest* res)
   : generic_binary_mxd(opcode, arg1, arg2, res)
 {
@@ -145,8 +141,8 @@ bool MEDDLY::diffr_mxd::checkTerminals(node_handle a, node_handle b, node_handle
 class MEDDLY::diffr_opname : public binary_opname {
   public:
     diffr_opname();
-    virtual binary_operation* buildOperation(expert_forest* a1, 
-      expert_forest* a2, expert_forest* r) const;
+    virtual binary_operation* buildOperation(expert_forest* a1,
+      expert_forest* a2, expert_forest* r);
 };
 
 MEDDLY::diffr_opname::diffr_opname()
@@ -154,15 +150,15 @@ MEDDLY::diffr_opname::diffr_opname()
 {
 }
 
-MEDDLY::binary_operation* 
-MEDDLY::diffr_opname::buildOperation(expert_forest* a1, expert_forest* a2, 
-  expert_forest* r) const
+MEDDLY::binary_operation*
+MEDDLY::diffr_opname::buildOperation(expert_forest* a1, expert_forest* a2,
+  expert_forest* r)
 {
   if (0==a1 || 0==a2 || 0==r) return 0;
 
-  if (  
-    (a1->getDomain() != r->getDomain()) || 
-    (a2->getDomain() != r->getDomain()) 
+  if (
+    (a1->getDomain() != r->getDomain()) ||
+    (a2->getDomain() != r->getDomain())
   )
     throw error(error::DOMAIN_MISMATCH, __FILE__, __LINE__);
 
@@ -173,11 +169,11 @@ MEDDLY::diffr_opname::buildOperation(expert_forest* a1, expert_forest* a2,
     (a2->getRangeType() != r->getRangeType()) ||
     (a1->getEdgeLabeling() != r->getEdgeLabeling()) ||
     (a2->getEdgeLabeling() != r->getEdgeLabeling()) ||
-    (r->getRangeType() != forest::BOOLEAN)
+    (r->getRangeType() != range_type::BOOLEAN)
   )
     throw error(error::TYPE_MISMATCH, __FILE__, __LINE__);
 
-  if (r->getEdgeLabeling() == forest::MULTI_TERMINAL) {
+  if (r->getEdgeLabeling() == edge_labeling::MULTI_TERMINAL) {
     if (r->isForRelations())
       return new diffr_mxd(this, a1, a2, r);
     else

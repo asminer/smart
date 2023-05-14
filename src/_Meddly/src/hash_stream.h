@@ -1,10 +1,9 @@
-
 /*
     Meddly: Multi-terminal and Edge-valued Decision Diagram LibrarY.
     Copyright (C) 2009, Iowa State University Research Foundation, Inc.
 
     This library is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Lesser General Public License as published 
+    it under the terms of the GNU Lesser General Public License as published
     by the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
@@ -17,10 +16,10 @@
     along with this library.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef HASH_STREAM_H
-#define HASH_STREAM_H
+#ifndef MEDDLY_HASH_STREAM_H
+#define MEDDLY_HASH_STREAM_H
 
-#include "meddly_expert.h"
+#include "error.h"
 
 namespace MEDDLY {
   class hash_stream;
@@ -40,11 +39,11 @@ class MEDDLY::hash_stream {
   public:
     hash_stream() { }
   protected:
-    inline static unsigned rot(unsigned x, int k) { 
+    inline static unsigned rot(unsigned x, int k) {
       return (((x)<<(k)) | ((x)>>(32-(k))));
     }
     inline static void mix(unsigned &a, unsigned &b, unsigned &c) {
-        a -= c;  a ^= rot(c, 4);  c += b; 
+        a -= c;  a ^= rot(c, 4);  c += b;
         b -= a;  b ^= rot(a, 6);  a += c;
         c -= b;  c ^= rot(b, 8);  b += a;
         a -= c;  a ^= rot(c,16);  c += b;
@@ -56,7 +55,7 @@ class MEDDLY::hash_stream {
         a ^= c; a -= rot(c,11);
         b ^= a; b -= rot(a,25);
         c ^= b; c -= rot(b,16);
-        a ^= c; a -= rot(c,4); 
+        a ^= c; a -= rot(c,4);
         b ^= a; b -= rot(a,14);
         c ^= b; c -= rot(b,24);
     }
@@ -96,7 +95,7 @@ class MEDDLY::hash_stream {
         unsigned long foo = z[0];
         foo <<= 32;
         foo |= z[1];
-        return foo; 
+        return foo;
     }
     inline void push(unsigned v) {
 #ifdef DEBUG_HASH
@@ -116,27 +115,27 @@ class MEDDLY::hash_stream {
         printf("    push %u, %u\n", v1, v2);
 #endif
         switch (slot) {
-            case 0: 
-                mix();  
+            case 0:
+                mix();
                 z[2] += v1;
                 z[1] += v2;
                 slot = 1;
                 return;
 
-            case 1: 
+            case 1:
                 z[0] += v1;
                 mix();
                 z[2] += v2;
                 slot = 2;
                 return;
 
-            case 2: 
+            case 2:
                 z[1] += v1;
                 z[0] += v2;
                 slot = 0;
                 return;
 
-            case 3: 
+            case 3:
                 z[2] += v1;
                 z[1] += v2;
                 slot = 1;
@@ -150,24 +149,24 @@ class MEDDLY::hash_stream {
         printf("    push %u, %u, %u\n", v1, v2, v3);
 #endif
         switch (slot) {
-            case 0: 
-                mix();  
+            case 0:
+                mix();
                 z[2] += v1;
                 z[1] += v2;
-                z[0] += v3; 
+                z[0] += v3;
                 return;
 
-            case 1: 
+            case 1:
                 z[0] += v1;
                 mix();
                 z[2] += v2;
                 z[1] += v3;
                 return;
 
-            case 2: 
+            case 2:
                 z[1] += v1;
                 z[0] += v2;
-                mix(); 
+                mix();
                 z[2] += v3;
                 return;
 
@@ -180,9 +179,9 @@ class MEDDLY::hash_stream {
             default: throw error(error::MISCELLANEOUS, __FILE__, __LINE__);
         };
     }
-    inline void push(const void* data, size_t bytes) {
+    inline void push(const void* data, std::size_t bytes) {
       const unsigned* hack = (const unsigned*) data;
-      size_t num_unsigneds = (bytes / sizeof(unsigned));
+      std::size_t num_unsigneds = (bytes / sizeof(unsigned));
       const unsigned* hackend = hack + num_unsigneds;
       for (; hack < hackend; hack++) {
         push(*hack);
@@ -301,7 +300,7 @@ class MEDDLY::hash_stream {
 
         // handle the last 3 uint32_t's
         switch(len)
-        { 
+        {
           // all the case statements fall through
           case 3: c += k[2];
           case 2: b += k[1];
@@ -335,7 +334,7 @@ class MEDDLY::hash_stream {
 
         // handle the last 3 uint32_t's
         switch(len)
-        { 
+        {
           // all the case statements fall through
           case 3: c += k[2];
           case 2: b += k[1];
@@ -350,6 +349,6 @@ class MEDDLY::hash_stream {
         answer |= c;
         return answer;
     }
-}; 
+};
 
-#endif
+#endif // #include guard

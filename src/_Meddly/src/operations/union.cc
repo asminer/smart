@@ -1,10 +1,9 @@
-
 /*
     Meddly: Multi-terminal and Edge-valued Decision Diagram LibrarY.
     Copyright (C) 2009, Iowa State University Research Foundation, Inc.
 
     This library is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Lesser General Public License as published 
+    it under the terms of the GNU Lesser General Public License as published
     by the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
@@ -17,9 +16,6 @@
     along with this library.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
 #include "../defines.h"
 #include "union.h"
 #include "apply_base.h"
@@ -42,14 +38,14 @@ namespace MEDDLY {
 
 class MEDDLY::union_mdd : public generic_binary_mdd {
   public:
-    union_mdd(const binary_opname* opcode, expert_forest* arg1,
+    union_mdd(binary_opname* opcode, expert_forest* arg1,
       expert_forest* arg2, expert_forest* res);
 
   protected:
     virtual bool checkTerminals(node_handle a, node_handle b, node_handle& c);
 };
 
-MEDDLY::union_mdd::union_mdd(const binary_opname* opcode, 
+MEDDLY::union_mdd::union_mdd(binary_opname* opcode,
   expert_forest* arg1, expert_forest* arg2, expert_forest* res)
   : generic_binary_mdd(opcode, arg1, arg2, res)
 {
@@ -70,21 +66,21 @@ bool MEDDLY::union_mdd::checkTerminals(node_handle a, node_handle b, node_handle
     if (arg2F == resF) {
       c = resF->linkNode(b);
       return true;
-    } 
+    }
     return false;
   }
   if (b == 0) {
     if (arg1F == resF) {
       c = resF->linkNode(a);
       return true;
-    } 
+    }
     return false;
   }
   if (a == b) {
     if (arg1F == arg2F && arg1F == resF) {
       c = resF->linkNode(b);
       return true;
-    } 
+    }
     return false;
   }
   return false;
@@ -100,7 +96,7 @@ bool MEDDLY::union_mdd::checkTerminals(node_handle a, node_handle b, node_handle
 
 class MEDDLY::union_mxd : public generic_binary_mxd {
   public:
-    union_mxd(const binary_opname* opcode, expert_forest* arg1,
+    union_mxd(binary_opname* opcode, expert_forest* arg1,
       expert_forest* arg2, expert_forest* res);
 
   protected:
@@ -108,7 +104,7 @@ class MEDDLY::union_mxd : public generic_binary_mxd {
     virtual MEDDLY::node_handle compute_ext(node_handle a, node_handle b);
 };
 
-MEDDLY::union_mxd::union_mxd(const binary_opname* opcode, 
+MEDDLY::union_mxd::union_mxd(binary_opname* opcode,
   expert_forest* arg1, expert_forest* arg2, expert_forest* res)
   : generic_binary_mxd(opcode, arg1, arg2, res)
 {
@@ -152,8 +148,8 @@ bool MEDDLY::union_mxd::checkTerminals(node_handle a, node_handle b, node_handle
   return false;
 }
 
-MEDDLY::node_handle 
-MEDDLY::union_mxd::compute_ext(node_handle a, node_handle b) 
+MEDDLY::node_handle
+MEDDLY::union_mxd::compute_ext(node_handle a, node_handle b)
 {
   // Get level information
   const int aLevel = arg1F->getNodeLevel(a);
@@ -165,14 +161,14 @@ MEDDLY::union_mxd::compute_ext(node_handle a, node_handle b)
   const int dwnLevel = resF->downLevel(resultLevel);
 
   // Initialize readers
-  unpacked_node *A = (aLevel < resultLevel) 
+  unpacked_node *A = (aLevel < resultLevel)
     ? unpacked_node::newRedundant(arg1F, resultLevel, a, false)
-    : unpacked_node::newFromNode(arg1F, a, false)
+    : arg1F->newUnpacked(a, SPARSE_ONLY)
     ;
 
   unpacked_node *B = (bLevel < resultLevel)
     ? unpacked_node::newRedundant(arg2F, resultLevel, b, false)
-    : unpacked_node::newFromNode(arg2F, b, false)
+    : arg2F->newUnpacked(b, SPARSE_ONLY)
     ;
 
   // Initialize result writer
@@ -282,30 +278,30 @@ MEDDLY::union_mxd::compute_ext(node_handle a, node_handle b)
 
 class MEDDLY::union_min_evplus : public generic_binary_evplus {
   public:
-    union_min_evplus(const binary_opname* opcode, expert_forest* arg1,
+    union_min_evplus(binary_opname* opcode, expert_forest* arg1,
       expert_forest* arg2, expert_forest* res);
 
   protected:
-    virtual compute_table::entry_key* findResult(long aev, node_handle a,
+    virtual ct_entry_key* findResult(long aev, node_handle a,
       long bev, node_handle b, long& cev, node_handle &c);
-    virtual void saveResult(compute_table::entry_key* key,
+    virtual void saveResult(ct_entry_key* key,
       long aev, node_handle a, long bev, node_handle b, long cev, node_handle c);
 
     virtual bool checkTerminals(long aev, node_handle a, long bev, node_handle b,
       long& cev, node_handle& c);
 };
 
-MEDDLY::union_min_evplus::union_min_evplus(const binary_opname* opcode,
+MEDDLY::union_min_evplus::union_min_evplus(binary_opname* opcode,
   expert_forest* arg1, expert_forest* arg2, expert_forest* res)
   : generic_binary_evplus(opcode, arg1, arg2, res)
 {
   operationCommutes();
 }
 
-MEDDLY::compute_table::entry_key* MEDDLY::union_min_evplus::findResult(long aev, node_handle a,
+MEDDLY::ct_entry_key* MEDDLY::union_min_evplus::findResult(long aev, node_handle a,
   long bev, node_handle b, long& cev, node_handle &c)
 {
-  compute_table::entry_key* CTsrch = CT0->useEntryKey(etype[0], 0);
+  ct_entry_key* CTsrch = CT0->useEntryKey(etype[0], 0);
   MEDDLY_DCASSERT(CTsrch);
   if (can_commute && a > b) {
     CTsrch->writeL(0);
@@ -330,7 +326,7 @@ MEDDLY::compute_table::entry_key* MEDDLY::union_min_evplus::findResult(long aev,
   return 0;
 }
 
-void MEDDLY::union_min_evplus::saveResult(compute_table::entry_key* key,
+void MEDDLY::union_min_evplus::saveResult(ct_entry_key* key,
   long aev, node_handle a, long bev, node_handle b, long cev, node_handle c)
 {
   MEDDLY_DCASSERT(c == 0 || cev == MIN(aev, bev));
@@ -409,30 +405,30 @@ bool MEDDLY::union_min_evplus::checkTerminals(long aev, node_handle a, long bev,
 
 class MEDDLY::union_min_evplus_mxd : public generic_binary_evplus_mxd {
   public:
-    union_min_evplus_mxd(const binary_opname* opcode, expert_forest* arg1,
+    union_min_evplus_mxd(binary_opname* opcode, expert_forest* arg1,
       expert_forest* arg2, expert_forest* res);
 
   protected:
-    virtual compute_table::entry_key* findResult(long aev, node_handle a,
+    virtual ct_entry_key* findResult(long aev, node_handle a,
       long bev, node_handle b, long& cev, node_handle &c);
-    virtual void saveResult(compute_table::entry_key* key,
+    virtual void saveResult(ct_entry_key* key,
       long aev, node_handle a, long bev, node_handle b, long cev, node_handle c);
 
     virtual bool checkTerminals(long aev, node_handle a, long bev, node_handle b,
       long& cev, node_handle& c);
 };
 
-MEDDLY::union_min_evplus_mxd::union_min_evplus_mxd(const binary_opname* opcode,
+MEDDLY::union_min_evplus_mxd::union_min_evplus_mxd(binary_opname* opcode,
   expert_forest* arg1, expert_forest* arg2, expert_forest* res)
   : generic_binary_evplus_mxd(opcode, arg1, arg2, res)
 {
   operationCommutes();
 }
 
-MEDDLY::compute_table::entry_key* MEDDLY::union_min_evplus_mxd::findResult(long aev, node_handle a,
+MEDDLY::ct_entry_key* MEDDLY::union_min_evplus_mxd::findResult(long aev, node_handle a,
   long bev, node_handle b, long& cev, node_handle &c)
 {
-  compute_table::entry_key* CTsrch = CT0->useEntryKey(etype[0], 0);
+  ct_entry_key* CTsrch = CT0->useEntryKey(etype[0], 0);
   MEDDLY_DCASSERT(CTsrch);
   if (can_commute && a > b) {
     CTsrch->writeL(0);
@@ -457,7 +453,7 @@ MEDDLY::compute_table::entry_key* MEDDLY::union_min_evplus_mxd::findResult(long 
   return 0;
 }
 
-void MEDDLY::union_min_evplus_mxd::saveResult(compute_table::entry_key* key,
+void MEDDLY::union_min_evplus_mxd::saveResult(ct_entry_key* key,
   long aev, node_handle a, long bev, node_handle b, long cev, node_handle c)
 {
   MEDDLY_DCASSERT(c == 0 || cev == MIN(aev, bev));
@@ -537,8 +533,8 @@ bool MEDDLY::union_min_evplus_mxd::checkTerminals(long aev, node_handle a, long 
 class MEDDLY::union_opname : public binary_opname {
   public:
     union_opname();
-    virtual binary_operation* buildOperation(expert_forest* a1, 
-      expert_forest* a2, expert_forest* r) const;
+    virtual binary_operation* buildOperation(expert_forest* a1,
+      expert_forest* a2, expert_forest* r);
 };
 
 MEDDLY::union_opname::union_opname()
@@ -546,15 +542,15 @@ MEDDLY::union_opname::union_opname()
 {
 }
 
-MEDDLY::binary_operation* 
-MEDDLY::union_opname::buildOperation(expert_forest* a1, expert_forest* a2, 
-  expert_forest* r) const
+MEDDLY::binary_operation*
+MEDDLY::union_opname::buildOperation(expert_forest *a1, expert_forest* a2,
+  expert_forest* r)
 {
   if (0==a1 || 0==a2 || 0==r) return 0;
 
-  if (  
-    (a1->getDomain() != r->getDomain()) || 
-    (a2->getDomain() != r->getDomain()) 
+  if (
+    (a1->getDomain() != r->getDomain()) ||
+    (a2->getDomain() != r->getDomain())
   )
     throw error(error::DOMAIN_MISMATCH, __FILE__, __LINE__);
 
@@ -562,18 +558,18 @@ MEDDLY::union_opname::buildOperation(expert_forest* a1, expert_forest* a2,
     (a1->isForRelations() != r->isForRelations()) ||
     (a2->isForRelations() != r->isForRelations()) ||
     (a1->getEdgeLabeling() != r->getEdgeLabeling()) ||
-    (a2->getEdgeLabeling() != r->getEdgeLabeling()) 
+    (a2->getEdgeLabeling() != r->getEdgeLabeling())
   )
     throw error(error::TYPE_MISMATCH, __FILE__, __LINE__);
 
-  if (r->getEdgeLabeling() == forest::MULTI_TERMINAL) {
+  if (r->getEdgeLabeling() == edge_labeling::MULTI_TERMINAL) {
     if (r->isForRelations())
       return new union_mxd(this, a1, a2, r);
     else
       return new union_mdd(this, a1, a2, r);
   }
 
-  if (r->getEdgeLabeling() == forest::EVPLUS) {
+  if (r->getEdgeLabeling() == edge_labeling::EVPLUS) {
     if (r->isForRelations()) {
       return new union_min_evplus_mxd(this, a1, a2, r);
     }

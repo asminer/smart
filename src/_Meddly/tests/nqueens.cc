@@ -4,7 +4,7 @@
     Copyright (C) 2009, Iowa State University Research Foundation, Inc.
 
     This library is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Lesser General Public License as published 
+    it under the terms of the GNU Lesser General Public License as published
     by the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
@@ -18,18 +18,20 @@
 */
 
 /*
-    Builds the set of solutions to the N-queens problem for 
+    Builds the set of solutions to the N-queens problem for
     various N, and checks if the number of solutions matches
     our expectations.
 */
 
 #include "../src/meddly.h"
 
+#include <cassert>
+
 using namespace MEDDLY;
 
 const int N_LOW  = 1;
 const int N_HIGH = 12;
-const long solutions[] = { 
+const long solutions[] = {
   0, 1, 0, 0, 2, 10, 4, 40, 92, 352, 724, 2680, 14200, 73712, 365596
 };
 
@@ -65,7 +67,7 @@ void intersect(dd_edge** A, int L)
   fflush(stderr);
 }
 
-#else 
+#else
 
 void intersect(dd_edge** A, int L)
 {
@@ -127,10 +129,10 @@ long buildQueenSolutions(int N)
   domain* d = createDomainBottomUp(varsizes, N);
   assert(d);
   delete[] varsizes;
-  forest::policies p(false);
+  policies p(false);
   p.setPessimistic();
-  forest* f = 
-    d->createForest(false, forest::INTEGER, forest::MULTI_TERMINAL, p);
+  forest* f =
+    d->createForest(false, range_type::INTEGER, edge_labeling::MULTI_TERMINAL, p);
   assert(f);
 
   printf(" q");
@@ -204,7 +206,7 @@ int main()
   for (int i=N_LOW; i<=N_HIGH; i++) {
     long sols = buildQueenSolutions(i);
     if (sols != solutions[i]) {
-      printf("%d queens, expected %ld solutions, obtained %ld\n", 
+      printf("%d queens, expected %ld solutions, obtained %ld\n",
               i, solutions[i], sols);
       return 1;
     }

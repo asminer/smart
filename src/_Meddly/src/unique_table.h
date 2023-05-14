@@ -1,10 +1,9 @@
-
 /*
     Meddly: Multi-terminal and Edge-valued Decision Diagram LibrarY.
     Copyright (C) 2009, Iowa State University Research Foundation, Inc.
 
     This library is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Lesser General Public License as published 
+    it under the terms of the GNU Lesser General Public License as published
     by the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
@@ -17,11 +16,11 @@
     along with this library.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
-#ifndef UNIQUE_TABLE_H
-#define UNIQUE_TABLE_H
+#ifndef MEDDLY_UNIQUE_TABLE_H
+#define MEDDLY_UNIQUE_TABLE_H
 
 #include "defines.h"
+#include "forest.h"
 
 namespace MEDDLY {
 class unique_table;
@@ -191,7 +190,7 @@ template <typename T>
 MEDDLY::node_handle MEDDLY::unique_table::subtable::find(const T &key) const
 {
   unsigned h = key.hash() % size;
-  MEDDLY_CHECK_RANGE(0, h, size);
+  MEDDLY::CHECK_RANGE(__FILE__, __LINE__, 0, h, size);
   node_handle prev = 0;
   for (node_handle ptr = table[h]; ptr != 0; ptr = parent->getNext(ptr)) {
     if (parent->areDuplicates(ptr, key)) { // key.equals(ptr)) {
@@ -241,4 +240,4 @@ inline unsigned MEDDLY::unique_table::getItems(int var, node_handle* items, unsi
   return tables[var].getItems(items, sz);
 }
 
-#endif
+#endif // #include guard

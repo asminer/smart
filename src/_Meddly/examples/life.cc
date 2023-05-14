@@ -4,7 +4,7 @@
     Copyright (C) 2009, Iowa State University Research Foundation, Inc.
 
     This library is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Lesser General Public License as published 
+    it under the terms of the GNU Lesser General Public License as published
     by the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
@@ -25,11 +25,11 @@
 #include <iostream>
 #include <string.h>
 #include <stdlib.h>
+#include <cassert>
 
 #define _MEDDLY_WITHOUT_CSTDIO_
 
 #include "../src/meddly.h"
-#include "../src/meddly_expert.h"
 #include "../src/timer.h"
 
 // #define DEBUG_INPUT
@@ -207,7 +207,7 @@ void numTrueGeneral(const int* levels, int* bottom, int n, int deflt, dd_edge &e
     }
     cerr << "]\n";
 #endif
-    for (int i=0; i<n; i++) { 
+    for (int i=0; i<n; i++) {
       unpacked_node* nb = unpacked_node::newFull(ef, levels[ki], 2);
       nb->d_ref(0) = ef->linkNode(bottom[i]);
       nb->d_ref(1) = ef->linkNode( (i+1<n) ? bottom[i+1] : deflt );
@@ -240,7 +240,7 @@ void numTrueGeneral(const int* levels, int* bottom, int n, int deflt, dd_edge &e
   //
   for (int i=1; i<n; i++) ef->unlinkNode(bottom[i]);
 
-  // 
+  //
   // Cleanup
   //
   delete[] current;
@@ -256,7 +256,7 @@ void numTrueEquals(const int* levels, int n, dd_edge &e)
 {
   int* bottom = new int[n+1];
   for (int i=0; i<n; i++) bottom[i] = 0;
-  bottom[n] = expert_forest::int_Tencoder::value2handle(1);
+  bottom[n] = int_Tencoder::value2handle(1);
   numTrueGeneral(levels, bottom, n+1, 0, e);
   delete[] bottom;
 }
@@ -265,14 +265,14 @@ void numTrueGreaterThan(const int* levels, int n, dd_edge &e)
 {
   int* bottom = new int[n+1];
   for (int i=0; i<n+1; i++) bottom[i] = 0;
-  numTrueGeneral(levels, bottom, n+1, expert_forest::int_Tencoder::value2handle(1), e);
+  numTrueGeneral(levels, bottom, n+1, int_Tencoder::value2handle(1), e);
   delete[] bottom;
 }
 
 void numTrueLessThan(const int* levels, int n, dd_edge &e)
 {
   int* bottom = new int[n];
-  for (int i=0; i<n; i++) bottom[i] = expert_forest::int_Tencoder::value2handle(1);
+  for (int i=0; i<n; i++) bottom[i] = int_Tencoder::value2handle(1);
   numTrueGeneral(levels, bottom, n, 0, e);
   delete[] bottom;
 }
@@ -343,7 +343,7 @@ void buildConstraints(const lifegrid &G, int row, int col, dd_edge &e)
     //  (less than 2 alive neighbors) OR
     //  (more than 3 alive neighbors) OR
     //  (we're dead AND we have 2 alive neighbors)
-    // 
+    //
 
     bool inv_terms[2] = {true, false};
     dd_edge dead(f);
@@ -477,7 +477,7 @@ int main(int argc, const char** argv)
   } display = some_minimal;
   bool show_stats = false;
   bool show_hist = false;
-  forest::policies p(false);
+  policies p(false);
   p.setPessimistic();
 
   using namespace std;
@@ -544,7 +544,7 @@ int main(int argc, const char** argv)
   domain* d = createDomainBottomUp(scratch, N);
   assert(d);
   expert_forest* f = dynamic_cast <expert_forest*> (
-    d->createForest(false, forest::BOOLEAN, forest::MULTI_TERMINAL, p)
+    d->createForest(false, range_type::BOOLEAN, edge_labeling::MULTI_TERMINAL, p)
   );
   assert(f);
 
@@ -553,7 +553,7 @@ int main(int argc, const char** argv)
   //
   cerr << "Building constraints for each cell   ";
   cerr.flush();
-  dd_edge* C = new dd_edge[N+1];  
+  dd_edge* C = new dd_edge[N+1];
   dd_edge answer(f);
   for (int i=0; i<=N; i++) C[i] = answer;    // set forest
   for (int r=0; r<G.height; r++) {
@@ -580,7 +580,7 @@ int main(int argc, const char** argv)
   cerr.flush();
   // f->garbageCollect();
   // f->compactMemory();
-  f->reportStats(meddlyout, "\t", 
+  f->reportStats(meddlyout, "\t",
     expert_forest::HUMAN_READABLE_MEMORY  |
     expert_forest::BASIC_STATS | expert_forest::EXTRA_STATS |
     expert_forest::STORAGE_STATS | expert_forest::HOLE_MANAGER_STATS

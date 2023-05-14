@@ -4,7 +4,7 @@
     Copyright (C) 2009, Iowa State University Research Foundation, Inc.
 
     This library is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Lesser General Public License as published 
+    it under the terms of the GNU Lesser General Public License as published
     by the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
@@ -20,18 +20,18 @@
 
 /*
   State space generation using On-The-Fly Saturation.
- 
+
   Model: A simple petri net
- 
+
   Places: A, B
   Transitions: T_ab
- 
+
   T_ab: A--, B++
   Initial state: A = N, B = 0
 */
 
 #include "../src/meddly.h"
-#include "../src/meddly_expert.h"
+#include <cassert>
 
 using namespace MEDDLY;
 
@@ -148,7 +148,7 @@ int main(int argc, char* argv[]) {
 
   pn model(nTokens);
   dd_edge rss = model.getReachableStateSet();
-  
+
   ostream_output s(std::cout);
   rss.show(s, 2);
   double rss_card = rss.getCardinality();
@@ -245,14 +245,14 @@ void pn::buildDomain() {
 }
 
 void pn::buildMdd() {
-  forest::policies p(false);
+  policies p(false);
   p.setQuasiReduced();
-  mdd = static_cast<expert_forest*>(dom->createForest(false, forest::BOOLEAN, forest::MULTI_TERMINAL, p));
+  mdd = static_cast<expert_forest*>(dom->createForest(false, range_type::BOOLEAN, edge_labeling::MULTI_TERMINAL, p));
   assert(mdd);
 }
 
 void pn::buildMxd() {
-  mxd = static_cast<expert_forest*>(dom->createForest(true, forest::BOOLEAN, forest::MULTI_TERMINAL));
+  mxd = static_cast<expert_forest*>(dom->createForest(true, range_type::BOOLEAN, edge_labeling::MULTI_TERMINAL));
   assert(mxd);
 }
 
@@ -307,7 +307,8 @@ void pn::buildOtfSaturationOp() {
       otf_rel = new satotf_opname::otf_relation(mdd, mxd, mdd, &events[0], 1);
     }
     assert(otf_rel);
-    otf_sat_op = SATURATION_OTF_FORWARD->buildOperation(otf_rel);
+    assert(SATURATION_OTF_FORWARD());
+    otf_sat_op = SATURATION_OTF_FORWARD()->buildOperation(otf_rel);
     assert(otf_sat_op);
   }
 }

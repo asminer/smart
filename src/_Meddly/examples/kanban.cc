@@ -4,7 +4,7 @@
     Copyright (C) 2011, Iowa State University Research Foundation, Inc.
 
     This library is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Lesser General Public License as published 
+    it under the terms of the GNU Lesser General Public License as published
     by the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
@@ -25,7 +25,6 @@
 #define _MEDDLY_WITHOUT_IOSTREAM_
 
 #include "../src/meddly.h"
-#include "../src/meddly_expert.h"
 #include "simple_model.h"
 #include "../src/timer.h"
 #include "../src/loggers.h"
@@ -172,8 +171,8 @@ int main(int argc, const char** argv)
     delete[] sizes;
 
     // Initialize forests
-    forest* mdd = d->createForest(0, forest::BOOLEAN, forest::MULTI_TERMINAL);
-    forest* mxd = d->createForest(1, forest::BOOLEAN, forest::MULTI_TERMINAL);
+    forest* mdd = d->createForest(0, range_type::BOOLEAN, edge_labeling::MULTI_TERMINAL);
+    forest* mxd = d->createForest(1, range_type::BOOLEAN, edge_labeling::MULTI_TERMINAL);
 
     // associate loggers
     std::ofstream log;
@@ -253,7 +252,7 @@ int main(int argc, const char** argv)
         apply(REACHABLE_STATES_DFS, init_state, nsf, reachable);
         break;
 
-      case 'e': 
+      case 'e':
         printf("Building reachability set using explicit search\n");
         printf("Using batch size: %d\n", batchsize);
         fflush(stdout);
@@ -266,10 +265,10 @@ int main(int argc, const char** argv)
         if ('k'==method)  printf(" by levels\n");
         else              printf(" by events\n");
         fflush(stdout);
-        if (0==SATURATION_FORWARD) {
+        if (!SATURATION_FORWARD()) {
           throw error(error::UNKNOWN_OPERATION, __FILE__, __LINE__);
         }
-        sat = SATURATION_FORWARD->buildOperation(ensf);
+        sat = SATURATION_FORWARD()->buildOperation(ensf);
         if (0==sat) {
           throw error(error::INVALID_OPERATION, __FILE__, __LINE__);
         }
@@ -326,7 +325,7 @@ int main(int argc, const char** argv)
     if (LOG) {
       LOG->newPhase(mdd, "Cleanup");
       LOG->newPhase(mxd, "Cleanup");
-      MEDDLY::destroyDomain(d); 
+      MEDDLY::destroyDomain(d);
       delete LOG;
     }
     MEDDLY::cleanup();

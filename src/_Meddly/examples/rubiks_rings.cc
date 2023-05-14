@@ -4,7 +4,7 @@
     Copyright (C) 2009, Iowa State University Research Foundation, Inc.
 
     This library is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Lesser General Public License as published 
+    it under the terms of the GNU Lesser General Public License as published
     by the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
@@ -26,7 +26,6 @@
 */
 
 #include "../src/meddly.h"
-#include "../src/meddly_expert.h"
 #include "../src/timer.h"
 #include <cstdio>
 #include <stdarg.h>
@@ -250,7 +249,7 @@ void incdec_order(int p_red, int p_blue)
 /**
     Builds relation where
       newSlot' == oldSlot
-    and for all other levels: 
+    and for all other levels:
         if changing[k] is true, then is "don't care";
                                 else is "don't change".
 */
@@ -258,7 +257,7 @@ void moveBall(int oldSlot, int newSlot, bool changing[], dd_edge &out)
 {
   //
   // Build minterm arrays, if needed (save for later)
-  // 
+  //
   static int** fromterms = 0;
   static int** toterms = 0;
 
@@ -280,7 +279,7 @@ void moveBall(int oldSlot, int newSlot, bool changing[], dd_edge &out)
   //
   for (int i=0; i<COLORS; i++) {
     for (int k=LEVELS; k; k--) {
-      fromterms[i][k] = DONT_CARE;  
+      fromterms[i][k] = DONT_CARE;
       toterms[i][k] = changing[k] ? DONT_CARE : DONT_CHANGE;
     }
     fromterms[i][oldSlot] = i;
@@ -319,7 +318,7 @@ void makeRotation(const int* vars, int nv, int r, dd_edge &out)
 
   for (int i=1; i<nv; i++) {
     dd_edge temp(out);
-   
+
     moveBall(vars[i], vars[(i+r)%nv], changing, temp);
 
     out *= temp;
@@ -342,7 +341,7 @@ void buildNSF(dd_edge& out)
 
   //
   // Rotations for the left ring
-  // 
+  //
   for (int r=1; r<leftring; r++) {
 #ifndef ALL_ROTATIONS
     if (r != 1 && r+1 != leftring) continue;
@@ -371,10 +370,10 @@ void buildNSF(dd_edge& out)
 
 void printStats(const char* who, timer& watch, const dd_edge &node)
 {
-  printf("%s construction took %.4f seconds\n", 
+  printf("%s construction took %.4f seconds\n",
     who, watch.get_last_seconds()
   );
-  printf("%s has\n\t%d nodes\n\t\%d edges\n", 
+  printf("%s has\n\t%d nodes\n\t\%d edges\n",
     who, node.getNodeCount(), node.getEdgeCount()
   );
   printf("    Stats:\n");
@@ -382,9 +381,9 @@ void printStats(const char* who, timer& watch, const dd_edge &node)
   const expert_forest* ef = (expert_forest*) node.getForest();
   ef->reportStats(meddlyout, "\t",
     expert_forest::HUMAN_READABLE_MEMORY  |
-    expert_forest::BASIC_STATS | 
+    expert_forest::BASIC_STATS |
     expert_forest::EXTRA_STATS |
-    expert_forest::STORAGE_STATS | 
+    expert_forest::STORAGE_STATS |
     expert_forest::HOLE_MANAGER_STATS |
     expert_forest::HOLE_MANAGER_DETAILED
   );
@@ -457,7 +456,7 @@ int main(int argc, const char** argv)
 
   int red = 11;
   int blue = 11;
-  forest::policies p(false);
+  policies p(false);
   p.setOptimistic();
   bool decinc = false;
   bool saturate = true;
@@ -508,12 +507,12 @@ int main(int argc, const char** argv)
   int scratch[1+LEVELS];
   for (int k=0; k<LEVELS; k++) scratch[k] = COLORS;
   domain* D = createDomainBottomUp(scratch, LEVELS);
- 
+
   //
   // Build NSF for possible "1-step" moves
   //
   timer watch;
-  forest* mxd = D->createForest(true, forest::BOOLEAN, forest::MULTI_TERMINAL);
+  forest* mxd = D->createForest(true, range_type::BOOLEAN, edge_labeling::MULTI_TERMINAL);
   dd_edge nsf(mxd);
 
   watch.note_time();
@@ -525,7 +524,7 @@ int main(int argc, const char** argv)
   //
   // Build initial configuration
   //
-  forest* mdd = D->createForest(false, forest::BOOLEAN, forest::MULTI_TERMINAL, p);
+  forest* mdd = D->createForest(false, range_type::BOOLEAN, edge_labeling::MULTI_TERMINAL, p);
   dd_edge initial(mdd);
   for (int i=0; i<leftring; i++)  scratch[leftvar[i]]   = leftinit[i];
   for (int i=0; i<rightring; i++) scratch[rightvar[i]]  = rightinit[i];

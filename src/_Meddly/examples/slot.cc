@@ -4,7 +4,7 @@
     Copyright (C) 2011, Iowa State University Research Foundation, Inc.
 
     This library is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Lesser General Public License as published 
+    it under the terms of the GNU Lesser General Public License as published
     by the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
@@ -23,7 +23,6 @@
 #include <fstream>
 
 #include "../src/meddly.h"
-#include "../src/meddly_expert.h"
 #include "simple_model.h"
 #include "../src/timer.h"
 #include "../src/loggers.h"
@@ -60,7 +59,7 @@ void printStats(const char* who, const forest* f)
   ef->reportStats(meddlyout, "\t",
     expert_forest::HUMAN_READABLE_MEMORY  |
     expert_forest::BASIC_STATS | expert_forest::EXTRA_STATS |
-    expert_forest::STORAGE_STATS | expert_forest::HOLE_MANAGER_STATS | 
+    expert_forest::STORAGE_STATS | expert_forest::HOLE_MANAGER_STATS |
     expert_forest::HOLE_MANAGER_DETAILED
   );
 }
@@ -186,8 +185,8 @@ void runWithArgs(int N, char method, int batchsize, bool build_pdf, forest::logg
   domain* d = createDomainBottomUp(sizes, N*8);
 
   // Initialize forests
-  forest* mdd = d->createForest(0, forest::BOOLEAN, forest::MULTI_TERMINAL);
-  forest* mxd = d->createForest(1, forest::BOOLEAN, forest::MULTI_TERMINAL);
+  forest* mdd = d->createForest(0, range_type::BOOLEAN, edge_labeling::MULTI_TERMINAL);
+  forest* mxd = d->createForest(1, range_type::BOOLEAN, edge_labeling::MULTI_TERMINAL);
   if (LOG) {
     mdd->setLogger(LOG, "MDD");
     mxd->setLogger(LOG, "MxD");
@@ -274,10 +273,10 @@ void runWithArgs(int N, char method, int batchsize, bool build_pdf, forest::logg
         if ('k'==method)  printf(" by levels\n");
         else              printf(" by events\n");
         fflush(stdout);
-        if (0==SATURATION_FORWARD) {
+        if (!SATURATION_FORWARD()) {
           throw error(error::UNKNOWN_OPERATION, __FILE__, __LINE__);
         }
-        sat = SATURATION_FORWARD->buildOperation(ensf);
+        sat = SATURATION_FORWARD()->buildOperation(ensf);
         if (0==sat) {
           throw error(error::INVALID_OPERATION, __FILE__, __LINE__);
         }
@@ -312,7 +311,7 @@ void runWithArgs(int N, char method, int batchsize, bool build_pdf, forest::logg
   double c;
   apply(CARDINALITY, reachable, c);
   operation::showAllComputeTables(meddlyout, 3);
-  
+
   printf("Approx. %g reachable states\n", c);
   destroyOperation(sat);
   // or, don't, and let cleanup() take care of it?
