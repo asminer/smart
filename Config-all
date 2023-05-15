@@ -107,6 +107,14 @@ fi
 
 printf "\n"
 printf "\n------------------------------------------------------------\n"
+printf "Configuring _Meddly automake"
+printf "\n------------------------------------------------------------\n"
+printf "\n"
+
+src/_Meddly/autogen.sh
+
+printf "\n"
+printf "\n------------------------------------------------------------\n"
 printf "Configuring development version"
 printf "\n------------------------------------------------------------\n"
 printf "\n"
