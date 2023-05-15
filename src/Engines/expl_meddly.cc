@@ -2573,7 +2573,7 @@ protected:
 public:
   meddly_explgen();
 
-  virtual MEDDLY::forest::policies buildRSSPolicies() const;
+  virtual MEDDLY::policies buildRSSPolicies() const;
 
 protected:
   static void preprocess(dsde_hlm &m);
@@ -2807,10 +2807,10 @@ meddly_explgen::meddly_explgen() : meddly_procgen()
 {
 }
 
-MEDDLY::forest::policies
+MEDDLY::policies
 meddly_explgen::buildRSSPolicies() const
 {
-  MEDDLY::forest::policies p = meddly_procgen::buildRSSPolicies();
+  MEDDLY::policies p = meddly_procgen::buildRSSPolicies();
   if (QRMXD == matrix_style) {
     p.setQuasiReduced();
   }
@@ -3122,8 +3122,8 @@ void meddly_explgen::generateMC(dsde_hlm &hm, meddly_reachset* rss)
   // Storage for the reachgraph and process
   //
   meddly_monolithic_rg* rgr = new meddly_monolithic_rg(rss->shareVars(), rss->grabMxdWrapper());
-  meddly_encoder* procmxd = rgr->newMxdWrapper("proc", MEDDLY::forest::REAL,
-    useEVMXD() ? MEDDLY::forest::EVTIMES : MEDDLY::forest::MULTI_TERMINAL);
+  meddly_encoder* procmxd = rgr->newMxdWrapper("proc", MEDDLY::range_type::REAL,
+    useEVMXD() ? MEDDLY::edge_labeling::EVTIMES : MEDDLY::edge_labeling::MULTI_TERMINAL);
   meddly_process* proc = new meddly_process( procmxd );
 
   //

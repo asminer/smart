@@ -5,7 +5,7 @@
 #include "state_llm.h"
 #include "../Modules/glue_meddly.h"
 #include <unordered_map>
-#include "../_Meddly/src/meddly_expert.h"
+#include "../_Meddly/src/meddly.h"
 
 class dsde_hlm;
 
@@ -31,15 +31,15 @@ class meddly_reachset : public state_lldsm::reachset {
       return Share(vars);
     }
 
-    inline MEDDLY::forest* createForest(bool rel, MEDDLY::forest::range_type t,
-      MEDDLY::forest::edge_labeling ev)
+    inline MEDDLY::forest* createForest(bool rel, MEDDLY::range_type t,
+      MEDDLY::edge_labeling ev)
     {
       DCASSERT(vars);
       return vars->createForest(rel, t, ev);
     }
 
-    inline MEDDLY::forest* createForest(bool rel, MEDDLY::forest::range_type t,
-      MEDDLY::forest::edge_labeling ev, const MEDDLY::forest::policies &p)
+    inline MEDDLY::forest* createForest(bool rel, MEDDLY::range_type t,
+      MEDDLY::edge_labeling ev, const MEDDLY::policies &p)
     {
       DCASSERT(vars);
       return vars->createForest(rel, t, ev, p);
@@ -79,7 +79,7 @@ class meddly_reachset : public state_lldsm::reachset {
     inline shared_ddedge* newEvmddEdge() {
       if (nullptr == evmdd_wrap){
         MEDDLY::forest* foo = vars->createForest(
-          false, MEDDLY::forest::INTEGER, MEDDLY::forest::EVPLUS,
+          false, MEDDLY::range_type::INTEGER, MEDDLY::edge_labeling::EVPLUS,
           mdd_wrap->getForest()->getPolicies()
         );
         evmdd_wrap = mdd_wrap->copyWithDifferentForest("EV+MDD", foo);

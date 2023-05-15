@@ -3,7 +3,7 @@
 
 #include "rgr_meddly.h"
 
-#include "../_Meddly/src/meddly_expert.h"
+#include "../_Meddly/src/meddly.h"
 
 // ******************************************************************
 // *                                                                *
@@ -566,8 +566,8 @@ void meddly_monolithic_rg::_EU(bool revTime, const shared_ddedge* p, const share
         ans->E.getForest());
 
       MEDDLY::specialized_operation* op = revTime
-        ? MEDDLY::CONSTRAINED_FORWARD_DFS->buildOperation(&args)
-        : MEDDLY::CONSTRAINED_BACKWARD_DFS->buildOperation(&args);
+        ? MEDDLY::CONSTRAINED_FORWARD_DFS()->buildOperation(&args)
+        : MEDDLY::CONSTRAINED_BACKWARD_DFS()->buildOperation(&args);
       op->compute(p->E, q->E, edges->E, ans->E);
 
       MEDDLY::destroyOperation(op);
@@ -713,7 +713,7 @@ stateset* meddly_monolithic_rg::attachWeight(const stateset* p) const
 }
 
 meddly_encoder* meddly_monolithic_rg::newMxdWrapper(const char* n,
-  MEDDLY::forest::range_type t, MEDDLY::forest::edge_labeling ev) const
+  MEDDLY::range_type t, MEDDLY::edge_labeling ev) const
 {
   DCASSERT(vars);
   MEDDLY::forest* f = vars->createForest(true, t, ev, getMxdForest()->getPolicies() );
@@ -736,7 +736,7 @@ meddly_encoder* meddly_monolithic_min_rg::getEvmxdWrap()
 {
   if (nullptr == evmxd_wrap) {
     MEDDLY::forest* foo = vars->createForest(
-      true, MEDDLY::forest::INTEGER, MEDDLY::forest::EVPLUS
+      true, MEDDLY::range_type::INTEGER, MEDDLY::edge_labeling::EVPLUS
     );
     evmxd_wrap = mxd_wrap->copyWithDifferentForest("EV+MxD", foo);
   }
@@ -916,7 +916,7 @@ void meddly_monolithic_min_rg::_EU(bool revTime, const shared_ddedge* p, const s
     return;
   }
 
-  MEDDLY::specialized_operation* op = MEDDLY::CONSTRAINED_BACKWARD_DFS->buildOperation(&args);
+  MEDDLY::specialized_operation* op = MEDDLY::CONSTRAINED_BACKWARD_DFS()->buildOperation(&args);
   if (nullptr == p) {
     shared_ddedge* t = mrss->newEvmddConst(true);
     op->compute(t->E, q->E, edges->E, ans->E);
@@ -962,7 +962,7 @@ void meddly_monolithic_min_rg::_unfairEG(bool revTime, const shared_ddedge* p,
 
   MEDDLY::constrained_opname::constrained_args args(p->E.getForest(),
     tc->E.getForest(), edges->E.getForest(), tc->E.getForest());
-  MEDDLY::specialized_operation* tcOp = MEDDLY::TRANSITIVE_CLOSURE_DFS->buildOperation(&args);
+  MEDDLY::specialized_operation* tcOp = MEDDLY::TRANSITIVE_CLOSURE_DFS()->buildOperation(&args);
   tcOp->compute(p->E, tc->E, edges->E, tc->E);
 
   MEDDLY::destroyOperation(tcOp);

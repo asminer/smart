@@ -215,8 +215,8 @@ void mxd_mc_finish::RunEngine(hldsm* hm, result &states_only)
   dsde_hlm* m = smart_cast <dsde_hlm*> (hm);
   DCASSERT(m);
 
-  meddly_encoder* procmxd = rgr->newMxdWrapper("proc", MEDDLY::forest::REAL,
-    MEDDLY::forest::MULTI_TERMINAL);
+  meddly_encoder* procmxd = rgr->newMxdWrapper("proc", MEDDLY::range_type::REAL,
+    MEDDLY::edge_labeling::MULTI_TERMINAL);
   shared_ddedge* R = smart_cast<shared_ddedge*>(procmxd->makeEdge(0));
   DCASSERT(R);
   procmxd->buildSymbolicConst(0.0, R);
@@ -980,7 +980,7 @@ long meddly_otfsat::computeMaxTokensPerMarking(
     }
 
     // expand mdd
-    MEDDLY::unpacked_node* mdd_nr = MEDDLY::unpacked_node::newFromNode(mddf, mdd, false);
+    MEDDLY::unpacked_node* mdd_nr = mddf->newUnpacked(mdd, MEDDLY::SPARSE_ONLY);
     for (unsigned i = 0; i < mdd_nr->getNNZs(); i++) {
       result = MAX( result,
           (level_index_to_token[level][mdd_nr->i(i)] +
@@ -1284,7 +1284,7 @@ void meddly_otfsat::generateRSS(meddly_varoption &x,
   DCASSERT(MEDDLY::SATURATION_OTF_FORWARD);
 
   try {
-    specialized_operation* satop = SATURATION_OTF_FORWARD->buildOperation(NSF);
+    specialized_operation* satop = SATURATION_OTF_FORWARD()->buildOperation(NSF);
     DCASSERT(satop);
 
     shared_ddedge* S = x.newMddEdge();
@@ -1666,7 +1666,7 @@ void meddly_otfimplsat::generateRSS(meddly_varoption &x,
   DCASSERT(IMPL_NSF);
   DCASSERT(MEDDLY::SATURATION_IMPL_FORWARD);
   try{
-    specialized_operation* satop = SATURATION_IMPL_FORWARD->buildOperation(IMPL_NSF);
+    specialized_operation* satop = SATURATION_IMPL_FORWARD()->buildOperation(IMPL_NSF);
     DCASSERT(satop);
 
     shared_ddedge* S = x.newMddEdge();
@@ -1687,7 +1687,7 @@ void meddly_otfimplsat::generateRSSWithHybrid(meddly_varoption &x,
   DCASSERT(HYB_NSF);
   DCASSERT(MEDDLY::SATURATION_HYB_FORWARD);
   try{
-    specialized_operation* satop = SATURATION_HYB_FORWARD->buildOperation(HYB_NSF);
+    specialized_operation* satop = SATURATION_HYB_FORWARD()->buildOperation(HYB_NSF);
     DCASSERT(satop);
 
     shared_ddedge* S = x.newMddEdge();
@@ -1814,7 +1814,8 @@ long meddly_otfimplsat::computeMaxTokensPerMarking(
       return iter->second;
     }
     // expand mdd
-    MEDDLY::unpacked_node* mdd_nr = MEDDLY::unpacked_node::newFromNode(mddf, mdd, false);
+    MEDDLY::unpacked_node* mdd_nr = mddf->newUnpacked(mdd, MEDDLY::SPARSE_ONLY);
+    // MEDDLY::unpacked_node* mdd_nr = MEDDLY::unpacked_node::newFromNode(mddf, mdd, false);
     for (unsigned i = 0; i < mdd_nr->getNNZs(); i++) {
     result = MAX( result,
                    (level_index_to_token[level][mdd_nr->i(i)] +
@@ -1887,7 +1888,8 @@ bigint meddly_otfimplsat::computeNumTransitions(
     } else if (mxdLevel < 0) {
       // if mddLevel < level && ABS(mxdLevel) >= level && mxdLevel < 0
       // --- return level_size * compute(mdd, mxd[i], level-1)
-      MEDDLY::unpacked_node* p_nr = MEDDLY::unpacked_node::newFromNode(mxdf, mxd, false);
+      MEDDLY::unpacked_node* p_nr = mxdf->newUnpacked(mxd, MEDDLY::SPARSE_ONLY);
+      // MEDDLY::unpacked_node* p_nr = MEDDLY::unpacked_node::newFromNode(mxdf, mxd, false);
       for (unsigned i = 0; i < p_nr->getNNZs(); i++) {
         result.add(result, computeNumTransitions(mdd, p_nr->d(i), level-1, mddf, mxdf, ct));
       }
@@ -1895,10 +1897,13 @@ bigint meddly_otfimplsat::computeNumTransitions(
       result.mul(bigint(levelSize), result);
     } else {
       // expand mxd
-      MEDDLY::unpacked_node* up_nr = MEDDLY::unpacked_node::newFromNode(mxdf, mxd, false);
-      MEDDLY::unpacked_node* p_nr = MEDDLY::unpacked_node::useUnpackedNode();
+      MEDDLY::unpacked_node* up_nr = mxdf->newUnpacked(mxd, MEDDLY::SPARSE_ONLY);
+      // MEDDLY::unpacked_node* up_nr = MEDDLY::unpacked_node::newFromNode(mxdf, mxd, false);
+      MEDDLY::unpacked_node* p_nr = MEDDLY::unpacked_node::New();
+      // MEDDLY::unpacked_node* p_nr = MEDDLY::unpacked_node::useUnpackedNode();
       for (unsigned i = 0; i < up_nr->getNNZs(); i++) {
-        p_nr->initFromNode(mxdf, up_nr->d(i), false);
+        mxdf->unpackNode(p_nr, up_nr->d(i), MEDDLY::SPARSE_ONLY);
+        // p_nr->initFromNode(mxdf, up_nr->d(i), false);
         for (unsigned j = 0; j < p_nr->getNNZs(); j++) {
           result.add(result, computeNumTransitions(mdd, p_nr->d(j), level-1, mddf, mxdf, ct));
         }
@@ -1920,13 +1925,15 @@ bigint meddly_otfimplsat::computeNumTransitions(
     }
 
     // expand mdd
-    MEDDLY::unpacked_node* mdd_nr = MEDDLY::unpacked_node::newFromNode(mddf, mdd, false);
+    MEDDLY::unpacked_node* mdd_nr = mddf->newUnpacked(mdd, MEDDLY::SPARSE_ONLY);
+    // MEDDLY::unpacked_node* mdd_nr = MEDDLY::unpacked_node::newFromNode(mddf, mdd, false);
     if (ABS(mxdLevel) < level) {
       for (unsigned i = 0; i < mdd_nr->getNNZs(); i++) {
         result.add(result, computeNumTransitions(mdd_nr->d(i), mxd, level-1, mddf, mxdf, ct));
       }
     } else if (mxdLevel < 0) {
-      MEDDLY::unpacked_node* p_nr = MEDDLY::unpacked_node::newFromNode(mxdf, mxd, false);
+      MEDDLY::unpacked_node* p_nr = mxdf->newUnpacked(mxd, MEDDLY::SPARSE_ONLY);
+      // MEDDLY::unpacked_node* p_nr = MEDDLY::unpacked_node::newFromNode(mxdf, mxd, false);
       for (unsigned i = 0; i < mdd_nr->getNNZs(); i++) {
         for (unsigned j = 0; j < p_nr->getNNZs(); j++) {
           result.add(result, computeNumTransitions(mdd_nr->d(i), p_nr->d(j), level-1, mddf, mxdf, ct));
@@ -1935,15 +1942,18 @@ bigint meddly_otfimplsat::computeNumTransitions(
       MEDDLY::unpacked_node::recycle(p_nr);
     } else {
       // expand mxd
-      MEDDLY::unpacked_node* up_nr = MEDDLY::unpacked_node::newFromNode(mxdf, mxd, true);
-      MEDDLY::unpacked_node* p_nr = MEDDLY::unpacked_node::useUnpackedNode();
+      MEDDLY::unpacked_node* up_nr = mxdf->newUnpacked(mxd, MEDDLY::FULL_ONLY);
+      // MEDDLY::unpacked_node* up_nr = MEDDLY::unpacked_node::newFromNode(mxdf, mxd, true);
+      MEDDLY::unpacked_node* p_nr = MEDDLY::unpacked_node::New();
+      // MEDDLY::unpacked_node* p_nr = MEDDLY::unpacked_node::useUnpackedNode();
       for (unsigned i = 0; i < mdd_nr->getNNZs(); i++) {
         int i_index = mdd_nr->i(i);
         if (0 == up_nr->d(i_index)) continue;
         if (-1 == up_nr->d(i_index)) {
           result.add(result, computeNumTransitions(mdd_nr->d(i), -1, level-1, mddf, mxdf, ct));
         } else {
-          p_nr->initFromNode(mxdf, up_nr->d(i_index), false);
+          mxdf->unpackNode(p_nr, up_nr->d(i_index), MEDDLY::SPARSE_ONLY);
+          // p_nr->initFromNode(mxdf, up_nr->d(i_index), false);
           for (unsigned j = 0; j < p_nr->getNNZs(); j++) {
             result.add(result, computeNumTransitions(mdd_nr->d(i), p_nr->d(j), level-1, mddf, mxdf, ct));
           }
@@ -1982,7 +1992,7 @@ bigint meddly_otfimplsat::computeNumTransitions(
     {
   NodeNodeIntMap ct;
   MEDDLY::domain *d = IMPL_NSF->getOutForest()->useDomain();
-  MEDDLY::forest* mxd = d->createForest(true,MEDDLY::forest::BOOLEAN, MEDDLY::forest::MULTI_TERMINAL);
+  MEDDLY::forest* mxd = d->createForest(true, MEDDLY::range_type::BOOLEAN, MEDDLY::edge_labeling::MULTI_TERMINAL);
 
   MEDDLY::dd_edge nsf_ev(mxd);
   nsf_ev = IMPL_NSF->buildEventMxd(IMPL_NSF->arrayForLevel(i)[ei],mxd);
@@ -2044,7 +2054,8 @@ bigint meddly_otfimplsat::computeNumTransitionsImplRel(
     }
 
     // expand mdd
-    MEDDLY::unpacked_node* mdd_nr = MEDDLY::unpacked_node::newFromNode(mddf, mdd, false);
+    MEDDLY::unpacked_node* mdd_nr = mddf->newUnpacked(mdd, MEDDLY::SPARSE_ONLY);
+    // MEDDLY::unpacked_node* mdd_nr = MEDDLY::unpacked_node::newFromNode(mddf, mdd, false);
     if (mxdLevel < level) {
       for (unsigned i = 0; i < mdd_nr->getNNZs(); i++) {
         result.add(result, computeNumTransitionsImplRel(mdd_nr->d(i), mxd, level-1, mddf, IMPL_NSF, ct));

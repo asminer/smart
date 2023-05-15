@@ -47,15 +47,15 @@ class shared_domain : public shared_object {
       return D->getNumVariables() + 1;
     }
 
-    inline MEDDLY::forest* createForest(bool rel, MEDDLY::forest::range_type t,
-      MEDDLY::forest::edge_labeling ev)
+    inline MEDDLY::forest* createForest(bool rel, MEDDLY::range_type t,
+      MEDDLY::edge_labeling ev)
     {
       DCASSERT(D);
       return D->createForest(rel, t, ev);
     }
 
-    inline MEDDLY::forest* createForest(bool rel, MEDDLY::forest::range_type t,
-      MEDDLY::forest::edge_labeling ev, const MEDDLY::forest::policies &p)
+    inline MEDDLY::forest* createForest(bool rel, MEDDLY::range_type t,
+      MEDDLY::edge_labeling ev, const MEDDLY::policies &p)
     {
       DCASSERT(D);
       return D->createForest(rel, t, ev, p);
@@ -231,13 +231,13 @@ public:
   /** Accumulate and destroy list of edges.
       Done by combining adjacent pairs until we reach the "top".
   */
-  shared_ddedge* fold(const MEDDLY::binary_opname* op,
+  shared_ddedge* fold(MEDDLY::binary_handle op,
                       shared_ddedge** list, int N, debugging_msg* debug) const;
 
   /** Accumulate and destroy list of edges.
       Done by accumulating, in order, until we reach the end.
   */
-  shared_ddedge* accumulate(const MEDDLY::binary_opname* op,
+  shared_ddedge* accumulate(MEDDLY::binary_handle op,
                       shared_ddedge** list, int N, debugging_msg* debug) const;
 
   // particular to meddly_encoder:
@@ -245,13 +245,13 @@ public:
   inline MEDDLY::forest* getForest() { return F; }
 
   inline bool isTypeBoolean() const {
-    return MEDDLY::forest::BOOLEAN == F->getRangeType();
+    return MEDDLY::range_type::BOOLEAN == F->getRangeType();
   }
   inline bool isTypeInteger() const {
-    return MEDDLY::forest::INTEGER == F->getRangeType();
+    return MEDDLY::range_type::INTEGER == F->getRangeType();
   }
   inline bool isTypeReal() const {
-    return MEDDLY::forest::REAL == F->getRangeType();
+    return MEDDLY::range_type::REAL == F->getRangeType();
   }
 };
 

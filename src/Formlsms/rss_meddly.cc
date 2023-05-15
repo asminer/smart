@@ -60,7 +60,7 @@ void meddly_reachset::setMddWrap(meddly_encoder* w)
   mdd_wrap = w;
   DCASSERT(0==mtmdd_wrap);
   MEDDLY::forest* foo = vars->createForest(
-    false, MEDDLY::forest::INTEGER, MEDDLY::forest::MULTI_TERMINAL,
+    false, MEDDLY::range_type::INTEGER, MEDDLY::edge_labeling::MULTI_TERMINAL,
     mdd_wrap->getForest()->getPolicies()
   );
   mtmdd_wrap = mdd_wrap->copyWithDifferentForest("MTMDD", foo);
@@ -185,7 +185,7 @@ long meddly_reachset::computeMaxTokensPerSet(  MEDDLY::node_handle mdd,
     result = Level_maxTokens[level] +
     computeMaxTokensPerSet(mdd, offset-1, ct, set_of_places);
   } else {
-    MEDDLY::unpacked_node* mdd_nr = MEDDLY::unpacked_node::newFromNode(mddf, mdd, false);
+    MEDDLY::unpacked_node* mdd_nr = mddf->newUnpacked(mdd, MEDDLY::SPARSE_ONLY);
     if (mddLevel > level) {
       // if mddLevel > level
       // --- skip the mddLevel and look down, return compute(mdd, mxd, level-1)
@@ -323,7 +323,7 @@ void meddly_reachset::buildIndexSet()
   if (0==index_wrap) {
     DCASSERT(vars);
     MEDDLY::forest* evF = vars->createForest(
-      false, MEDDLY::forest::INTEGER, MEDDLY::forest::INDEX_SET
+      false, MEDDLY::range_type::INTEGER, MEDDLY::edge_labeling::INDEX_SET
     );
     DCASSERT(evF);
     index_wrap = mdd_wrap->copyWithDifferentForest("EV+MDD", evF);

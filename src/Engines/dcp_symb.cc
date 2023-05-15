@@ -477,10 +477,10 @@ void icp_symbgen::RunEngine(hldsm* hm, result &)
   d->showInfo(em->Fstdout());
   em->cout() << "Building forest\n";
 #endif
-  MEDDLY::forest::policies p(false);
+  MEDDLY::policies p(false);
   p.setPessimistic();
   MEDDLY::forest* f = d->createForest(
-    false, MEDDLY::forest::INTEGER, MEDDLY::forest::MULTI_TERMINAL, p
+    false, MEDDLY::range_type::INTEGER, MEDDLY::edge_labeling::MULTI_TERMINAL, p
   );
   DCASSERT(f);
   icp_encoder* ddlwrap = new icp_encoder("MDD", f, nem);

@@ -107,8 +107,8 @@ class meddly_monolithic_rg : public graph_lldsm::reachgraph {
   // Helpers
   //
   public:
-    meddly_encoder* newMxdWrapper(const char* n, MEDDLY::forest::range_type t,
-      MEDDLY::forest::edge_labeling ev) const;
+    meddly_encoder* newMxdWrapper(const char* n, MEDDLY::range_type t,
+      MEDDLY::edge_labeling ev) const;
 
     inline meddly_encoder& useMxdWrapper() {
       DCASSERT(mxd_wrap);

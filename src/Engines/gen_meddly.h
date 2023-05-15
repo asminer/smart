@@ -320,8 +320,8 @@ public:
 
   inline static void useXdds(bool use) { uses_xdds = use; }
   inline static bool usesXdds() { return uses_xdds; }
-  virtual MEDDLY::forest::policies buildNSFPolicies() const;
-  virtual MEDDLY::forest::policies buildRSSPolicies() const;
+  virtual MEDDLY::policies buildNSFPolicies() const;
+  virtual MEDDLY::policies buildRSSPolicies() const;
 
 protected:
   inline static bool useActualEdges() {

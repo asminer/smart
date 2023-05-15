@@ -275,11 +275,11 @@ void meddly_encoder::buildSymbolicConst(bool t, shared_object* ans)
 
   try {
     switch (F->getRangeType()) {
-      case MEDDLY::forest::INTEGER:
+      case MEDDLY::range_type::INTEGER:
         F->createEdge(long(t), answer->E);
         return;
 
-      case MEDDLY::forest::REAL:
+      case MEDDLY::range_type::REAL:
         F->createEdge(float(t), answer->E);
         return;
 
@@ -303,7 +303,7 @@ void meddly_encoder::buildSymbolicConst(long t, shared_object* ans)
   DCASSERT(answer);
 
   try {
-    if (MEDDLY::forest::REAL == F->getRangeType()) {
+    if (MEDDLY::range_type::REAL == F->getRangeType()) {
       F->createEdge(float(t), answer->E);
     } else {
       F->createEdge(long(t), answer->E);
@@ -488,7 +488,7 @@ void meddly_encoder
   try {
     switch (op) {
       case unary_op::uop_not: {
-        if (MEDDLY::forest::BOOLEAN == F->getRangeType()) {
+        if (MEDDLY::range_type::BOOLEAN == F->getRangeType()) {
           F->createEdge(true, out);
           out -= opdd->E;
         } else {
@@ -622,8 +622,8 @@ void meddly_encoder
       case assoc_op::aop_semi:
       case assoc_op::aop_and:
         DCASSERT(!flip);
-        if (MEDDLY::forest::BOOLEAN != F->getRangeType()
-            && MEDDLY::forest::EVPLUS != F->getEdgeLabeling())
+        if (MEDDLY::range_type::BOOLEAN != F->getRangeType()
+            && MEDDLY::edge_labeling::EVPLUS != F->getEdgeLabeling())
           MEDDLY::apply(
             MEDDLY::MINIMUM, meL->E, meR->E, out
           );
@@ -648,7 +648,7 @@ void meddly_encoder
       case assoc_op::aop_or:
       case assoc_op::aop_union:
         DCASSERT(!flip);
-        if (MEDDLY::forest::BOOLEAN != F->getRangeType())
+        if (MEDDLY::range_type::BOOLEAN != F->getRangeType())
           MEDDLY::apply(
             MEDDLY::MAXIMUM, meL->E, meR->E, out
           );
@@ -876,15 +876,15 @@ void meddly_encoder
   try {
     MEDDLY::dd_edge one(meRows->getForest());
     switch (meRows->getForest()->getRangeType()) {
-      case MEDDLY::forest::BOOLEAN:
+      case MEDDLY::range_type::BOOLEAN:
         meRows->getForest()->createEdge(true, one);
         break;
 
-      case MEDDLY::forest::INTEGER:
+      case MEDDLY::range_type::INTEGER:
          meRows->getForest()->createEdge(long(1), one);
         break;
 
-      case MEDDLY::forest::REAL:
+      case MEDDLY::range_type::REAL:
         meRows->getForest()->createEdge(float(1.0), one);
         break;
 
@@ -894,7 +894,7 @@ void meddly_encoder
     } // switch
     MEDDLY::dd_edge tmp(meE->getForest());
     MEDDLY::apply(MEDDLY::CROSS, meRows->E, one, tmp);
-    if (meE->getForest()->getRangeType() == MEDDLY::forest::BOOLEAN) {
+    if (meE->getForest()->getRangeType() == MEDDLY::range_type::BOOLEAN) {
       MEDDLY::apply(MEDDLY::INTERSECTION, meE->E, tmp, ans->E);
     } else {
       MEDDLY::apply(MEDDLY::MULTIPLY, meE->E, tmp, ans->E);
@@ -922,15 +922,15 @@ void meddly_encoder
   try {
     MEDDLY::dd_edge one(meCols->getForest());
     switch (meCols->getForest()->getRangeType()) {
-      case MEDDLY::forest::BOOLEAN:
+      case MEDDLY::range_type::BOOLEAN:
         meCols->getForest()->createEdge(true, one);
         break;
 
-      case MEDDLY::forest::INTEGER:
+      case MEDDLY::range_type::INTEGER:
          meCols->getForest()->createEdge(long(1), one);
         break;
 
-      case MEDDLY::forest::REAL:
+      case MEDDLY::range_type::REAL:
         meCols->getForest()->createEdge(float(1.0), one);
         break;
 
@@ -940,7 +940,7 @@ void meddly_encoder
     } // switch
     MEDDLY::dd_edge tmp(meE->getForest());
     MEDDLY::apply(MEDDLY::CROSS, one, meCols->E, tmp);
-    if (meE->getForest()->getRangeType() == MEDDLY::forest::BOOLEAN) {
+    if (meE->getForest()->getRangeType() == MEDDLY::range_type::BOOLEAN) {
       MEDDLY::apply(MEDDLY::INTERSECTION, meE->E, tmp, ans->E);
     } else {
       MEDDLY::apply(MEDDLY::MULTIPLY, meE->E, tmp, ans->E);
@@ -977,7 +977,7 @@ void meddly_encoder::reportStats(std::ostream &out)
   putMem(out, "Peak", name, F->getPeakMemoryUsed());
 }
 
-shared_ddedge* meddly_encoder::fold(const MEDDLY::binary_opname* op,
+shared_ddedge* meddly_encoder::fold(MEDDLY::binary_handle op,
                       shared_ddedge** list, int N, debugging_msg* debug) const
 {
   if (0==N || 0==list) return 0;
@@ -1023,7 +1023,7 @@ shared_ddedge* meddly_encoder::fold(const MEDDLY::binary_opname* op,
   return answer;
 }
 
-shared_ddedge* meddly_encoder::accumulate(const MEDDLY::binary_opname* op,
+shared_ddedge* meddly_encoder::accumulate(MEDDLY::binary_handle op,
                       shared_ddedge** list, int N, debugging_msg* debug) const
 {
   if (0==N || 0==list) return 0;
