@@ -2,58 +2,120 @@
    Petri net plKS.
 */
 
+/*
+
+            0   
+
+  N       p[0][N]
+
+  ...
+
+  4      p[0][4]
+          ^   |
+        __|   |__
+        |       |
+  3   tr[][]  tr[][] 
+        |
+        
+  2
+
+  1
+
+  0
+
+*/
+
 // #Warning + pn_ALL
 
 #GraphDisplayStyle OUTGOING
 #StatesetPrintIndexes false
 
-pn plks := {
-  place p00, p01, p10, p11, samples_max, samples, battery;
+pn plks(int N) := {
+  place samples_max, samples, battery;
+  trans samples_t;
 
-  trans t00_01, t00_10,
-        t01_11, t01_00, 
-        t10_11, t10_00,
-        t11_10, t11_01,
-        samples_t;
+  for (int i in {0..N+(N-2)..2}, int j in {0..N+(N-2)..2}) {
+    place p[i][j];
+  }
 
-  init(p00:1, samples_max:2, battery:3);
+  for (int i in {1..N+(N-2)..2}, int j in {0..N+(N-2)..2}) {
+    trans tr0[i][j];
+    trans tr1[i][j];
+  }
 
-  arcs(
-      p00 : t00_01, p00 : t00_10,
-      p01 : t01_11, p01 : t01_00,
-      p10 : t10_11, p10 : t10_00,
-      p11 : t11_10, p11 : t11_01,
-      t00_01 : p01, t00_10 : p10,
-      t01_11 : p11, t01_00 : p00,
-      t10_11 : p11, t10_00 : p00,
-      t11_10 : p10, t11_01 : p01,
-      samples_max : samples_t,
-      samples_t : samples,
-      battery : t00_01, battery : t00_10, 
-      battery : t01_11, battery : t01_00, 
-      battery : t10_11, battery : t10_00,
-      battery : t11_10, battery : t11_01
-  );
+  for (int i in {0..N+(N-2)..2}, int j in {1..N+(N-2)..2}) {
+    trans tc0[i][j];
+    trans tc1[i][j];
+  }
 
-  guard(samples_t:tk(p01)==1 | tk(p10)==1 );
+  init(p[0][0]:1, samples_max:2, battery:5);
+
+  for (int i in {0..N+(N-4)..2}, int j in {0..N+(N-2)..2}) {
+    arcs(p[i][j] : tr0[i+1][j],
+         tr0[i+1][j] : p[i+2][j],
+         p[i+2][j] : tr1[i+1][j],
+         tr1[i+1][j] : p[i][j]
+    );
+  }
+
+  for (int i in {0..N+(N-2)..2}, int j in {0..N+(N-4)..2}) {
+    arcs(p[i][j] : tc0[i][j+1],
+         tc0[i][j+1] : p[i][j+2],
+         p[i][j+2] : tc1[i][j+1],
+         tc1[i][j+1] : p[i][j]
+    );
+  }
+
+  for (int i in {1..N+(N-2)..2}, int j in {0..N+(N-2)..2}) {
+    arcs(battery : tr0[i][j],
+         battery : tr1[i][j]);
+  }
+
+  for (int i in {0..N+(N-2)..2}, int j in {1..N+(N-2)..2}) {
+    arcs(battery : tc0[i][j],
+         battery : tc1[i][j]);
+  }
+
+  place sample_taken_02, sample_taken_20;
+  trans sample_taken_02_t, sample_taken_20_t;
+
+  arcs(samples_max : samples_t,
+       samples_max : sample_taken_02_t,
+       samples_max : sample_taken_20_t,
+       samples_t : samples,
+       sample_taken_02_t : sample_taken_02,
+       sample_taken_20_t : sample_taken_20);
+
+  guard(samples_t : (tk(p[0][2])==1 & tk(sample_taken_02)==0) | (tk(p[2][0])==1 & tk(sample_taken_20)==0),
+       sample_taken_02_t : tk(p[0][2])==1 & tk(sample_taken_02)==0,
+       sample_taken_20_t : tk(p[2][0])==1 & tk(sample_taken_20)==0);
 
   decision s_min1, s_min2;
   enable_decision(s_min1:(!is_taken(s_min2)), s_min2:(!is_taken(s_min1)));
+
+  //decision s_min2;
 
   bigint n_states := num_states;
   bigint n_arcs := num_arcs;
   stateset r := reachable;
 
-  stateset prop := (potential(tk(p00)==1)) -> EU(reachable, potential(tk(p11)==1) & 
+  stateset prop := (potential(tk(p[0][0])==1)) -> EU(reachable, potential(tk(p[N+(N-2)][N+(N-2)])==1) & 
                                                 (potential(tk(battery) > 0)) &
                                                 ((potential(dec_value(s_min1) & tk(samples)>0)) |
                                                  (potential(dec_value(s_min2) & tk(samples)>1))));
 
+  /*
+  stateset prop := (potential(tk(p[0][0])==1)) -> EU(reachable, potential(tk(p[N+(N-2)][N+(N-2)])==1) & 
+                                                (potential(tk(battery) > 0)) &
+                                                (potential(dec_value(s_min2) & tk(samples)>1)));
+  */
+
   bool test := min_decision_cost(prop);
 };
 
-print(plks.n_states,"\n");
-print(plks.n_arcs,"\n");
-print(plks.r,"\n");
-print("\n");
-print(plks.test,"\n");
+print(plks(3).n_states,"\n");
+print(plks(3).n_arcs,"\n");
+print("--------\n");
+print(plks(3).test,"\n");
+print("-------\n");
+print(plks(3).r,"\n");
