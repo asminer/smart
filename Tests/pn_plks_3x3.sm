@@ -1,0 +1,73 @@
+/* 
+   Petri net plKS.
+*/
+
+// #Warning + pn_ALL
+
+#GraphDisplayStyle OUTGOING
+#StatesetPrintIndexes false
+
+pn plks := {
+  place p00, p01, p10, p11, p20, p02, p21, p12, p22, battery, sample_01, sample_10, samples;
+  trans t00_01, t01_00, t00_10, t10_00, t01_11, t11_01, t10_11, t11_10, 
+        t01_02, t02_01, t10_20, t20_10, t11_12, t12_11, t11_21, t21_11,
+        t02_12, t12_02, t20_21, t21_20, t12_22, t22_12, t21_22, t22_21,
+        sample_01_take, sample_10_take;
+
+  init(p00:1, battery:5, sample_01:1, sample_10:1);
+
+  arcs(p00 : t00_01, p00 : t00_10, 
+       t00_01 : p01, t00_10 : p10,
+       p01 : t01_00, p01 : t01_11, p01 : t01_02,
+       t01_00 : p00, t01_11 : p11, t01_02 : p02,
+       p10 : t10_00, p10 : t10_11, p10 : t10_20,
+       t10_00 : p00, t10_11 : p11, t10_20 : p20,
+       p11 : t11_01, p11 : t11_10, p11 : t11_21, p11 : t11_12,
+       t11_01 : p01, t11_10 : p10, t11_21 : p21, t11_12 : p12,
+       p02 : t02_01, p02 : t02_12, 
+       t02_01 : p01, t02_12 : p12, 
+       p20 : t20_10, p20 : t20_21,
+       t20_10 : p10, t20_21 : p21,
+       p12 : t12_02, p12 : t12_11, p12 : t12_22,
+       t12_02 : p02, t12_11 : p12, t12_22 : p22,
+       p21 : t21_11, p21 : t21_20, p21 : t21_22,
+       t21_11 : p21, t21_20 : p20, t21_22 : p22,
+       p22 : t22_12, p22 : t22_21,
+       t22_12 : p12, t22_21 : p21,
+       battery : t00_01, battery : t01_00, battery : t00_10, battery : t10_00, 
+       battery : t01_11, battery : t11_01, battery : t10_11, battery : t11_10, 
+       battery : t01_02, battery : t02_01, battery : t10_20, battery : t20_10, 
+       battery : t11_12, battery : t12_11, battery : t11_21, battery : t21_11,
+       battery : t02_12, battery : t12_02, battery : t20_21, battery : t21_20, 
+       battery : t12_22, battery : t22_12, battery : t21_22, battery : t22_21,
+       sample_01 : sample_01_take, sample_10 : sample_10_take,
+       sample_01_take : samples, sample_10_take : samples);
+
+  guard(sample_01_take : tk(p01) > 0, sample_10_take : tk(p10) > 0);
+
+  decision s_min1, s_min2;
+  enable_decision(s_min1:(!is_taken(s_min2)), s_min2:(!is_taken(s_min1)));
+
+  bigint n_states := num_states;
+  bigint n_arcs := num_arcs;
+  stateset r := reachable;
+
+  stateset prop := (potential(tk(p00)==1)) -> EU(reachable, potential(tk(p22)==1) & 
+                                                (potential(tk(battery) > 0)) &
+                                                ((potential(dec_value(s_min1) & tk(samples)>0)) |
+                                                 (potential(dec_value(s_min2) & tk(samples)>1))));
+
+  /*
+  stateset prop := potential(tk(p00)==1) -> EU(reachable, potential(tk(p22)==1) & 
+                                                (potential(tk(battery) > 0)) &
+                                                (potential(dec_value(s_min2) & tk(samples)>1)));
+  */
+
+  bool test := min_decision_cost(prop);
+};
+
+print(plks.n_states,"\n");
+print(plks.n_arcs,"\n");
+print(plks.r,"\n");
+print("--------\n");
+print(plks.test,"\n");

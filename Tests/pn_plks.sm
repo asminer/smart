@@ -4,24 +4,25 @@
 
 /*
 
-            0   
+              0               1           ...        2N-2   
 
-  N       p[0][N]
+  2N-2     p[0][2N-2] --> tc[2N-2][1] --> ...     p[2N-2][2N-2]
+ 
+  ...        ...             ...          ...        ...
 
-  ...
-
-  4      p[0][4]
-          ^   |
-        __|   |__
-        |       |
-  3   tr[][]  tr[][] 
-        |
-        
-  2
-
-  1
-
-  0
+  4         p[0][4] ------> tc[4][1] ---> ...
+            ^     |
+            |     v
+  3   tc0[3][0]  tc1[3][0]                ...
+            |     ^
+            v     |
+  2         p[0][2] ------> tc[2][1] ---> ...
+            ^     |
+            |     v
+  1   tc0[0][1]  tc1[0][1]                ...
+            ^     |
+            |     v
+  0         p[0][0] ------> tc[0][1] ---> ...
 
 */
 
@@ -31,8 +32,8 @@
 #StatesetPrintIndexes false
 
 pn plks(int N) := {
-  place samples_max, samples, battery;
-  trans samples_t;
+  place battery, sample_20, sample_02, samples;
+  trans sample_20_take, sample_02_take;
 
   for (int i in {0..N+(N-2)..2}, int j in {0..N+(N-2)..2}) {
     place p[i][j];
@@ -48,7 +49,7 @@ pn plks(int N) := {
     trans tc1[i][j];
   }
 
-  init(p[0][0]:1, samples_max:2, battery:5);
+  init(p[0][0]:1, battery:7, sample_02:1, sample_20:1);
 
   for (int i in {0..N+(N-4)..2}, int j in {0..N+(N-2)..2}) {
     arcs(p[i][j] : tr0[i+1][j],
@@ -76,21 +77,13 @@ pn plks(int N) := {
          battery : tc1[i][j]);
   }
 
-  place sample_taken_02, sample_taken_20;
-  trans sample_taken_02_t, sample_taken_20_t;
+  arcs(sample_02 : sample_02_take, sample_20 : sample_20_take,
+       sample_02_take : samples, sample_20_take : samples);
 
-  arcs(samples_max : samples_t,
-       samples_max : sample_taken_02_t,
-       samples_max : sample_taken_20_t,
-       samples_t : samples,
-       sample_taken_02_t : sample_taken_02,
-       sample_taken_20_t : sample_taken_20);
-
-  guard(samples_t : (tk(p[0][2])==1 & tk(sample_taken_02)==0) | (tk(p[2][0])==1 & tk(sample_taken_20)==0),
-       sample_taken_02_t : tk(p[0][2])==1 & tk(sample_taken_02)==0,
-       sample_taken_20_t : tk(p[2][0])==1 & tk(sample_taken_20)==0);
+  guard(sample_20_take : tk(p[2][0]) > 0, sample_02_take : tk(p[0][2]) > 0);
 
   decision s_min1, s_min2;
+  
   enable_decision(s_min1:(!is_taken(s_min2)), s_min2:(!is_taken(s_min1)));
 
   //decision s_min2;
@@ -113,9 +106,8 @@ pn plks(int N) := {
   bool test := min_decision_cost(prop);
 };
 
-print(plks(3).n_states,"\n");
-print(plks(3).n_arcs,"\n");
+print(plks(4).n_states,"\n");
+print(plks(4).n_arcs,"\n");
+print(plks(4).r,"\n");
 print("--------\n");
-print(plks(3).test,"\n");
-print("-------\n");
-print(plks(3).r,"\n");
+print(plks(4).test,"\n");
