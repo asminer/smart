@@ -1,0 +1,75 @@
+
+
+dtmc fiveCthree :={
+	state s1,s2,s3,s4,s5,s6;
+	init(s1:1);
+	arcs(
+	s1: s1:0.95099,
+	s1:s2:0.0480298005,
+	s1:s3:0.000970299,
+	s1:s4:0.000009801,
+	s1:s5:0.0000000495,
+	s1:s6:0.0000000001,
+	s2:s2:0.960596,
+	s2:s3: 0.03881196,
+	s2:s4:0.00058806,
+	s2:s5:0.00000396,
+	s2:s6: 0.00000001,
+	s3:s3:0.970299,
+	s3:s4:0.029403,
+	s3:s5:0.000297,
+	s3:s6:0.000001,
+	s4 : s4 : 1,
+	s5:s5:1,
+	s6:s6:1
+	);
+
+stateset abs := potential(is_absorbed);
+//stateset bad := potential(abs);
+stateset good := !abs;
+stateset timed := !(EX(abs)| abs);
+stateprobs prop2:= conditional_tta(40,500,abs,!abs);
+}
+;
+print("absorbing states ", fiveCthree.abs, "\n");
+print("conditional states ", fiveCthree.prop2,"\n");
+
+/*
+dtmc fiveCtwo :={
+	state s1,s2,s3,s4,s5,s6;
+	init(s1:1);
+	arcs(
+	s1: s1:0.995,
+	s1:s2:0.001,
+	s1:s3:0.000001,
+	s1:s4:0.000000001,
+	s1:s5:0.000000000001,
+	s1:s6:0.000000000000001,
+	s2:s2:0.96059,
+	s2:s3: 0.01,
+	s2:s4:0.0001,
+	s2:s5:0.000001,
+	s2:s6: 0.00000001,
+	s3:s3:0.970299,
+	s3:s4:0.01,
+	s3:s5:0.0001,
+	s3:s6:0.000001,
+	s4:s4:0.9801,
+	s4:s5:0.01,
+	s4:s6:0.0001,
+	s5:s5:1,
+	s6:s6:1
+	);
+
+stateset abs := potential(is_absorbed);
+//stateset bad := potential(abs);
+stateset good := !abs;
+stateset timed := !(EX(abs)| abs);
+stateprobs prop2:= conditional_tta(20,22,abs,!abs);
+}
+;
+print("absorbing states ", fiveCtwo.abs, "\n");
+print("conditional states ", fiveCtwo.prop2,"\n");
+
+
+*/

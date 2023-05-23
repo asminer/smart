@@ -74371,13 +74371,14 @@ s27297:s22317:1,
 s27298:s22317:1
 );
 stateset abs := potential(is_absorbed);
+stateset leader := potential(in_state(s22290));
 stateset h_timed:= !(abs | EX(abs)| EX(EX(abs)));
-stateprobs prop1 := reverse_tta(150,abs);
+stateprobs prop1 := reverse_tta(150,leader);
 
 };
 
 print("test for leader election::::", leader_5.abs,"\n");
-print("test for the correct state numbering ", leader_4.test_abs,"\n");
+//print("test for the correct state numbering ", leader_4.test_abs,"\n");
 
 print("test for expected time::::", leader_5.prop1,"\n");
 

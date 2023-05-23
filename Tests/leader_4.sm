@@ -7150,9 +7150,10 @@ s3171:s2599:1
 );
 
 stateset abs := potential(is_absorbed);
+stateset leader := potential(in_state(s2595));
 stateset h_timed:= !(abs | EX(abs)| EX(EX(abs)));
 //stateprobs prop2 := reverse_tta_timed(3,100,abs);
-stateprobs prop1 := reverse_tta(150,abs);
+stateprobs prop1 := reverse_tta(150,leader);
 //stateprobs prop3 := expected_timed(prop2,h_timed);
 
 };
