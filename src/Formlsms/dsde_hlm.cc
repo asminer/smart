@@ -377,13 +377,14 @@ decision_eval::decision_eval(decision_set *d, bitvector *b)
 	int i;
 	for(i = 0; i < size; ++i) {
 		if(bv->IsSet(i)) {
-			std::cerr << "1";
+			// std::cerr << "1";
 			cost += ds->getDecision(i)->getCost();
-		} else {
-			std::cerr << "0";
-		}
+		} 
+		// else {
+		//  std::cerr << "0";
+		// }
 	}
-	std::cerr << "\n";
+	// std::cerr << "\n";
 }
 
 std::vector<decision_eval*>* decision_eval::getNextEvals(traverse_data &x) 

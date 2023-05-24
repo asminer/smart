@@ -1486,7 +1486,7 @@ int bitvectorToInt(bitvector* bv)
 
 void CTL_min_decision_cost_base::Compute(traverse_data &x, expr** pass, int np)
 {
-  em->cout() << "computing min_decision_cost\n";
+  // em->cout() << "computing min_decision_cost\n";
   DCASSERT(x.answer);
   DCASSERT(0==x.aggregate);
   DCASSERT(pass);
@@ -1517,30 +1517,30 @@ void CTL_min_decision_cost_base::Compute(traverse_data &x, expr** pass, int np)
   Q.push(eval);
 
   while(!Q.empty()) { /// repeat loop until queue is empty
-    em->cout() << "Queue size: " << Q.size() << "\n";
+    // em->cout() << "Queue size: " << Q.size() << "\n";
     /// pop eval from queue
     eval = Q.top();
     Q.pop();
-    em->cout() << "Popping eval from Q\n";
+    // em->cout() << "Popping eval from Q\n";
     dec_set->setDecisions(eval);
     explored.insert(bitvectorToInt(eval->getBitvector()));
 
-    em->cout() << "Eval: ";
-    int i;
-    for(i = 0; i < size; ++i) {
-      if(dec_set->getDecision(i)->isTaken())
-        em->cout() << dec_set->getDecision(i)->Name() << " ";
-    }
-    em->cout() << "\n";
+    // em->cout() << "Eval: ";
+    // int i;
+    // for(i = 0; i < size; ++i) {
+    //   if(dec_set->getDecision(i)->isTaken())
+    //     em->cout() << dec_set->getDecision(i)->Name() << " ";
+    // }
+    // em->cout() << "\n";
 
 
     // evaluate CTL expression using eval, obtain tri-stateset
     /// (2) how to compute CTL expressions using evals?
     /// how to dispatch to correct engine? (e.g., AG_base)
     /// ASNWER: call pass[1]->Compute(x)
-    em->cout() << "Computing CTL expression\n";
+    // em->cout() << "Computing CTL expression\n";
     ctl_expr->Compute(x);
-    em->cout() << "done computing CTL\n";
+    // em->cout() << "done computing CTL\n";
     DCASSERT(x.answer->getPtr());
 
     res = dynamic_cast <expl_tri_stateset*> (x.answer->getPtr());
@@ -1551,20 +1551,20 @@ void CTL_min_decision_cost_base::Compute(traverse_data &x, expr** pass, int np)
     }
     DCASSERT(res);
 
-    res->Print(em->cout(), 0);
-    em->cout() << "\n";
+    // res->Print(em->cout(), 0);
+    // em->cout() << "\n";
 
     // check if all initial states are in trueset, or any in falseset
     // if all in trueset, found min cost eval, return (b/c sorted by cost)
     trueset = res->getTrueSet();
     if(initset->isSubsetOf(trueset)) {
 
-      em->cout() << "Initial states: ";
-      initset->Print(em->cout(), 0);
-      em->cout() << "\nTrue states: ";
-      trueset->Print(em->cout(), 0);
-      em->cout() << "\n";
-      em->cout() << "Min cost eval is 'true'\n";
+      // em->cout() << "Initial states: ";
+      // initset->Print(em->cout(), 0);
+      // em->cout() << "\nTrue states: ";
+      // trueset->Print(em->cout(), 0);
+      // em->cout() << "\n";
+      // em->cout() << "Min cost eval is 'true'\n";
 
       x.answer->setBool(true);
       return;
@@ -1574,9 +1574,9 @@ void CTL_min_decision_cost_base::Compute(traverse_data &x, expr** pass, int np)
     falseset = res->getFalseSet()->DeepCopy();
     falseset->Intersect(initset);
     if(!falseset->isEmpty()) {
-      em->cout() << "Min cost eval is 'false'\n";
-      falseset->Print(em->cout(), 0);
-      em->cout() << "\n";
+      // em->cout() << "Min cost eval is 'false'\n";
+      // falseset->Print(em->cout(), 0);
+      // em->cout() << "\n";
       continue;
     }
 
@@ -1587,17 +1587,17 @@ void CTL_min_decision_cost_base::Compute(traverse_data &x, expr** pass, int np)
     for(decision_eval *de : *next_evals) {
       if(explored.find(bitvectorToInt(de->getBitvector())) == explored.end()) {
         Q.push(de);
-        em->cout() << "Adding to Queue: ";
-        for(i = 0; i < size; ++i) {
-          if(de->isTaken(i))
-            em->cout() << dec_set->getDecision(i)->Name() << " ";
-        }
-        em->cout() << "\n";
+        // em->cout() << "Adding to Queue: ";
+        // for(i = 0; i < size; ++i) {
+        //   if(de->isTaken(i))
+        //     em->cout() << dec_set->getDecision(i)->Name() << " ";
+        // }
+        // em->cout() << "\n";
       }
     }
   }
 
-  em->cout() << "Min cost is 'false'\n";
+  // em->cout() << "Min cost is 'false'\n";
   x.answer->setBool(false);
 }
 
