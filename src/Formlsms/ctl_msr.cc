@@ -1490,7 +1490,7 @@ void CTL_min_decision_cost_base::Compute(traverse_data &x, expr** pass, int np)
   DCASSERT(x.answer);
   DCASSERT(0==x.aggregate);
   DCASSERT(pass);
-  
+
   const graph_lldsm* llm = getLLM(x, pass[0]);
   DCASSERT(llm);
   const dsde_hlm* hlm = dynamic_cast<const dsde_hlm*>(llm->GetParent());
@@ -1498,7 +1498,6 @@ void CTL_min_decision_cost_base::Compute(traverse_data &x, expr** pass, int np)
   DCASSERT(hlm);
 
   decision_set* dec_set = hlm->getDecisionSet();
-
 
   expr* ctl_expr = pass[1];
   expl_tri_stateset* res;

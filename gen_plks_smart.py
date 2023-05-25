@@ -1,8 +1,8 @@
 import random
 
-N = 3
-num_samples = 2
-battery = 7
+N = 20
+num_samples = 5
+battery = 40
 
 sample_coords = []
 for i in range(0,num_samples):
@@ -119,10 +119,9 @@ output += """
   bool test := min_decision_cost(prop);
 };
 
-print(plks.n_states,"\\n");
-print(plks.n_arcs,"\\n");
-print(plks.r,"\\n");
-print("--------\\n");
-print(plks.test,"\\n");"""
+start_timer(0);
+print(plks.test,"\\n");
+print("Total time: ", stop_timer(0), " seconds\\n");
+"""
 
 print(output)
