@@ -1,8 +1,8 @@
 import random
 
-N = 3
+N = 10
 num_samples = 2
-battery = 7
+battery = 25
 forbidden_s= 2*N//3
 
 forbid_coords=[]
@@ -158,13 +158,12 @@ for i in range(1,num_samples+1):
 output += "|".join(props) + "));"
 
 output += """
-  bool test := min_decision_cost(prop);
+  int test := min_decision_cost(prop);
 };
 
-print(plks.n_states,"\\n");
-print(plks.n_arcs,"\\n");
-print(plks.r,"\\n");
-print("--------\\n");
-print(plks.test,"\\n");"""
+start_timer(0);
+print(plks.test,"\\n");
+print("Total time: ", stop_timer(0), " seconds\\n");
+"""
 
 print(output)

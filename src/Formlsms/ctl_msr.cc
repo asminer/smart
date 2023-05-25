@@ -1452,7 +1452,7 @@ public:
 };
 
 CTL_min_decision_cost_base::CTL_min_decision_cost_base(const char* name, bool rt)
- : CTL_engine(em->BOOL, name, rt, 2, false)
+ : CTL_engine(em->INT, name, rt, 2, false)
 {
   SetFormal(1, em->STATESET, "p");
 }
@@ -1565,7 +1565,7 @@ void CTL_min_decision_cost_base::Compute(traverse_data &x, expr** pass, int np)
       // em->cout() << "\n";
       // em->cout() << "Min cost eval is 'true'\n";
 
-      x.answer->setBool(true);
+      x.answer->setInt(eval->getCost());
       return;
     }
 
@@ -1597,7 +1597,7 @@ void CTL_min_decision_cost_base::Compute(traverse_data &x, expr** pass, int np)
   }
 
   // em->cout() << "Min cost is 'false'\n";
-  x.answer->setBool(false);
+  x.answer->setInt(-1);
 }
 
 class CTL_min_decision_cost_si : public CTL_min_decision_cost_base {
