@@ -387,6 +387,15 @@ decision_eval::decision_eval(decision_set *d, bitvector *b)
 	// std::cerr << "\n";
 }
 
+void decision_eval::Print(OutputStream& stream)
+{
+	long i;
+	for(i = 0; i < size-1; ++i) {
+		stream << ds->getDecision(i)->Name() << ":" << bv->IsSet(i) << ",";
+	}
+	stream << ds->getDecision(size-1)->Name() << ":" << bv->IsSet(size-1);
+}
+
 std::vector<decision_eval*>* decision_eval::getNextEvals(traverse_data &x) 
 {
 	std::vector<decision_eval*>* next_evals = new std::vector<decision_eval*>;

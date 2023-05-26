@@ -1565,6 +1565,9 @@ void CTL_min_decision_cost_base::Compute(traverse_data &x, expr** pass, int np)
       // em->cout() << "\n";
       // em->cout() << "Min cost eval is 'true'\n";
 
+      eval->Print(em->cout());
+      em->cout() << "\n";
+
       x.answer->setInt(eval->getCost());
       return;
     }

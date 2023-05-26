@@ -402,6 +402,8 @@ public:
   decision_eval(decision_set *d);
   decision_eval(decision_set *d, bitvector *b);
 
+  void Print(OutputStream& stream);
+
   inline int getCost() { return cost; }
   inline int getSize() { return size; }
   inline bool isTaken(long i) { return bv->IsSet(i); }
