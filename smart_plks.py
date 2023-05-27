@@ -170,10 +170,10 @@ def generate_smart(N: int, num_samples: int, max_battery: int, forbidden_s: int)
     int test := min_decision_cost(prop);
   };
 
-  print(plks.n_states,"\\n");
   start_timer(0);
+  print(plks.n_states,"\\n");
+  print("Model generation: ", stop_timer(0), " seconds\\n");
   print(plks.test,"\\n");
-  print("Total time: ", stop_timer(0), " seconds\\n");
   """
 
   return output
@@ -184,9 +184,10 @@ num_samples = [n//2 for n in dims]
 max_battery = [2*(n-1)*4 for n in dims]
 forbidden_s = [2*n//3 for n in dims]
 
+num_tests = [20,10,5,5,5,3,3]
 
 for i in range(0,len(dims)):
-  for j in range(0,5):
+  for j in range(0,num_tests[i]):
     smart_src = generate_smart(dims[i], num_samples[i], max_battery[i], forbidden_s[i])
     testname = "plks_"+"_".join([str(dims[i]), str(num_samples[i]), str(max_battery[i]), str(forbidden_s[i]), str(j)])
     with open(testname+".sm","w") as f:

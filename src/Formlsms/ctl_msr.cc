@@ -1446,6 +1446,9 @@ void traces::traces_ex::Compute(traverse_data &x, expr** pass, int np)
 // *****************************************************************
 
 class CTL_min_decision_cost_base : public CTL_engine {
+private:
+  bool is_computed;
+  int computed_cost;
 public:
   CTL_min_decision_cost_base(const char* name, bool rt);
   virtual void Compute(traverse_data &x, expr** pass, int np);
@@ -1455,6 +1458,8 @@ CTL_min_decision_cost_base::CTL_min_decision_cost_base(const char* name, bool rt
  : CTL_engine(em->INT, name, rt, 2, false)
 {
   SetFormal(1, em->STATESET, "p");
+  is_computed = false;
+  computed_cost = 0;
 }
 
 int min_cost_taken(result** eval, int size)
@@ -1471,6 +1476,7 @@ int min_cost_taken(result** eval, int size)
 #include <cmath>
 #include <iostream>
 #include <unordered_set>
+#include <chrono>
 
 int bitvectorToInt(bitvector* bv)
 {
@@ -1486,6 +1492,12 @@ int bitvectorToInt(bitvector* bv)
 
 void CTL_min_decision_cost_base::Compute(traverse_data &x, expr** pass, int np)
 {
+  if(is_computed) {
+      x.answer->setInt(computed_cost);
+      return;
+  }
+
+  auto start = std::chrono::steady_clock::now();
   // em->cout() << "computing min_decision_cost\n";
   DCASSERT(x.answer);
   DCASSERT(0==x.aggregate);
@@ -1568,6 +1580,12 @@ void CTL_min_decision_cost_base::Compute(traverse_data &x, expr** pass, int np)
       eval->Print(em->cout());
       em->cout() << "\n";
 
+      auto end = std::chrono::steady_clock::now();
+      std::chrono::duration<double> elapsed_seconds = end-start;
+      em->cout() << "compute time: " << elapsed_seconds.count() << " seconds\n";
+
+      is_computed = true;
+      computed_cost = eval->getCost();
       x.answer->setInt(eval->getCost());
       return;
     }
@@ -1599,7 +1617,13 @@ void CTL_min_decision_cost_base::Compute(traverse_data &x, expr** pass, int np)
     }
   }
 
+  auto end = std::chrono::steady_clock::now();
+  std::chrono::duration<double> elapsed_seconds = end-start;
+  em->cout() << "compute time: " << elapsed_seconds.count() << " seconds\n";
+
   // em->cout() << "Min cost is 'false'\n";
+  is_computed = true;
+  computed_cost = -1;
   x.answer->setInt(-1);
 }
 
