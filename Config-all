@@ -69,18 +69,7 @@ printf "Building configure script"
 printf "\n------------------------------------------------------------\n"
 printf "\n"
 
-tmpmf=`mktemp`
-printf "configure: configure.ac\n\tautoreconf --force --install\n\n" > $tmpmf
-
-awk '/AC_CONFIG_FILES/{p=1} {if (p) print} /\]\)/{p=0}' configure.ac | sed 's/AC_CONFIG_FILES(\[//' | tr -d ')]' | AddAM >> $tmpmf
-
-make -f $tmpmf
-if [ "$?" -ne "0" ]; then
-  printf "\nCouldn't build configure script, bailing out.\n\n"
-  rm $tmpmf
-  exit 1
-fi
-rm $tmpmf
+autoreconf --force --install --verbose
 
 
 printf "\n------------------------------------------------------------\n"
@@ -104,14 +93,6 @@ else
   find_gmp || GMP_STATUS="--without-gmp"
 fi
 
-
-printf "\n"
-printf "\n------------------------------------------------------------\n"
-printf "Configuring _Meddly automake"
-printf "\n------------------------------------------------------------\n"
-printf "\n"
-
-src/_Meddly/autogen.sh
 
 printf "\n"
 printf "\n------------------------------------------------------------\n"
