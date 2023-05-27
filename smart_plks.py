@@ -1,7 +1,8 @@
+from multiprocessing import Process
 import random
 import subprocess
 
-def generate_smart(N: int, num_samples: int, max_battery: int, forbidden_s: int) -> str:
+def generate_smart(N: int, num_samples: int, forbidden_s: int) -> str:
 
   forbid_coords=[]
   for i in range(0,forbidden_s):
@@ -29,7 +30,7 @@ def generate_smart(N: int, num_samples: int, max_battery: int, forbidden_s: int)
   #GraphDisplayStyle OUTGOING
   #StatesetPrintIndexes false
 
-  pn plks := {
+  pn plks(int B) := {
     place """
 
   places = []
@@ -68,7 +69,7 @@ def generate_smart(N: int, num_samples: int, max_battery: int, forbidden_s: int)
 
   inits = []
   inits.append("p0_0:1")
-  inits.append(f"battery:{max_battery}")
+  inits.append(f"battery:B")
   for (x,y) in sample_coords:
     inits.append(f"sample_{x}_{y}:1")
 
@@ -156,8 +157,8 @@ def generate_smart(N: int, num_samples: int, max_battery: int, forbidden_s: int)
 
   battery_p=[]
   for i in range(1,4):
-    battery_p.append(f"(potential(dec_value(battery_min{i}) & tk(battery)> {int(max_battery*(i/4))}))")
-    # print(max_battery*(i/4))
+    battery_p.append(f"(potential(dec_value(battery_min{i}) & tk(battery) > int(B*(1/(2*{i})))))")
+    # print(B*(i/4))
   output+= "|".join(battery_p)+ ") & ("
 
   props = []
@@ -166,34 +167,45 @@ def generate_smart(N: int, num_samples: int, max_battery: int, forbidden_s: int)
 
   output += "|".join(props) + "));"
 
-  output += """
+  output += f"""
     int test := min_decision_cost(prop);
-  };
+  }};
 
   start_timer(0);
-  print(plks.n_states,"\\n");
+  print(plks({2*N}).n_states,"\\n");
   print("Model generation: ", stop_timer(0), " seconds\\n");
-  print(plks.test,"\\n");
+  print(plks({2*N}).test,"\\n");
   """
 
   return output
 
+def run_test(i, dim, num_samples, forbidden_s):
+  for j in range(0,i):
+    smart_src = generate_smart(dim, num_samples, forbidden_s)
+    testname = "plks_"+"_".join([str(dim), str(num_samples), str(forbidden_s), str(j)])
+    with open(testname+".sm","w") as f:
+        f.write(smart_src)
+    result = subprocess.run(["./bin-release/bin/smart",testname+".sm"], stdout=subprocess.PIPE,timeout=3600)
+    with open(testname+".out","w") as f:
+        f.write(result.stdout.decode('utf-8'))
+    print(f"done with {testname}")  
 
-dims = [5,10,15,20,25,30,35]
+
+# dims = [5,10,15,20,25,30,35]
+dims = [5,10]
 num_samples = [n//2 for n in dims]
-max_battery = [2*(n-1)*4 for n in dims]
 forbidden_s = [2*n//3 for n in dims]
 
-num_tests = [20,10,5,5,5,3,3]
+num_tests = [10,10,5,5,5,3,3]
+
+processes = []
 
 for i in range(0,len(dims)):
-  for j in range(0,num_tests[i]):
-    smart_src = generate_smart(dims[i], num_samples[i], max_battery[i], forbidden_s[i])
-    testname = "plks_"+"_".join([str(dims[i]), str(num_samples[i]), str(max_battery[i]), str(forbidden_s[i]), str(j)])
-    with open(testname+".sm","w") as f:
-      f.write(smart_src)
-    result = subprocess.run(["./bin-devel/bin/smart",testname+".sm"], capture_output=True, text=True)
-    with open(testname+".out","w") as f:
-      f.write(result.stdout)
-    print(f"done with {testname}")
+  processes.append(Process(target=run_test, args=(num_tests[i], dims[i], num_samples[i], forbidden_s[i])))
 
+for p in processes:
+    p.start()
+
+for p in processes:
+    p.join()
+    print("done with "+str(p))

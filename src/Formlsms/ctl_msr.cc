@@ -1527,11 +1527,14 @@ void CTL_min_decision_cost_base::Compute(traverse_data &x, expr** pass, int np)
   decision_eval *eval = new decision_eval(dec_set);
   Q.push(eval);
 
+  int evals = 0;
+
   while(!Q.empty()) { /// repeat loop until queue is empty
     // em->cout() << "Queue size: " << Q.size() << "\n";
     /// pop eval from queue
     eval = Q.top();
     Q.pop();
+    evals++;
     // em->cout() << "Popping eval from Q\n";
     dec_set->setDecisions(eval);
     explored.insert(bitvectorToInt(eval->getBitvector()));
@@ -1580,6 +1583,8 @@ void CTL_min_decision_cost_base::Compute(traverse_data &x, expr** pass, int np)
       eval->Print(em->cout());
       em->cout() << "\n";
 
+      em->cout() << "evaluations considered: " << evals << "\n";
+
       auto end = std::chrono::steady_clock::now();
       std::chrono::duration<double> elapsed_seconds = end-start;
       em->cout() << "compute time: " << elapsed_seconds.count() << " seconds\n";
@@ -1616,6 +1621,7 @@ void CTL_min_decision_cost_base::Compute(traverse_data &x, expr** pass, int np)
       }
     }
   }
+  em->cout() << "evaluations considered: " << evals << "\n";
 
   auto end = std::chrono::steady_clock::now();
   std::chrono::duration<double> elapsed_seconds = end-start;
