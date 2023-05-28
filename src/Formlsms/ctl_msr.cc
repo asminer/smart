@@ -20,6 +20,8 @@
 #include "../ParseSM/parse_sm.h"
 extern parse_module* pm;
 
+#define DEBUG_DECISIONS
+
 // *****************************************************************
 // *                                                               *
 // *                           CTL_engine                          *
@@ -1526,26 +1528,34 @@ void CTL_min_decision_cost_base::Compute(traverse_data &x, expr** pass, int np)
   // add initial evaluations to queue
   decision_eval *eval = new decision_eval(dec_set);
   Q.push(eval);
+  explored.insert(bitvectorToInt(eval->getBitvector()));
 
   int evals = 0;
 
   while(!Q.empty()) { /// repeat loop until queue is empty
-    // em->cout() << "Queue size: " << Q.size() << "\n";
+#ifdef DEBUG_DECISIONS
+    em->cout() << "Queue size: " << Q.size() << "\n";
+#endif
     /// pop eval from queue
     eval = Q.top();
     Q.pop();
     evals++;
-    // em->cout() << "Popping eval from Q\n";
+#ifdef DEBUG_DECISIONS
+    em->cout() << "Popping eval from Q\n";
+		em->cout().flush();
+#endif
     dec_set->setDecisions(eval);
-    explored.insert(bitvectorToInt(eval->getBitvector()));
+    // explored.insert(bitvectorToInt(eval->getBitvector()));
 
-    // em->cout() << "Eval: ";
-    // int i;
-    // for(i = 0; i < size; ++i) {
-    //   if(dec_set->getDecision(i)->isTaken())
-    //     em->cout() << dec_set->getDecision(i)->Name() << " ";
-    // }
-    // em->cout() << "\n";
+#ifdef DEBUG_DECISIONS
+    em->cout() << "Eval: ";
+    for(int i = 0; i < size; ++i) {
+      if(dec_set->getDecision(i)->isTaken())
+        em->cout() << dec_set->getDecision(i)->Name() << " ";
+    }
+    em->cout() << "\n";
+		em->cout().flush();
+#endif
 
 
     // evaluate CTL expression using eval, obtain tri-stateset
@@ -1578,7 +1588,9 @@ void CTL_min_decision_cost_base::Compute(traverse_data &x, expr** pass, int np)
       // em->cout() << "\nTrue states: ";
       // trueset->Print(em->cout(), 0);
       // em->cout() << "\n";
-      // em->cout() << "Min cost eval is 'true'\n";
+#ifdef DEBUG_DECISIONS
+      em->cout() << "Min cost eval is 'true'\n";
+#endif
 
       eval->Print(em->cout());
       em->cout() << "\n";
@@ -1599,7 +1611,9 @@ void CTL_min_decision_cost_base::Compute(traverse_data &x, expr** pass, int np)
     falseset = res->getFalseSet()->DeepCopy();
     falseset->Intersect(initset);
     if(!falseset->isEmpty()) {
-      // em->cout() << "Min cost eval is 'false'\n";
+#ifdef DEBUG_DECISIONS
+      em->cout() << "Min cost eval is 'false'\n";
+#endif
       // falseset->Print(em->cout(), 0);
       // em->cout() << "\n";
       continue;
@@ -1612,12 +1626,15 @@ void CTL_min_decision_cost_base::Compute(traverse_data &x, expr** pass, int np)
     for(decision_eval *de : *next_evals) {
       if(explored.find(bitvectorToInt(de->getBitvector())) == explored.end()) {
         Q.push(de);
-        // em->cout() << "Adding to Queue: ";
-        // for(i = 0; i < size; ++i) {
-        //   if(de->isTaken(i))
-        //     em->cout() << dec_set->getDecision(i)->Name() << " ";
-        // }
-        // em->cout() << "\n";
+			  explored.insert(bitvectorToInt(de->getBitvector()));
+#ifdef DEBUG_DECISIONS
+        em->cout() << "Adding to Queue: ";
+        for(int i = 0; i < size; ++i) {
+           if(de->isTaken(i))
+             em->cout() << dec_set->getDecision(i)->Name() << " ";
+        }
+        em->cout() << "\n";
+#endif
       }
     }
   }
