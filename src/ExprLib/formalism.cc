@@ -67,6 +67,7 @@ bool formalism::isLegalMeasureType(const type* mtype) const
     if (mtype->matches("ph real"))    return 1;
     if (mtype->matches("statedist"))  return 1;
     if (mtype->matches("stateprobs")) return 1;
+    if (mtype->matches("statevect")) return 1;
   }
   return 0;
 }

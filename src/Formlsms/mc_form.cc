@@ -7,6 +7,7 @@
 #include "../ExprLib/startup.h"
 #include "../ExprLib/exprman.h"
 #include "../ExprLib/formalism.h"
+#include "../ExprLib/measures.h"
 
 #include "../ExprLib/sets.h"
 #include "../ExprLib/mod_def.h"
@@ -59,6 +60,7 @@ class markov_def : public model_def {
   int state_count;
 
   SplayOfPointers <state_weight> *initial;
+ 
 
   GraphLib::dynamic_summable<double>* mymc;
   // Old_MCLib::Markov_chain* mymc;
@@ -82,11 +84,13 @@ public:
 
   // For model construction:
   void AddInitial(const expr* cause, model_enum_value* st, double weight);
+  
 
   void AddEdge(const expr* cause, 
     model_enum_value* from, model_enum_value* to, double weight);
 
   inline bool isDiscrete() const { return discrete; }
+  inline int getStateCount() const { return state_count; } 
 protected:
   virtual void InitModel();
   virtual void FinalizeModel(OutputStream &ds);
@@ -427,6 +431,157 @@ void mc_init::Compute(traverse_data &x, expr** pass, int np)
   x.answer = answer;
   x.aggregate = 0;
 }
+#include<iostream>
+// **************************************************************************
+// *                             mc_reward  class                             *
+// **************************************************************************
+
+class mc_reward : public msr_noengine {
+public:
+  mc_reward();
+  virtual void Compute(traverse_data &x, expr** pass, int np);
+  virtual int Traverse(traverse_data &x, expr** pass, int np);
+};
+
+mc_reward::mc_reward() : msr_noengine(Nothing,em->STATEVECT, "reward", 2)
+{
+  typelist* t = new typelist(2);
+  const type* state = em->findType("state");
+  t->SetItem(0, state);
+  t->SetItem(1, em->REAL);
+  SetFormal(1, t, "s:r");
+  SetRepeat(1);
+  SetDocumentation("Sets rewards to the state(s) of a Markov chain model.");
+
+  std::cout << "Initialized reward thingy, em->STATEVECT is " << em->STATESET << std::endl;
+}
+
+int mc_reward::Traverse(traverse_data &x, expr** pass, int np)
+{
+  std::cout << "Inside Traverse for mc_reward\n";
+  DisplayStream foo(stdout);
+  foo << "  ";
+  x.Print(foo);
+  foo << "\n";
+  
+  std::cout << "Pass[1] has " << pass[1]->NumComponents() << " components before\n";
+  int doit = msr_noengine::Traverse(x, pass, np);
+  std::cout << "Pass[1] has " << pass[1]->NumComponents() << " components after\n";
+  return doit;
+}
+
+void mc_reward::Compute(traverse_data &x, expr** pass, int np)
+{
+  std::cout << "here" << std::endl;
+  
+  DCASSERT(x.answer);
+  DCASSERT(0==x.aggregate);
+  DCASSERT(pass);
+  DCASSERT(pass[0]);
+  /*
+  markov_def* mdl = smart_cast<markov_def*>(pass[0]);
+  DCASSERT(mdl);
+  int b= mdl->getStateCount();
+
+ std::cout<<"num_states" <<b<<"\n";
+ */
+
+  model_instance* mi = grabModelInstance(x, pass[0]);
+  DCASSERT(mi);
+  hldsm* foo = mi->GetCompiledModel();
+  DCASSERT(foo);
+  lldsm* bar = foo->GetProcess();
+  DCASSERT(bar);
+  const stochastic_lldsm* cruft = smart_cast<const stochastic_lldsm*>(bar);
+  DCASSERT(cruft);
+  const stochastic_lldsm::process* proc = cruft->getPROC();
+  DCASSERT(proc);
+  double* reward= new double[proc->getNumStates()];
+  for(long p = 0; p < proc->getNumStates(); ++p) {
+     reward[p] =0;
+  }
+
+
+
+
+  /*
+  stochastic_lldsm* proc = 0;
+  shared_object* accept = 0;
+
+  ExtractParams(x, pass, np, proc, accept);
+  if (0==proc || 0==accept) {
+    x.answer->setNull();
+    return;
+  }
+
+  */
+  
+  result* answer = x.answer;
+  result state;
+  result weight;
+  //x.answer->setBool(true);
+  //return;
+  
+  for (int i=1; i<np; i++) {
+  std::cout << np<<"\n";
+  // result state;
+  // result weight;
+  if (0==pass[i])  continue;
+  x.aggregate = 0;
+  x.answer = &state;
+  long sname=x.current_state_index;
+  pass[i]->Compute(x);
+  DCASSERT(state.isNormal());
+  if (!state.isNormal())  return;
+  DCASSERT(state.getPtr());
+  // model_enum_value* st = smart_cast<model_enum_value*> (state.getPtr());
+  // DCASSERT(st);
+  // std::cout << st->Name()<< "\n";
+  // std::cout << st->GetIndex()<< "\n";
+  // x.aggregate = 1;
+  x.answer = &weight;
+  pass[i]->Compute(x);
+  float re= weight.getReal();
+  reward[sname]=weight.getReal();
+  std::cerr << "reward: " << re << "\n";
+  }
+   //x.answer = answer;
+   //x.aggregate = 0;
+  statevect* sv= new statevect(cruft,reward,proc->getNumStates());
+  x.answer->setPtr(sv);
+
+
+   //return x.answer->setBool(true);
+  // double* rewards=new double[proc->getNumStates()];
+  // for(long p = 0; p < proc->getNumStates(); ++p) {
+  //    rewards[p] =0;
+  //    std::cerr << "reward_vect: " << rewards[p] << "\n";
+  // }
+  /*
+  for(int i=0;i<np;i++){
+    //DCASSERT(pass[i]);
+    x.aggregate = 0;
+    x.answer = &state;
+    pass[i]->Compute(x);
+    x.aggregate = 0;
+    x.answer = &state;
+    pass[i]->Compute(x);
+    x.aggregate = 1;
+    x.answer = &weight;
+    pass[i]->Compute(x);
+    float re= x.answer->getReal();
+    std::cerr << "reward: " << re << "\n";
+
+    if (!weight.isNormal()) {
+      continue;
+    }
+    //rewards[x.current_state_index]=weight.getReal();
+
+  }*/
+  // statevect* sv= new statevect(cruft,rewards,proc->getNumStates());
+  // x.answer->setPtr(sv);
+  
+}
 
 
 // **************************************************************************
@@ -602,7 +757,7 @@ void mc_absorbing::Compute(traverse_data &x, expr** pass, int np)
   DCASSERT(bar);
   const stochastic_lldsm* cruft = smart_cast<const stochastic_lldsm*>(bar);
   DCASSERT(cruft);
-  
+
   x.answer->setBool(cruft->isAbsorbing(x.current_state_index));
 }
 
@@ -1142,6 +1297,7 @@ init_mcform::init_mcform() : initializer("init_mcform")
   usesResource("em");
   usesResource("CML");
   buildsResource("formalisms");
+  usesResource("statevects");
 }
 
 bool init_mcform::execute()
@@ -1222,6 +1378,7 @@ void init_mcform::FillSymbolTable(bool disc, formalism* mc)
 {
   // Build functions if necessary
   static symbol*  init = 0;
+  static symbol*  reward = 0;
   static symbol*  arcs = 0;
   static symbol*  instate = 0;
   static symbol*  transient = 0;
@@ -1233,6 +1390,7 @@ void init_mcform::FillSymbolTable(bool disc, formalism* mc)
   static symbol*  rev_cond_dTTA=0;
 
   if (!init)      init = new mc_init;
+  if (!reward)    reward = new  mc_reward;
   if (!arcs)      arcs = new mc_arcs;
   if (!instate)   instate = new mc_instate;
   if (!transient) transient = new mc_transient;
@@ -1245,6 +1403,7 @@ void init_mcform::FillSymbolTable(bool disc, formalism* mc)
   mcsyms->AddSymbol(  instate   );
   mcsyms->AddSymbol(  transient );
   mcsyms->AddSymbol(  absorbing );
+  mcsyms->AddSymbol(  reward    );
 
   if (disc) {
     if (!dTTA)  dTTA = new mc_tta(true);
@@ -1255,6 +1414,8 @@ void init_mcform::FillSymbolTable(bool disc, formalism* mc)
     mcsyms->AddSymbol(rev_timed_dTTA);
     if(!rev_cond_dTTA) rev_cond_dTTA= new mc_conditional_tta(true);
     mcsyms->AddSymbol(rev_cond_dTTA);
+    //if (!reward)    reward = new  mc_reward(true);
+    //mcsyms->AddSymbol(  reward    );
   } else {
     if (!cTTA)  cTTA = new mc_tta(false);
     mcsyms->AddSymbol(  cTTA    );

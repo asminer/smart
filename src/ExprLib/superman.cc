@@ -326,6 +326,7 @@ bool superman::setFundamentalTypes()
   if (!STATESET)    STATESET    = findSimple("stateset");
   if (!STATEDIST)   STATEDIST   = findSimple("statedist");
   if (!STATEPROBS)  STATEPROBS  = findSimple("stateprobs");
+  if (!STATEVECT)   STATEVECT   = findSimple("statevect");
   if (!TEMPORAL)    TEMPORAL    = findSimple("temporal_formula");
   if (!TRACE)       TRACE       = findSimple("trace");
 
