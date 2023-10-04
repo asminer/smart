@@ -289,49 +289,90 @@ protected:
 aggregates::aggregates(const location &W, expr **x, unsigned nc)
  : assoc (W, assoc_op::aop_colon, (typelist*) 0, x, nc)
 {
-  DCASSERT(nc>0);
-  // determine the type
-  typelist* tl = new typelist(nc);
-  for (unsigned i=0; i<nc; i++) {
-    tl->SetItem(i, expr::SafeType(x[i]));
-  }
-  SetType(tl);
+    DCASSERT(nc>0);
+    // determine the type
+    typelist* tl = new typelist(nc);
+    for (unsigned i=0; i<nc; i++) {
+        tl->SetItem(i, expr::SafeType(x[i]));
+    }
+    SetType(tl);
 }
 
 expr* aggregates::GetComponent(int i)
 {
-  CHECK_RANGE(__FILE__, __LINE__, 0, i, opnd_count);
-  return operands[i];
+    CHECK_RANGE(__FILE__, __LINE__, 0, i, opnd_count);
+    return operands[i];
 }
 
 void aggregates::Compute(traverse_data &x)
 {
-  DCASSERT(x.answer);
-  int i = x.aggregate;
-  CHECK_RANGE(__FILE__, __LINE__, 0, i, opnd_count);
-  x.aggregate = 0;
-  SafeCompute(operands[i], x);
-  x.aggregate = i;  // just in case the caller needs it
+    DCASSERT(x.answer);
+    const unsigned i = x.aggregate;
+    CHECK_RANGE(__FILE__, __LINE__, 1, i, 1+opnd_count);
+    x.aggregate = 0;
+    SafeCompute(operands[i-1], x);
+    x.aggregate = i;  // just in case the caller needs it
 }
 
 void aggregates::Traverse(traverse_data &x)
 {
-  int i = x.aggregate;
-  CHECK_RANGE(__FILE__, __LINE__, 0, i, opnd_count);
-  x.aggregate = 0;
-  if (operands[i]) operands[i]->Traverse(x);
-  x.aggregate = i;  // just in case the caller needs it
+    if (0==x.aggregate) {
+        //
+        // Visit everything
+        //
+        if (traverse_data::Substitute == x.which) {
+            expr** newopnds = new expr* [opnd_count];
+            bool different = false;
+            for (int i=0; i<opnd_count; i++) {
+                if (operands[i]) {
+                    operands[i]->Traverse(x);
+                    newopnds[i] = smart_cast <expr*> (
+                        Share(x.answer->getPtr())
+                    );
+                } else {
+                    newopnds[i] = nullptr;
+                }
+                if (operands[i] != newopnds[i]) {
+                    different = true;
+                }
+            } // for i
+            if (different) {
+                x.answer->setPtr(
+                    new aggregates(Where(), newopnds, opnd_count)
+                );
+            } else {
+                for (int i=0; i<opnd_count; i++)  Delete(newopnds[i]);
+                delete[] newopnds;
+                x.answer->setPtr(Share(this));
+            }
+        } else {
+            for (int i=0; i<opnd_count; i++)
+                if (operands[i])
+                    operands[i]->Traverse(x);
+        }
+        return;
+    }
+
+    //
+    // Visit just one thing
+    //
+
+    unsigned i = x.aggregate;
+    CHECK_RANGE(__FILE__, __LINE__, 1, i, 1+opnd_count);
+    x.aggregate = 0;
+    if (operands[i-1]) operands[i-1]->Traverse(x);
+    x.aggregate = i;  // just in case the caller needs it
 }
 
 bool aggregates::Print(std::ostream &s, int) const
 {
-  operands[0]->Print(s, 0);
-  for (int i=1; i<opnd_count; i++) {
-    s << ':';
-    if (operands[i])  operands[i]->Print(s, 0);
-    else              s << "null";
-  }
-  return true;
+    operands[0]->Print(s, 0);
+    for (int i=1; i<opnd_count; i++) {
+        s << ':';
+        if (operands[i])  operands[i]->Print(s, 0);
+        else              s << "null";
+    }
+    return true;
 }
 
 assoc* aggregates::buildAnother(expr **, int) const

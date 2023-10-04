@@ -424,7 +424,7 @@ void mc_init::Compute(traverse_data &x, expr** pass, int np)
   result weight;
   for (int i=1; i<np; i++) {
     if (0==pass[i])  continue;
-    x.aggregate = 0;
+    x.aggregate = 1;
     x.answer = &state;
     pass[i]->Compute(x);
     DCASSERT(state.isNormal());
@@ -433,7 +433,7 @@ void mc_init::Compute(traverse_data &x, expr** pass, int np)
     model_enum_value* st = smart_cast<model_enum_value*> (state.getPtr());
     DCASSERT(st);
     x.answer = &weight;
-    x.aggregate = 1;
+    x.aggregate = 2;
     pass[i]->Compute(x);
 
     if (weight.isNormal()) {
@@ -491,14 +491,14 @@ void mc_arcs::Compute(traverse_data &x, expr** pass, int np)
   result weight;
   for (int i=1; i<np; i++) {
     if (0==pass[i])  continue;
-    x.aggregate = 0;
+    x.aggregate = 1;
     x.answer = &from;
     pass[i]->Compute(x);
     x.answer = &to;
-    x.aggregate = 1;
+    x.aggregate = 2;
     pass[i]->Compute(x);
     x.answer = &weight;
-    x.aggregate = 2;
+    x.aggregate = 3;
     pass[i]->Compute(x);
 
     // TBD: check state, weight for errors!

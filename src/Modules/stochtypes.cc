@@ -1864,7 +1864,7 @@ void choose_ph::Compute(traverse_data &x, expr** pass, int np)
   x.answer->setNull();
   double* probarray = new double[np];
   double total = 0;
-  x.aggregate = 1;
+  x.aggregate = 2;
   for (int i=0; i<np; i++) {
     SafeCompute(pass[i], x);
     if (x.answer->isNormal()) {
@@ -1885,7 +1885,7 @@ void choose_ph::Compute(traverse_data &x, expr** pass, int np)
     return;
   }
   // weights are ok, now get distributions
-  x.aggregate = 0;
+  x.aggregate = 1;
   phase_hlm** opnds = new phase_hlm*[np];
   for (int i=0; i<np; i++) {
     pass[i]->Compute(x);
@@ -1894,6 +1894,7 @@ void choose_ph::Compute(traverse_data &x, expr** pass, int np)
   phase_hlm* ans = makeChoice(opnds, probarray, np);
   DCASSERT(ans);
   x.answer->setPtr(ans);
+  x.aggregate = 0;
 }
 
 int choose_ph::Traverse(traverse_data &x, expr** pass, int np)

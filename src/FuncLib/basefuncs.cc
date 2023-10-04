@@ -445,16 +445,18 @@ void case_ci::Compute(traverse_data &x, expr** pass, int np)
   const type* t = type::find("int");
   DCASSERT(t);
   for (int i=2; i<np; i++) {
+    x.aggregate = 1;
     SafeCompute(pass[i], x);
 
     if (0==t->compare(*answer, key)) {
-      x.aggregate = 1;
+      x.aggregate = 2;
       SafeCompute(pass[i], x);
       x.aggregate = 0;
       return;
     }
   } // for i
   // not found in list, use the default
+  x.aggregate = 0;
   SafeCompute(pass[1], x);
 }
 

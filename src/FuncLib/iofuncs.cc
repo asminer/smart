@@ -354,6 +354,7 @@ void generic_print::compute(std::ostream &s, traverse_data &x,
         expr** pass, int np)
 {
   if (x.stopExecution())  return;
+  DCASSERT(0==x.aggregate);
   result* answer = x.answer;
   result item;
   result width;
@@ -366,21 +367,26 @@ void generic_print::compute(std::ostream &s, traverse_data &x,
       type::find("int")->print(s, item);
       continue;
     }
-    x.aggregate = 0;
+    if (pass[i]->NumComponents()==1) {
+      x.answer = &item;
+      x.aggregate = 0;
+      pass[i]->Compute(x);
+      pass[i]->Type(0)->print(s, item);
+      continue;
+    }
+
+    x.aggregate = 1;
     x.answer = &item;
     pass[i]->Compute(x);
-    // Determine width, if any
-    if (pass[i]->NumComponents()>1) {
-      x.answer = &width;
-      x.aggregate = 1;
-      pass[i]->Compute(x);
-    } else {
-      width.setNull();
-    }
+    // Determine width
+    x.answer = &width;
+    x.aggregate = 2;
+    pass[i]->Compute(x);
+
     // Determine precision, if any
     if (pass[i]->NumComponents()>2) {
       x.answer = &prec;
-      x.aggregate = 2;
+      x.aggregate = 3;
       pass[i]->Compute(x);
     } else {
       prec.setNull();

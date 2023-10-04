@@ -968,7 +968,7 @@ void evm_range::Compute(traverse_data &x, expr** pass, int np)
 
     result second;
     x.answer = &second;
-    x.aggregate = 1;
+    x.aggregate = 2;
     SafeCompute(pass[i], x);
     if (! second.isNormal() ) {
       model_def::errmsg E(mdl, pass[i]);
@@ -980,7 +980,7 @@ void evm_range::Compute(traverse_data &x, expr** pass, int np)
 
     result first;
     x.answer = &first;
-    x.aggregate = 0;
+    x.aggregate = 1;
     SafeCompute(pass[i], x);
     DCASSERT(first.isNormal());
     shared_set* ps = smart_cast <shared_set*> (first.getPtr());
@@ -1027,13 +1027,14 @@ void evm_enabled::Compute(traverse_data &x, expr** pass, int np)
 
   result first;
   x.answer = &first;
+  x.aggregate = 1;
   for (int i=1; i<np; i++) {
     DCASSERT(pass[i]);
     SafeCompute(pass[i], x);
     DCASSERT(first.isNormal());
     shared_set* es = smart_cast <shared_set*> (first.getPtr());
     DCASSERT(es);
-    expr* guard = pass[i]->Substitute(1);
+    expr* guard = pass[i]->Substitute(2);
 
     for (int z=0; z<es->Size(); z++) {
       result elem;
@@ -1090,7 +1091,7 @@ void evm_assign::Compute(traverse_data &x, expr** pass, int np)
 
     result first;
     x.answer = &first;
-    x.aggregate = 0;
+    x.aggregate = 1;
     SafeCompute(pass[i], x);
     DCASSERT(first.isNormal());
     model_var* v = smart_cast <model_var*> (first.getPtr());
@@ -1098,13 +1099,13 @@ void evm_assign::Compute(traverse_data &x, expr** pass, int np)
 
     result second;
     x.answer = &second;
-    x.aggregate = 1;
+    x.aggregate = 2;
     SafeCompute(pass[i], x);
     DCASSERT(second.isNormal());
     evm_event* e = smart_cast <evm_event*> (second.getPtr());
     DCASSERT(e);
 
-    mdl->AddAssignment(pass[i], v, e, pass[i]->Substitute(2));
+    mdl->AddAssignment(pass[i], v, e, pass[i]->Substitute(3));
   }
   x.answer = answer;
   x.aggregate = 0;
@@ -1150,7 +1151,7 @@ void evm_init::Compute(traverse_data &x, expr** pass, int np)
 
     result second;
     x.answer = &second;
-    x.aggregate = 1;
+    x.aggregate = 2;
     SafeCompute(pass[i], x);
     if (! second.isNormal() ) {
       model_def::errmsg E(mdl, pass[i]);
@@ -1160,7 +1161,7 @@ void evm_init::Compute(traverse_data &x, expr** pass, int np)
 
     result first;
     x.answer = &first;
-    x.aggregate = 0;
+    x.aggregate = 1;
     SafeCompute(pass[i], x);
     DCASSERT(first.isNormal());
     shared_set* ps = smart_cast <shared_set*> (first.getPtr());

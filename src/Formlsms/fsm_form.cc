@@ -390,11 +390,11 @@ void fsm_arcs::Compute(traverse_data &x, expr** pass, int np)
   result to;
   for (int i=1; i<np; i++) {
     if (0==pass[i])  continue;
-    x.aggregate = 0;
+    x.aggregate = 1;
     x.answer = &from;
     pass[i]->Compute(x);
     x.answer = &to;
-    x.aggregate = 1;
+    x.aggregate = 2;
     pass[i]->Compute(x);
 
     // TBD: check state for errors!

@@ -1103,7 +1103,7 @@ void dsde_part2::Compute(traverse_data &x, expr** pass, int np) {
 	result pset;
 	for (int i = 1; i < np; i++) {
 		DCASSERT(pass[i]);
-		x.aggregate = 1;
+		x.aggregate = 2;
 		x.answer = &pnum;
 		SafeCompute(pass[i], x);
 		if (!pnum.isNormal() || pnum.getInt() <= 0) {
@@ -1114,7 +1114,7 @@ void dsde_part2::Compute(traverse_data &x, expr** pass, int np) {
 			continue;
 		}
 
-		x.aggregate = 0;
+		x.aggregate = 1;
 		x.answer = &pset;
 		SafeCompute(pass[i], x);
 		DCASSERT(pset.isNormal());
@@ -1159,7 +1159,7 @@ void dsde_part3::Compute(traverse_data &x, expr** pass, int np) {
 	result pset;
 	for (int i = 1; i < np; i++) {
 		DCASSERT(pass[i]);
-		x.aggregate = 1;
+		x.aggregate = 2;
 		x.answer = &pref;
 		SafeCompute(pass[i], x);
 		model_statevar* pl = smart_cast <model_statevar*>(pref.getPtr());
@@ -1174,7 +1174,7 @@ void dsde_part3::Compute(traverse_data &x, expr** pass, int np) {
 			continue;
 		}
 
-		x.aggregate = 0;
+		x.aggregate = 1;
 		x.answer = &pset;
 		SafeCompute(pass[i], x);
 		DCASSERT(pset.isNormal());
@@ -1219,7 +1219,7 @@ void dsde_priolevel::Compute(traverse_data &x, expr** pass, int np) {
 	result tset;
 	for (int i = 1; i < np; i++) {
 		DCASSERT(pass[i]);
-		x.aggregate = 1;
+		x.aggregate = 2;
 		x.answer = &plev;
 		SafeCompute(pass[i], x);
 		if (!plev.isNormal() || plev.getInt() <= 0) {
@@ -1230,7 +1230,7 @@ void dsde_priolevel::Compute(traverse_data &x, expr** pass, int np) {
 			continue;
 		}
 
-		x.aggregate = 0;
+		x.aggregate = 1;
 		x.answer = &tset;
 		SafeCompute(pass[i], x);
 		DCASSERT(tset.isNormal());
@@ -1275,13 +1275,13 @@ void dsde_priolist::Compute(traverse_data &x, expr** pass, int np) {
 	result lowset;
 	for (int i = 1; i < np; i++) {
 		DCASSERT(pass[i]);
-		x.aggregate = 0;
+		x.aggregate = 1;
 		x.answer = &highset;
 		SafeCompute(pass[i], x);
 		DCASSERT(highset.isNormal());
 		shared_set* hs = smart_cast <shared_set*>(highset.getPtr());
 
-		x.aggregate = 1;
+		x.aggregate = 2;
 		x.answer = &lowset;
 		SafeCompute(pass[i], x);
 		DCASSERT(lowset.isNormal());

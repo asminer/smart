@@ -38,98 +38,102 @@ class symbol;  // defined in symbols.h
     Allows for flexibility and speed.  Not bad.
  */
 struct traverse_data {
-  /// Types of expression traversals
-  enum traversal_type {
-    /// Do nothing; useful default.
-    None = 0,
-    /// Compute the expression.
-    Compute,
-    /// Like compute, but specialized for expo rates.
-    ComputeExpoRate,
-    /// Construct a decision diagram encoding of this expression.
-    BuildDD,
-    /// Construct a decision diagram encoding of the expo rate expression.
-    BuildExpoRateDD,
-    /// For random values, determine the range of possible values.
-    FindRange,
-    /// Pre-compute values in const to rand promotions.
-    PreCompute,
-    /// Clear pre-computed values.
-    ClearCache,
-    /// Reset guess statements within a converge.
-    Guess,
-    /// Update values.  Used in converge statements.
-    Update,
-    /// Finalizes a statement block within another statement.
-    Block,
-    /// Affix values.  Used primarily in converge statements.
-    Affix,
-    /// Create a copy with values substituted for certain symbols.
-    Substitute,
-    /// Get a list of symbols.
-    GetSymbols,
-    /// Get a list of symbols this expression depends on.
-    GetVarDeps,
-    /// Get a list of terms in a huge product.
-    GetProducts,
-    /// Get a list of measures contained in an expression.
-    GetMeasures,
-    /// Get the current type.  Used by functions.
-    GetType,
-    /// Perform typechecking.  Used by functions.
-    Typecheck,
-    /// Promote parameters.  Used by functions.
-    Promote,
-    /// Signifies that model instantiation is complete.
-    ModelDone,
-    /// Prepare for generating the set of states satisfying a temporal formula. Used by temporal operations.
-    TemporalStateSet,
-    /// Prepare for generating a trace verifying a temporal formula. Used by temporal operations.
-    TemporalTrace
-  };
+    /// Types of expression traversals
+    enum traversal_type {
+        /// Do nothing; useful default.
+        None = 0,
+        /// Compute the expression.
+        Compute,
+        /// Like compute, but specialized for expo rates.
+        ComputeExpoRate,
+        /// Construct a decision diagram encoding of this expression.
+        BuildDD,
+        /// Construct a decision diagram encoding of the expo rate expression.
+        BuildExpoRateDD,
+        /// For random values, determine the range of possible values.
+        FindRange,
+        /// Pre-compute values in const to rand promotions.
+        PreCompute,
+        /// Clear pre-computed values.
+        ClearCache,
+        /// Reset guess statements within a converge.
+        Guess,
+        /// Update values.  Used in converge statements.
+        Update,
+        /// Finalizes a statement block within another statement.
+        Block,
+        /// Affix values.  Used primarily in converge statements.
+        Affix,
+        /// Create a copy with values substituted for certain symbols.
+        Substitute,
+        /// Get a list of symbols.
+        GetSymbols,
+        /// Get a list of symbols this expression depends on.
+        GetVarDeps,
+        /// Get a list of terms in a huge product.
+        GetProducts,
+        /// Get a list of measures contained in an expression.
+        GetMeasures,
+        /// Get the current type.  Used by functions.
+        GetType,
+        /// Perform typechecking.  Used by functions.
+        Typecheck,
+        /// Promote parameters.  Used by functions.
+        Promote,
+        /// Signifies that model instantiation is complete.
+        ModelDone,
+        /// Prepare for generating the set of states satisfying a temporal formula. Used by temporal operations.
+        TemporalStateSet,
+        /// Prepare for generating a trace verifying a temporal formula. Used by temporal operations.
+        TemporalTrace
+    };
 
-  /// Input: Traversal type.
-  traversal_type which;
-  /// Input: aggregate index (normally 0)
-  int aggregate;
-  /// Random number stream to use, for "rand" expressions.
-  rng_stream* stream;
-  /// The current state, for "proc" expressions.
-  shared_state* current_state;
-  /// The current state index, for "proc" expressions.
-  long current_state_index;
-  /// The next state; written to for "next state" expressions.
-  shared_state* next_state;
+    /// Input: Traversal type.
+    traversal_type which;
 
-  /// Interface for building decision diagrams.
-  sv_encoder* ddlib;
+    /// Input: aggregate selector:
+    ///     Use 0 to indicate "entire expression",
+    ///     Use 1 to indicate "first aggregate", etc.
+    unsigned aggregate;
 
-  /// Parent (calling) expression, if any.
-  const expr* parent;
+    /// Random number stream to use, for "rand" expressions.
+    rng_stream* stream;
+    /// The current state, for "proc" expressions.
+    shared_state* current_state;
+    /// The current state index, for "proc" expressions.
+    long current_state_index;
+    /// The next state; written to for "next state" expressions.
+    shared_state* next_state;
 
-  /// Parent model, if any.
-  model_def* model;
+    /// Interface for building decision diagrams.
+    sv_encoder* ddlib;
 
-  /// The return value, usually.
-  result* answer;
+    /// Parent (calling) expression, if any.
+    const expr* parent;
 
-  /// Output: type, used by functions.
-  const type* the_type;
+    /// Parent model, if any.
+    model_def* model;
 
-  /// Output: model type, used by functions.
-  const model_def* the_model_type;
+    /// The return value, usually.
+    result* answer;
 
-  /// Output: callback function, used by CTL witness generation.
-  const expr* the_callback;
+    /// Output: type, used by functions.
+    const type* the_type;
 
-  /// Used as necessary for lists of exprs.
-  List <expr> *elist;
+    /// Output: model type, used by functions.
+    const model_def* the_model_type;
 
-  /// Used as necessary for lists of symbols.
-  List <symbol> *slist;
+    /// Output: callback function, used by CTL witness generation.
+    const expr* the_callback;
 
-  /// status, for converges.
-  bool needs_repeating;
+    /// Used as necessary for lists of exprs.
+    List <expr> *elist;
+
+    /// Used as necessary for lists of symbols.
+    List <symbol> *slist;
+
+    /// status, for converges.
+    bool needs_repeating;
 
 public:
   /// Handy: constructor
@@ -393,8 +397,9 @@ class expr : public shared_object {
             We make shallow copies (shared pointers to expressions)
             whenever possible.
                 @param  i  The component to substitute.
+                           Use 0 for the entire expression.
         */
-        expr* Substitute(int i);
+        expr* Substitute(unsigned i=0);
 
         /** Like substitute, but for measures.
         */
@@ -403,26 +408,26 @@ class expr : public shared_object {
 
         /** Build a list of expressions for a particular type of traversal.
                 @param  w   Type of list to build.
-                @param  i   The component to check.
+                @param  i   The component to check, or 0 for all.
                 @param  L   List in which we try to store items;
                             can be 0.
                 @return     The number of items that should appear in the
                             list. The actual list might be smaller (e.g.,
                             if list is 0, or we ran out of memory).
         */
-        int BuildExprList(traverse_data::traversal_type w, int i,
+        int BuildExprList(traverse_data::traversal_type w, unsigned i,
                 List <expr> *L);
 
         /** Build a list of symbols for a particular type of traversal.
                 @param  w   Type of list to build.
-                @param  i   The component to check.
+                @param  i   The component to check, or 0 for all.
                 @param  L   List in which we try to store items;
                             can be 0.
                 @return     The number of items that should appear in the
                             list. The actual list might be smaller (e.g.,
                             if list is 0, or we ran out of memory).
         */
-        int BuildSymbolList(traverse_data::traversal_type w, int i,
+        int BuildSymbolList(traverse_data::traversal_type w, unsigned i,
                 List <symbol> *L);
 
         /** Traverse the expression.

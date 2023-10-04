@@ -301,7 +301,7 @@ void expr::Affix()
   Traverse(foo);
 }
 
-expr* expr::Substitute(int i)
+expr* expr::Substitute(unsigned i)
 {
   traverse_data foo(traverse_data::Substitute);
   foo.aggregate = i;
@@ -328,7 +328,7 @@ expr* expr::Measurify(model_def* parent)
 }
 
 int expr
-::BuildExprList(traverse_data::traversal_type w, int i, List <expr> *list)
+::BuildExprList(traverse_data::traversal_type w, unsigned i, List <expr> *list)
 {
   traverse_data x(w);
   result ans(0L);
@@ -339,7 +339,7 @@ int expr
 }
 
 int expr
-::BuildSymbolList(traverse_data::traversal_type w, int i, List <symbol> *list)
+::BuildSymbolList(traverse_data::traversal_type w, unsigned i, List <symbol> *list)
 {
   traverse_data x(w);
   result ans(0L);

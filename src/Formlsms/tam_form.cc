@@ -1101,7 +1101,7 @@ void tam_strength::Compute(traverse_data &x, expr** pass, int np)
     DCASSERT(pass[i]);
     result first;
     x.answer = &first;
-    x.aggregate = 0;
+    x.aggregate = 1;
     SafeCompute(pass[i], x);
     DCASSERT(first.isNormal());
     shared_set* gset = smart_cast <shared_set*> (first.getPtr());
@@ -1109,7 +1109,7 @@ void tam_strength::Compute(traverse_data &x, expr** pass, int np)
 
     result second;
     x.answer = &second;
-    x.aggregate = 1;
+    x.aggregate = 2;
     SafeCompute(pass[i], x);
 
     for (int z=0; z<gset->Size(); z++) {
@@ -1175,11 +1175,11 @@ void tam_tiledef::Compute(traverse_data &x, expr** pass, int np)
   DCASSERT(t);
 
   for (int i=2; i<np; i++) {
-    x.aggregate = 0;
+    x.aggregate = 1;
     SafeCompute(pass[i], x);
     DCASSERT(foo.isNormal());
     long b = foo.getInt();
-    x.aggregate = 1;
+    x.aggregate = 2;
     SafeCompute(pass[i], x);
     DCASSERT(foo.isNormal());
     tam_glue* g = smart_cast <tam_glue*> (foo.getPtr());
@@ -1304,13 +1304,13 @@ void tam_init::Compute(traverse_data &x, expr** pass, int np)
 
   for (int i=1; i<np; i++) {
     long x_pos, y_pos;
-    x.aggregate = 0;
-    SafeCompute(pass[i], x);
-    if (!okInt(tmp, x_pos, mdl, pass[i], "x")) continue;
     x.aggregate = 1;
     SafeCompute(pass[i], x);
-    if (!okInt(tmp, y_pos, mdl, pass[i], "y")) continue;
+    if (!okInt(tmp, x_pos, mdl, pass[i], "x")) continue;
     x.aggregate = 2;
+    SafeCompute(pass[i], x);
+    if (!okInt(tmp, y_pos, mdl, pass[i], "y")) continue;
+    x.aggregate = 3;
     SafeCompute(pass[i], x);
     if (!tmp.isNormal()) continue;
     DCASSERT(tmp.isNormal());
@@ -1373,13 +1373,13 @@ void tam_prio::Compute(traverse_data &x, expr** pass, int np)
 
   for (int i=1; i<np; i++) {
     long x_pos, y_pos, prio;
-    x.aggregate = 0;
-    SafeCompute(pass[i], x);
-    if (!okInt(tmp, x_pos, mdl, pass[i], "x")) continue;
     x.aggregate = 1;
     SafeCompute(pass[i], x);
-    if (!okInt(tmp, y_pos, mdl, pass[i], "y")) continue;
+    if (!okInt(tmp, x_pos, mdl, pass[i], "x")) continue;
     x.aggregate = 2;
+    SafeCompute(pass[i], x);
+    if (!okInt(tmp, y_pos, mdl, pass[i], "y")) continue;
+    x.aggregate = 3;
     SafeCompute(pass[i], x);
     if (!okInt(tmp, prio, mdl, pass[i], "p")) continue;
 

@@ -1786,13 +1786,13 @@ void pn_init::Compute(traverse_data &x, expr** pass, int np)
     DCASSERT(pass[i]);
     result first;
     x.answer = &first;
-    x.aggregate = 0;
+    x.aggregate = 1;
     SafeCompute(pass[i], x);
     DCASSERT(first.isNormal());
 
     result second;
     x.answer = &second;
-    x.aggregate = 1;
+    x.aggregate = 2;
     SafeCompute(pass[i], x);
     if (! second.isNormal() || second.getInt() < 0) {
       model_def::errmsg E(mdl, pass[i]);
@@ -1849,7 +1849,7 @@ void pn_bound::Compute(traverse_data &x, expr** pass, int np)
 
     result second;
     x.answer = &second;
-    x.aggregate = 1;
+    x.aggregate = 2;
     SafeCompute(pass[i], x);
     if (! second.isNormal() || second.getInt() < 0) {
       model_def::errmsg E(mdl, pass[i]);
@@ -1861,7 +1861,7 @@ void pn_bound::Compute(traverse_data &x, expr** pass, int np)
 
     result first;
     x.answer = &first;
-    x.aggregate = 0;
+    x.aggregate = 1;
     SafeCompute(pass[i], x);
     DCASSERT(first.isNormal());
     shared_set* ps = smart_cast <shared_set*> (first.getPtr());
@@ -1913,13 +1913,13 @@ void pn_arcs::Compute(traverse_data &x, expr** pass, int np)
     DCASSERT(pass[i]);
     result first;
     x.answer = &first;
-    x.aggregate = 0;
+    x.aggregate = 1;
     SafeCompute(pass[i], x);
     DCASSERT(first.isNormal());
 
     result second;
     x.answer = &second;
-    x.aggregate = 1;
+    x.aggregate = 2;
     SafeCompute(pass[i], x);
     DCASSERT(second.isNormal());
 
@@ -1928,7 +1928,7 @@ void pn_arcs::Compute(traverse_data &x, expr** pass, int np)
     model_var* pl;
     transition* t;
     expr* card = 0;
-    if (pass[i]->NumComponents()==3) card = pass[i]->Substitute(2);
+    if (pass[i]->NumComponents()==3) card = pass[i]->Substitute(3);
     if (pass[i]->Type(0) == PLACE) {
       pl = smart_cast <model_var*> (first.getPtr());
       t = smart_cast <transition*> (second.getPtr());
@@ -2060,13 +2060,13 @@ void pn_inhibit::Compute(traverse_data &x, expr** pass, int np)
     DCASSERT(pass[i]);
     result first;
     x.answer = &first;
-    x.aggregate = 0;
+    x.aggregate = 1;
     SafeCompute(pass[i], x);
     DCASSERT(first.isNormal());
 
     result second;
     x.answer = &second;
-    x.aggregate = 1;
+    x.aggregate = 2;
     SafeCompute(pass[i], x);
     DCASSERT(second.isNormal());
 
@@ -2075,7 +2075,7 @@ void pn_inhibit::Compute(traverse_data &x, expr** pass, int np)
     model_var* pl;
     transition* t;
     expr* card = 0;
-    if (pass[i]->NumComponents()==3) card = pass[i]->Substitute(2);
+    if (pass[i]->NumComponents()==3) card = pass[i]->Substitute(3);
     pl = smart_cast <model_var*> (first.getPtr());
     t = smart_cast <transition*> (second.getPtr());
     mdl->AddInhibitor(pass[i], pl, t, card);
@@ -2185,6 +2185,7 @@ void pn_guard::Compute(traverse_data &x, expr** pass, int np)
   if (x.stopExecution())  return;
   result* answer = x.answer;
 
+  x.aggregate = 1;
   for (int i=1; i<np; i++) {
     DCASSERT(pass[i]);
     result first;
@@ -2193,7 +2194,7 @@ void pn_guard::Compute(traverse_data &x, expr** pass, int np)
     DCASSERT(first.isNormal());
     shared_set* tset = smart_cast <shared_set*> (first.getPtr());
     DCASSERT(tset);
-    expr* guard = pass[i]->Substitute(1);
+    expr* guard = pass[i]->Substitute(2);
 
     for (int z=0; z<tset->Size(); z++) {
       result tr;
@@ -2204,6 +2205,7 @@ void pn_guard::Compute(traverse_data &x, expr** pass, int np)
     }
   }
   x.answer = answer;
+  x.aggregate = 0;
 }
 
 // ********************************************************
@@ -2240,6 +2242,7 @@ void pn_firing::Compute(traverse_data &x, expr** pass, int np)
   if (x.stopExecution())  return;
   result* answer = x.answer;
 
+  x.aggregate = 1;
   for (int i=1; i<np; i++) {
     DCASSERT(pass[i]);
     result first;
@@ -2247,10 +2250,11 @@ void pn_firing::Compute(traverse_data &x, expr** pass, int np)
     SafeCompute(pass[i], x);
     DCASSERT(first.isNormal());
     transition* t = smart_cast <transition*> (first.getPtr());
-    expr* firing = pass[i]->Substitute(1);
+    expr* firing = pass[i]->Substitute(2);
     mdl->AddFiring(pass[i], t, firing);
   }
   x.answer = answer;
+  x.aggregate = 0;
 }
 
 int pn_firing::Traverse(traverse_data &x, expr** pass, int np)
@@ -2331,6 +2335,7 @@ void pn_weight::Compute(traverse_data &x, expr** pass, int np)
   if (x.stopExecution())  return;
   result* answer = x.answer;
 
+  x.aggregate = 1;
   int wc = mdl->NewWeightClass();
   for (int i=1; i<np; i++) {
     DCASSERT(pass[i]);
@@ -2339,10 +2344,11 @@ void pn_weight::Compute(traverse_data &x, expr** pass, int np)
     SafeCompute(pass[i], x);
     DCASSERT(first.isNormal());
     transition* t = smart_cast <transition*> (first.getPtr());
-    expr* wt = pass[i]->Substitute(1);
+    expr* wt = pass[i]->Substitute(2);
     mdl->AddWeight(pass[i], t, wt, wc);
   }
   x.answer = answer;
+  x.aggregate = 0;
 }
 
 // ********************************************************
@@ -2395,6 +2401,7 @@ void pn_weight2::Compute(traverse_data &x, expr** pass, int np)
     wc = mdl->NewWeightClass();
   }
 
+  x.aggregate = 1;
   for (int i=2; i<np; i++) {
     DCASSERT(pass[i]);
     result first;
@@ -2402,10 +2409,11 @@ void pn_weight2::Compute(traverse_data &x, expr** pass, int np)
     SafeCompute(pass[i], x);
     DCASSERT(first.isNormal());
     transition* t = smart_cast <transition*> (first.getPtr());
-    expr* wt = pass[i]->Substitute(1);
+    expr* wt = pass[i]->Substitute(2);
     mdl->AddWeight(pass[i], t, wt, wc);
   }
   x.answer = answer;
+  x.aggregate = 0;
 }
 
 // ********************************************************
