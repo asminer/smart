@@ -60,7 +60,7 @@ class markov_def : public model_def {
   int state_count;
 
   SplayOfPointers <state_weight> *initial;
- 
+
 
   GraphLib::dynamic_summable<double>* mymc;
   // Old_MCLib::Markov_chain* mymc;
@@ -74,7 +74,7 @@ class markov_def : public model_def {
   static named_msg dup_arc;
   friend class init_mcform;
 public:
-  markov_def(const char* fn, int line, const type* t, bool d, char*n, 
+  markov_def(const char* fn, int line, const type* t, bool d, char*n,
       formal_param **pl, int np);
 
   virtual ~markov_def();
@@ -84,13 +84,13 @@ public:
 
   // For model construction:
   void AddInitial(const expr* cause, model_enum_value* st, double weight);
-  
 
-  void AddEdge(const expr* cause, 
+
+  void AddEdge(const expr* cause,
     model_enum_value* from, model_enum_value* to, double weight);
 
   inline bool isDiscrete() const { return discrete; }
-  inline int getStateCount() const { return state_count; } 
+  inline int getStateCount() const { return state_count; }
 protected:
   virtual void InitModel();
   virtual void FinalizeModel(OutputStream &ds);
@@ -109,7 +109,7 @@ named_msg markov_def::dup_arc;
 markov_def::markov_def(const char* fn, int line, const type* t, bool d,
    char*n, formal_param **pl, int np) : model_def(fn, line, t, n, pl, np)
 {
-  statelist = 0; 
+  statelist = 0;
   state_count = 0;
   mymc = 0;
   initial = 0;
@@ -145,7 +145,7 @@ model_var* markov_def::MakeModelVar(const symbol* wrap, shared_object* bnds)
   // Build a state in the frontend MC
   model_var* s = new model_enum_value(wrap, current, state_count);
   state_count++;
-  
+
   // add to statelist (reverse order)
   s->LinkTo(statelist);
   statelist = s;
@@ -193,7 +193,7 @@ void markov_def::AddEdge(const expr* cause,
       em->warn() << f->Name() << " to " << t->Name();
       DoneWarning();
     }
-  } 
+  }
   catch (GraphLib::error e) {
     if (StartError(cause)) {
       em->cerr() << e.getString() << " when adding edge from ";
@@ -206,7 +206,7 @@ void markov_def::AddEdge(const expr* cause,
 
 void markov_def::InitModel()
 {
-  statelist = 0; 
+  statelist = 0;
   state_count = 0;
   DCASSERT(0==mymc);
   mymc = new GraphLib::dynamic_summable<double> (isDiscrete(), true);
@@ -276,7 +276,7 @@ void markov_def::FinalizeModel(OutputStream &ds)
 
   //
   // Build reachable states
-  // 
+  //
   enum_reachset* rss = new enum_reachset(mcstate);
 
   //
@@ -335,11 +335,11 @@ markov_formalism
   discrete = d;
 }
 
-model_def* markov_formalism::makeNewModel(const char* fn, int ln, char* name, 
+model_def* markov_formalism::makeNewModel(const char* fn, int ln, char* name,
           symbol** formals, int np) const
 {
   // TBD: check formals?
-  return new markov_def(fn, ln, this, discrete, 
+  return new markov_def(fn, ln, this, discrete,
       name, (formal_param**) formals, np);
 }
 
@@ -394,7 +394,7 @@ void mc_init::Compute(traverse_data &x, expr** pass, int np)
     model_debug.report() << "Calling init in model " << mdl->Name() << "\n";
     model_debug.stopIO();
   }
-  
+
   if (x.stopExecution())  return;
   result* answer = x.answer;
   result state;
@@ -443,7 +443,7 @@ public:
   virtual int Traverse(traverse_data &x, expr** pass, int np);
 };
 
-mc_reward::mc_reward() : msr_noengine(Nothing,em->STATEVECT, "reward", 2)
+mc_reward::mc_reward() : msr_noengine(Nothing, em->STATEVECT, "reward", 2)
 {
   typelist* t = new typelist(2);
   const type* state = em->findType("state");
@@ -458,22 +458,42 @@ mc_reward::mc_reward() : msr_noengine(Nothing,em->STATEVECT, "reward", 2)
 
 int mc_reward::Traverse(traverse_data &x, expr** pass, int np)
 {
-  std::cout << "Inside Traverse for mc_reward\n";
+    /*
   DisplayStream foo(stdout);
+  foo << "Inside Traverse for mc_reward\n";
   foo << "  ";
   x.Print(foo);
   foo << "\n";
-  
-  std::cout << "Pass[1] has " << pass[1]->NumComponents() << " components before\n";
+
+  foo << "Pass[1] has type ";
+  if (pass[1]) {
+    pass[1]->PrintType(foo);
+  } else {
+    foo << "(null pointer)";
+  }
+  foo << " before\n";
+  foo.flush();
+  */
+
   int doit = msr_noengine::Traverse(x, pass, np);
-  std::cout << "Pass[1] has " << pass[1]->NumComponents() << " components after\n";
+
+  /*
+  foo << "Pass[1] has type ";
+  if (pass[1]) {
+    pass[1]->PrintType(foo);
+  } else {
+    foo << "(null pointer)";
+  }
+  foo << " after\n";
+  */
+
   return doit;
 }
 
 void mc_reward::Compute(traverse_data &x, expr** pass, int np)
 {
   std::cout << "here" << std::endl;
-  
+
   DCASSERT(x.answer);
   DCASSERT(0==x.aggregate);
   DCASSERT(pass);
@@ -515,13 +535,13 @@ void mc_reward::Compute(traverse_data &x, expr** pass, int np)
   }
 
   */
-  
+
   result* answer = x.answer;
   result state;
   result weight;
   //x.answer->setBool(true);
   //return;
-  
+
   for (int i=1; i<np; i++) {
   std::cout << np<<"\n";
   // result state;
@@ -580,7 +600,7 @@ void mc_reward::Compute(traverse_data &x, expr** pass, int np)
   }*/
   // statevect* sv= new statevect(cruft,rewards,proc->getNumStates());
   // x.answer->setPtr(sv);
-  
+
 }
 
 
@@ -614,7 +634,7 @@ void mc_arcs::Compute(traverse_data &x, expr** pass, int np)
   DCASSERT(pass[0]);
   markov_def* mdl = smart_cast<markov_def*>(pass[0]);
   DCASSERT(mdl);
-  
+
   if (x.stopExecution())  return;
   result* answer = x.answer;
   result from;
@@ -701,7 +721,7 @@ public:
   virtual void Compute(traverse_data &x, expr** pass, int np);
 };
 
-mc_transient::mc_transient() 
+mc_transient::mc_transient()
  : model_internal(em->BOOL->addProc(), "transient", 1)
 {
   SetDocumentation("Returns true iff the Markov chain is in a transient state.");
@@ -737,7 +757,7 @@ public:
   virtual void Compute(traverse_data &x, expr** pass, int np);
 };
 
-mc_absorbing::mc_absorbing() 
+mc_absorbing::mc_absorbing()
  : model_internal(em->BOOL->addProc(), "is_absorbed", 1)
 {
   SetDocumentation("Returns true iff the Markov chain is in an absorbing state (this includes deadlocked states).");
@@ -771,7 +791,7 @@ public:
   mc_tta(bool disc);
   virtual void Compute(traverse_data &x, expr** pass, int np);
 
-  inline void ExtractParams(traverse_data &x, expr** pass, int np, 
+  inline void ExtractParams(traverse_data &x, expr** pass, int np,
     stochastic_lldsm* &cruft, shared_object* &ss) {
 
       DCASSERT(x.answer);
@@ -793,7 +813,7 @@ public:
 
 mc_tta::mc_tta(bool disc)
 : model_internal(
-    disc ? em->INT->modifyType(PHASE) : em->REAL->modifyType(PHASE), 
+    disc ? em->INT->modifyType(PHASE) : em->REAL->modifyType(PHASE),
     "tta", 2
   )
 {
@@ -828,7 +848,7 @@ public:
   mc_reverse_tta(bool disc);
   virtual void Compute(traverse_data &x, expr** pass, int np);
 
-  inline void ExtractParams(traverse_data &x, expr** pass, int np, 
+  inline void ExtractParams(traverse_data &x, expr** pass, int np,
     stochastic_lldsm* &cruft, shared_object* &ss) {
 
       DCASSERT(x.answer);
@@ -863,7 +883,7 @@ void mc_reverse_tta::Compute(traverse_data &x, expr** pass, int np)
 {
   stochastic_lldsm* proc = 0;
   shared_object* accept = 0;
-  
+
   pass[1]->Compute(x);
   if (!x.answer->isNormal()) return ;
   long time = x.answer->getInt();
@@ -874,7 +894,7 @@ void mc_reverse_tta::Compute(traverse_data &x, expr** pass, int np)
     x.answer->setNull();
     return;
   }
-  
+
   SafeCompute(pass[2], x);
   if (!x.answer->isNormal()) {
     return;
@@ -883,7 +903,7 @@ void mc_reverse_tta::Compute(traverse_data &x, expr** pass, int np)
   stateset* ss = smart_cast <stateset*>(Share(x.answer->getPtr()));
   expl_stateset* e = dynamic_cast <expl_stateset*>(ss);
   if (!e) {
-  
+
     if (em->startError()) {
       em->causedBy(this);
       em->cerr() << "Sorry, condition() requires explicit statesets (for now)";
@@ -907,7 +927,7 @@ void mc_reverse_tta::Compute(traverse_data &x, expr** pass, int np)
   }
 
   double* aux=0;
-  
+
   //statedist* init = proc->getInitialDistribution();
   //phase_hlm* foo = makeTTA(is_disc, init, accept, 0, proc->copyPROC());
   //proc->getPROC()->getNumStates();
@@ -942,7 +962,7 @@ void mc_reverse_tta::Compute(traverse_data &x, expr** pass, int np)
   //how to set the pointer ??
   stateprobs* sp= new stateprobs(proc,probs,proc->getPROC()->getNumStates());
   x.answer->setPtr(sp);
-  
+
 }
 
 // **************************************************************************
@@ -955,7 +975,7 @@ public:
   mc_reverse_tta_timed(bool disc);
   virtual void Compute(traverse_data &x, expr** pass, int np);
 
-  inline void ExtractParams(traverse_data &x, expr** pass, int np, 
+  inline void ExtractParams(traverse_data &x, expr** pass, int np,
     stochastic_lldsm* &cruft, shared_object* &ss) {
 
       DCASSERT(x.answer);
@@ -992,7 +1012,7 @@ void mc_reverse_tta_timed::Compute(traverse_data &x, expr** pass, int np)
 {
   stochastic_lldsm* proc = 0;
   shared_object* accept = 0;
-  
+
   pass[1]->Compute(x);
   if (!x.answer->isNormal()) return ;
   long h = x.answer->getInt();
@@ -1014,7 +1034,7 @@ void mc_reverse_tta_timed::Compute(traverse_data &x, expr** pass, int np)
   stateset* ss = smart_cast <stateset*>(Share(x.answer->getPtr()));
   expl_stateset* e = dynamic_cast <expl_stateset*>(ss);
   if (!e) {
-  
+
     if (em->startError()) {
       em->causedBy(this);
       em->cerr() << "Sorry, condition() requires explicit statesets (for now)";
@@ -1044,7 +1064,7 @@ void mc_reverse_tta_timed::Compute(traverse_data &x, expr** pass, int np)
   stateset* ss_t = smart_cast <stateset*>(Share(x.answer->getPtr()));
   expl_stateset* et = dynamic_cast <expl_stateset*>(ss_t);
   if (!e) {
-  
+
     if (em->startError()) {
       em->causedBy(this);
       em->cerr() << "Sorry, condition() requires explicit statesets (for now)";
@@ -1064,7 +1084,7 @@ void mc_reverse_tta_timed::Compute(traverse_data &x, expr** pass, int np)
     //how to assign the values to probs
     if(etis.contains(i)){
       probs_t[i]=1;
-      
+
     }
   }
    for(long i=0;i<proc->getPROC()->getNumStates();i++){
@@ -1094,7 +1114,7 @@ void mc_reverse_tta_timed::Compute(traverse_data &x, expr** pass, int np)
   // for(long p = 0; p < proc->getPROC()->getNumStates(); ++p) {
   //   std::cerr << probs[p] << "\n";
   // }
-  
+
   bool res= proc->getPROC()->reverseTransientBounded(h,k,probs,probs_t,aux);
 
   // for(long p = 0; p < proc->getPROC()->getNumStates(); ++p) {
@@ -1105,7 +1125,7 @@ void mc_reverse_tta_timed::Compute(traverse_data &x, expr** pass, int np)
   //how to set the pointer ??
   stateprobs* sp= new stateprobs(proc,probs,proc->getPROC()->getNumStates());
   x.answer->setPtr(sp);
-  
+
 }
 // **************************************************************************
 // *                              mc_conditional_tta class                              *
@@ -1117,7 +1137,7 @@ public:
   mc_conditional_tta(bool disc);
   virtual void Compute(traverse_data &x, expr** pass, int np);
 
-  inline void ExtractParams(traverse_data &x, expr** pass, int np, 
+  inline void ExtractParams(traverse_data &x, expr** pass, int np,
     stochastic_lldsm* &cruft, shared_object* &ss) {
 
       DCASSERT(x.answer);
@@ -1155,7 +1175,7 @@ void mc_conditional_tta::Compute(traverse_data &x, expr** pass, int np)
 {
   stochastic_lldsm* proc = 0;
   shared_object* accept = 0;
-  
+
   pass[1]->Compute(x);
   if (!x.answer->isNormal()) return ;
   long h = x.answer->getInt();
@@ -1178,7 +1198,7 @@ void mc_conditional_tta::Compute(traverse_data &x, expr** pass, int np)
   stateset* ss = smart_cast <stateset*>(Share(x.answer->getPtr()));
   expl_stateset* e = dynamic_cast <expl_stateset*>(ss);
   if (!e) {
-  
+
     if (em->startError()) {
       em->causedBy(this);
       em->cerr() << "Sorry, condition() requires explicit statesets (for now)";
@@ -1208,7 +1228,7 @@ void mc_conditional_tta::Compute(traverse_data &x, expr** pass, int np)
   stateset* ss_t = smart_cast <stateset*>(Share(x.answer->getPtr()));
   expl_stateset* et = dynamic_cast <expl_stateset*>(ss_t);
   if (!e) {
-  
+
     if (em->startError()) {
       em->causedBy(this);
       em->cerr() << "Sorry, condition() requires explicit statesets (for now)";
@@ -1228,12 +1248,12 @@ void mc_conditional_tta::Compute(traverse_data &x, expr** pass, int np)
     //how to assign the values to probs
     if(etis.contains(i)){
       probs_t[i]=1;
-      
+
     }
   }
 
   double* aux=0;
-  
+
   //statedist* init = proc->getInitialDistribution();
   //phase_hlm* foo = makeTTA(is_disc, init, accept, 0, proc->copyPROC());
   //proc->getPROC()->getNumStates();
@@ -1271,7 +1291,7 @@ void mc_conditional_tta::Compute(traverse_data &x, expr** pass, int np)
   //how to set the pointer ??
   stateprobs* sp= new stateprobs(proc,probs,proc->getPROC()->getNumStates());
   x.answer->setPtr(sp);
-  
+
 }
 
 
@@ -1333,9 +1353,9 @@ bool init_mcform::execute()
   // Set up and register formalisms
   const char* longdocs = "The Markov chain formalisms dtmc and ctmc allow for direct specification of a discrete-time or continuous-time Markov chain. The two formalisms are nearly identical; the primary difference is that self-loops in a ctmc are ignored. States of the Markov chain are declared, and transition rates / probabilities are specified \"by hand\".";
 
-  formalism* dtmc = new markov_formalism("dtmc", 
+  formalism* dtmc = new markov_formalism("dtmc",
       "Discrete-time Markov chain", longdocs, true);
-  formalism* ctmc = new markov_formalism("ctmc", 
+  formalism* ctmc = new markov_formalism("ctmc",
       "Continuous-time Markov chain", longdocs, false);
   ok = em->registerType(dtmc);
   if (!ok) {
