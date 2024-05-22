@@ -198,6 +198,8 @@ bool type::print_normal(OutputStream &s, const result& r, int w) const
   if (foo) {
     foo->Print(s, w);
     return true;
+  } else {
+    s << "null thingy";
   }
   DCASSERT(0);
   return false;

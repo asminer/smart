@@ -443,7 +443,7 @@ public:
   virtual int Traverse(traverse_data &x, expr** pass, int np);
 };
 
-mc_reward::mc_reward() : msr_noengine(Nothing, em->STATEVECT, "reward", 2)
+mc_reward::mc_reward() : msr_noengine( Nothing, em->STATEVECT, "reward", 2)
 {
   typelist* t = new typelist(2);
   const type* state = em->findType("state");
@@ -453,7 +453,7 @@ mc_reward::mc_reward() : msr_noengine(Nothing, em->STATEVECT, "reward", 2)
   SetRepeat(1);
   SetDocumentation("Sets rewards to the state(s) of a Markov chain model.");
 
-  std::cout << "Initialized reward thingy, em->STATEVECT is " << em->STATESET << std::endl;
+  //std::cout << "Initialized reward thingy, em->STATEVECT is " << em->STATESET << std::endl;
 }
 
 int mc_reward::Traverse(traverse_data &x, expr** pass, int np)
@@ -488,24 +488,15 @@ int mc_reward::Traverse(traverse_data &x, expr** pass, int np)
   */
 
   return doit;
+  
 }
 
 void mc_reward::Compute(traverse_data &x, expr** pass, int np)
 {
-  std::cout << "here" << std::endl;
-
   DCASSERT(x.answer);
   DCASSERT(0==x.aggregate);
   DCASSERT(pass);
   DCASSERT(pass[0]);
-  /*
-  markov_def* mdl = smart_cast<markov_def*>(pass[0]);
-  DCASSERT(mdl);
-  int b= mdl->getStateCount();
-
- std::cout<<"num_states" <<b<<"\n";
- */
-
   model_instance* mi = grabModelInstance(x, pass[0]);
   DCASSERT(mi);
   hldsm* foo = mi->GetCompiledModel();
@@ -516,91 +507,58 @@ void mc_reward::Compute(traverse_data &x, expr** pass, int np)
   DCASSERT(cruft);
   const stochastic_lldsm::process* proc = cruft->getPROC();
   DCASSERT(proc);
+  //long ss = proc->getNumStates();
+  //std::cout<< "states" << ss<< std::endl;
   double* reward= new double[proc->getNumStates()];
   for(long p = 0; p < proc->getNumStates(); ++p) {
      reward[p] =0;
   }
-
-
-
-
-  /*
-  stochastic_lldsm* proc = 0;
-  shared_object* accept = 0;
-
-  ExtractParams(x, pass, np, proc, accept);
-  if (0==proc || 0==accept) {
-    x.answer->setNull();
-    return;
-  }
-
-  */
-
   result* answer = x.answer;
+  DCASSERT(answer);
   result state;
   result weight;
   //x.answer->setBool(true);
   //return;
 
   for (int i=1; i<np; i++) {
-  std::cout << np<<"\n";
+  //std::cout << np<<"\n";
   // result state;
   // result weight;
   if (0==pass[i])  continue;
   x.aggregate = 0;
   x.answer = &state;
-  long sname=x.current_state_index;
   pass[i]->Compute(x);
   DCASSERT(state.isNormal());
+
   if (!state.isNormal())  return;
   DCASSERT(state.getPtr());
-  // model_enum_value* st = smart_cast<model_enum_value*> (state.getPtr());
-  // DCASSERT(st);
-  // std::cout << st->Name()<< "\n";
-  // std::cout << st->GetIndex()<< "\n";
-  // x.aggregate = 1;
+  model_enum_value* st = smart_cast<model_enum_value*> (state.getPtr());
+  DCASSERT(st);
+  //std::cout << st->Name()<< "\n";
+  //std::cout << st->GetIndex()<< "\n";
   x.answer = &weight;
+  x.aggregate = 1;
   pass[i]->Compute(x);
   float re= weight.getReal();
-  reward[sname]=weight.getReal();
-  std::cerr << "reward: " << re << "\n";
+  reward[st->GetIndex()]=weight.getReal();
+  //std::cerr << "reward: " << re << "\n";
+  // std::cout<< "index "<< st->GetIndex()<< std::endl;
+  // std::cout<< "name "<< st->Name() << std::endl;
+  // std::cout<< "reward "<< weight.getReal()<< std::endl;
   }
+  // for(long p = 0; p < proc->getNumStates(); ++p) {
+  //   //if(reward[p]!=0)
+  //    std::cout << reward[p]<< std::endl;
+  // }
    //x.answer = answer;
    //x.aggregate = 0;
   statevect* sv= new statevect(cruft,reward,proc->getNumStates());
-  x.answer->setPtr(sv);
-
-
-   //return x.answer->setBool(true);
-  // double* rewards=new double[proc->getNumStates()];
-  // for(long p = 0; p < proc->getNumStates(); ++p) {
-  //    rewards[p] =0;
-  //    std::cerr << "reward_vect: " << rewards[p] << "\n";
-  // }
-  /*
-  for(int i=0;i<np;i++){
-    //DCASSERT(pass[i]);
-    x.aggregate = 0;
-    x.answer = &state;
-    pass[i]->Compute(x);
-    x.aggregate = 0;
-    x.answer = &state;
-    pass[i]->Compute(x);
-    x.aggregate = 1;
-    x.answer = &weight;
-    pass[i]->Compute(x);
-    float re= x.answer->getReal();
-    std::cerr << "reward: " << re << "\n";
-
-    if (!weight.isNormal()) {
-      continue;
-    }
-    //rewards[x.current_state_index]=weight.getReal();
-
-  }*/
-  // statevect* sv= new statevect(cruft,rewards,proc->getNumStates());
-  // x.answer->setPtr(sv);
-
+  if (reward) {
+      answer->setPtr(sv);
+      //std::cerr << "what!!! " << "\n";  
+  }
+  else    answer->setNull();
+  
 }
 
 
@@ -838,6 +796,432 @@ void mc_tta::Compute(traverse_data &x, expr** pass, int np)
   phase_hlm* foo = makeTTA(is_disc, init, accept, 0, proc->copyPROC());
   x.answer->setPtr(foo);
 }
+
+// **************************************************************************
+// *                              mc_acc_reward class                              *
+// **************************************************************************
+
+class mc_acc_reward : public model_internal {
+  bool is_disc;
+public:
+  mc_acc_reward(bool disc);
+  virtual void Compute(traverse_data &x, expr** pass, int np);
+
+  inline void ExtractParams(traverse_data &x, expr** pass, int np,
+    stochastic_lldsm* &cruft, shared_object* &ss) {
+
+      DCASSERT(x.answer);
+      DCASSERT(4==np);
+
+      model_instance* mi = grabModelInstance(x, pass[0]);
+      DCASSERT(mi);
+      hldsm* foo = mi->GetCompiledModel();
+      DCASSERT(foo);
+      lldsm* bar = foo->GetProcess();
+      DCASSERT(bar);
+      cruft = smart_cast<stochastic_lldsm*>(bar);
+      DCASSERT(cruft);
+
+      // make set of states
+      ss = cruft->getPotential(pass[1]);
+  }
+};
+
+mc_acc_reward::mc_acc_reward(bool disc)
+: model_internal(
+    em->STATEVECT, "acc_reward", 4
+  )
+{
+  is_disc = disc;
+  SetFormal(1,em->INT,"time");
+  SetFormal(2, em->STATESET, "q");
+  SetFormal(3, em->STATEVECT, "r");
+  SetDocumentation("Returns the expected accumulated reward until reaching absorbing q state, when starting from the transient states.");
+}
+#include <iostream>
+void mc_acc_reward::Compute(traverse_data &x, expr** pass, int np)
+{
+  stochastic_lldsm* proc = 0;
+  shared_object* accept = 0;
+
+  pass[1]->Compute(x);
+  if (!x.answer->isNormal()) return ;
+  long time = x.answer->getInt();
+  std::cerr << "time: " << time << "\n";
+
+  ExtractParams(x, pass, np, proc, accept);
+  if (0==proc || 0==accept) {
+    x.answer->setNull();
+    return;
+  }
+
+  SafeCompute(pass[2], x);
+  if (!x.answer->isNormal()) {
+    return;
+  }
+
+  stateset* ss = smart_cast <stateset*>(Share(x.answer->getPtr()));
+  expl_stateset* e = dynamic_cast <expl_stateset*>(ss);
+  if (!e) {
+
+    if (em->startError()) {
+      em->causedBy(this);
+      em->cerr() << "Sorry, condition() requires explicit statesets (for now)";
+      em->stopIO();
+    }
+    //Delete(p);
+    Delete(accept);
+    x.answer->setNull();
+    return;
+  }
+  const intset& eis = e->getExplicit();
+  double* probs=new double[proc->getNumStates()];
+  for(long p = 0; p < proc->getPROC()->getNumStates(); ++p) {
+     probs[p] =0;
+  }
+  for(long i=0;i<proc->getPROC()->getNumStates();i++){
+    //how to assign the values to probs
+    if(eis.contains(i)){
+      probs[i]=1;
+    }
+  }
+
+  double* aux=0;
+  SafeCompute(pass[3],x);
+  if (!x.answer->isNormal()) {
+    return;
+  }
+  statevect* sv = smart_cast <statevect*>(Share(x.answer->getPtr()));
+  //std::cout<< "test of sv "<< sv->isSparse()<<std::endl;
+  double* reward= new double[proc->getPROC()->getNumStates()];
+  sv->ExportTo(reward);
+  // for(long i=0;i<proc->getPROC()->getNumStates();i++){
+  //   //reward[sv->readSparseIndex(i)]= sv->readSparseValue(i);
+  //   //std::cout<< "reward vector "<< reward[i] << std::endl;
+    
+  // }
+
+  bool res= proc->getPROC()->reverseAccRewardUnbounded(time,probs,aux,reward);
+
+  // for(long p = 0; p < proc->getPROC()->getNumStates(); ++p) {
+  //   std::cerr << probs[p] << "\n";
+  // }
+
+  // std::cerr << acc_state << " " << probs[5] << "\n";
+  //how to set the pointer ??
+  statevect* svv= new statevect(proc,probs,proc->getPROC()->getNumStates());
+  std::cout<< "svv size"<< svv->size()<< std:: endl;
+  x.answer->setPtr(svv);
+
+}
+
+// **************************************************************************
+// *                              mc_cond_acc_reward class                              *
+// **************************************************************************
+
+class mc_cond_acc_reward : public model_internal {
+  bool is_disc;
+public:
+  mc_cond_acc_reward(bool disc);
+  virtual void Compute(traverse_data &x, expr** pass, int np);
+
+  inline void ExtractParams(traverse_data &x, expr** pass, int np,
+    stochastic_lldsm* &cruft, shared_object* &ss) {
+
+      DCASSERT(x.answer);
+      DCASSERT(5==np);
+
+      model_instance* mi = grabModelInstance(x, pass[0]);
+      DCASSERT(mi);
+      hldsm* foo = mi->GetCompiledModel();
+      DCASSERT(foo);
+      lldsm* bar = foo->GetProcess();
+      DCASSERT(bar);
+      cruft = smart_cast<stochastic_lldsm*>(bar);
+      DCASSERT(cruft);
+
+      // make set of states
+      ss = cruft->getPotential(pass[1]);
+  }
+};
+
+mc_cond_acc_reward::mc_cond_acc_reward(bool disc)
+: model_internal(
+    em->STATEVECT, "cond_acc_reward", 5
+  )
+{
+  is_disc = disc;
+  SetFormal(1,em->INT,"time");
+  SetFormal(2, em->STATESET, "p");
+  SetFormal(3, em->STATEVECT, "r");
+   SetFormal(4, em->STATESET, "q");
+  SetDocumentation("Returns the conditional expected accumulated reward until reaching p states avoiding absorbing q state, when starting from the transient states.");
+}
+#include <iostream>
+void mc_cond_acc_reward::Compute(traverse_data &x, expr** pass, int np)
+{
+  stochastic_lldsm* proc = 0;
+  shared_object* accept = 0;
+
+  pass[1]->Compute(x);
+  if (!x.answer->isNormal()) return ;
+  long time = x.answer->getInt();
+  std::cerr << "time: " << time << "\n";
+
+  ExtractParams(x, pass, np, proc, accept);
+  if (0==proc || 0==accept) {
+    x.answer->setNull();
+    return;
+  }
+
+  SafeCompute(pass[2], x);
+  if (!x.answer->isNormal()) {
+    return;
+  }
+
+  stateset* ss = smart_cast <stateset*>(Share(x.answer->getPtr()));
+  expl_stateset* e = dynamic_cast <expl_stateset*>(ss);
+  if (!e) {
+
+    if (em->startError()) {
+      em->causedBy(this);
+      em->cerr() << "Sorry, condition() requires explicit statesets (for now)";
+      em->stopIO();
+    }
+    //Delete(p);
+    Delete(accept);
+    x.answer->setNull();
+    return;
+  }
+  const intset& eis = e->getExplicit();
+  double* probs=new double[proc->getNumStates()];
+  for(long p = 0; p < proc->getPROC()->getNumStates(); ++p) {
+     probs[p] =0;
+  }
+  for(long i=0;i<proc->getPROC()->getNumStates();i++){
+    //how to assign the values to probs
+    if(eis.contains(i)){
+      probs[i]=1;
+    }
+  }
+
+  double* aux=0;
+  SafeCompute(pass[3],x);
+  if (!x.answer->isNormal()) {
+    return;
+  }
+  statevect* sv = smart_cast <statevect*>(Share(x.answer->getPtr()));
+  //std::cout<< "test of sv "<< sv->isSparse()<<std::endl;
+  double* reward= new double[proc->getPROC()->getNumStates()];
+  sv->ExportTo(reward);
+  SafeCompute(pass[4], x);
+  if (!x.answer->isNormal()) {
+    return;
+  }
+
+  stateset* ss_q = smart_cast <stateset*>(Share(x.answer->getPtr()));
+  expl_stateset* e_q = dynamic_cast <expl_stateset*>(ss_q);
+  if (!e) {
+
+    if (em->startError()) {
+      em->causedBy(this);
+      em->cerr() << "Sorry, condition() requires explicit statesets (for now)";
+      em->stopIO();
+    }
+    //Delete(p);
+    Delete(accept);
+    x.answer->setNull();
+    return;
+  }
+  const intset& eis_q = e_q->getExplicit();
+  double* q=new double[proc->getNumStates()];
+  for(long i = 0; i < proc->getPROC()->getNumStates(); ++i) {
+     q[1] =0;
+  }
+  for(long i=0;i<proc->getPROC()->getNumStates();i++){
+    //how to assign the values to probs
+    if(eis_q.contains(i)){
+      q[i]=1;
+    }
+  }
+
+
+  // for(long i=0;i<proc->getPROC()->getNumStates();i++){
+  //   //reward[sv->readSparseIndex(i)]= sv->readSparseValue(i);
+  //   //std::cout<< "reward vector "<< reward[i] << std::endl;
+    
+  // }
+
+  bool res= proc->getPROC()->reverseCondAccRewardUnbounded(time,probs,aux,reward,q);
+
+  // for(long p = 0; p < proc->getPROC()->getNumStates(); ++p) {
+  //   std::cerr << probs[p] << "\n";
+  // }
+
+  // std::cerr << acc_state << " " << probs[5] << "\n";
+  //how to set the pointer ??
+  statevect* svv= new statevect(proc,probs,proc->getPROC()->getNumStates());
+  std::cout<< "svv size"<< svv->size()<< std:: endl;
+  x.answer->setPtr(svv);
+
+}
+
+// **************************************************************************
+// *                              mc_cond_acc_reward_time class                              *
+// **************************************************************************
+
+class mc_cond_acc_reward_time : public model_internal {
+  bool is_disc;
+public:
+  mc_cond_acc_reward_time(bool disc);
+  virtual void Compute(traverse_data &x, expr** pass, int np);
+
+  inline void ExtractParams(traverse_data &x, expr** pass, int np,
+    stochastic_lldsm* &cruft, shared_object* &ss) {
+
+      DCASSERT(x.answer);
+      DCASSERT(6==np);
+
+      model_instance* mi = grabModelInstance(x, pass[0]);
+      DCASSERT(mi);
+      hldsm* foo = mi->GetCompiledModel();
+      DCASSERT(foo);
+      lldsm* bar = foo->GetProcess();
+      DCASSERT(bar);
+      cruft = smart_cast<stochastic_lldsm*>(bar);
+      DCASSERT(cruft);
+
+      // make set of states
+      ss = cruft->getPotential(pass[1]);
+  }
+};
+
+mc_cond_acc_reward_time::mc_cond_acc_reward_time(bool disc)
+: model_internal(
+    em->STATEVECT, "cond_acc_reward_time", 6
+  )
+{
+  is_disc = disc;
+  SetFormal(1,em->INT,"time");
+  SetFormal(2,em->INT,"T");//this is the exact time t, up to which time we accumulate reward
+  SetFormal(3, em->STATESET, "p");
+  SetFormal(4, em->STATEVECT, "r");
+   SetFormal(5, em->STATESET, "q");
+  SetDocumentation("Returns the conditional expected accumulated reward until reaching p states avoiding absorbing q state, when starting from the transient states.");
+}
+#include <iostream>
+void mc_cond_acc_reward_time::Compute(traverse_data &x, expr** pass, int np)
+{
+  stochastic_lldsm* proc = 0;
+  shared_object* accept = 0;
+
+  pass[1]->Compute(x);
+  if (!x.answer->isNormal()) return ;
+  long time = x.answer->getInt();
+  std::cerr << "time: " << time << "\n";
+  pass[2]->Compute(x);
+  if (!x.answer->isNormal()) return ;
+  long T = x.answer->getInt();
+  std::cerr << "time to reward: " << T << "\n";
+
+  ExtractParams(x, pass, np, proc, accept);
+  if (0==proc || 0==accept) {
+    x.answer->setNull();
+    return;
+  }
+
+  SafeCompute(pass[3], x);
+  if (!x.answer->isNormal()) {
+    return;
+  }
+
+  stateset* ss = smart_cast <stateset*>(Share(x.answer->getPtr()));
+  expl_stateset* e = dynamic_cast <expl_stateset*>(ss);
+  if (!e) {
+
+    if (em->startError()) {
+      em->causedBy(this);
+      em->cerr() << "Sorry, condition() requires explicit statesets (for now)";
+      em->stopIO();
+    }
+    //Delete(p);
+    Delete(accept);
+    x.answer->setNull();
+    return;
+  }
+  const intset& eis = e->getExplicit();
+  double* probs=new double[proc->getNumStates()];
+  for(long p = 0; p < proc->getPROC()->getNumStates(); ++p) {
+     probs[p] =0;
+  }
+  for(long i=0;i<proc->getPROC()->getNumStates();i++){
+    //how to assign the values to probs
+    if(eis.contains(i)){
+      probs[i]=1;
+    }
+  }
+
+  double* aux=0;
+  SafeCompute(pass[4],x);
+  if (!x.answer->isNormal()) {
+    return;
+  }
+  statevect* sv = smart_cast <statevect*>(Share(x.answer->getPtr()));
+  //std::cout<< "test of sv "<< sv->isSparse()<<std::endl;
+  double* reward= new double[proc->getPROC()->getNumStates()];
+  sv->ExportTo(reward);
+  SafeCompute(pass[5], x);
+  if (!x.answer->isNormal()) {
+    return;
+  }
+
+  stateset* ss_q = smart_cast <stateset*>(Share(x.answer->getPtr()));
+  expl_stateset* e_q = dynamic_cast <expl_stateset*>(ss_q);
+  if (!e) {
+
+    if (em->startError()) {
+      em->causedBy(this);
+      em->cerr() << "Sorry, condition() requires explicit statesets (for now)";
+      em->stopIO();
+    }
+    //Delete(p);
+    Delete(accept);
+    x.answer->setNull();
+    return;
+  }
+  const intset& eis_q = e_q->getExplicit();
+  double* q=new double[proc->getNumStates()];
+  for(long i = 0; i < proc->getPROC()->getNumStates(); ++i) {
+     q[1] =0;
+  }
+  for(long i=0;i<proc->getPROC()->getNumStates();i++){
+    //how to assign the values to probs
+    if(eis_q.contains(i)){
+      q[i]=1;
+    }
+  }
+
+
+  // for(long i=0;i<proc->getPROC()->getNumStates();i++){
+  //   //reward[sv->readSparseIndex(i)]= sv->readSparseValue(i);
+  //   //std::cout<< "reward vector "<< reward[i] << std::endl;
+    
+  // }
+
+  bool res= proc->getPROC()->reverseCondAccRewardUnboundedTime(time,T,probs,aux,reward,q);
+
+  // for(long p = 0; p < proc->getPROC()->getNumStates(); ++p) {
+  //   std::cerr << probs[p] << "\n";
+  // }
+
+  // std::cerr << acc_state << " " << probs[5] << "\n";
+  //how to set the pointer ??
+  statevect* svv= new statevect(proc,probs,proc->getPROC()->getNumStates());
+  std::cout<< "svv size"<< svv->size()<< std:: endl;
+  x.answer->setPtr(svv);
+
+}
+
 // **************************************************************************
 // *                              mc_reverse_tta class                              *
 // **************************************************************************
@@ -960,8 +1344,8 @@ void mc_reverse_tta::Compute(traverse_data &x, expr** pass, int np)
 
   // std::cerr << acc_state << " " << probs[5] << "\n";
   //how to set the pointer ??
-  stateprobs* sp= new stateprobs(proc,probs,proc->getPROC()->getNumStates());
-  x.answer->setPtr(sp);
+  statevect* svv= new statevect(proc,probs,proc->getPROC()->getNumStates());
+  x.answer->setPtr(svv);
 
 }
 
@@ -1401,6 +1785,7 @@ void init_mcform::FillSymbolTable(bool disc, formalism* mc)
   static symbol*  reward = 0;
   static symbol*  arcs = 0;
   static symbol*  instate = 0;
+  static symbol*  acc_reward = 0;
   static symbol*  transient = 0;
   static symbol*  absorbing = 0;
   static symbol*  dTTA = 0;
@@ -1408,6 +1793,8 @@ void init_mcform::FillSymbolTable(bool disc, formalism* mc)
   static symbol*  rev_dTTA=0;
   static symbol*  rev_timed_dTTA=0;
   static symbol*  rev_cond_dTTA=0;
+  static symbol*  cond_acc_reward=0;
+  static symbol*  cond_acc_reward_time=0;
 
   if (!init)      init = new mc_init;
   if (!reward)    reward = new  mc_reward;
@@ -1415,6 +1802,7 @@ void init_mcform::FillSymbolTable(bool disc, formalism* mc)
   if (!instate)   instate = new mc_instate;
   if (!transient) transient = new mc_transient;
   if (!absorbing) absorbing = new mc_absorbing;
+  //if(! acc_reward) acc_reward= new mc_acc_reward;
 
   // Grab functions into a symbol table
   symbol_table* mcsyms = MakeSymbolTable();
@@ -1434,8 +1822,12 @@ void init_mcform::FillSymbolTable(bool disc, formalism* mc)
     mcsyms->AddSymbol(rev_timed_dTTA);
     if(!rev_cond_dTTA) rev_cond_dTTA= new mc_conditional_tta(true);
     mcsyms->AddSymbol(rev_cond_dTTA);
-    //if (!reward)    reward = new  mc_reward(true);
-    //mcsyms->AddSymbol(  reward    );
+    if (!acc_reward)    acc_reward = new  mc_acc_reward(true);
+      mcsyms->AddSymbol(acc_reward);
+    if (!cond_acc_reward)    cond_acc_reward = new  mc_cond_acc_reward(true);
+      mcsyms->AddSymbol(cond_acc_reward);
+    if (!cond_acc_reward_time)    cond_acc_reward_time = new  mc_cond_acc_reward_time(true);
+      mcsyms->AddSymbol(cond_acc_reward_time);
   } else {
     if (!cTTA)  cTTA = new mc_tta(false);
     mcsyms->AddSymbol(  cTTA    );

@@ -7,6 +7,7 @@
 
 #include <math.h>
 #include <string.h>
+#include <iostream>
 
 // #define DEBUG_CONSTRUCTOR
 // #define DEBUG_PERIOD
@@ -1270,6 +1271,415 @@ void MCLib::Markov_chain::reverseMTTA_unbounded(int t, double* p,
   }
 }
 // ******************************************************************
+
+namespace MCLib {
+  template <class MATRIX, class REAL>
+  void templ_dtmc_accumulated_reward(MATRIX &Qdiag, MATRIX &Qoff, const REAL* diags,
+    int t, double* p, double* reward, bool normalize,Markov_chain::DTMC_transient_options &opts)
+  {
+      DCASSERT(diags);
+
+      const long size = Qdiag.Size();
+      
+      //
+      // Set up auxiliary vectors if necessary
+      //
+      if (0== opts.vm_result) {
+        opts.vm_result = new double[size];
+      }
+      //double* m= opts.vm_result;
+      //zeroArray(m,size); 
+      double* acc = new double[size];
+      
+      for (long i =0; i< size; i++){
+        //if(p[i]!=1){
+          acc[i]=reward[i];
+        //}
+        //else {
+        //std::cout<< "p value index" << i << std::endl;
+        //acc[i]=0;
+        //}
+        //std::cout<< "reward_acc" << acc[i] << std::endl;
+      }
+      // for(long i=0; i < size; i++ ){
+        //std::cout<< "reward " << reward[i] <<std:: endl ;
+       // }
+      
+      double* aux = opts.vm_result;
+      //opts.ssprec= 0.00000001;
+      for (opts.multiplications=1; opts.multiplications<=t; opts.multiplications++) {
+        // VM multiply
+        zeroArray(aux, size);
+         if(opts.multiplications==1){
+          //Qdiag.VectorMatrixMultiply(aux, p);
+          Qoff.VectorMatrixMultiply(aux, p);
+          //*****//element wise multiply two vectors aux*reward
+          adjustDiagonals(aux, p, diags, size);
+         }
+         else{
+        Qdiag.VectorMatrixMultiply(aux, p);
+        Qoff.VectorMatrixMultiply(aux, p);
+        adjustDiagonals(aux, p, diags, size);
+        }
+
+        if (normalize) normalizeVector(aux, size);
+
+        // aux is now the distribution after one step.
+        // add (*(aux+i))*t to acc[s]
+        /*
+#ifdef DEBUG_ESHITA
+        std::cout << "time :" << opts.multiplications << '\n';
+        std::cout << "acc: [";
+#endif
+*/      for (int i=0;i<size;i++){
+            //std::cout<< "aux" << aux[i] << std::endl;
+        }
+        for(long i=0; i < size; i++ ){
+          //if(aux[i]){
+            if(opts.multiplications==1){
+              //std::cout << "prob after first time "<< aux[i] << std::endl;
+              //aux[i]=aux[i]*acc[i];
+              aux[i]=reward[i];
+              //next line is for E(true U[T,T] true) formulas
+              //aux[i]+=reward[i]; // aux[i]=aux[i]*reward[i];
+            }
+            else
+            {
+              //std::cout<< "reward_acc" << acc[i] << std::endl;
+              //for E(true U[T,T] true) formulas
+              aux[i]+=reward[i];
+              acc[i]=aux[i]+reward[i];
+              //aux[i]+=acc[i];
+              //std::cout << "acc/reward "<< acc[i] << std::endl;
+              //std::cout << "reward aux at 2nd time "<< aux[i] << " index i ="<< i << std::endl;
+            }
+          //}
+          /*
+          #ifdef DEBUG_ESHITA
+          if (i) std::cout << ", ";
+          std::cout << acc[i] ;
+          #endif
+          */
+        }
+        /*
+        #ifdef DEBUG_ESHITA
+        std::cout << "]\n";
+        #endif
+        */
+
+        // Check if we've hit steady state
+        if (vectorsWithinEpsilon(p, aux, size, opts.ssprec)) {
+          opts.multiplications++;
+          break;
+        }
+
+
+        SWAP(aux, p);
+      } 
+      //std::cout << "how many multiplcations = "<< opts.multiplications<< std::endl;
+      // for opts.multiplications
+       for(long i=0; i < size; i++ ){
+          //std::cout<< "aux " << aux[i] <<std:: endl ;
+          //std::cout<< "prob " << p[i] <<std:: endl ;
+        }
+      // we're done.  p is our answer.
+      //assiging acc[size] to p
+     ///// what is happeninh here?
+     
+     if (aux != opts.vm_result){
+      //std::cout << "here? "<< std::endl;
+      SWAP(aux,p);
+     }
+     
+     for(long i=0; i < size; i++ ){
+          std::cout<< "prob " << p[i] <<std:: endl ;
+        }
+     //if h!=0, them compute MTTA on a different graph where b is not absorbing
+     /*
+     double* temp=opts.vm_result;
+     if (h!=0){
+        for (opts.multiplications=1;opts.multiplications<=h;opts.multiplications++){
+          zeroArray(temp,size);
+          Qdiag.VectorMatrixMultiply(temp, acc);
+          Qoff.VectorMatrixMultiply(temp, acc);
+          adjustDiagonals(temp, acc, diags, size);
+        } 
+     }
+      */
+     
+      memcpy(p,acc,size*sizeof(double));
+      for(long i=0; i < size; i++ ){
+          //std::cout<< "aux " << aux[i] <<std:: endl ;
+          //std::cout<< "prob " << p[i] <<std:: endl ;
+        }
+      #ifdef DEBUG_ESHITA
+        //std::cout << opts.multiplications <<"\n";
+        //std::cout <<"when to stop" << opts.ssprec << "\n";
+        #endif
+     //Dr. Miner's stuff
+      // Since we swapped pointers around, p might be different
+      // from the original p.  Check for that:
+      /*
+      if (aux != opts.vm_result) {
+        // aux is the original p.  Copy into p.
+        memcpy(aux, p, size * sizeof(double));
+      }
+      */
+     /*
+     #ifdef DEBUG_ESHITA
+        std::cout << "exiting\n";
+        std::cout << "p: [";
+        for(long i=0; i < size; i++ ){
+          if (i) std::cout << ", ";
+          std::cout << p[i] ;
+        }
+        std::cout << "]\n";
+        std::cout << "p ptr " << p << "\n";
+        #endif
+        */
+  }
+}
+
+// ******************************************************************
+
+void MCLib::Markov_chain::reverse_accumulated_reward_unbounded(int t, double* p, double* reward,
+  DTMC_transient_options &opts) const
+{
+  if (0==p) {
+    throw MCLib::error(MCLib::error::Null_Vector);
+  }
+  if (!isDiscrete()) {
+    throw MCLib::error(MCLib::error::Wrong_Type);
+  }
+
+  if (double_graphs) {
+    //
+    // Set up matrices (shallow copies here)
+    //
+    LS_CRS_Matrix_double Qdiag, Qoff;
+    graphToMatrix(G_bycols_diag, Qdiag);
+    graphToMatrix(G_bycols_off, Qoff);
+
+    //
+    // And pass everything to our nice template function :^)
+    //
+    templ_dtmc_accumulated_reward(Qdiag, Qoff, selfloops_d, t, p,reward, false, opts);
+  } else {
+    //
+    // Set up matrices (shallow copies here)
+    //
+    LS_CRS_Matrix_float Qdiag, Qoff;
+    graphToMatrix(G_bycols_diag, Qdiag);
+    graphToMatrix(G_bycols_off, Qoff);
+
+    //
+    // And pass everything to our nice template function :^)
+    //
+    templ_dtmc_accumulated_reward(Qdiag, Qoff, selfloops_f, t,p,reward, false, opts);
+  }
+}
+// ******************************************************************
+
+
+namespace MCLib {
+  template <class MATRIX, class REAL>
+  void templ_dtmc_cond_accumulated_reward(MATRIX &Qdiag, MATRIX &Qoff, const REAL* diags,
+    int t, double* p, const double* q, bool normalize,Markov_chain::DTMC_transient_options &opts)
+  {
+     DCASSERT(diags);
+     const long size = Qdiag.Size();
+      //
+      // Set up auxiliary vectors if necessary
+      //
+      if (0== opts.vm_result) {
+        opts.vm_result = new double[size];
+      }
+      if (0== opts.accumulator) {
+        opts.accumulator = new double[size];
+      }
+      zeroArray(opts.accumulator, size);
+
+      double* aux = opts.vm_result;
+      double* myp = p;
+      double* acc = new double[size];
+      double* newQ = new double[size];
+      for(long i=0;i<size;i++){
+        newQ[i]=q[i];
+      }
+      //double* newQ = q;
+      for(long i =0;i<Qoff.size;i++){
+      std::cout <<"after reward calculation  q " << q[i] <<std::endl;
+    }
+              
+      #ifdef DEBUG_ESHITA
+        std::cout << " vector in t \n p: [";
+        for(long i=0; i < size; i++ ){
+          if (i) std::cout << ", ";
+          std::cout << myp[i] ;
+        }
+        std::cout << "]\n";
+        #endif
+      for (opts.multiplications=1; opts.multiplications<=t; opts.multiplications++) {
+          zeroArray(acc,size);
+          Qdiag.VectorMatrixMultiply(acc,newQ);
+          Qoff.VectorMatrixMultiply(acc,newQ);
+
+          adjustDiagonals(acc, newQ, diags, size);
+          for(long i=0;i<size;i++){
+          // if(!q[i]){
+          //   acc[i]=0;
+          // }
+          }
+          //addToVector(opts.accumulator, acc, size);
+          for(long i=0;i<size;i++){
+            opts.accumulator[i]= acc[i];
+          }
+
+          #ifdef DEBUG_ESHITA
+          //std::cout << "time :" << opts.multiplications << '\n';
+          //std::cout << "first accumulator: [";
+          #endif
+          SWAP(acc,newQ);
+        }
+        if (normalize) normalizeVector(acc, size);
+        // aux is the probability after one step.
+        // Add it to the accumulator.
+        for (long i=0;i<size;i++){
+        #ifdef DEBUG_ESHITA
+        std::cout << "q :" << q[i] << '\n';
+        #endif
+        }
+        #ifdef DEBUG_ESHITA
+        std::cout << "time :" << opts.multiplications << '\n';
+        #endif
+      if(acc!=opts.vm_result){
+        SWAP(acc,newQ);
+      }
+      //divide the expected time with probability
+      for(long i=0;i<size;i++){
+        std::cout<< myp[i] << " expected reward \n";
+        std::cout<< opts.accumulator[i] << " prob that stays in a fail state \n";
+        if(myp[i]){
+        myp[i] = myp[i]/(1-opts.accumulator[i]);
+        std::cout << "conditional expected reward" << "\n";
+        std::cout<< myp[i] << "\n" ;
+        }
+      }
+      
+
+      // we're done.  accumulator is our answer.
+      // Copy it into p.
+      memcpy(p,myp, size * sizeof(double));
+      for(long i=0;i<size;i++){
+        std::cout << "after first comp q is " << q[i] << std::endl;
+      }
+
+  }
+}  
+
+
+// ******************************************************************
+
+void MCLib::Markov_chain::conditional_accumulated_reward_unbounded(int t, double* p, double* reward,double* q,
+  DTMC_transient_options &opts) const
+{
+  if (0==p) {
+    throw MCLib::error(MCLib::error::Null_Vector);
+  }
+  if (!isDiscrete()) {
+    throw MCLib::error(MCLib::error::Wrong_Type);
+  }
+
+  if (double_graphs) {
+    //
+    // Set up matrices (shallow copies here)
+    //
+    LS_CRS_Matrix_double Qdiag, Qoff;
+    graphToMatrix(G_bycols_diag, Qdiag);
+    graphToMatrix(G_bycols_off, Qoff);
+
+    //
+    // And pass everything to our nice template function :^)
+    for(long i =0;i<Qoff.size;i++){
+      std::cout <<"before p value for double " << p[i] <<std::endl;
+    }
+    
+    templ_dtmc_accumulated_reward(Qdiag,Qoff,selfloops_d,t,p,reward,false,opts);
+    
+    for(long i =0;i<Qoff.size;i++){
+      std::cout <<"before q " << q[i] <<std::endl;
+    }
+     templ_dtmc_cond_accumulated_reward(Qdiag, Qoff, selfloops_d, t,p,q, false, opts);
+  } else {
+    //
+    // Set up matrices (shallow copies here)
+    //
+    LS_CRS_Matrix_float Qdiag, Qoff;
+    graphToMatrix(G_bycols_diag, Qdiag);
+    graphToMatrix(G_bycols_off, Qoff);
+
+    //
+    // And pass everything to our nice template function :^)
+    //
+    templ_dtmc_accumulated_reward(Qdiag,Qoff,selfloops_f,t,p,reward,false,opts);
+    for(long i =0;i<Qoff.size;i++){
+      std::cout <<"before q " << q[i] <<std::endl;
+    }
+    templ_dtmc_cond_accumulated_reward(Qdiag, Qoff, selfloops_f, t,p,q, false, opts);
+  }
+}
+// ******************************************************************
+
+void MCLib::Markov_chain::conditional_accumulated_reward_unbounded_time(int t,int T, double* p, double* reward,double* q,
+  DTMC_transient_options &opts) const
+{
+  if (0==p) {
+    throw MCLib::error(MCLib::error::Null_Vector);
+  }
+  if (!isDiscrete()) {
+    throw MCLib::error(MCLib::error::Wrong_Type);
+  }
+
+  if (double_graphs) {
+    //
+    // Set up matrices (shallow copies here)
+    //
+    LS_CRS_Matrix_double Qdiag, Qoff;
+    graphToMatrix(G_bycols_diag, Qdiag);
+    graphToMatrix(G_bycols_off, Qoff);
+
+    //
+    // And pass everything to our nice template function :^)
+    for(long i =0;i<Qoff.size;i++){
+      std::cout <<"before p value for double " << p[i] <<std::endl;
+    }
+    
+    templ_dtmc_accumulated_reward(Qdiag,Qoff,selfloops_d,T,p,reward,false,opts);
+    
+    for(long i =0;i<Qoff.size;i++){
+      std::cout <<"before q " << q[i] <<std::endl;
+    }
+     templ_dtmc_cond_accumulated_reward(Qdiag, Qoff, selfloops_d, t,p,q, false, opts);
+  } else {
+    //
+    // Set up matrices (shallow copies here)
+    //
+    LS_CRS_Matrix_float Qdiag, Qoff;
+    graphToMatrix(G_bycols_diag, Qdiag);
+    graphToMatrix(G_bycols_off, Qoff);
+
+    //
+    // And pass everything to our nice template function :^)
+    //
+    templ_dtmc_accumulated_reward(Qdiag,Qoff,selfloops_f,T,p,reward,false,opts);
+    for(long i =0;i<Qoff.size;i++){
+      std::cout <<"before q " << q[i] <<std::endl;
+    }
+    templ_dtmc_cond_accumulated_reward(Qdiag, Qoff, selfloops_f, t,p,q, false, opts);
+  }
+}
+// ******************************************************************
+
 
 namespace MCLib {
   template <class MATRIX, class REAL>

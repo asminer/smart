@@ -1,0 +1,20 @@
+
+dtmc ma:={
+	state s0,s1,s2,s3,s4;
+	init(s0:1);
+	arcs(
+		s0:s1:1,
+		s1:s3:0.5,
+		s1:s4:0.5,
+		s2:s4:1,
+		s3:s2:0.5,
+		s3:s3:0.5,
+		s4:s4:1
+	);
+stateset abs:= potential(is_absorbed);
+statevect re:=reward(s0:5,s1:2.5,s2:4.5,s3:1.5,s4:0);
+statevect exp_reward := acc_reward(50,abs,re);	
+};
+
+print("::::", ma.abs,"\n");
+print("reward for test MC with multiple absorbing states ", ma.exp_reward, "\n");

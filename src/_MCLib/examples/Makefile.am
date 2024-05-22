@@ -13,7 +13,8 @@ noinst_PROGRAMS = \
   ss_test \
   trans_test \
   tta_test \
-  vanish_test 
+  vanish_test \
+  reward_test
 
 check_PROGRAMS = \
   acc_test \
@@ -24,7 +25,8 @@ check_PROGRAMS = \
   ss_test \
   trans_test \
   tta_test \
-  vanish_test 
+  vanish_test  \
+  reward_test
 
 TESTS = \
   acc_test \
@@ -35,7 +37,8 @@ TESTS = \
   ss_test \
   trans_test \
   tta_test \
-  vanish_test 
+  vanish_test \
+  reward_test
 
 
 MY_SOURCES = \
@@ -84,3 +87,5 @@ dist_test_SOURCES = dist_test.cc mcbuilder.cc $(MY_SOURCES)
 vanish_test_SOURCES = vanish_test.cc $(MY_SOURCES)
 
 reach_test_SOURCES = reach_test.cc mcbuilder.cc $(MY_SOURCES)
+
+reward_test_SOURCES = reward_test.cc mcbuilder.cc $(MY_SOURCES)

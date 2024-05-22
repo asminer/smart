@@ -129,6 +129,21 @@ long stochastic_lldsm::process::getOutgoingWeights(long from, long* to, double* 
   parent->bailOut(__FILE__, __LINE__, "Can't get outgoing weights");
   return 0;
 }
+bool stochastic_lldsm::process::reverseAccRewardUnbounded(int t, double* probs, double* aux, double* reward) const
+{
+  parent->bailOut(__FILE__, __LINE__, "Can't compute reverse expected accumulate reward");
+  return false;
+};
+bool stochastic_lldsm::process::reverseCondAccRewardUnbounded(int t, double* probs, double* aux, double* reward,double* abs) const
+{
+  parent->bailOut(__FILE__, __LINE__, "Can't compute reverse conditional expected accumulate reward");
+  return false;
+};
+bool stochastic_lldsm::process::reverseCondAccRewardUnboundedTime(int t,int T, double* probs, double* aux, double* reward,double* abs) const
+{
+  parent->bailOut(__FILE__, __LINE__, "Can't compute reverse conditional expected accumulate reward up to time t");
+  return false;
+};
 bool stochastic_lldsm::process::reverseTransientUnbounded(int t, double* probs, double* aux) const
 {
   parent->bailOut(__FILE__, __LINE__, "Can't compute reverse unbounded MTTA");

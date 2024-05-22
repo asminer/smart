@@ -1,0 +1,275 @@
+/*
+
+The Runway Safety Monitor.
+
+The protocol is parameterized by #numtargets (target #0 is ownship, which monitors
+targets 1 to num_targets). The Petri Net description below attempts to model the
+state-transition chart given in the NASA Technical Report 211416 by David F. Green.
+More details will be gradually introduced, as we expand the model.
+
+The states are defined from ownship's point of view (i.e: a
+target may be in some state from its own perspective, but seen
+in a different state by ownship -- target 0 --, due to incorrect, missing
+or erroneously interpreted data).
+
+There are a few basic Physics concepts used in this model: 
+* 3-D coordinates (x= on the width of the runway, y=on the length, z=the
+altitude) discretized into a grid with the square unit of approx 1/max_y nautical miles;
+The mesh may be coarsened or refined on either axes by adjusting the parameters 
+max_x, max_y and max_z;
+* speed : on a scale from 1 to max_speed;
+* heading: fixed to the 4 geographical orientations: N (meaning by convention a 
+movement along the length of the runway), W (across), S, and E (which can be further 
+refined to 8, 16 directions, or more if needed);
+* pitch : up, down, horizontal;
+
+To make the transition to the analysis of the C code, there is also a set of saved 
+xyx coordinates:  old_x, old_y, old_z; These will be used for correctness and fault 
+tolerance analysis later on. We can add to the "depth" of the history by adding more 
+layers of saved data.
+
+Some identifier rules: local state names (PN places) are prefixed st_,
+transition names are freestyle.
+
+*/
+
+/* Constants for relative geographic orientation */
+int North := 0;
+// int Northwest := 1;
+int West  := 1;
+// int Southwest := 3;
+int South := 2;
+// int Southeast := 5;
+int East  := 3;
+// int Northeast := 7;
+
+pn RIPS(int num_targets, int max_x, int max_y, int max_z) := {
+  for (int i in {0..num_targets}) {
+    place 
+ 
+      /* 
+         States of aircraft & targets :
+         Seven from the Tech.Rep. diagram, plus an additional three.
+      */
+
+      st_taxi[i],		// aircraft taxiing or not moving + stationary objects
+      st_pretakeoff[i],		// cleared and positioned for takeoff
+      st_takeoff_roll[i],	// ground takeoff roll, not airborne
+      st_climbout[i],		// airborne climb or after aborted landing
+      st_landing[i],		// final approach airborne
+      st_rollout[i],		// ground roll after landing or aborted takeoff
+      st_flythru[i],		// flying through, not landing nor taking off
+        /* additional states */
+      st_no_data[i],		// missing radar coordinates in last scan
+      st_out[i],		// out of incursion zone
+      st_alarm[i],		// the incursion detection flag, on/off
+
+    /* 
+      The Physics part: positioning and motion 
+    */
+
+      x[i],    y[i],    z[i],	// coordinates in space
+      rx[i],   ry[i],   rz[i],  // flags to signal when update is complete     
+      oldx[i], oldy[i], oldz[i],// previous known position
+      vx[i], rvx[i],            // X axis speed (and its r flag)
+      vy[i], rvy[i],            // Y axis speed
+      vz[i], rvz[i],            // vertical speed
+      speed[i],                 // absoulte velocity
+      accel[i];			// acceleration
+
+    /* 
+      Places regarding aircraft i are grouped in 6 partitions 
+      6*i:            the status (should generate 16 possible local states),
+      6*i+1 to 6*i+3: the positioning parameters
+      6*i+4, 6*i+5:   the motion parameters
+    */
+
+
+    init(st_taxi[i]:1, vx[i]:1, vy[i]:1, vz[i]:1);
+
+    /* The transitions */
+
+    trans
+      taxi_to_pretakeoff[i],    // positioned for takeoff
+      start_rolling[i],         // ground acceleration
+      climb[i],                 // takeoff
+      exit_zone[i],             // fly out of monitoring zone
+      enter_zone[i],            // fly into the monitoring zone
+      cross_zone[i],            // fly across into the zone
+      quit_zone[i],             // fly across and out of the zone
+      land[i],                  // from airborne to the ground
+      roll_to_taxi[i],          // reach taxiing speed
+      lose_data[i],             // no data from radars
+      recover_data[i],          // resume radar reading
+
+      decx[i], incx[i],	samex[i],	// update the x coordinate
+      decy[i], incy[i],	samey[i],	// update the y coordinate
+      decz[i], incz[i],	samez[i],	// update the z coordinate
+
+      decvx[i], incvx[i], samevx[i],	// steer left, right
+      decvy[i], incvy[i], samevy[i],	// accelerate, break
+      decvz[i], incvz[i], samevz[i],	// climb, descend
+
+      set_alarm[i];             // the key event: alarm is set on or off
+				// after each sweep of the data
+/*
+    firing(
+      taxi_to_pretakeoff[i]:expo(1), 
+      start_rolling[i]:expo(1), climb[i]:expo(1), 
+      exit_zone[i]:expo(1), enter_zone[i]:expo(1), 
+      cross_zone[i]:expo(1), quit_zone[i]:expo(1),
+      land[i]:expo(1), roll_to_taxi[i]:expo(1),
+      lose_data[i]:expo(1), recover_data[i]:expo(1),
+      decx[i]:expo(1), incx[i]:expo(1), samex[i]:expo(1),
+      decy[i]:expo(1), incy[i]:expo(1), samey[i]:expo(1),
+      decz[i]:expo(1), incz[i]:expo(1), samez[i]:expo(1),
+      decvx[i]:expo(1), incvx[i]:expo(1), samevx[i]:expo(1),
+      decvy[i]:expo(1), incvy[i]:expo(1), samevy[i]:expo(1),
+      decvz[i]:expo(1), incvz[i]:expo(1), samevz[i]:expo(1),
+      set_alarm[i]:expo(1)
+    );
+    */
+
+    arcs(
+
+      /* The T.R. diagram part */
+
+      st_taxi[i]:taxi_to_pretakeoff[i], taxi_to_pretakeoff[i]:st_pretakeoff[i],
+
+      st_pretakeoff[i]:start_rolling[i], start_rolling[i]:st_takeoff_roll[i],
+      speed[i]:start_rolling[i], start_rolling[i]:speed[i],
+
+      st_takeoff_roll[i]:climb[i], climb[i]:st_climbout[i], climb[i]:z[i],
+      speed[i]:climb[i], climb[i]:speed[i],
+ 
+      st_climbout[i]:exit_zone[i], exit_zone[i]:st_out[i],
+      st_out[i]:enter_zone[i], enter_zone[i]:st_landing[i],
+      st_landing[i]:land[i], land[i]:st_rollout[i],
+      st_rollout[i]:roll_to_taxi[i], roll_to_taxi[i]:st_taxi[i],
+      st_out[i]:cross_zone[i], cross_zone[i]:st_flythru[i],
+      st_flythru[i]:quit_zone[i], quit_zone[i]:st_out[i],
+
+      lose_data[i]:st_no_data[i], 
+      lose_data[i]:rx[i], lose_data[i]:ry[i], lose_data[i]:rz[i],
+      lose_data[i]:rvx[i], lose_data[i]:rvy[i], lose_data[i]:rvz[i],
+
+      st_no_data[i]:recover_data[i],
+
+      /*
+         Determining the status of a target, 
+         based on the following decision procedure:
+
+        if (altitude == 0) { 	// on the ground
+          if (speed < max_speed) 
+            state = taxi;
+          else if (runway heading) {
+            if (accel > 0)
+              state = takeoff_roll;
+            else
+              state = rollout;
+          }
+          else		// not runway heading 
+            state = taxi
+        }
+        else		// altitude > 0
+        if (runway heading) {
+          if (vertical speed > 0)
+            state = climbout;
+          else
+            state = landing;
+        }
+        else 
+          state = flythru;
+      */
+
+
+      /* 
+         The motion part:
+         Update x,y,z: increment, decrement, or no change (consistent with heading);
+      */
+
+      incx[i]:x[i], incx[i]:rx[i], vx[i]:incx[i], incx[i]:vx[i],
+      oldx[i]:incx[i]:tk(oldx[i]), incx[i]:oldx[i]:tk(x[i]),
+      x[i]:decx[i], decx[i]:rx[i], oldx[i]:decx[i]:tk(oldx[i]), decx[i]:oldx[i]:tk(x[i]),
+      samex[i]:rx[i], oldx[i]:samex[i]:tk(oldx[i]), samex[i]:oldx[i]:tk(x[i]),
+       
+      incy[i]:y[i], incy[i]:ry[i], vy[i]:incy[i], incy[i]:vy[i],
+      oldy[i]:incy[i]:tk(oldy[i]), incy[i]:oldy[i]:tk(y[i]),
+      y[i]:decy[i], decy[i]:ry[i], oldy[i]:decy[i]:tk(oldy[i]), decy[i]:oldy[i]:tk(y[i]),
+      samey[i]:ry[i], oldy[i]:samey[i]:tk(oldy[i]), samey[i]:oldy[i]:tk(y[i]),
+
+      incz[i]:z[i], incz[i]:rz[i], vz[i]:incz[i], incz[i]:vz[i],
+      oldz[i]:incz[i]:tk(oldz[i]), incz[i]:oldz[i]:tk(z[i]),
+      z[i]:decz[i], decz[i]:rz[i], oldz[i]:decz[i]:tk(oldz[i]), decz[i]:oldz[i]:tk(z[i]),
+      samez[i]:rz[i], oldz[i]:samez[i]:tk(oldz[i]), samez[i]:oldz[i]:tk(z[i]), 
+
+      /* Update axis velocities */
+      incvx[i]:vx[i], incvx[i]:rvx[i],      
+      vx[i]:decvx[i], decvx[i]:rvx[i], samevx[i]:rvx[i],
+      incvy[i]:vy[i], incvy[i]:rvy[i],
+      vy[i]:decvy[i], decvy[i]:rvy[i], samevy[i]:rvy[i],
+      incvz[i]:vz[i], incvz[i]:rvz[i],
+      vz[i]:decvz[i], decvz[i]:rvz[i], samevz[i]:rvz[i],
+
+      rx[i]:set_alarm[i],  ry[i]:set_alarm[i],  rz[i]:set_alarm[i],
+      rvx[i]:set_alarm[i], rvy[i]:set_alarm[i], rvz[i]:set_alarm[i]
+    );
+   
+    inhibit(
+      st_no_data[i]:lose_data[i],
+
+      /* enforce upper bounds on motion parameters*/
+      x[i]:incx[i]:max_x, y[i]:incy[i]:max_y, z[i]:incz[i]:max_z,
+      vx[i]:incvx[i]:2, vy[i]:incvy[i]:2, vz[i]:incvz[i]:2,
+
+      /* coordinate changes must be consistent with heading */
+      vx[i]:decx[i]:2, vy[i]:decy[i]:2, vz[i]:decz[i]:2,
+
+      /* update coords only once per sweep */
+      rx[i]:incx[i], rx[i]:decx[i], rx[i]:samex[i],
+      ry[i]:incy[i], ry[i]:decy[i], ry[i]:samey[i],
+      rz[i]:incz[i], rz[i]:decz[i], rz[i]:samez[i],
+      rvx[i]:incvx[i], rvx[i]:decvx[i], rvx[i]:samevx[i],
+      rvy[i]:incvy[i], rvy[i]:decvy[i], rvy[i]:samevy[i],
+      rvz[i]:incvz[i], rvz[i]:decvz[i], rvz[i]:samevz[i],
+      rx[i]:lose_data[i],  ry[i]:lose_data[i],  rz[i]:lose_data[i],
+      rvx[i]:lose_data[i], rvy[i]:lose_data[i], rvz[i]:lose_data[i],
+
+      /* start climbout from the ground (altitude 0) */
+      z[i]:climb[i]
+    );
+
+  }
+   
+  bigint numstates := num_states;
+
+  stateset F       := potential(tk(x[0])==max_x
+                              & tk(y[0])==max_y
+                              & tk(z[0])==max_z 
+                              );
+  //stateset N       := next(initialstate,2);
+  stateset trace1      := EF(F);
+};
+
+
+int T:=1;
+int S:=1;
+int X:=3;
+int Y:=10;
+int Z:=4;
+
+print("***************************************\n");
+print("The Runway Incursion Prevention System.\n");
+print("***************************************\n");
+print("Parameters:\n");
+print(" * number of tracked targets = ", T, "\n");
+print(" * thresholds of speed = ", S, "\n");
+print(" * X axis divisions = ", X, "\n");
+print(" * Y axis divisions = ", Y, "\n");
+print(" * Z axis divisions = ", Z, "\n");
+print("***************************************\n");
+print("Number of states in the model: ");
+//RIPS(/*numtargets:=*/T, /*maxspeed:=S, max_x:=*/X, /*max_y:=*/Y, /*max_z:=*/Z).numstates;
+print("test ",RIPS(T,S,X,Y,Z).numstates, "\n");
+//print("\n\n An arbitrary execution trace:\n");
+//compute(RIPS(T,X,Y,Z).trace1);

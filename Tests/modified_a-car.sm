@@ -1,0 +1,33 @@
+
+#GraphDisplayStyle OUTGOING
+#StatesetPrintIndexes false
+
+pn plks (int n ):= {
+place cx2, cy2, cx1, cy1, time;
+
+trans tcy2_tcx1_cy1_0;
+init(cx2:3, cy2: n, cx1:n, cy1:1);
+
+
+
+arcs(
+cy2:tcy2_tcx1_cy1_0: tk(cy2)-1, tcy2_tcx1_cy1_0:cy2:tk(cy2)-1,
+cx1: tcy2_tcx1_cy1_0: tk(cx1)+1, tcy2_tcx1_cy1_0: cx1 :tk(cx1)+1,
+cx1: tcy2_tcx1_cy1_0: tk(cx1)-1, tcy2_tcx1_cy1_0: cx1 :tk(cx1)-1,
+cy1:tcy2_tcx1_cy1_0:tk(cy1)+1, tcy2_tcx1_cy1_0: cy1:tk(cy1)+1, 
+cy1:tcy2_tcx1_cy1_0:tk(cy1)-1, tcy2_tcx1_cy1_0: cy1:tk(cy1)-1
+); // synchronous with car1
+
+/*
+if (tk(cx1)<= n & tk(cx1)>=1 & tk(cy1)>=1 & tk(cy1)<=n){
+	arcs(
+	cx1: tcx1_cy1: tk(cx1)+1, tcx1_cy1: cx1 :tk(cx1)+1,
+	cx1: tcx1_cy1: tk(cx1)-1, tcx1_cy1: cx1 :tk(cx1)-1,
+	cy1:tcx1_cy1:tk(cy1)+1, cy1:tcx1_cy1:tk(cy1)+1, 
+	cy1:tcx1_cy1:tk(cy1)-1, cy1:tcx1_cy1:tk(cy1)-1
+	);
+
+}
+*/
+
+};

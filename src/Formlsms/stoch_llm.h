@@ -145,6 +145,52 @@ public:
         virtual bool computeTransient(double t, double* probs, 
               double* aux, double* aux2) const;
  
+        /** Backward computation of expected accumulated reward until reaches an absorbing state.
+            This must be provided in derived classes, the
+            default behavior here is to print an error message.
+              @param  t       Time.
+              @param  probs   On input: An array of dimension getNumStates(), holding
+                              the probability for each state at time 0.
+        
+                              On output: An array of dimension getNumStates(), holding
+                              the expected time to reach the target state starting from each state.
+              @param  aux     Auxiliary vector, dimension getNumStates().
+              @param  reward   Vector of reals, reward rate at each state, dimension getNumStates().
+
+              @return    true on success, false otherwise.
+        */
+        virtual bool reverseAccRewardUnbounded(int t, double* probs,double* aux, double* reward) const;
+         /** Backward computation of expected accumulated reward until reaches an absorbing state.
+            This must be provided in derived classes, the
+            default behavior here is to print an error message.
+              @param  t       Time.
+              @param  probs   On input: An array of dimension getNumStates(), holding
+                              the probability for each state at time 0.
+        
+                              On output: An array of dimension getNumStates(), holding
+                              the expected time to reach the target state starting from each state.
+              @param  aux     Auxiliary vector, dimension getNumStates().
+              @param  reward   Vector of reals, reward rate at each state, dimension getNumStates().
+              @param  abs    Vector of absorbing bad states,dimension getNumStates().
+              @return    true on success, false otherwise.
+        */
+        virtual bool reverseCondAccRewardUnbounded(int t, double* probs,double* aux, double* reward,double* abs) const;
+        /** Backward computation of expected accumulated reward until reaches an absorbing state.
+            This must be provided in derived classes, the
+            default behavior here is to print an error message.
+              @param  t       Time: in the formula
+              @param T        Time till we accumulate reward
+              @param  probs   On input: An array of dimension getNumStates(), holding
+                              the probability for each state at time 0.
+        
+                              On output: An array of dimension getNumStates(), holding
+                              the expected time to reach the target state starting from each state.
+              @param  aux     Auxiliary vector, dimension getNumStates().
+              @param  reward   Vector of reals, reward rate at each state, dimension getNumStates().
+              @param  abs    Vector of absorbing bad states,dimension getNumStates().
+              @return    true on success, false otherwise.
+        */
+        virtual bool reverseCondAccRewardUnboundedTime(int t, int T, double* probs,double* aux, double* reward,double* abs) const;
         /** Backward computation of expected time to reach an absorbing state, until time t.
             This must be provided in derived classes, the
             default behavior here is to print an error message.

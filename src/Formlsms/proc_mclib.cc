@@ -585,7 +585,147 @@ bool mclib_process
     return false;
   }
 }
+// ******************************************************************
 
+bool mclib_process
+::reverseAccRewardUnbounded(int t, double* probs, double* aux, double* reward) const
+{
+  if (0==chain || 0==probs)  return false;
+  DCASSERT(chain);
+  
+  try {
+    timer w;
+    if (is_discrete) {
+      MCLib::Markov_chain::DTMC_transient_options opts;
+      opts.vm_result = aux;
+      
+
+      int it = int(t);
+      startTransientReport(w, it);
+      //chain->reverseTransientConditional_TTA(h,k, probs, probs_t, opts);
+      chain->reverse_accumulated_reward_unbounded(t,probs,reward,opts);
+      stopTransientReport(w, opts.multiplications);
+
+      opts.vm_result = 0;
+      opts.accumulator = 0;
+    } 
+    /*else {
+      MCLib::Markov_chain::CTMC_transient_options opts;
+      opts.vm_result = aux;
+
+      startTransientReport(w, t); 
+      chain->computeTransient(t, probs, opts);
+      stopTransientReport(w, opts.multiplications);
+
+      opts.vm_result = 0;
+      opts.accumulator = 0;
+    }*/
+    return true;
+  }
+  catch (MCLib::error e) {
+    if (em->startInternal(__FILE__, __LINE__)) {
+      em->noCause();
+      em->internal() << "Unexpected error: ";
+      em->internal() << e.getString();
+      em->stopIO();
+    }
+    return false;
+  }
+}
+// ******************************************************************
+
+bool mclib_process
+::reverseCondAccRewardUnbounded(int t, double* probs, double* aux, double* reward, double* abs) const
+{
+  if (0==chain || 0==probs)  return false;
+  DCASSERT(chain);
+  
+  try {
+    timer w;
+    if (is_discrete) {
+      MCLib::Markov_chain::DTMC_transient_options opts;
+      opts.vm_result = aux;
+      
+
+      int it = int(t);
+      startTransientReport(w, it);
+      //chain->reverseTransientConditional_TTA(h,k, probs, probs_t, opts);
+      chain->conditional_accumulated_reward_unbounded(t,probs,reward,abs,opts);
+      stopTransientReport(w, opts.multiplications);
+
+      opts.vm_result = 0;
+      opts.accumulator = 0;
+    } 
+    /*else {
+      MCLib::Markov_chain::CTMC_transient_options opts;
+      opts.vm_result = aux;
+
+      startTransientReport(w, t); 
+      chain->computeTransient(t, probs, opts);
+      stopTransientReport(w, opts.multiplications);
+
+      opts.vm_result = 0;
+      opts.accumulator = 0;
+    }*/
+    return true;
+  }
+  catch (MCLib::error e) {
+    if (em->startInternal(__FILE__, __LINE__)) {
+      em->noCause();
+      em->internal() << "Unexpected error: ";
+      em->internal() << e.getString();
+      em->stopIO();
+    }
+    return false;
+  }
+}
+// ******************************************************************
+
+bool mclib_process
+::reverseCondAccRewardUnboundedTime(int t, int T, double* probs, double* aux, double* reward, double* abs) const
+{
+  if (0==chain || 0==probs)  return false;
+  DCASSERT(chain);
+  
+  try {
+    timer w;
+    if (is_discrete) {
+      MCLib::Markov_chain::DTMC_transient_options opts;
+      opts.vm_result = aux;
+      
+
+      int it = int(t);
+      startTransientReport(w, it);
+      //chain->reverseTransientConditional_TTA(h,k, probs, probs_t, opts);
+      chain->conditional_accumulated_reward_unbounded_time(t,T,probs,reward,abs,opts);
+      stopTransientReport(w, opts.multiplications);
+
+      opts.vm_result = 0;
+      opts.accumulator = 0;
+    } 
+    /*else {
+      MCLib::Markov_chain::CTMC_transient_options opts;
+      opts.vm_result = aux;
+
+      startTransientReport(w, t); 
+      chain->computeTransient(t, probs, opts);
+      stopTransientReport(w, opts.multiplications);
+
+      opts.vm_result = 0;
+      opts.accumulator = 0;
+    }*/
+    return true;
+  }
+  catch (MCLib::error e) {
+    if (em->startInternal(__FILE__, __LINE__)) {
+      em->noCause();
+      em->internal() << "Unexpected error: ";
+      em->internal() << e.getString();
+      em->stopIO();
+    }
+    return false;
+  }
+}
 // ******************************************************************
 bool mclib_process::computeAccumulated(double t, const double* p0, double* n,
                                   double* aux, double* aux2) const

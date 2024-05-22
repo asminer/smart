@@ -1,0 +1,19 @@
+
+#StatevectDisplayStyle SPARSE_STATE
+dtmc re_test:={
+state s0,s4,s2,s3,s1;
+init(s0:1);
+arcs(
+  s0:s1:1.0,
+  s1:s2:1.0,
+  s2:s3:1.0,
+  s3:s3:0.5,
+  s3:s4:0.5,
+  s4:s4:1
+);
+
+stateset abs:= potential(is_absorbed);
+statevect re:=reward(s0:5,s1:2.5,s2:4.5,s3:1.5,s4:0);
+statevect exp_reward := acc_reward(500,abs,re);	
+};
+print("reward for test MC ", re_test.exp_reward, "\n");

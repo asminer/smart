@@ -1,0 +1,158 @@
+int T:=1;
+int S:=1;
+int max_x:=3;
+int max_y:=3;
+pn RIPS(int num_targets) := {
+  for (int i in {0..num_targets}) {
+    place 
+ 
+      /* 
+         States of aircraft & targets :
+         Seven from the Tech.Rep. diagram, plus an additional three.
+      */
+
+      st_taxi[i],		// aircraft taxiing or not moving + stationary objects
+      st_pretakeoff[i],		// cleared and positioned for takeoff
+      st_takeoff_roll[i],	// ground takeoff roll, not airborne
+      st_climbout[i],		// airborne climb or after aborted landing
+      st_landing[i],		// final approach airborne
+      st_rollout[i],		// ground roll after landing or aborted takeoff
+      st_flythru[i],		// flying through, not landing nor taking off
+        /* additional states */
+      st_no_data[i],		// missing radar coordinates in last scan
+      st_out[i],		// out of incursion zone
+      st_alarm[i],		// the incursion detection flag, on/off
+
+    /* 
+      The Physics part: positioning and motion 
+    */
+
+      x[i],    y[i],  	// coordinates in space
+      rx[i],   ry[i],     // flags to signal when update is complete     
+      oldx[i], oldy[i], // previous known position
+      vx[i], rvx[i],            // X axis speed (and its r flag)
+      vy[i], rvy[i],            // Y axis speed
+      speed[i],                 // absoulte velocity
+      accel[i];			// acceleration
+
+    /* 
+      Places regarding aircraft i are grouped in 6 partitions 
+      6*i:            the status (should generate 16 possible local states),
+      6*i+1 to 6*i+3: the positioning parameters
+      6*i+4, 6*i+5:   the motion parameters
+    */
+
+
+    init(st_taxi[i]:1, vx[i]:1, vy[i]:1);
+
+    /* The transitions */
+
+    trans
+      taxi_to_pretakeoff[i],    // positioned for takeoff
+      start_rolling[i],         // ground acceleration
+      climb[i],                 // takeoff
+      exit_zone[i],             // fly out of monitoring zone
+      enter_zone[i],            // fly into the monitoring zone
+      cross_zone[i],            // fly across into the zone
+      quit_zone[i],             // fly across and out of the zone
+      land[i],                  // from airborne to the ground
+      roll_to_taxi[i],          // reach taxiing speed
+      lose_data[i],             // no data from radars
+      recover_data[i],          // resume radar reading
+
+      decx[i], incx[i],	samex[i],	// update the x coordinate
+      decy[i], incy[i],	samey[i],	// update the y coordinate
+      
+
+      decvx[i], incvx[i], samevx[i],	// steer left, right
+      decvy[i], incvy[i], samevy[i],	// accelerate, break
+      
+
+      set_alarm[i];             // the key event: alarm is set on or off
+				// after each sweep of the data
+
+    arcs(
+
+      /* The T.R. diagram part */
+
+      st_taxi[i]:taxi_to_pretakeoff[i], taxi_to_pretakeoff[i]:st_pretakeoff[i],
+
+      st_pretakeoff[i]:start_rolling[i], start_rolling[i]:st_takeoff_roll[i],
+      speed[i]:start_rolling[i], start_rolling[i]:speed[i],
+
+      st_takeoff_roll[i]:climb[i], climb[i]:st_climbout[i], climb[i]:z[i],
+      speed[i]:climb[i], climb[i]:speed[i],
+ 
+      st_climbout[i]:exit_zone[i], exit_zone[i]:st_out[i],
+      st_out[i]:enter_zone[i], enter_zone[i]:st_landing[i],
+      st_landing[i]:land[i], land[i]:st_rollout[i],
+      st_rollout[i]:roll_to_taxi[i], roll_to_taxi[i]:st_taxi[i],
+      st_out[i]:cross_zone[i], cross_zone[i]:st_flythru[i],
+      st_flythru[i]:quit_zone[i], quit_zone[i]:st_out[i],
+
+      lose_data[i]:st_no_data[i], 
+      lose_data[i]:rx[i], lose_data[i]:ry[i], lose_data[i]:rz[i],
+      lose_data[i]:rvx[i], lose_data[i]:rvy[i], lose_data[i]:rvz[i],
+
+      st_no_data[i]:recover_data[i],
+
+      
+      /* 
+         The motion part:
+         Update x,y,z: increment, decrement, or no change (consistent with heading);
+      */
+
+      incx[i]:x[i], incx[i]:rx[i], vx[i]:incx[i], incx[i]:vx[i],
+      oldx[i]:incx[i]:tk(oldx[i]), incx[i]:oldx[i]:tk(x[i]),
+      x[i]:decx[i], decx[i]:rx[i], oldx[i]:decx[i]:tk(oldx[i]), decx[i]:oldx[i]:tk(x[i]),
+      samex[i]:rx[i], oldx[i]:samex[i]:tk(oldx[i]), samex[i]:oldx[i]:tk(x[i]),
+       
+      incy[i]:y[i], incy[i]:ry[i], vy[i]:incy[i], incy[i]:vy[i],
+      oldy[i]:incy[i]:tk(oldy[i]), incy[i]:oldy[i]:tk(y[i]),
+      y[i]:decy[i], decy[i]:ry[i], oldy[i]:decy[i]:tk(oldy[i]), decy[i]:oldy[i]:tk(y[i]),
+      samey[i]:ry[i], oldy[i]:samey[i]:tk(oldy[i]), samey[i]:oldy[i]:tk(y[i]),
+
+
+      /* Update axis velocities */
+      incvx[i]:vx[i], incvx[i]:rvx[i],      
+      vx[i]:decvx[i], decvx[i]:rvx[i], samevx[i]:rvx[i],
+      incvy[i]:vy[i], incvy[i]:rvy[i],
+      vy[i]:decvy[i], decvy[i]:rvy[i], samevy[i]:rvy[i],
+      rx[i]:set_alarm[i],  ry[i]:set_alarm[i],
+      rvx[i]:set_alarm[i], rvy[i]:set_alarm[i]
+    );
+
+   
+    inhibit(
+      st_no_data[i]:lose_data[i],
+
+      // enforce upper bounds on motion parameters
+      x[i]:incx[i]:max_x, y[i]:incy[i]:max_y,
+      vx[i]:incvx[i]:2, vy[i]:incvy[i]:2,
+
+      //coordinate changes must be consistent with heading 
+      vx[i]:decx[i]:2, vy[i]:decy[i]:2,
+
+      // update coords only once per sweep 
+      rx[i]:incx[i], rx[i]:decx[i], rx[i]:samex[i],
+      ry[i]:incy[i], ry[i]:decy[i], ry[i]:samey[i],
+      rvx[i]:incvx[i], rvx[i]:decvx[i], rvx[i]:samevx[i],
+      rvy[i]:incvy[i], rvy[i]:decvy[i], rvy[i]:samevy[i],
+      rx[i]:lose_data[i],  ry[i]:lose_data[i],  
+      rvx[i]:lose_data[i], rvy[i]:lose_data[i]
+    );
+    
+
+  }
+   
+  bigint numstates := num_states;
+  stateset init := initial;
+
+  stateset test       := reachable & potential(tk(x[0])==max_x
+                              & tk(y[0])==max_y
+                              );
+  //stateset N       := next(initialstate,2);
+  stateset trace1      := EF(test);
+};
+
+print("test ", RIPS(1).numstates,"\n");

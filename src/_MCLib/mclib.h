@@ -515,9 +515,57 @@ namespace MCLib {
       */
       void reverseTransient(double t, double* x, CTMC_transient_options &opts)
       const;
+    /** Compute expected accumulated reward till time t, for all possible starting states.
+          Must be a DTMC.
+          Vectors are allocated so that x[s] is the expected accumulated reward when the
+          chain starts in state s, for any legal state handle s.
+          Specifically, we determine
 
+            r[s] = m[s,s']*rho[s]  
+            x[s]= E [ f(state at time t) ], given we start in state s
 
+          @param  t   Time
+          @param  r   Reward rate vector
 
+          @param  x   On input: function f() to compute expectation over.
+                      On output: expected value for each starting state.
+                      (Will decide the output later!)
+      */
+      void reverse_accumulated_reward_unbounded(int t, double* x,double* r, DTMC_transient_options &opts) const;
+
+/** Compute conditional expected accumulated reward till time t, for all possible starting states.
+          Must be a DTMC.
+          Vectors are allocated so that x[s] is the expected accumulated reward when the
+          chain starts in state s, for any legal state handle s.
+          Specifically, we determine
+
+            r[s] = m[s,s']*rho[s]  
+            x[s]= E [ f(state at time t) ], given we start in state s
+
+          @param  t   Time
+          @param  r   Reward rate vector
+          @param  x   On input: function f() to compute expectation over.
+                      On output: expected value for each starting state.
+                      (Will decide the output later!)
+      */
+      void conditional_accumulated_reward_unbounded(int t, double* x,double* r, double* q, DTMC_transient_options &opts) const;
+/** Compute conditional expected accumulated reward till time t, for all possible starting states.
+          Must be a DTMC.
+          Vectors are allocated so that x[s] is the expected accumulated reward when the
+          chain starts in state s, for any legal state handle s.
+          Specifically, we determine
+
+            r[s] = m[s,s']*rho[s]  
+            x[s]= E [ f(state at time t) ], given we start in state s
+
+          @param  t   Time to collect reward
+          @param  T   time associated with the formula, can be optional
+          @param  r   Reward rate vector
+          @param  x   On input: function f() to compute expectation over.
+                      On output: expected value for each starting state.
+                      (Will decide the output later!)
+      */
+      void conditional_accumulated_reward_unbounded_time(int t, int T,  double* x,double* r, double* q, DTMC_transient_options &opts) const;
       /** Compute the accumulated time spent in every state, up
           to and including time t.
           Must be a DTMC.
