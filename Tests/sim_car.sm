@@ -1,0 +1,57 @@
+#GraphDisplayStyle OUTGOING
+#StatesetPrintIndexes false
+
+pn plks:={
+
+place cx1,cy1,cx2,cy2, time1,time2, time_test;
+trans tcy2do_car1diag, tcy2do_car1up, tcy2do_car1left,tcy2do_car1stop;
+init(cx1:6,cy1:1,cx2:3,cy2:6,time1:100);
+
+arcs(
+
+cy2:tcy2do_car1diag:cond(tk(cy2)>0,1,0),
+cx1:tcy2do_car1diag:1,
+tcy2do_car1diag:cy1:cond(tk(cy1)<6,1,0),
+time1:tcy2do_car1diag,
+tcy2do_car1diag:time2:1,
+
+
+cy2:tcy2do_car1up:cond(tk(cy2)>0,1,0),
+tcy2do_car1up:cy1:cond(tk(cy1)<6,1,0),
+time1:tcy2do_car1up,
+tcy2do_car1up:time2:1,
+
+
+cy2:tcy2do_car1left:cond(tk(cy2)>0,1,0),
+cx1:tcy2do_car1left:1,
+time1:tcy2do_car1left:1,
+tcy2do_car1left:time2,
+
+
+cy2:tcy2do_car1stop:cond(tk(cy2)>0,1,0),
+time1:tcy2do_car1stop,
+tcy2do_car1stop:time2
+
+);
+
+priority(tcy2do_car1stop: {tcy2do_car1diag,tcy2do_car1up, tcy2do_car1left});
+guard(tcy2do_car1left: (tk(cy1)==4|tk(cy1)==3)  & tk(cx1)>0);
+guard(tcy2do_car1stop:((tk(cx1)-tk(cx2)<2) & (tk(cy1)-tk(cy2)<3)) | ((tk(cx1)-tk(cx2)<2) & (tk(cy1)-tk(cy2)<2)) ); // check again 
+//guard(tcy2do_car1stop:((tk(cx1)-1==tk(cx2)) & (tk(cy1)+1==tk(cy2)-1))| ((tk(cx1)-1==tk(cx2)) & (tk(cy1)==tk(cy2)-1)) );
+//guard(tcy2do_car1stop: (tk(cx1)-1) == tk(cx2) & tk(cy1)==(tk(cy2)-1) );
+
+
+inhibit(
+cy1: tcy2do_car1up:4,
+cy1: tcy2do_car1diag:4
+);
+stateset r := reachable;
+stateset collide := reachable & potential((tk(cx1)==tk(cx2)) & (tk(cy1)==tk(cy2)));
+stateset prop := AU(!collide, potential(tk(cx1)==0& (tk(cy1)==3)| (tk(cy1)==4))) &  initial; 
+};
+
+print(plks.r,"\n");
+print(plks.collide,"\n");
+
+print("Desired property ",plks.prop,"\n");
+

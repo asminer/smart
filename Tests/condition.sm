@@ -1,0 +1,43 @@
+dtmc tmr := {
+  state w3, w2, w1, w0;
+
+  init(w3:1);
+
+/*
+  arcs(
+    w3 : w2 : 0.03,
+    w3 : w3: 0.970299,
+    w3: w1 : 0.0003,
+    w3 : w0 : 0.000001,
+    w2 : w2 : 0.9801,
+    w2 : w1 : 0.02,
+    w2 : w0: 0.0001,
+    w1 : w1 : 1,
+    w0: w0: 1
+  );
+*/
+
+arcs(
+    w3 : w2 : 0.03,
+    w3 : w3: 0.970299,
+    w3: w1 : 0.0003,
+    w3 : w0 : 0.000001,
+    w2 : w2 : 0.9801,
+    w2 : w1 : 0.02,
+    w2 : w0: 0.0001,
+    w1 : w1 : 1,
+    w0: w0: 1
+  );
+
+  
+  //& potential(in_state(w1));
+  stateset abs := potential(is_absorbed);
+  stateset nxt_abs := EX(abs);
+  stateset good := !(abs);
+  //stateprobs prop1 := conditional_tta(3,good);
+  stateprobs rev_time := conditional_tta(50,100,abs, !abs);
+  };
+
+  print("test3:::::::::",tmr.rev_time,"\n");
+  print("absorbing   ", tmr.abs, "\n");
+  print("good stateset ", tmr.good, "\n");

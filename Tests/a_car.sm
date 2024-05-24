@@ -1,0 +1,65 @@
+/* 
+   Petri net plKS.
+*/
+
+// #Warning + pn_ALL
+
+#GraphDisplayStyle OUTGOING
+#StatesetPrintIndexes false
+
+pn plks := {
+  place p00, p01, p10, p11, p20, p02, p21, p12, p22, time;
+  
+  trans t20_21, t21_11, t11_01, t12_11, t11_10,t20_11;
+
+  init(p20:1,p12:2);
+  decision cam_1, lidar_1; // can be unknown: initially
+  arcs(
+       p11 : t11_01, t11_01 : p01,
+
+       p11 : t11_10:2, t11_10 : p10:2,
+
+       p20 : t20_21, t20_21 : p21,
+        
+       p12 : t12_11:2,  t12_11 : p11:2, 
+
+       p21 : t21_11, t21_11 : p11, 
+       
+        p20:t20_11, t20_11:p11,
+        //transitions to time
+        t20_21:time, t21_11:time, t11_01:time, t20_11:time // how does this count the number of brake?
+       );
+
+      
+  inhibit(
+  p12:t21_11:2,
+  p12:t20_11:2
+  );
+      
+  bigint n_states := num_states;
+  bigint n_arcs := num_arcs;
+  stateset r := reachable;
+  stateset collide := reachable & (potential(tk(p00)>2) | potential(tk(p01)>2) | potential(tk(p02)>2) | potential(tk(p10)>2) | potential(tk(p11)>2) | potential(tk(p12)>2) | potential(tk(p20)>2) | potential(tk(p21)>2) | potential(tk(p22)>2));
+  stateset prop := EU(!collide, potential(tk(p01)==1))& AG(potential(tk(time)<6)) & initial; 
+                                               
+
+
+  //int test := min_decision_cost(prop);
+};
+
+print(plks.n_states,"\n");
+print(plks.n_arcs,"\n");
+//print(plks.r,"\n");
+print("--------\n");
+print(plks.prop,"\n");
+
+
+
+stateset car_1_in_crit_section := const(is_taken(lidar), tk(cx)==3 and tk(cy) == 3, tk(cx) == 3 and tk(cy) == 3 or tk(cx) == 2 and tk(cy) == 3 ...)
+
+stateset car_1_in_crit_section := cond(is_taken(lidar), tk(cx)==3 and tk(cy) == 3, tk(cx) == 3 and tk(cy) == 3 or tk(cx) == 2 and tk(cy) == 3 ...)
+
+stateset collide := car_1_in_crit_section & car_2_in_crit_section 
+
+stateset car_1_in_crit_section_lidar := tk(cx)==3 and tk(cy) == 3
+

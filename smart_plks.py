@@ -1,8 +1,10 @@
-from multiprocessing import Process
+#!/usr/bin/python3
+
+#from multiprocessing import Process
 import random
 import subprocess
 
-def generate_smart(N: int, num_samples: int, forbidden_s: int) -> str:
+def generate_smart(N: int, num_samples: int, B: int, forbidden_s: int) -> str:
 
   forbid_coords=[]
   for i in range(0,forbidden_s):
@@ -26,11 +28,33 @@ def generate_smart(N: int, num_samples: int, forbidden_s: int) -> str:
       y = random.randint(0,N-1)
     sample_coords.append((x,y))
 
-  output = """
+  output = "//\n"
+  output += "// Grid " + str(N) + " x " + str(N) + " \n"
+  output += "//\n"
+  output += "// "
+  for i in range(0,N):
+    for j in range(0,N):
+        if (i,j) == (0,0):
+            output += "A"
+            continue
+        if (i,j) == (N-1,N-1):
+            output += "B"
+            continue
+        if (i,j) in forbid_coords:
+            output += "X"
+            continue
+        if (i,j) in sample_coords:
+            output += "s"
+            continue
+        output += "."
+    output += "\n// "
+  output += "\n"
+
+  output += """
   #GraphDisplayStyle OUTGOING
   #StatesetPrintIndexes false
 
-  pn plks(int B) := {
+  pn plks := {
     place """
 
   places = []
@@ -69,7 +93,7 @@ def generate_smart(N: int, num_samples: int, forbidden_s: int) -> str:
 
   inits = []
   inits.append("p0_0:1")
-  inits.append(f"battery:B")
+  inits.append(f"battery:{B}")
   for (x,y) in sample_coords:
     inits.append(f"sample_{x}_{y}:1")
 
@@ -125,11 +149,23 @@ def generate_smart(N: int, num_samples: int, forbidden_s: int) -> str:
   cost =[]
   for i in range(1,num_samples+1):
     decisions.append(f"s_min{i}")
-    cost.append(f"s_min{i}:{int((num_samples-i+1)**1.5)}")
+    cost_t=0
+    for j in range(1,i+1):
+      cost_t+= 1/j
+    cost.append(f"s_min{i}:{int((num_samples-cost_t)*100)}")
 
-  for i in range(1,4):
+  for i in range(1,6):
     decisions.append(f"battery_min{i}")
-    cost.append(f"battery_min{i}:{int((4-i+1)**1.5)}")
+    if(i==1):
+      cost.append(f"battery_min{i}:{int(8*100)}")
+    if(i==2):
+      cost.append(f"battery_min{i}:{int(6*100)}")
+    if(i==3):
+      cost.append(f"battery_min{i}:{int(4*100)}")
+    if(i==4):
+      cost.append(f"battery_min{i}:{int(2*100)}")
+    if(i==5):
+      cost.append(f"battery_min{i}:{int(1*100)}")
 
   output += "\n  decision " + ",".join(decisions) + ";\n"
   output+= "cost("+ ",".join(cost)+");\n"
@@ -143,9 +179,9 @@ def generate_smart(N: int, num_samples: int, forbidden_s: int) -> str:
         s_min_list.append(f"!is_taken(s_min{j})")
     dec_enables.append(f"s_min{i}:"+"&".join(s_min_list))
 
-  for i in range(1,4):
+  for i in range(1,6):
     b_min_list=[]
-    for j  in range(1,4):
+    for j  in range(1,6):
       if j!=i:
         b_min_list.append(f"!is_taken(battery_min{j})")
     dec_enables.append(f"battery_min{i}:"+"&".join(b_min_list))
@@ -153,17 +189,26 @@ def generate_smart(N: int, num_samples: int, forbidden_s: int) -> str:
   output+="enable_decision("+ ",".join(dec_enables)+");"
   output += f"""
     bigint n_states := num_states;
-    stateset prop := (potential(tk(p0_0)==1)) -> EU(reachable, potential(tk(p{N-1}_{N-1})==1) & ("""
+    stateset prop := (potential(tk(p0_0)==1)) -> EU(reachable, potential( (tk(p{N-1}_{N-1})==1) & ( """
 
   battery_p=[]
-  for i in range(1,4):
-    battery_p.append(f"(potential(dec_value(battery_min{i}) & tk(battery) > int(B*(1/(2*{i})))))")
+  for i in range(1,6):
+    if (i==1):
+      battery_p.append(f"(dec_value(battery_min{i}) & tk(battery) > 0))")
+    if (i==2):
+      battery_p.append(f"(dec_value(battery_min{i}) & tk(battery) > 1))")
+    if (i==3):
+      battery_p.append(f"(dec_value(battery_min{i}) & tk(battery) > 3))")
+    if (i==4):
+      battery_p.append(f"(dec_value(battery_min{i}) & tk(battery) > 5))")
+    if (i==5):
+      battery_p.append(f"(dec_value(battery_min{i}) & tk(battery) > 7))")
     # print(B*(i/4))
   output+= "|".join(battery_p)+ ") & ("
 
   props = []
   for i in range(1,num_samples+1):
-    props.append(f"(potential(dec_value(s_min{i}) & tk(samples)>{i-1}))")
+    props.append(f"((dec_value(s_min{i}) & tk(samples)>{i-1}))")
 
   output += "|".join(props) + "));"
 
@@ -172,13 +217,32 @@ def generate_smart(N: int, num_samples: int, forbidden_s: int) -> str:
   }};
 
   start_timer(0);
-  print(plks({2*N}).n_states,"\\n");
+  print(plks.n_states,"\\n");
   print("Model generation: ", stop_timer(0), " seconds\\n");
-  print(plks({2*N}).test,"\\n");
+  print(plks.test,"\\n");
   """
 
   return output
+dims = [15]
+num_samples = [3]
+max_battery = 30
+forbidden_s = [40]
 
+num_tests = [1]
+
+for i in range(0,len(dims)):
+  for j in range(0,num_tests[i]):
+    smart_src = generate_smart(dims[i], num_samples[i], max_battery, forbidden_s[i])
+    testname = "range_plks_"+"_".join([str(dims[i]), str(num_samples[i]), str(max_battery), str(forbidden_s[i]), str(j)])
+    with open(testname+".sm","w") as f:
+      f.write(smart_src)
+    result = subprocess.run(["./bin-devel/bin/smart",testname+".sm"], capture_output=True, text=True)
+    with open(testname+".out","w") as f:
+      f.write(result.stdout)
+    print(f"done with {testname}")
+
+
+'''
 def run_test(i, dim, num_samples, forbidden_s):
   for j in range(0,i):
     smart_src = generate_smart(dim, num_samples, forbidden_s)
@@ -192,11 +256,11 @@ def run_test(i, dim, num_samples, forbidden_s):
 
 
 # dims = [5,10,15,20,25,30,35]
-dims = [5,10]
+dims = [5,10,15]
 num_samples = [n//2 for n in dims]
 forbidden_s = [2*n//3 for n in dims]
 
-num_tests = [10,10,5,5,5,3,3]
+num_tests = [6,6,6]
 
 processes = []
 
@@ -209,3 +273,4 @@ for p in processes:
 for p in processes:
     p.join()
     print("done with "+str(p))
+'''

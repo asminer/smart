@@ -1,0 +1,33 @@
+//
+// Grid 5 x 5 
+//
+// A.X.X
+// .Xs..
+// .s...
+// .....
+// ....B
+// 
+
+  #GraphDisplayStyle OUTGOING
+  #StatesetPrintIndexes false
+
+  pn plks := {
+    place p0_0,p0_1,p0_3,p1_0,p1_2,p1_3,p1_4,p2_0,p2_1,p2_2,p2_3,p2_4,p3_0,p3_1,p3_2,p3_3,p3_4,p4_0,p4_1,p4_2,p4_3,p4_4,sample_1_2,sample_2_1,samples,battery;
+  trans t0_0__1_0,t0_0__0_1,t0_1__0_0,t0_3__1_3,t1_0__0_0,t1_0__2_0,t1_2__2_2,t1_2__1_3,t1_3__0_3,t1_3__2_3,t1_3__1_2,t1_3__1_4,t1_4__2_4,t1_4__1_3,t2_0__1_0,t2_0__3_0,t2_0__2_1,t2_1__3_1,t2_1__2_0,t2_1__2_2,t2_2__1_2,t2_2__3_2,t2_2__2_1,t2_2__2_3,t2_3__1_3,t2_3__3_3,t2_3__2_2,t2_3__2_4,t2_4__1_4,t2_4__3_4,t2_4__2_3,t3_0__2_0,t3_0__4_0,t3_0__3_1,t3_1__2_1,t3_1__4_1,t3_1__3_0,t3_1__3_2,t3_2__2_2,t3_2__4_2,t3_2__3_1,t3_2__3_3,t3_3__2_3,t3_3__4_3,t3_3__3_2,t3_3__3_4,t3_4__2_4,t3_4__4_4,t3_4__3_3,t4_0__3_0,t4_0__4_1,t4_1__3_1,t4_1__4_0,t4_1__4_2,t4_2__3_2,t4_2__4_1,t4_2__4_3,t4_3__3_3,t4_3__4_2,t4_3__4_4,t4_4__3_4,t4_4__4_3,sample_1_2_take,sample_2_1_take;
+  init(p0_0:1,battery:15,sample_1_2:1,sample_2_1:1);
+  arcs(p0_0 : t0_0__1_0,t0_0__1_0 : p1_0,battery : t0_0__1_0,p0_0 : t0_0__0_1,t0_0__0_1 : p0_1,battery : t0_0__0_1,p0_1 : t0_1__0_0,t0_1__0_0 : p0_0,battery : t0_1__0_0,p0_3 : t0_3__1_3,t0_3__1_3 : p1_3,battery : t0_3__1_3,p1_0 : t1_0__0_0,t1_0__0_0 : p0_0,battery : t1_0__0_0,p1_0 : t1_0__2_0,t1_0__2_0 : p2_0,battery : t1_0__2_0,p1_2 : t1_2__2_2,t1_2__2_2 : p2_2,battery : t1_2__2_2,p1_2 : t1_2__1_3,t1_2__1_3 : p1_3,battery : t1_2__1_3,p1_3 : t1_3__0_3,t1_3__0_3 : p0_3,battery : t1_3__0_3,p1_3 : t1_3__2_3,t1_3__2_3 : p2_3,battery : t1_3__2_3,p1_3 : t1_3__1_2,t1_3__1_2 : p1_2,battery : t1_3__1_2,p1_3 : t1_3__1_4,t1_3__1_4 : p1_4,battery : t1_3__1_4,p1_4 : t1_4__2_4,t1_4__2_4 : p2_4,battery : t1_4__2_4,p1_4 : t1_4__1_3,t1_4__1_3 : p1_3,battery : t1_4__1_3,p2_0 : t2_0__1_0,t2_0__1_0 : p1_0,battery : t2_0__1_0,p2_0 : t2_0__3_0,t2_0__3_0 : p3_0,battery : t2_0__3_0,p2_0 : t2_0__2_1,t2_0__2_1 : p2_1,battery : t2_0__2_1,p2_1 : t2_1__3_1,t2_1__3_1 : p3_1,battery : t2_1__3_1,p2_1 : t2_1__2_0,t2_1__2_0 : p2_0,battery : t2_1__2_0,p2_1 : t2_1__2_2,t2_1__2_2 : p2_2,battery : t2_1__2_2,p2_2 : t2_2__1_2,t2_2__1_2 : p1_2,battery : t2_2__1_2,p2_2 : t2_2__3_2,t2_2__3_2 : p3_2,battery : t2_2__3_2,p2_2 : t2_2__2_1,t2_2__2_1 : p2_1,battery : t2_2__2_1,p2_2 : t2_2__2_3,t2_2__2_3 : p2_3,battery : t2_2__2_3,p2_3 : t2_3__1_3,t2_3__1_3 : p1_3,battery : t2_3__1_3,p2_3 : t2_3__3_3,t2_3__3_3 : p3_3,battery : t2_3__3_3,p2_3 : t2_3__2_2,t2_3__2_2 : p2_2,battery : t2_3__2_2,p2_3 : t2_3__2_4,t2_3__2_4 : p2_4,battery : t2_3__2_4,p2_4 : t2_4__1_4,t2_4__1_4 : p1_4,battery : t2_4__1_4,p2_4 : t2_4__3_4,t2_4__3_4 : p3_4,battery : t2_4__3_4,p2_4 : t2_4__2_3,t2_4__2_3 : p2_3,battery : t2_4__2_3,p3_0 : t3_0__2_0,t3_0__2_0 : p2_0,battery : t3_0__2_0,p3_0 : t3_0__4_0,t3_0__4_0 : p4_0,battery : t3_0__4_0,p3_0 : t3_0__3_1,t3_0__3_1 : p3_1,battery : t3_0__3_1,p3_1 : t3_1__2_1,t3_1__2_1 : p2_1,battery : t3_1__2_1,p3_1 : t3_1__4_1,t3_1__4_1 : p4_1,battery : t3_1__4_1,p3_1 : t3_1__3_0,t3_1__3_0 : p3_0,battery : t3_1__3_0,p3_1 : t3_1__3_2,t3_1__3_2 : p3_2,battery : t3_1__3_2,p3_2 : t3_2__2_2,t3_2__2_2 : p2_2,battery : t3_2__2_2,p3_2 : t3_2__4_2,t3_2__4_2 : p4_2,battery : t3_2__4_2,p3_2 : t3_2__3_1,t3_2__3_1 : p3_1,battery : t3_2__3_1,p3_2 : t3_2__3_3,t3_2__3_3 : p3_3,battery : t3_2__3_3,p3_3 : t3_3__2_3,t3_3__2_3 : p2_3,battery : t3_3__2_3,p3_3 : t3_3__4_3,t3_3__4_3 : p4_3,battery : t3_3__4_3,p3_3 : t3_3__3_2,t3_3__3_2 : p3_2,battery : t3_3__3_2,p3_3 : t3_3__3_4,t3_3__3_4 : p3_4,battery : t3_3__3_4,p3_4 : t3_4__2_4,t3_4__2_4 : p2_4,battery : t3_4__2_4,p3_4 : t3_4__4_4,t3_4__4_4 : p4_4,battery : t3_4__4_4,p3_4 : t3_4__3_3,t3_4__3_3 : p3_3,battery : t3_4__3_3,p4_0 : t4_0__3_0,t4_0__3_0 : p3_0,battery : t4_0__3_0,p4_0 : t4_0__4_1,t4_0__4_1 : p4_1,battery : t4_0__4_1,p4_1 : t4_1__3_1,t4_1__3_1 : p3_1,battery : t4_1__3_1,p4_1 : t4_1__4_0,t4_1__4_0 : p4_0,battery : t4_1__4_0,p4_1 : t4_1__4_2,t4_1__4_2 : p4_2,battery : t4_1__4_2,p4_2 : t4_2__3_2,t4_2__3_2 : p3_2,battery : t4_2__3_2,p4_2 : t4_2__4_1,t4_2__4_1 : p4_1,battery : t4_2__4_1,p4_2 : t4_2__4_3,t4_2__4_3 : p4_3,battery : t4_2__4_3,p4_3 : t4_3__3_3,t4_3__3_3 : p3_3,battery : t4_3__3_3,p4_3 : t4_3__4_2,t4_3__4_2 : p4_2,battery : t4_3__4_2,p4_3 : t4_3__4_4,t4_3__4_4 : p4_4,battery : t4_3__4_4,p4_4 : t4_4__3_4,t4_4__3_4 : p3_4,battery : t4_4__3_4,p4_4 : t4_4__4_3,t4_4__4_3 : p4_3,battery : t4_4__4_3,sample_1_2 : sample_1_2_take,sample_1_2_take : samples,sample_2_1 : sample_2_1_take,sample_2_1_take : samples);
+  guard(sample_1_2_take : tk(p1_2) > 0,sample_2_1_take : tk(p2_1) > 0);
+  inhibit(sample_1_2 : t1_2__2_2,sample_1_2 : t1_2__1_3,sample_2_1 : t2_1__3_1,sample_2_1 : t2_1__2_0,sample_2_1 : t2_1__2_2);
+  decision s_min1,s_min2,battery_min1,battery_min2,battery_min3,battery_min4,battery_min5;
+cost(s_min1:100,s_min2:50,battery_min1:800,battery_min2:600,battery_min3:400,battery_min4:200,battery_min5:100);
+enable_decision(s_min1:!is_taken(s_min2),s_min2:!is_taken(s_min1),battery_min1:!is_taken(battery_min2)&!is_taken(battery_min3)&!is_taken(battery_min4)&!is_taken(battery_min5),battery_min2:!is_taken(battery_min1)&!is_taken(battery_min3)&!is_taken(battery_min4)&!is_taken(battery_min5),battery_min3:!is_taken(battery_min1)&!is_taken(battery_min2)&!is_taken(battery_min4)&!is_taken(battery_min5),battery_min4:!is_taken(battery_min1)&!is_taken(battery_min2)&!is_taken(battery_min3)&!is_taken(battery_min5),battery_min5:!is_taken(battery_min1)&!is_taken(battery_min2)&!is_taken(battery_min3)&!is_taken(battery_min4));
+    bigint n_states := num_states;
+    stateset prop := (potential(tk(p0_0)==1)) -> EU(reachable, potential( (tk(p4_4)==1) & ( (dec_value(battery_min1) & tk(battery) > 0))|(dec_value(battery_min2) & tk(battery) > 1))|(dec_value(battery_min3) & tk(battery) > 3))|(dec_value(battery_min4) & tk(battery) > 5))|(dec_value(battery_min5) & tk(battery) > 7))) & (((dec_value(s_min1) & tk(samples)>0))|((dec_value(s_min2) & tk(samples)>1))));
+    int test := min_decision_cost(prop);
+  };
+
+  start_timer(0);
+  print(plks.n_states,"\n");
+  print("Model generation: ", stop_timer(0), " seconds\n");
+  print(plks.test,"\n");
+  

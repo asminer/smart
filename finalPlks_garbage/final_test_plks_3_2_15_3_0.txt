@@ -1,0 +1,31 @@
+//
+// Grid 3 x 3 
+//
+// AsX
+// .X.
+// sXB
+// 
+
+  #GraphDisplayStyle OUTGOING
+  #StatesetPrintIndexes false
+
+  pn plks := {
+    place p0_0,p0_1,p1_0,p1_2,p2_0,p2_2,sample_2_0,sample_0_1,samples,battery;
+  trans t0_0__1_0,t0_0__0_1,t0_1__0_0,t1_0__0_0,t1_0__2_0,t1_2__2_2,t2_0__1_0,t2_2__1_2,sample_2_0_take,sample_0_1_take;
+  init(p0_0:1,battery:15,sample_2_0:1,sample_0_1:1);
+  arcs(p0_0 : t0_0__1_0,t0_0__1_0 : p1_0,battery : t0_0__1_0,p0_0 : t0_0__0_1,t0_0__0_1 : p0_1,battery : t0_0__0_1,p0_1 : t0_1__0_0,t0_1__0_0 : p0_0,battery : t0_1__0_0,p1_0 : t1_0__0_0,t1_0__0_0 : p0_0,battery : t1_0__0_0,p1_0 : t1_0__2_0,t1_0__2_0 : p2_0,battery : t1_0__2_0,p1_2 : t1_2__2_2,t1_2__2_2 : p2_2,battery : t1_2__2_2,p2_0 : t2_0__1_0,t2_0__1_0 : p1_0,battery : t2_0__1_0,p2_2 : t2_2__1_2,t2_2__1_2 : p1_2,battery : t2_2__1_2,sample_2_0 : sample_2_0_take,sample_2_0_take : samples,sample_0_1 : sample_0_1_take,sample_0_1_take : samples);
+  guard(sample_2_0_take : tk(p2_0) > 0,sample_0_1_take : tk(p0_1) > 0);
+  inhibit(sample_2_0 : t2_0__1_0,sample_0_1 : t0_1__0_0);
+  decision s_min1,s_min2,battery_min1,battery_min2,battery_min3,battery_min4,battery_min5;
+cost(s_min1:100,s_min2:50,battery_min1:800,battery_min2:600,battery_min3:400,battery_min4:200,battery_min5:100);
+enable_decision(s_min1:!is_taken(s_min2),s_min2:!is_taken(s_min1),battery_min1:!is_taken(battery_min2)&!is_taken(battery_min3)&!is_taken(battery_min4)&!is_taken(battery_min5),battery_min2:!is_taken(battery_min1)&!is_taken(battery_min3)&!is_taken(battery_min4)&!is_taken(battery_min5),battery_min3:!is_taken(battery_min1)&!is_taken(battery_min2)&!is_taken(battery_min4)&!is_taken(battery_min5),battery_min4:!is_taken(battery_min1)&!is_taken(battery_min2)&!is_taken(battery_min3)&!is_taken(battery_min5),battery_min5:!is_taken(battery_min1)&!is_taken(battery_min2)&!is_taken(battery_min3)&!is_taken(battery_min4));
+    bigint n_states := num_states;
+    stateset prop := (potential(tk(p0_0)==1)) -> EU(reachable, potential( (tk(p2_2)==1) & ( (dec_value(battery_min1) & tk(battery) > 0)|(dec_value(battery_min2) & tk(battery) > 3)|(dec_value(battery_min3) & tk(battery) > 5)|(dec_value(battery_min4) & tk(battery) > 7)|(dec_value(battery_min5) & tk(battery) > 9)) & ((dec_value(s_min1) & tk(samples)>0)|(dec_value(s_min2) & tk(samples)>1))));
+    int test := min_decision_cost(prop);
+  };
+
+  start_timer(0);
+  print(plks.n_states,"\n");
+  print("Model generation: ", stop_timer(0), " seconds\n");
+  print(plks.test,"\n");
+  

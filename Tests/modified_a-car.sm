@@ -1,0 +1,98 @@
+
+#GraphDisplayStyle OUTGOING
+#StatesetPrintIndexes false
+
+pn plks (int n ):= {
+place cx2, cy2, cx1, cy1, time;
+
+decision cam_1, lidar_1;
+//trans tcy2, tcx1_u,tcx1_l, tcx1_r, tcy1;
+trans tcy2_tcx1l_tcy1u, tcy2_tcx1s_tcy1u, tcy2_tcx1l_tcy1s, tcar1stops_car2d ;
+
+init( cx2:3,cy2: n, cx1:n, cy1:1,time:1);
+
+
+
+arcs(
+// simultaneous car movement
+cy2:tcy2_tcx1l_tcy1u:cond(tk(cy2)>0, 1,0),
+
+//the following movement is for car1 diagonal movement
+tcy2_tcx1l_tcy1u: cx1: cond(tk(cx1)>0,-1,0),
+tcy2_tcx1l_tcy1u: cy1:1,
+tcy2_tcx1l_tcy1u:time,
+
+
+
+// cx1 same, cy1 increases
+cy2:tcy2_tcx1s_tcy1u:cond(tk(cy2)>0, 1,0),
+tcy2_tcx1s_tcy1u:cy1:1,
+tcy2_tcx1s_tcy1u:time,
+
+//cx1 decreases, cy1 same
+cy2:tcy2_tcx1l_tcy1s:cond(tk(cy2)>0, 1,0),
+tcy2_tcx1l_tcy1s: cx1: cond(tk(cx1)>0,-1,0)
+//tcy2_tcx1l_tcy1s: cy1:0
+//tcy2_tcx1l_tcy1s:time:1 //giving (value<max) error! why?
+
+//car2 moves, car1 stopped
+//cy2: tcar1stops_car2d: cond(tk(cy2)>0, 1,0)
+//tcar1stops_car2d:time:1 //giving (value<max) error! why?
+
+
+//add guard here?
+
+
+// working for single car movement
+/*
+cy2:tcy2: cond(tk(cy2)>0, 1,0), 
+tcx1_l: cx1: cond(tk(cx1)>0,-1,0),
+tcx1_r: cx1:1,
+tcy1: cy1: 1
+*/
+
+
+);
+
+// guard(tcy2_tcx1l_tcy1u: ); // what would be the guard condition?
+
+inhibit(
+cx1:tcy2_tcx1l_tcy1u:0,
+cy1:tcy2_tcx1l_tcy1u:div(n,2),
+cy1:tcy2_tcx1s_tcy1u:div(n,2),
+cy1:tcy2_tcx1l_tcy1s:div(n,2)
+// for seperate transitions of car1 and car2
+/*
+cx1:tcx1_r:n,
+cx1:tcx1_l:n,
+cx1:tcx1_l:0,
+cy1:tcy1:div(n,2)
+*/
+);
+
+
+
+
+//might add more lanes; think about it
+// no input arc from cx1 to the transition, output arc 
+// make 4 transitions for each cx1, for moving to 3 places, 1 for stopping. we might not need cy1. 
+
+int min_dist:= cond(is_taken(lidar_1),1,2);
+stateset car1_crit_sect:= cond(is_taken(lidar_1), potential((tk(cx1)==2 & tk(cy1)==2)|(tk(cx1)==2 & tk(cy1)==3) | (tk(cx1)==3 & tk(cy1)==3)|(tk(cx1)==3 & tk(cy1)==2)), potential(tk(cx1)==2 & tk(cy1)==2) );
+
+//reachable & potential(tk(cx1)>tk(cx2) & tk(cy2)-2 > tk(cy1));
+stateset post_candidate:= reachable & potential(tk(cy2)<tk(cy1));
+bigint n_states := num_states;
+bigint n_arcs := num_arcs;
+stateset r := reachable;
+stateset collide := reachable & (potential(tk(cx1)==1 & tk(cy1)==3 & tk(cy2)==3));
+stateset prop := EU(!collide, potential(tk(cx1)==0 & tk(cy1)==div(n,2))) & initial; 
+};
+
+print(plks(6).n_states,"\n");
+print(plks(6).n_arcs,"\n");
+print(plks(6).r,"\n");
+print("--------\n");
+print(plks(6).prop,"\n");
+print(plks(6).min_dist,"\n");
+print(plks(6).car1_crit_sect,"\n");
