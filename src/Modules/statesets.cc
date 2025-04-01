@@ -187,7 +187,7 @@ void stateset_diff::Compute(traverse_data &x)
   stateset* notR = smart_cast <stateset*> (x.answer->getPtr());
   DCASSERT(notR);
 
-  expl_tri_stateset* notRtri = dynamic_cast <expl_tri_stateset*> (x.answer->getPtr());
+  tri_stateset* notRtri = dynamic_cast <tri_stateset*> (x.answer->getPtr());
   bool is_tri = false;
   if (notRtri) {
     is_tri = true;
@@ -215,7 +215,7 @@ void stateset_diff::Compute(traverse_data &x)
   DCASSERT(L);
 
   if (is_tri) {
-    L = new expl_tri_stateset(L->getParent(), L);
+    L = new tri_stateset(L->getParent(), L);
   }
 
   //
@@ -290,7 +290,7 @@ void stateset_implies::Compute(traverse_data &x)
   stateset* notL = smart_cast <stateset*> (x.answer->getPtr());
   DCASSERT(notL);
 
-  expl_tri_stateset* notLtri = dynamic_cast <expl_tri_stateset*> (x.answer->getPtr());
+  tri_stateset* notLtri = dynamic_cast <tri_stateset*> (x.answer->getPtr());
   bool is_tri = false;
   if (notLtri) {
     is_tri = true;
@@ -316,7 +316,7 @@ void stateset_implies::Compute(traverse_data &x)
   DCASSERT(R);
 
   if (is_tri) {
-    R = new expl_tri_stateset(R->getParent(), R);
+    R = new tri_stateset(R->getParent(), R);
   }
 
   //
@@ -385,7 +385,7 @@ void stateset_union::Compute(traverse_data &x)
   if (!x.answer->isNormal()) return;
   stateset* total = smart_cast <stateset*> (x.answer->getPtr());
 
-  expl_tri_stateset* total_tri = dynamic_cast <expl_tri_stateset*> (total);
+  tri_stateset* total_tri = dynamic_cast <tri_stateset*> (total);
   if (total_tri) {
     is_tri = true;
   }
@@ -407,10 +407,10 @@ void stateset_union::Compute(traverse_data &x)
     stateset* curr = smart_cast <stateset*> (x.answer->getPtr());
     DCASSERT(curr);
 
-    expl_tri_stateset* curr_tri = dynamic_cast <expl_tri_stateset*> (x.answer->getPtr());
+    tri_stateset* curr_tri = dynamic_cast <tri_stateset*> (x.answer->getPtr());
     if (curr_tri) {
       is_tri = true;
-      total_tri = new expl_tri_stateset(total->getParent(), total);
+      total_tri = new tri_stateset(total->getParent(), total);
     }
 
     bool ok = false;
@@ -472,7 +472,7 @@ void stateset_intersect::Compute(traverse_data &x)
   if (!x.answer->isNormal()) return;
   stateset* total = smart_cast <stateset*> (x.answer->getPtr());
 
-  expl_tri_stateset* total_tri = dynamic_cast <expl_tri_stateset*> (total);
+  tri_stateset* total_tri = dynamic_cast <tri_stateset*> (total);
   if (total_tri) {
     is_tri = true;
   }
@@ -494,10 +494,10 @@ void stateset_intersect::Compute(traverse_data &x)
     stateset* curr = smart_cast <stateset*> (x.answer->getPtr());
     DCASSERT(curr);
 
-    expl_tri_stateset* curr_tri = dynamic_cast <expl_tri_stateset*> (x.answer->getPtr());
+    tri_stateset* curr_tri = dynamic_cast <tri_stateset*> (x.answer->getPtr());
     if (curr_tri) {
       is_tri = true;
-      total_tri = new expl_tri_stateset(total->getParent(), total);
+      total_tri = new tri_stateset(total->getParent(), total);
     }
 
     bool ok = false;

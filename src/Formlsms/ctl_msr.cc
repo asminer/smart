@@ -19,13 +19,7 @@
 
 #include "../ParseSM/parse_sm.h"
 extern parse_module* pm;
-<<<<<<< HEAD
 #define DEBUG_DECISIONS
-=======
-
-#define DEBUG_DECISIONS
-
->>>>>>> 057614876cb13a75edf3b4599a1da26c29c49505
 // *****************************************************************
 // *                                                               *
 // *                           CTL_engine                          *
@@ -1518,11 +1512,11 @@ void CTL_min_decision_cost_base::Compute(traverse_data &x, expr** pass, int np)
   decision_set* dec_set = hlm->getDecisionSet();
 
   expr* ctl_expr = pass[1];
-  expl_tri_stateset* res;
-  const expl_stateset *trueset;
-  expl_stateset* falseset;
+  tri_stateset* res;
+  const stateset *trueset;
+  stateset* falseset;
 
-  expl_stateset *initset = dynamic_cast<expl_stateset*> (llm->getInitialStates());
+  stateset *initset = dynamic_cast<stateset*> (llm->getInitialStates());
   DCASSERT(initset);
 
   std::priority_queue<decision_eval*, std::vector<decision_eval*>, decision_eval_comp> Q; 
@@ -1571,11 +1565,11 @@ void CTL_min_decision_cost_base::Compute(traverse_data &x, expr** pass, int np)
     // em->cout() << "done computing CTL\n";
     DCASSERT(x.answer->getPtr());
 
-    res = dynamic_cast <expl_tri_stateset*> (x.answer->getPtr());
+    res = dynamic_cast <tri_stateset*> (x.answer->getPtr());
     if(res==0) {
-      expl_stateset* ss = dynamic_cast <expl_stateset*> (x.answer->getPtr());
+      stateset* ss = dynamic_cast <stateset*> (x.answer->getPtr());
       DCASSERT(ss);
-      res = new expl_tri_stateset(llm, ss);
+      res = new tri_stateset(llm, ss);
     }
     DCASSERT(res);
 

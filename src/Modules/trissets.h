@@ -1,45 +1,42 @@
 
-/** \file expl_trissets.h
+/** \file trissets.h
 
-    Module for expl_tri_stateset, implemented explicity with a pair of bitvectors.
-
+    Module for tri_stateset
+ 
 */
 
-#include "expl_ssets.h"
-#include "trissets.h"
+#include "statesets.h"
 
-#ifndef EXPL_TRISSETS_H
-#define EXPL_TRISSETS_H
+#ifndef TRISSETS_H
+#define TRISSETS_H
+
+class intset;
 
 // ******************************************************************
 // *                                                                *
-// *                      expl_tri_stateset  class                  *
+// *                      tri_stateset  class                       *
 // *                                                                *
 // ******************************************************************
 
-class expl_tri_stateset : public tri_stateset {
+class tri_stateset : public stateset {
   public:
-    expl_tri_stateset(const state_lldsm* p, intset* t, intset* f);
-    expl_tri_stateset(const state_lldsm* p, expl_stateset* t, expl_stateset* f);
-    expl_tri_stateset(const state_lldsm* p, stateset* t, stateset* f);
-    expl_tri_stateset(const state_lldsm* p, const expl_stateset* t);
+    tri_stateset(const state_lldsm* p, stateset* t, stateset* f);
+    tri_stateset(const state_lldsm* p, stateset* t, stateset* f);
+    tri_stateset(const state_lldsm* p, stateset* t);
+    tri_stateset(const state_lldsm* p, const stateset* t);
   protected:
-    virtual ~expl_tri_stateset();
+    virtual ~tri_stateset();
 
   public:
-    virtual expl_tri_stateset* DeepCopy() const;
+    virtual tri_stateset* DeepCopy() const = 0;
     virtual bool Complement();
     virtual bool Union(const expr* c, const char* op, const stateset* x);
     virtual bool Intersect(const expr* c, const char* op, const stateset* x);
     virtual bool Plus(const expr* c, const char* op, const stateset* x);
 
-    inline const expl_stateset* getExplicitTrueSet() const {
-      return trueset;
-    };
-    inline const expl_stateset* getExplicitFalseSet() const {
-      return falseset;
-    };
-    virtual expl_stateset* computeExplicitUnknownSet() const;
+    inline const stateset* getTrueSet() const;
+    inline const stateset* getFalseSet() const;
+    virtual stateset* computeUnknownSet() const;
 
     virtual void getCardinality(long &card) const;
     virtual void getCardinality(result &x) const;
@@ -58,19 +55,6 @@ class expl_tri_stateset : public tri_stateset {
 
     virtual bool Print(OutputStream &s, int) const;
     virtual bool Equals(const shared_object *o) const;
-
-    inline const intset& getExplicit() const {
-      DCASSERT(trueset);
-      return trueset->getExplicit();
-    }
-
-    inline intset& changeExplicit() {
-      DCASSERT(trueset);
-      return trueset->changeExplicit();
-    }
-
-  private:
-    expl_stateset *trueset, *falseset;
 };
 
 #endif

@@ -249,7 +249,7 @@ stateset* ectl_reachgraph::EU(bool revTime, const stateset* p, const stateset* q
       etq = new expl_tri_stateset(q->getParent(), eq);
     }
 
-    const intset& itq = etq->getTrueSet()->getExplicit(); 
+    const intset& itq = etq->getExplicitTrueSet()->getExplicit(); 
     if (!TH) TH = new CTL_traversal(itq.getSize());
 
     // obligations to 1
@@ -258,7 +258,7 @@ stateset* ectl_reachgraph::EU(bool revTime, const stateset* p, const stateset* q
     // if p is specified, then restrict paths to satisfying p
     if (p) {
       if (0==etp)   return incompatibleOperand(CTLOP);
-      const intset& itp = etp->getTrueSet()->getExplicit(); 
+      const intset& itp = etp->getExplicitTrueSet()->getExplicit();
       TH->restrict_paths(itp);
     }
 
@@ -280,9 +280,9 @@ stateset* ectl_reachgraph::EU(bool revTime, const stateset* p, const stateset* q
     DCASSERT(etp);
     DCASSERT(etq);
 
-    expl_stateset *pset = etp->getFalseSet()->DeepCopy();
+    expl_stateset *pset = etp->getExplicitFalseSet()->DeepCopy();
     pset->Complement();
-    expl_stateset *qset = etq->getFalseSet()->DeepCopy();
+    expl_stateset *qset = etq->getExplicitFalseSet()->DeepCopy();
     qset->Complement();
     stateset *falseset = EU(revTime, pset, qset, td);
     falseset->Complement();
