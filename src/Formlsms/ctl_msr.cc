@@ -19,13 +19,7 @@
 
 #include "../ParseSM/parse_sm.h"
 extern parse_module* pm;
-<<<<<<< HEAD
 #define DEBUG_DECISIONS
-=======
-
-#define DEBUG_DECISIONS
-
->>>>>>> 057614876cb13a75edf3b4599a1da26c29c49505
 // *****************************************************************
 // *                                                               *
 // *                           CTL_engine                          *
