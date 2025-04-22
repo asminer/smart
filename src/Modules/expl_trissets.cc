@@ -18,25 +18,25 @@
 // *                                                                *
 // ******************************************************************
 
-expl_tri_stateset::expl_tri_stateset(const state_lldsm* p, intset* t, intset* f) : stateset(p)
+expl_tri_stateset::expl_tri_stateset(const state_lldsm* p, intset* t, intset* f) : tri_stateset(p,(stateset*)t,(stateset*)f)
 {
   trueset = new expl_stateset(p,t);
   falseset = new expl_stateset(p,f);
 }
 
-expl_tri_stateset::expl_tri_stateset(const state_lldsm* p, expl_stateset* t, expl_stateset* f) : stateset(p)
+expl_tri_stateset::expl_tri_stateset(const state_lldsm* p, expl_stateset* t, expl_stateset* f) : tri_stateset(p,(stateset*)t,(stateset*)f)
 {
-  trueset = t;
-  falseset = f;
+  trueset = dynamic_cast<expl_stateset*>(t);
+  falseset = dynamic_cast<expl_stateset*>(f);
 }
 
-expl_tri_stateset::expl_tri_stateset(const state_lldsm* p, stateset* t, stateset* f) : stateset(p)
+/*expl_tri_stateset::expl_tri_stateset(const state_lldsm* p, expl_stateset* t, expl_stateset* f) : tri_stateset(p,(stateset*)t,(stateset*)f)
 {
-  trueset = t;
-  falseset = f;
+  trueset = dynamic_cast<expl_stateset*>(t);
+  falseset = dynamic_cast<expl_stateset*>(f);
 }
-
-expl_tri_stateset::expl_tri_stateset(const state_lldsm* p, const expl_stateset* t) : stateset(p)
+*/
+expl_tri_stateset::expl_tri_stateset(const state_lldsm* p, const expl_stateset* t) : tri_stateset(p,(stateset*)t)
 {
   trueset = t->DeepCopy();
   falseset = t->DeepCopy();
@@ -57,7 +57,7 @@ expl_tri_stateset* expl_tri_stateset::DeepCopy() const
   return new expl_tri_stateset(getParent(), trueset->DeepCopy(), falseset->DeepCopy() );
 }
 
-expl_stateset* expl_tri_stateset::computeUnknownSet() const {
+expl_stateset* expl_tri_stateset::computeUnknownSet() const{
   intset t = trueset->getExplicit();
   intset f = falseset->getExplicit();
 

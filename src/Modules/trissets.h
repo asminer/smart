@@ -21,7 +21,7 @@ class intset;
 class tri_stateset : public stateset {
   public:
     tri_stateset(const state_lldsm* p, stateset* t, stateset* f);
-    tri_stateset(const state_lldsm* p, stateset* t, stateset* f);
+    //tri_stateset(const state_lldsm* p, expl_stateset* t, expl_stateset* f);
     tri_stateset(const state_lldsm* p, stateset* t);
     tri_stateset(const state_lldsm* p, const stateset* t);
   protected:

@@ -40,6 +40,7 @@ class expl_tri_stateset : public tri_stateset {
       return falseset;
     };
     virtual expl_stateset* computeExplicitUnknownSet() const;
+    expl_stateset* computeUnknownSet() const override;
 
     virtual void getCardinality(long &card) const;
     virtual void getCardinality(result &x) const;
@@ -50,6 +51,7 @@ class expl_tri_stateset : public tri_stateset {
     virtual void getFalseCardinality(result &x) const;
     virtual void getUnknownCardinality(long &card) const;
     virtual void getUnknownCardinality(result &x) const;
+    
 
     virtual bool isEmpty() const;
 

@@ -4,7 +4,7 @@
     Module for meddly tri statesets
 
 */
-
+#include "statesets.h"
 #include "meddly_ssets.h"
 #include "trissets.h"
 

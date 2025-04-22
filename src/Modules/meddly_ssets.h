@@ -48,8 +48,15 @@ class meddly_stateset : public stateset {
     virtual bool Print(OutputStream &s, int) const;
     virtual bool Equals(const shared_object *o) const;
 
-    inline const shared_ddedge* getStateDD() const {
+    inline shared_ddedge* getStateDD() const {
       return states;
+    }
+    inline shared_domain* getSharedD() const {
+      return vars;
+    }
+    inline meddly_encoder* getMeddlyEncoder() const {
+      return mdd_wrap;
+
     }
 
   private:
