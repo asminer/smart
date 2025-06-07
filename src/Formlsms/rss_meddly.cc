@@ -3,6 +3,7 @@
 
 #include "../ExprLib/mod_vars.h"
 #include "../Modules/meddly_ssets.h"
+#include "../Modules/meddly_trissets.h"
 #include "../Modules/biginttype.h"
 
 // #define DEBUG_INDEXSET
@@ -315,7 +316,10 @@ stateset* meddly_reachset::getPotential(expr* p) const
   //
   // Package up the answer
   //
-  return new meddly_stateset(getParent(), Share(vars), Share(mdd_wrap), ans);
+  //meddly_stateset* tset =  new meddly_stateset(getParent(), Share(vars), Share(mdd_wrap), ans);
+  //meddly_stateset* fset = new meddly_stateset(getParent(), Share(vars), Share(mdd_wrap), ans);
+  //fset->Complement();
+  return new meddly_tri_stateset(getParent(), Share(vars), Share(mdd_wrap), ans);
 }
 
 void meddly_reachset::buildIndexSet()

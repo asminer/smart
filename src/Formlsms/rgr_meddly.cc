@@ -1,9 +1,9 @@
-
 #include "../ExprLib/mod_vars.h"
 
 #include "rgr_meddly.h"
 
 #include "../_Meddly/src/meddly_expert.h"
+#include "../Modules/meddly_trissets.h"
 
 // ******************************************************************
 // *                                                                *
@@ -251,15 +251,43 @@ void meddly_monolithic_rg::showArcs(OutputStream &os, const show_options &opt,
 stateset* meddly_monolithic_rg::EX(bool revTime, const stateset* p, trace_data* td)
 {
   const meddly_stateset* mp = dynamic_cast <const meddly_stateset*> (p);
+  
   if (0==mp) return incompatibleOperand(revTime ? "EY" : "EX");
-  const shared_ddedge* mpe = mp->getStateDD();
+  const shared_ddedge* mpe = mp->getStateDD();//this returns states in DD
+  
   DCASSERT(mpe);
+  
+  const meddly_tri_stateset* mpt = dynamic_cast<const meddly_tri_stateset*>(p);
+  if (mpt) {
+    //  DDs for true and false sets
+    const shared_ddedge* mpte = mpt->getMeddlyTrueSet()->getStateDD();
+    const shared_ddedge* mpte_false = mpt->getMeddlyFalseSet()->getStateDD();
+
+    // result DDs
+    shared_ddedge* ans_true = mrss->newMddEdge();
+    shared_ddedge* ans_false = mrss->newMddEdge();
+
+    //  EX for trueset and falseset
+    _EX(revTime, mpte, ans_true);
+    _EX(revTime, mpte_false, ans_false);
+
+    // Return new tri stateset
+    return new meddly_tri_stateset(mpt->getParent(),ans_true,ans_false);
+  }
+
 
   shared_ddedge* ans = mrss->newMddEdge();
+  // how do I set the ans after applying EX in the trueset here?
+  
 
   try {
     if (nullptr == td) {
       _EX(revTime, mpe, ans);
+      //mpte= ans;
+      //meddly_stateset* trueset= new meddly_stateset(p->getParent(),mp->getSharedD(),mp->getMeddlyEncoder(),ans);
+    
+      
+      
     }
     else {
       // Keep the necessary data for trace generation later
@@ -296,6 +324,34 @@ stateset* meddly_monolithic_rg::AX(bool revTime, const stateset* p)
   if (0==mp) return incompatibleOperand(revTime ? "EY" : "EX");
   const shared_ddedge* mpe = mp->getStateDD();
   DCASSERT(mpe);
+  //meddly_tri_state
+  const meddly_tri_stateset* mpt = dynamic_cast<const meddly_tri_stateset*>(p);
+  if(mpt){
+    //for trueset
+    shared_ddedge* notpt = mrss->newMddEdge();
+    DCASSERT(notpt);
+
+    MEDDLY::apply( MEDDLY::COMPLEMENT, mpt->getMeddlyTrueSet()->getStateDD()->E, notpt->E );
+
+    shared_ddedge* ans_true = mrss->newMddEdge();
+    DCASSERT(ans_true);
+    _EX(revTime, notpt, ans_true);
+    Delete(notpt);
+    MEDDLY::apply( MEDDLY::COMPLEMENT, ans_true->E, ans_true->E );
+
+    //for falseset
+    shared_ddedge* notpf = mrss->newMddEdge();
+    DCASSERT(notpf);
+
+    MEDDLY::apply( MEDDLY::COMPLEMENT, mpt->getMeddlyFalseSet()->getStateDD()->E, notpf->E );
+
+    shared_ddedge* ans_false = mrss->newMddEdge();
+    DCASSERT(ans_false);
+    _EX(revTime,notpf,ans_false);
+    Delete(notpf);
+    MEDDLY::apply( MEDDLY::COMPLEMENT, ans_false->E, ans_false->E );
+    return new meddly_tri_stateset(mpt->getParent(),ans_true,ans_false);
+  }
 
   shared_ddedge* notp = mrss->newMddEdge();
   DCASSERT(notp);
@@ -333,7 +389,23 @@ stateset* meddly_monolithic_rg
     mpe = mp->getStateDD();
     DCASSERT(mpe);
   }
+//grap p as tri stateset
+  const meddly_tri_stateset* mpt = dynamic_cast<const meddly_tri_stateset*>(p);
+  shared_ddedge*  mpt_pt = mpt->getMeddlyTrueSet()->getStateDD();
+  shared_ddedge*  mpt_pf = mpt->getMeddlyFalseSet()->getStateDD();
+//grab q as tri stateset
+  const meddly_tri_stateset* mqt = dynamic_cast<const meddly_tri_stateset*>(q);
+  shared_ddedge* mqt_qt = mqt->getMeddlyTrueSet()->getStateDD();
+  shared_ddedge* mqt_qf = mqt->getMeddlyFalseSet()->getStateDD();
 
+  shared_ddedge* ans_true= mrss->newMddEdge();
+  shared_ddedge* ans_false= mrss->newMddEdge();
+  if(mpt){
+    _EU(revTime,mpt_pt,mqt_qt,ans_true);
+    _EU(revTime,mpt_pf,mqt_qf,ans_false);
+    return new meddly_tri_stateset(mpt->getParent(),ans_true,ans_false);
+  }
+  
   //
   // Grab q in a form we can use
   //

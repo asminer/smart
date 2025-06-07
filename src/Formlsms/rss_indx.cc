@@ -2,6 +2,7 @@
 #include "rss_indx.h"
 #include "../Modules/expl_ssets.h"
 #include "../Modules/expl_trissets.h"
+#include "../Modules/meddly_trissets.h"
 
 #include <iostream>
 
@@ -51,9 +52,9 @@ stateset* indexed_reachset::getPotential(expr* p) const
     tset->removeAll();
   }
 
-  if (unk) {
+  /*if (unk) {
     return new expl_tri_stateset(getParent(), tset, fset);
-  }
+  }*/
   return new expl_stateset(getParent(), tset);
 }
 

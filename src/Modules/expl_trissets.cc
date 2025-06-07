@@ -18,13 +18,13 @@
 // *                                                                *
 // ******************************************************************
 
-expl_tri_stateset::expl_tri_stateset(const state_lldsm* p, intset* t, intset* f) : tri_stateset(p,(stateset*)t,(stateset*)f)
+expl_tri_stateset::expl_tri_stateset(const state_lldsm* p, intset* t, intset* f)
 {
   trueset = new expl_stateset(p,t);
   falseset = new expl_stateset(p,f);
 }
 
-expl_tri_stateset::expl_tri_stateset(const state_lldsm* p, expl_stateset* t, expl_stateset* f) : tri_stateset(p,(stateset*)t,(stateset*)f)
+expl_tri_stateset::expl_tri_stateset(const state_lldsm* p, expl_stateset* t, expl_stateset* f)
 {
   trueset = dynamic_cast<expl_stateset*>(t);
   falseset = dynamic_cast<expl_stateset*>(f);
@@ -36,7 +36,13 @@ expl_tri_stateset::expl_tri_stateset(const state_lldsm* p, expl_stateset* t, exp
   falseset = dynamic_cast<expl_stateset*>(f);
 }
 */
-expl_tri_stateset::expl_tri_stateset(const state_lldsm* p, const expl_stateset* t) : tri_stateset(p,(stateset*)t)
+expl_tri_stateset::expl_tri_stateset(const state_lldsm* p, stateset* t) 
+{
+  trueset = dynamic_cast<expl_stateset*>(t);
+  falseset = trueset->DeepCopy();
+  falseset->Complement();
+}
+expl_tri_stateset::expl_tri_stateset(const state_lldsm* p, const expl_stateset* t) 
 {
   trueset = t->DeepCopy();
   falseset = t->DeepCopy();
@@ -54,7 +60,7 @@ expl_tri_stateset* expl_tri_stateset::DeepCopy() const
 {
   DCASSERT(trueset);
   DCASSERT(falseset);
-  return new expl_tri_stateset(getParent(), trueset->DeepCopy(), falseset->DeepCopy() );
+  return new expl_tri_stateset(trueset->getParent(), trueset->DeepCopy(), falseset->DeepCopy() );
 }
 
 expl_stateset* expl_tri_stateset::computeUnknownSet() const{
@@ -63,7 +69,7 @@ expl_stateset* expl_tri_stateset::computeUnknownSet() const{
 
   intset u = !(t+f);
 
-  return new expl_stateset(this->getParent(), new intset(u));
+  return new expl_stateset(trueset->getParent(), new intset(u));
 };
 
 bool expl_tri_stateset::Complement() 
@@ -82,7 +88,7 @@ bool expl_tri_stateset::Union(const expr* c, const char* op, const stateset* x)
   if (0==ext) {
     const expl_stateset* ex = dynamic_cast <const expl_stateset*> (x);
     if (0==ex) {
-      storageMismatchError(c, op);
+      //storageMismatchError(c, op);
       return false;
     } else {
       trueset->Union(c,op,ex);
@@ -105,7 +111,7 @@ bool expl_tri_stateset::Intersect(const expr* c, const char* op, const stateset*
   if (0==ext) {
     const expl_stateset* ex = dynamic_cast <const expl_stateset*> (x);
     if (0==ex) {
-      storageMismatchError(c, op);
+      //storageMismatchError(c, op);
       return false;
     } else {
       trueset->Intersect(c,op,ex);
@@ -214,7 +220,7 @@ bool expl_tri_stateset::Equals(const shared_object *o) const
   if (0==b) return false;
   // TBD : may want to allow comparisons with other implementations
 
-  if (getParent() != b->getParent()) return false;  // TBD: may want to allow this
+  if (b->trueset->getParent() != b->falseset->getParent()) return false;  // TBD: may want to allow this
 
   // Not sure if data can ever be 0, but this is probably 
   // the correct way to handle it if it is possible.

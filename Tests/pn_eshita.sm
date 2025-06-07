@@ -104,7 +104,7 @@ pn cruft(int n) := {
   //stateset test2 := potential(tk(I)>0 & dec_value(aa));
   //bool min_cost := min_decision_cost(test2);
 
-  bool min_cost := min_decision_cost(potential(tk(I)>0 & dec_value(aa))); // works
+  int min_cost := min_decision_cost(potential(tk(I)>0 & dec_value(aa))); // works
   //bool min_cost := min_decision_cost(reachable & potential(tk(I)>0 & dec_value(aa))); // works
 
 

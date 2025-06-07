@@ -13,7 +13,7 @@
 
 #include "statesets.h"
 #include "expl_trissets.h"
-
+#include "meddly_trissets.h"
 
 // ******************************************************************
 // *                                                                *
@@ -187,23 +187,6 @@ void stateset_diff::Compute(traverse_data &x)
   stateset* notR = smart_cast <stateset*> (x.answer->getPtr());
   DCASSERT(notR);
 
-  tri_stateset* notRtri = dynamic_cast <tri_stateset*> (x.answer->getPtr());
-  bool is_tri = false;
-  if (notRtri) {
-    is_tri = true;
-  }
-
-  if (notR->numRefs() > 1) {
-    notR = notR->DeepCopy();  // loses the original but x.answer still has it
-    notR->Complement();
-  } else {
-    notR->Complement();
-    notR = Share(notR);
-  }
-
-  // 
-  // We have !R.
-  //
   SafeCompute(left, x); // Deletes old x.answer
 
   if (!x.answer->isNormal()) {
@@ -214,36 +197,80 @@ void stateset_diff::Compute(traverse_data &x)
   stateset* L = smart_cast <stateset*> (x.answer->getPtr());
   DCASSERT(L);
 
-  if (is_tri) {
-    L = new tri_stateset(L->getParent(), L);
-  }
-
-  //
-  // We have L
-  //
-
-  if (stateset::parentsMatch(this, "difference", L, notR)) {
-    bool ok;
-    if (L->numRefs() > 1) {
-      L = L->DeepCopy();
-      ok = L->Intersect(this, "difference", notR);
+  meddly_tri_stateset* m_notR = dynamic_cast <meddly_tri_stateset*> (notR);//changed
+  //meddly_tri_stateset* m_notRtri = new meddly_tri_stateset(meddly_notR->getParent(),meddly_notR->getSharedD(),meddly_notR->getMeddlyEncoder(),meddly_notR->getStateDD());
+  
+  meddly_tri_stateset* m_L = dynamic_cast<meddly_tri_stateset*>(L);
+  //meddly_tri_stateset* m_Ltri = new meddly_tri_stateset(meddly_L->getParent(),meddly_L->getSharedD(),meddly_L->getMeddlyEncoder(),meddly_L->getStateDD());
+  
+  bool is_tri = false;
+  if (m_notR) {
+    is_tri = true;
+    if (m_notR->getMeddlyTrueSet()->numRefs()>1){
+      m_notR= m_notR->DeepCopy();
+      m_notR->Complement();
+    }else{
+      m_notR->Complement();
+      m_notR = Share(m_notR);
+    }
+    if (stateset::parentsMatch(this, "difference", m_L, m_notR)) {
+      bool ok;
+      if (m_L->getMeddlyTrueSet()->numRefs() > 1) {
+        m_L = m_L->DeepCopy();
+        ok = m_L->Intersect(this, "difference", notR);
+      } else {
+        ok = m_L->Intersect(this, "difference", notR);
+        m_L = Share(m_L);
+      }
+      if (!ok) {
+        // Intersection failed
+        Delete(L);
+        m_L = 0;
+      }
+    }
+    Delete(notR);
+  
+    if (m_L) {
+      x.answer->setPtr(m_L);
     } else {
-      ok = L->Intersect(this, "difference", notR);
-      L = Share(L);
+      x.answer->setNull();
     }
-    if (!ok) {
-      // Intersection failed
-      Delete(L);
-      L = 0;
-    }
-  }
-  Delete(notR);
 
-  if (L) {
-    x.answer->setPtr(L);
-  } else {
-    x.answer->setNull();
   }
+  else{
+
+    if (notR->numRefs() > 1) {
+      notR = notR->DeepCopy();  // loses the original but x.answer still has it
+      notR->Complement();
+    } else {
+      notR->Complement();
+      notR = Share(notR);
+    }
+    if (stateset::parentsMatch(this, "difference", L, notR)) {
+      bool ok;
+      if (L->numRefs() > 1) {
+        L = L->DeepCopy();
+        ok = L->Intersect(this, "difference", notR);
+      } else {
+        ok = L->Intersect(this, "difference", notR);
+        L = Share(L);
+      }
+      if (!ok) {
+        // Intersection failed
+        Delete(L);
+        L = 0;
+      }
+    }
+    Delete(notR);
+  
+    if (L) {
+      x.answer->setPtr(L);
+    } else {
+      x.answer->setNull();
+    }
+  }
+
+  
 }
 
 expr* stateset_diff::buildAnother(expr *x, expr* y) const
@@ -256,7 +283,7 @@ expr* stateset_diff::buildAnother(expr *x, expr* y) const
 // *                    stateset_implies  class                     *
 // *                                                                *
 // ******************************************************************
-
+/*
 /// Implication (ugh!) of two statesets.
 class stateset_implies : public binary {
 public:
@@ -265,86 +292,84 @@ public:
 protected:
   virtual expr* buildAnother(expr *x, expr* y) const;
 };
-
+*/
 // ******************************************************************
 // *                   stateset_implies  methods                    *
 // ******************************************************************
+class stateset_implies : public binary {
+public:
+  stateset_implies(const char* fn,int line,expr* l,expr* r);
+  virtual void Compute(traverse_data &x);
+protected:
+  virtual expr* buildAnother(expr* x,expr* y) const;
+};
 
-stateset_implies::stateset_implies(const char* fn, int line, expr *l, expr* r)
- : binary(fn, line, exprman::bop_implies, l->Type(), l, r)
+stateset_implies::stateset_implies(const char* fn,int line,expr* l,expr* r)
+  : binary(fn,line,exprman::bop_implies,l->Type(),l,r)
 {
 }
 
 void stateset_implies::Compute(traverse_data &x)
 {
-  //
-  // L -> R   =  !L + R
-  //
-  DCASSERT(x.answer);
-  DCASSERT(0==x.aggregate);
+  DCASSERT(x.answer && x.aggregate==0);
 
-  SafeCompute(left, x);
+  SafeCompute(left,x);
+  if(!x.answer->isNormal()) return;
+  stateset* notL = smart_cast<stateset*>(x.answer->getPtr()); DCASSERT(notL);
 
-  if (!x.answer->isNormal()) return;
+  
 
-  stateset* notL = smart_cast <stateset*> (x.answer->getPtr());
-  DCASSERT(notL);
-
-  tri_stateset* notLtri = dynamic_cast <tri_stateset*> (x.answer->getPtr());
+  // detect MEDDLY backend
+  meddly_tri_stateset* m_notL = dynamic_cast<meddly_tri_stateset*>(notL);
   bool is_tri = false;
-  if (notLtri) {
-    is_tri = true;
+  if(m_notL) {
+    is_tri=true;
   }
-
-  if (notL->numRefs() > 1) {
-    notL->Complement();
-    notL = Share(notL);
-  } else {
-    notL = notL->DeepCopy();  // loses the original but x.answer still has it
-    notL->Complement();
-  }
-
-  // 
-  // We have !L.
-  //
-  SafeCompute(right, x);      // Deletes old x.answer
-  if (!x.answer->isNormal()) {
-    return;
-  }
-
-  stateset* R = smart_cast <stateset*> (x.answer->getPtr());
-  DCASSERT(R);
-
-  if (is_tri) {
-    R = new tri_stateset(R->getParent(), R);
-  }
-
-  //
-  // We have R
-  //
-
-  if (stateset::parentsMatch(this, "implication", notL, R)) {
-    bool ok;
-    if (R->numRefs() > 1) {
-      R = R->DeepCopy();
-      ok = R->Union(this, "implication", notL);
-    } else {
-      ok = R->Union(this, "implication", notL);
-      R = Share(R);
+  if (m_notL->getMeddlyTrueSet()->numRefs()>1){
+      m_notL= m_notL->DeepCopy();
+      m_notL->Complement();
+    }else{
+      m_notL->Complement();
+      m_notL = Share(m_notL);
     }
-  }
-  Delete(notL);
 
-  if (R) {
-    x.answer->setPtr(R);
-  } else {
-    x.answer->setNull();
+  SafeCompute(right,x);
+  if(!x.answer->isNormal()){ return; }
+  stateset* R = smart_cast<stateset*>(x.answer->getPtr()); DCASSERT(R);
+  if(is_tri){
+    meddly_tri_stateset* m_R = dynamic_cast<meddly_tri_stateset*>(R);
+  if (stateset::parentsMatch(this, "implication", m_notL, m_R)) {
+    bool ok;
+    if (m_R->getMeddlyTrueSet()->numRefs() > 1) {
+      m_R = m_R->DeepCopy();
+      ok = m_R->Union(this, "implication", m_notL);
+    } else {
+      ok = m_R->Union(this, "implication", m_notL);
+      m_R = Share(m_R);
+    }
+    if(!ok) { Delete(m_R); x.answer->setNull(); }
+    else    x.answer->setPtr(m_R);
+  } 
+  }
+  else {
+    // fall back to plain stateset logic
+    bool ok;
+    if(notL->numRefs()>1) { notL=notL->DeepCopy(); ok=notL->Complement(); }
+    else               { ok=notL->Complement(); notL=Share(notL); }
+
+    if(ok && stateset::parentsMatch(this,"implication",notL,R)) {
+      if(R->numRefs()>1) { R=R->DeepCopy(); ok=R->Union(this,"implication",notL); }
+      else               { ok=R->Union(this,"implication",notL); R=Share(R); }
+    }
+    Delete(notL);
+    if(!ok) { Delete(R); x.answer->setNull(); }
+    else    x.answer->setPtr(R);
   }
 }
 
-expr* stateset_implies::buildAnother(expr *x, expr* y) const
+expr* stateset_implies::buildAnother(expr* x,expr* y) const
 {
-  return new stateset_implies(Filename(), Linenumber(), x, y);
+  return new stateset_implies(Filename(),Linenumber(),x,y);
 }
 
 // ******************************************************************
@@ -385,13 +410,13 @@ void stateset_union::Compute(traverse_data &x)
   if (!x.answer->isNormal()) return;
   stateset* total = smart_cast <stateset*> (x.answer->getPtr());
 
-  tri_stateset* total_tri = dynamic_cast <tri_stateset*> (total);
+  meddly_tri_stateset* total_tri = dynamic_cast <meddly_tri_stateset*> (total);
   if (total_tri) {
     is_tri = true;
   }
 
   DCASSERT(total);
-  if (is_tri ? total_tri->numRefs() > 1 : total->numRefs() > 1) {
+  if (is_tri ? total_tri->getMeddlyTrueSet()->numRefs() > 1 : total->numRefs() > 1) {
     is_tri ? (total_tri = total_tri->DeepCopy()) : (total = total->DeepCopy());
   } else {
     is_tri ? (total_tri = Share(total_tri)) : (total = Share(total));
@@ -407,10 +432,10 @@ void stateset_union::Compute(traverse_data &x)
     stateset* curr = smart_cast <stateset*> (x.answer->getPtr());
     DCASSERT(curr);
 
-    tri_stateset* curr_tri = dynamic_cast <tri_stateset*> (x.answer->getPtr());
+    meddly_tri_stateset* curr_tri = dynamic_cast <meddly_tri_stateset*> (x.answer->getPtr());
     if (curr_tri) {
       is_tri = true;
-      total_tri = new tri_stateset(total->getParent(), total);
+      //meddly_tri_stateset* total_tri = new meddly_tri_stateset(total->getParent(), total);
     }
 
     bool ok = false;
@@ -425,7 +450,7 @@ void stateset_union::Compute(traverse_data &x)
     }
   } // for i
 
-  is_tri ? x.answer->setPtr(total_tri) : x.answer->setPtr(total);
+  is_tri ? x.answer->setPtr((stateset*)total_tri) : x.answer->setPtr(total);
 }
 
 expr* stateset_union::buildAnother(expr **x, bool* f, int n) const
@@ -472,13 +497,13 @@ void stateset_intersect::Compute(traverse_data &x)
   if (!x.answer->isNormal()) return;
   stateset* total = smart_cast <stateset*> (x.answer->getPtr());
 
-  tri_stateset* total_tri = dynamic_cast <tri_stateset*> (total);
+  meddly_tri_stateset* total_tri = dynamic_cast <meddly_tri_stateset*> (total);
   if (total_tri) {
     is_tri = true;
   }
 
   DCASSERT(total);
-  if (is_tri ? total_tri->numRefs() > 1 : total->numRefs() > 1) {
+  if (is_tri ? total_tri->getMeddlyTrueSet()->numRefs() > 1 : total->numRefs() > 1) {
     is_tri ? (total_tri = total_tri->DeepCopy()) : (total = total->DeepCopy());
   } else {
     is_tri ? (total_tri = Share(total_tri)) : (total = Share(total));
@@ -494,10 +519,10 @@ void stateset_intersect::Compute(traverse_data &x)
     stateset* curr = smart_cast <stateset*> (x.answer->getPtr());
     DCASSERT(curr);
 
-    tri_stateset* curr_tri = dynamic_cast <tri_stateset*> (x.answer->getPtr());
+    meddly_tri_stateset* curr_tri = dynamic_cast <meddly_tri_stateset*> (x.answer->getPtr());
     if (curr_tri) {
       is_tri = true;
-      total_tri = new tri_stateset(total->getParent(), total);
+      //total_tri = new expl_tri_stateset(total->getParent(), total);
     }
 
     bool ok = false;

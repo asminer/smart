@@ -13,19 +13,26 @@ meddly_tri_stateset::meddly_tri_stateset(
     shared_domain* dom,
     meddly_encoder* enc,
     shared_ddedge* set
-)
-: tri_stateset(p, (stateset*) Share(set), (stateset*) Share(set)) //EZ:is it correct/
+):stateset(p)
 {
+    parent=p;
     trueset = new meddly_stateset(p, dom, enc, Share(set));
-    falseset = new meddly_stateset(p, dom, enc,Share(set)); //EZ:do i need to complement the trueset to create the falseset?
+    falseset = new meddly_stateset(p, dom, enc,Share(set));
+    falseset->Complement();
 }
-
+meddly_tri_stateset::meddly_tri_stateset(const state_lldsm* p, shared_ddedge* t, shared_ddedge* f
+):stateset(p){
+    parent = p;
+    trueset = dynamic_cast<meddly_stateset*>(t);
+    falseset = dynamic_cast<meddly_stateset*>(f);
+}
 meddly_tri_stateset::meddly_tri_stateset(
     const meddly_tri_stateset* clone,
     shared_ddedge* set
-) : tri_stateset(clone->getParent(),(stateset*) Share(clone->trueset),(stateset*) Share(clone->falseset))
+):stateset(clone->getParent())
 {
     DCASSERT(clone);
+    parent = clone->getParent();
     trueset = Share(clone->trueset);
     falseset = Share(clone->falseset);
     
@@ -41,7 +48,7 @@ meddly_tri_stateset::~meddly_tri_stateset()
 }
 
 meddly_tri_stateset* meddly_tri_stateset::DeepCopy() const {
-    return new meddly_tri_stateset(this->getParent(),Share(this->trueset->getSharedD()),Share(this->trueset->getMeddlyEncoder()),Share(this->trueset->getStateDD()));
+    return new meddly_tri_stateset(getParent(),Share(this->trueset->getSharedD()),Share(this->trueset->getMeddlyEncoder()),Share(this->trueset->getStateDD()));
 }
 
 bool meddly_tri_stateset::Complement() {
@@ -144,6 +151,6 @@ meddly_stateset* meddly_tri_stateset::computeMeddlyUnknownSet() const {
     shared_ddedge* unknown = new shared_ddedge(trueset->getMeddlyEncoder()->getForest());
     trueset->getMeddlyEncoder()->buildUnary(exprman::uop_not, union_tf, unknown);
     Delete(union_tf);
-    return new meddly_stateset(getParent(), Share(trueset->getSharedD()),
+    return new meddly_stateset(trueset->getParent(), Share(trueset->getSharedD()),
                                Share(trueset->getMeddlyEncoder()), unknown);
 }

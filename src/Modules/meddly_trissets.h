@@ -6,7 +6,7 @@
 */
 #include "statesets.h"
 #include "meddly_ssets.h"
-#include "trissets.h"
+//#include "trissets.h"
 
 #ifndef MEDDLY_TRI_SSETS_H
 #define MEDDLY_TRI_SSETS_H
@@ -22,10 +22,10 @@ class meddly_encoder;
 // *                                                                *
 // ******************************************************************
 
-class meddly_tri_stateset : public tri_stateset {
+class meddly_tri_stateset: public stateset{
   public:
     meddly_tri_stateset(const state_lldsm* p, shared_domain*, meddly_encoder*, shared_ddedge*);
-
+    meddly_tri_stateset(const state_lldsm* p, shared_ddedge* trueset, shared_ddedge* falseset);
     meddly_tri_stateset(const meddly_tri_stateset* clone, shared_ddedge* set);
   protected:
     virtual ~meddly_tri_stateset();
@@ -43,6 +43,9 @@ class meddly_tri_stateset : public tri_stateset {
       inline const meddly_stateset* getMeddlyFalseSet() const {
         return falseset;
       };
+      inline const state_lldsm* getParent() const {
+        return parent;
+      };
       virtual meddly_stateset* computeMeddlyUnknownSet() const;
 
     virtual void getCardinality(long &card) const;
@@ -58,13 +61,14 @@ class meddly_tri_stateset : public tri_stateset {
     virtual bool isEmpty() const;
 
     virtual shared_state* getSingleState() const;
-    virtual void Select();
-    virtual void Offset(int offset);
+    //virtual void Select();
+    //virtual void Offset(int offset);
 
     virtual bool Print(OutputStream &s, int) const;
     virtual bool Equals(const shared_object *o) const;
 
   private:
+    const state_lldsm* parent;  
     meddly_stateset *trueset, *falseset;
 };
 

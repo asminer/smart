@@ -14,6 +14,7 @@
 #include "../Modules/biginttype.h"
 #include "../Modules/statesets.h"
 #include "../Modules/expl_trissets.h"
+#include "../Modules/meddly_trissets.h"
 
 #include "../SymTabs/symtabs.h"
 
@@ -1512,7 +1513,7 @@ void CTL_min_decision_cost_base::Compute(traverse_data &x, expr** pass, int np)
   decision_set* dec_set = hlm->getDecisionSet();
 
   expr* ctl_expr = pass[1];
-  tri_stateset* res;
+  meddly_tri_stateset* res;// this will give an error
   const stateset *trueset;
   stateset* falseset;
 
@@ -1564,12 +1565,15 @@ void CTL_min_decision_cost_base::Compute(traverse_data &x, expr** pass, int np)
     ctl_expr->Compute(x);
     // em->cout() << "done computing CTL\n";
     DCASSERT(x.answer->getPtr());
-
-    res = dynamic_cast <tri_stateset*> (x.answer->getPtr());
+    std::cout<< "where am I\n";
+    res = dynamic_cast <meddly_tri_stateset*> (x.answer->getPtr());
+    std::cout << "Typeid: " << typeid(*x.answer->getPtr()).name() << std::endl;
     if(res==0) {
       stateset* ss = dynamic_cast <stateset*> (x.answer->getPtr());
       DCASSERT(ss);
-      res = new tri_stateset(llm, ss);
+      std::cout<< "or where am I\n";
+      //res = new expl_tri_stateset(llm, ss);
+      meddly_tri_stateset* res= dynamic_cast<meddly_tri_stateset*>(ss); 
     }
     DCASSERT(res);
 
@@ -1578,7 +1582,7 @@ void CTL_min_decision_cost_base::Compute(traverse_data &x, expr** pass, int np)
 
     // check if all initial states are in trueset, or any in falseset
     // if all in trueset, found min cost eval, return (b/c sorted by cost)
-    trueset = res->getTrueSet();
+    trueset = res->getMeddlyTrueSet();
     if(initset->isSubsetOf(trueset)) {
 
       // em->cout() << "Initial states: ";
@@ -1606,8 +1610,8 @@ void CTL_min_decision_cost_base::Compute(traverse_data &x, expr** pass, int np)
     }
 
     // if any in falseset, no need to continue search down this branch, return
-    falseset = res->getFalseSet()->DeepCopy();
-    falseset->Intersect(initset);
+    falseset = res->getMeddlyFalseSet()->DeepCopy();
+    falseset->Intersect(this,initset);
     if(!falseset->isEmpty()) {
 #ifdef DEBUG_DECISIONS
       em->cout() << "Min cost eval is 'false'\n";
