@@ -20,11 +20,27 @@ meddly_tri_stateset::meddly_tri_stateset(
     falseset = new meddly_stateset(p, dom, enc,Share(set));
     falseset->Complement();
 }
-meddly_tri_stateset::meddly_tri_stateset(const state_lldsm* p, shared_ddedge* t, shared_ddedge* f
-):stateset(p){
+meddly_tri_stateset::meddly_tri_stateset(
+    const state_lldsm* p,
+    shared_domain* dom,
+    meddly_encoder* enc,
+    shared_ddedge* t,
+    shared_ddedge* f
+) : stateset(p)
+{
     parent = p;
-    trueset = dynamic_cast<meddly_stateset*>(t);
-    falseset = dynamic_cast<meddly_stateset*>(f);
+    trueset = new meddly_stateset(p, dom, enc, Share(t));
+    falseset = new meddly_stateset(p, dom, enc, Share(f));
+}
+meddly_tri_stateset::meddly_tri_stateset(
+    const state_lldsm* p,
+    meddly_stateset* t,
+    meddly_stateset* f
+) : stateset(p)
+{
+    parent = p;
+    trueset = Share(t);
+    falseset = Share(f);
 }
 meddly_tri_stateset::meddly_tri_stateset(
     const meddly_tri_stateset* clone,
@@ -69,10 +85,14 @@ bool meddly_tri_stateset::Union(const expr* c, const char* op, const stateset* x
 
 bool meddly_tri_stateset::Intersect(const expr* c, const char* op, const stateset* x) {
     const meddly_tri_stateset* mx = dynamic_cast<const meddly_tri_stateset*>(x);
-    if (!mx) return false;
+    if (!mx) {
+        return false;
+    }
+    else{
     trueset->Intersect(c, op, mx->trueset);
     falseset->Intersect(c, op, mx->falseset);
     return true;
+    }
 }
 
 bool meddly_tri_stateset::Plus(const expr* c, const char* op, const stateset* x) {

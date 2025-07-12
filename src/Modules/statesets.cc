@@ -516,27 +516,44 @@ void stateset_intersect::Compute(traverse_data &x)
       is_tri ? Delete(total_tri) : Delete(total);
       return;
     }
-    stateset* curr = smart_cast <stateset*> (x.answer->getPtr());
-    DCASSERT(curr);
+    void* curr_ptr = x.answer->getPtr();
+    if (!curr_ptr) {
+        std::cerr << "Operand " << i << " is null!" << std::endl;
+        is_tri ? Delete(total_tri) : Delete(total);
+        return;
+    }
+    else{
+      std::cout << "test "<< typeid(*(shared_object*)curr_ptr).name()<< std::endl;
+    }
+    //stateset* curr = smart_cast <stateset*> (x.answer->getPtr());
+  
+    //DCASSERT(curr);
 
     meddly_tri_stateset* curr_tri = dynamic_cast <meddly_tri_stateset*> (x.answer->getPtr());
     if (curr_tri) {
       is_tri = true;
+      std::cout<<"curr_tri "<< std::endl;
       //total_tri = new expl_tri_stateset(total->getParent(), total);
     }
 
     bool ok = false;
-    if (stateset::parentsMatch(this, "intersection", total, curr)) {
-      ok = is_tri ? total_tri->Intersect(this, "intersection", curr_tri) : total->Intersect(this, curr);
-    } 
+    //if (stateset::parentsMatch(this, "intersection", total, curr_tri)) {
+    if(is_tri){
+      ok = total_tri->Intersect(this,"intersection",curr_tri);
+
+    }
+      //ok = is_tri ? total_tri->Intersect(this, "intersection", curr_tri) : total->Intersect(this,"intersection", curr_tri);
+    //} 
     if (!ok) {
       Delete(total);
       x.answer->setNull();
       return;
     }
   } // for i
-
-  is_tri ? x.answer->setPtr(total_tri) : x.answer->setPtr(total);
+  if(is_tri){
+    x.answer->setPtr(total_tri);
+  }
+  //is_tri ? x.answer->setPtr(total_tri) : x.answer->setPtr(total);
 }
 
 expr* stateset_intersect::buildAnother(expr **x, bool* f, int n) const

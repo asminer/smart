@@ -1704,7 +1704,7 @@ bool init_ctlmsrs::execute()
 
   if (st) st->AddSymbol(ctl_help);
 
-  CTL_engine::ProcGen = em->findEngineType("ProcessGeneration");
+  CTL_engine::ProcGen = em->findEngineType("ProcessGeneration");//("ProcessGeneration");
   DCASSERT(CTL_engine::ProcGen);
 
   //

@@ -25,7 +25,8 @@ class meddly_encoder;
 class meddly_tri_stateset: public stateset{
   public:
     meddly_tri_stateset(const state_lldsm* p, shared_domain*, meddly_encoder*, shared_ddedge*);
-    meddly_tri_stateset(const state_lldsm* p, shared_ddedge* trueset, shared_ddedge* falseset);
+    meddly_tri_stateset(const state_lldsm* p, shared_domain* dom, meddly_encoder* enc, shared_ddedge* t, shared_ddedge* f);
+    meddly_tri_stateset(const state_lldsm* p, meddly_stateset* trueset, meddly_stateset* falseset);
     meddly_tri_stateset(const meddly_tri_stateset* clone, shared_ddedge* set);
   protected:
     virtual ~meddly_tri_stateset();

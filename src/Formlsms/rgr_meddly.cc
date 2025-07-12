@@ -272,7 +272,13 @@ stateset* meddly_monolithic_rg::EX(bool revTime, const stateset* p, trace_data* 
     _EX(revTime, mpte_false, ans_false);
 
     // Return new tri stateset
-    return new meddly_tri_stateset(mpt->getParent(),ans_true,ans_false);
+    return new meddly_tri_stateset(
+    mpt->getParent(),
+    mpt->getMeddlyTrueSet()->getSharedD(),      // domain
+    mpt->getMeddlyTrueSet()->getMeddlyEncoder(),// encoder
+    ans_true,
+    ans_false
+);
   }
 
 
@@ -350,7 +356,13 @@ stateset* meddly_monolithic_rg::AX(bool revTime, const stateset* p)
     _EX(revTime,notpf,ans_false);
     Delete(notpf);
     MEDDLY::apply( MEDDLY::COMPLEMENT, ans_false->E, ans_false->E );
-    return new meddly_tri_stateset(mpt->getParent(),ans_true,ans_false);
+    return new meddly_tri_stateset(
+    mpt->getParent(),
+    mpt->getMeddlyTrueSet()->getSharedD(),      // domain
+    mpt->getMeddlyTrueSet()->getMeddlyEncoder(),// encoder
+    ans_true,
+    ans_false
+);
   }
 
   shared_ddedge* notp = mrss->newMddEdge();
@@ -403,7 +415,13 @@ stateset* meddly_monolithic_rg
   if(mpt){
     _EU(revTime,mpt_pt,mqt_qt,ans_true);
     _EU(revTime,mpt_pf,mqt_qf,ans_false);
-    return new meddly_tri_stateset(mpt->getParent(),ans_true,ans_false);
+    return new meddly_tri_stateset(
+    mpt->getParent(),
+    mpt->getMeddlyTrueSet()->getSharedD(),      // domain
+    mpt->getMeddlyTrueSet()->getMeddlyEncoder(),// encoder
+    ans_true,
+    ans_false
+);
   }
   
   //

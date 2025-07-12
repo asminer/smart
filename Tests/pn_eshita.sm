@@ -43,6 +43,14 @@
 #PNMarkingStyle SAFE
 #StateDisplayOrder LEXICAL
 #DisplayGraphNodeNames true
+# Debug + procgen
+
+# MeddlyProcessGeneration TRADITIONAL
+# MeddlyProcessGeneration SATURATION
+# MeddlyVariableStyle BOUNDED
+# MeddlyNSFNodeDeletion PESSIMISTIC
+# ProcessGeneration MEDDLY
+# MeddlyProcessEdgeStyle ACTUAL
 
 
 pn cruft(int n) := {
@@ -132,16 +140,16 @@ pn cruft(int n) := {
   stateset prop5 := reachable & !EX(reachable);
 };
 
-print(cruft(5).min_cost,"\n");
+//print(cruft(5).min_cost,"\n");//june 18
 //print("\n", cruft(5).test2, "\n");
 
 print("Reachable states:\n");
 compute(cruft(5).show_rs);
-print("decisions: \n");
-compute(cruft(5).show_dec);
+//print("decisions: \n");
+//compute(cruft(5).show_dec);
 print("State graph:\n");
 compute(cruft(5).show_rg);
-print("\n");
+//print("\n");//june 18
 
 print("\nEX tests:\n--------------------------------------------------\n");
 

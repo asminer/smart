@@ -246,7 +246,7 @@ bounded_encoder::~bounded_encoder()
   delete[] terms;
   Delete(expl_state);
 }
-
+#include <iostream>
 void bounded_encoder
 ::buildSymbolicSV(const symbol* sv, bool primed, expr* f, shared_object* answer)
 {
@@ -259,6 +259,11 @@ void bounded_encoder
   DCASSERT(dd);
 
   const model_statevar* mv = dynamic_cast<const model_statevar*> (sv);
+  if (!dynamic_cast<const model_statevar*>(sv)) {
+    std::cerr << "buildSymbolicSV: symbol is not a model_statevar! Name: "
+              << (sv ? sv->Name() : "null") << ", type: "
+              << (sv ? typeid(*sv).name() : "null") << std::endl;
+}
   DCASSERT(mv);
 
   int level = mv->GetPart();
