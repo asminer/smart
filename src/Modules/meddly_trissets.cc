@@ -64,7 +64,7 @@ meddly_tri_stateset::~meddly_tri_stateset()
 }
 
 meddly_tri_stateset* meddly_tri_stateset::DeepCopy() const {
-    return new meddly_tri_stateset(getParent(),Share(this->trueset->getSharedD()),Share(this->trueset->getMeddlyEncoder()),Share(this->trueset->getStateDD()));
+    return new meddly_tri_stateset(getParent(),Share(this->trueset->getSharedD()),Share(this->trueset->getMeddlyEncoder()),Share(this->trueset->getStateDD()),Share(this->falseset->getStateDD()));
 }
 
 bool meddly_tri_stateset::Complement() {

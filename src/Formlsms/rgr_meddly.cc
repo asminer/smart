@@ -247,22 +247,22 @@ void meddly_monolithic_rg::showArcs(OutputStream &os, const show_options &opt,
   }
 }
 
-
+#include<iostream>
 stateset* meddly_monolithic_rg::EX(bool revTime, const stateset* p, trace_data* td)
 {
+
   const meddly_stateset* mp = dynamic_cast <const meddly_stateset*> (p);
   
-  if (0==mp) return incompatibleOperand(revTime ? "EY" : "EX");
-  const shared_ddedge* mpe = mp->getStateDD();//this returns states in DD
-  
-  DCASSERT(mpe);
-  
-  const meddly_tri_stateset* mpt = dynamic_cast<const meddly_tri_stateset*>(p);
-  if (mpt) {
+  if (0==mp){
+    const meddly_tri_stateset* mpt = dynamic_cast<const meddly_tri_stateset*>(p);
+    if(!mpt){
+      return incompatibleOperand(revTime ? "EY" : "EX");
+    }
+    if (mpt) {
     //  DDs for true and false sets
     const shared_ddedge* mpte = mpt->getMeddlyTrueSet()->getStateDD();
     const shared_ddedge* mpte_false = mpt->getMeddlyFalseSet()->getStateDD();
-
+    
     // result DDs
     shared_ddedge* ans_true = mrss->newMddEdge();
     shared_ddedge* ans_false = mrss->newMddEdge();
@@ -270,21 +270,26 @@ stateset* meddly_monolithic_rg::EX(bool revTime, const stateset* p, trace_data* 
     //  EX for trueset and falseset
     _EX(revTime, mpte, ans_true);
     _EX(revTime, mpte_false, ans_false);
-
+    
     // Return new tri stateset
     return new meddly_tri_stateset(
     mpt->getParent(),
     mpt->getMeddlyTrueSet()->getSharedD(),      // domain
     mpt->getMeddlyTrueSet()->getMeddlyEncoder(),// encoder
     ans_true,
-    ans_false
-);
-  }
-
-
+    ans_false);
+    }
+  } 
+  const shared_ddedge* mpe = mp->getStateDD();//this returns states in DD
+  
+  DCASSERT(mpe);
+  
+  //const meddly_tri_stateset* mpt = dynamic_cast<const meddly_tri_stateset*>(p);
+  
   shared_ddedge* ans = mrss->newMddEdge();
   // how do I set the ans after applying EX in the trueset here?
-  
+  DCASSERT(ans->getForest());
+
 
   try {
     if (nullptr == td) {
@@ -310,6 +315,7 @@ stateset* meddly_monolithic_rg::EX(bool revTime, const stateset* p, trace_data* 
         mtd->AppendStage(Share(sd));
         Delete(sd);
       }
+      
     }
 
     return new meddly_stateset(mp, ans);

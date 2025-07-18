@@ -500,6 +500,7 @@ void stateset_intersect::Compute(traverse_data &x)
   meddly_tri_stateset* total_tri = dynamic_cast <meddly_tri_stateset*> (total);
   if (total_tri) {
     is_tri = true;
+  
   }
 
   DCASSERT(total);
@@ -516,24 +517,37 @@ void stateset_intersect::Compute(traverse_data &x)
       is_tri ? Delete(total_tri) : Delete(total);
       return;
     }
-    void* curr_ptr = x.answer->getPtr();
-    if (!curr_ptr) {
+    stateset* curr = smart_cast <stateset*> (x.answer->getPtr());
+    DCASSERT(curr);
+
+    //void* curr_ptr = x.answer->getPtr();
+    if (!curr) {
         std::cerr << "Operand " << i << " is null!" << std::endl;
         is_tri ? Delete(total_tri) : Delete(total);
         return;
     }
     else{
-      std::cout << "test "<< typeid(*(shared_object*)curr_ptr).name()<< std::endl;
+      std::cout << "test "<< typeid(*(shared_object*)curr).name()<< std::endl;
     }
     //stateset* curr = smart_cast <stateset*> (x.answer->getPtr());
   
     //DCASSERT(curr);
 
     meddly_tri_stateset* curr_tri = dynamic_cast <meddly_tri_stateset*> (x.answer->getPtr());
+    meddly_stateset* tset = dynamic_cast<meddly_stateset*>(total);
+    if (!tset) {
+      return ;
+      // handle error: total is not a meddly_stateset
+    }
+    meddly_stateset* fset= (meddly_stateset*)tset->DeepCopy();
+    fset->Complement();
+
+    //total_tri = new meddly_tri_stateset(total->getParent(), tset, fset);
     if (curr_tri) {
       is_tri = true;
-      std::cout<<"curr_tri "<< std::endl;
-      //total_tri = new expl_tri_stateset(total->getParent(), total);
+      //std::cout<<"curr_tri "<< std::endl;
+      total_tri = new meddly_tri_stateset(total->getParent(), tset, fset);
+      //total_tri = new meddly_tri_stateset(total->getParent(), total);
     }
 
     bool ok = false;
