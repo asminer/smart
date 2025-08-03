@@ -539,14 +539,14 @@ void stateset_intersect::Compute(traverse_data &x)
       return ;
       // handle error: total is not a meddly_stateset
     }
-    meddly_stateset* fset= (meddly_stateset*)tset->DeepCopy();
+    meddly_stateset* fset= dynamic_cast<meddly_stateset*>(tset->DeepCopy());
     fset->Complement();
 
     //total_tri = new meddly_tri_stateset(total->getParent(), tset, fset);
     if (curr_tri) {
       is_tri = true;
       //std::cout<<"curr_tri "<< std::endl;
-      total_tri = new meddly_tri_stateset(total->getParent(), tset, fset);
+      total_tri = new meddly_tri_stateset(total->getParent(), tset,fset);
       //total_tri = new meddly_tri_stateset(total->getParent(), total);
     }
 

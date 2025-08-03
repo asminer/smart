@@ -270,6 +270,7 @@ stateset* meddly_monolithic_rg::EX(bool revTime, const stateset* p, trace_data* 
     //  EX for trueset and falseset
     _EX(revTime, mpte, ans_true);
     _EX(revTime, mpte_false, ans_false);
+    MEDDLY::apply( MEDDLY::COMPLEMENT, ans_false->E, ans_false->E );
     
     // Return new tri stateset
     return new meddly_tri_stateset(
