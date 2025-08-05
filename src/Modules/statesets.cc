@@ -433,9 +433,16 @@ void stateset_union::Compute(traverse_data &x)
     DCASSERT(curr);
 
     meddly_tri_stateset* curr_tri = dynamic_cast <meddly_tri_stateset*> (x.answer->getPtr());
+    meddly_stateset* tset = dynamic_cast<meddly_stateset*>(total);
+    if (!tset) {
+      return ;
+      // handle error: total is not a meddly_stateset
+    }
+    meddly_stateset* fset= dynamic_cast<meddly_stateset*>(tset->DeepCopy());
+    fset->Complement();
     if (curr_tri) {
       is_tri = true;
-      //meddly_tri_stateset* total_tri = new meddly_tri_stateset(total->getParent(), total);
+      meddly_tri_stateset* total_tri = new meddly_tri_stateset(total->getParent(), tset,fset);
     }
 
     bool ok = false;

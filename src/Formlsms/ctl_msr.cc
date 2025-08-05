@@ -1513,7 +1513,7 @@ void CTL_min_decision_cost_base::Compute(traverse_data &x, expr** pass, int np)
   decision_set* dec_set = hlm->getDecisionSet();
 
   expr* ctl_expr = pass[1];
-  meddly_tri_stateset* res;// this will give an error
+  meddly_tri_stateset* res;
   const stateset *trueset;
   stateset* falseset;
 

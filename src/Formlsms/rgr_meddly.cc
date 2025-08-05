@@ -334,12 +334,12 @@ stateset* meddly_monolithic_rg::AX(bool revTime, const stateset* p)
   //
 
   const meddly_stateset* mp = dynamic_cast <const meddly_stateset*> (p);
-  if (0==mp) return incompatibleOperand(revTime ? "EY" : "EX");
-  const shared_ddedge* mpe = mp->getStateDD();
-  DCASSERT(mpe);
-  //meddly_tri_state
-  const meddly_tri_stateset* mpt = dynamic_cast<const meddly_tri_stateset*>(p);
-  if(mpt){
+  if (0==mp){ 
+    const meddly_tri_stateset* mpt = dynamic_cast<const meddly_tri_stateset*>(p);
+    if(0==mpt){
+      return incompatibleOperand(revTime ? "EY" : "EX");
+    }
+    if(mpt){
     //for trueset
     shared_ddedge* notpt = mrss->newMddEdge();
     DCASSERT(notpt);
@@ -368,9 +368,13 @@ stateset* meddly_monolithic_rg::AX(bool revTime, const stateset* p)
     mpt->getMeddlyTrueSet()->getSharedD(),      // domain
     mpt->getMeddlyTrueSet()->getMeddlyEncoder(),// encoder
     ans_true,
-    ans_false
-);
+    ans_false);
   }
+  }
+  const shared_ddedge* mpe = mp->getStateDD();
+  DCASSERT(mpe);
+  //meddly_tri_state
+
 
   shared_ddedge* notp = mrss->newMddEdge();
   DCASSERT(notp);
@@ -404,24 +408,25 @@ stateset* meddly_monolithic_rg
   const shared_ddedge* mpe = 0;
   if (p) {
     mp = dynamic_cast <const meddly_stateset*> (p);
-    if (0==mp) return incompatibleOperand(revTime ? "ES" : "EU");
-    mpe = mp->getStateDD();
-    DCASSERT(mpe);
-  }
-//grap p as tri stateset
-  const meddly_tri_stateset* mpt = dynamic_cast<const meddly_tri_stateset*>(p);
-  shared_ddedge*  mpt_pt = mpt->getMeddlyTrueSet()->getStateDD();
-  shared_ddedge*  mpt_pf = mpt->getMeddlyFalseSet()->getStateDD();
-//grab q as tri stateset
-  const meddly_tri_stateset* mqt = dynamic_cast<const meddly_tri_stateset*>(q);
-  shared_ddedge* mqt_qt = mqt->getMeddlyTrueSet()->getStateDD();
-  shared_ddedge* mqt_qf = mqt->getMeddlyFalseSet()->getStateDD();
+    if (0==mp) {
+      //grap p as tri stateset
+    const meddly_tri_stateset* mpt = dynamic_cast<const meddly_tri_stateset*>(p);
+    shared_ddedge*  mpt_pt = mpt->getMeddlyTrueSet()->getStateDD();
+    shared_ddedge*  mpt_pf = mpt->getMeddlyFalseSet()->getStateDD();
+    if(0==mpt){
+      return incompatibleOperand(revTime ? "ES" : "EU");
+    }
+    //grab q as tri stateset
+    const meddly_tri_stateset* mqt = dynamic_cast<const meddly_tri_stateset*>(q);
+    shared_ddedge* mqt_qt = mqt->getMeddlyTrueSet()->getStateDD();
+    shared_ddedge* mqt_qf = mqt->getMeddlyFalseSet()->getStateDD();
 
-  shared_ddedge* ans_true= mrss->newMddEdge();
-  shared_ddedge* ans_false= mrss->newMddEdge();
+    shared_ddedge* ans_true= mrss->newMddEdge();
+    shared_ddedge* ans_false= mrss->newMddEdge();
   if(mpt){
     _EU(revTime,mpt_pt,mqt_qt,ans_true);
     _EU(revTime,mpt_pf,mqt_qf,ans_false);
+    MEDDLY::apply( MEDDLY::COMPLEMENT, ans_false->E, ans_false->E );
     return new meddly_tri_stateset(
     mpt->getParent(),
     mpt->getMeddlyTrueSet()->getSharedD(),      // domain
@@ -430,6 +435,11 @@ stateset* meddly_monolithic_rg
     ans_false
 );
   }
+    }
+    mpe = mp->getStateDD();
+    DCASSERT(mpe);
+  }
+
   
   //
   // Grab q in a form we can use
