@@ -44,13 +44,15 @@ dtmc mpr:={
 	 stateset trns:= potential(transient);
 	 stateset test := potential(true);
 	 statevect exp_reward := acc_reward(15,test,re);
+	 statevect res_u := cond_acc_reward(35,test,re,abs);
 	 statevect res := cond_acc_reward_time(35,40,test,re,abs);
 	};
 
 
 	//print("reward for test MC ", mpr.trns, "\n");
 	//print("expected acc reward for test MC ", mpr.exp_reward, "\n");
-	print("conditional expected acc reward for test MC ", mpr.res, "\n");
+	//print("conditional expected acc reward for test MC ", mpr.res, "\n");
+	print("conditional expected acc reward for test MC ", mpr.res_u, "\n");
 	//print("this is for the second model ","\n");
 	//print(" expected acc reward for test MC ", mpr2.exp_reward, "\n");
 

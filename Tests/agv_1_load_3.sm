@@ -1,0 +1,45 @@
+#StatevectDisplayStyle SPARSE_STATE
+dtmc 
+agv_1 :={ 
+state s0,s1,s2,s3,s4,s5,s6,s7,s8,s9,s10,s11,s12,s13; 
+init(s0:1); 
+ arcs(
+s0 :s0 :0.6,
+s0 :s3 :0.1,
+s0 :s6 :0.05,
+s0 :s9 :0.25,
+s1: s1 :0.6,
+s1 :s4: 0.1,
+s1: s7 :0.05,
+s1 :s10 :0.25,
+s2 :s13 :1,
+s3 :s0 :0.98,
+s3 :s6 :0.02,
+s4 :s1 :0.98,
+s4 :s7 :0.02,
+s5 :s13 :1,
+s6 :s6 :1,
+s7 :s7 :1,
+s8 :s13 :1,
+s9 :s1 :1,
+s10 :s13 :1,
+s11 :s13 :1,
+s12 :s13 :1,
+s13:s13:1
+); 
+
+
+//statevect re:= reward(s0:0.25,s1:0.25);
+statevect re:= reward(s9:1,s10:1,s11:1);
+
+stateset test := potential(true);
+stateset success := potential(in_state({s13})); //s2,s5,s8,s10,s11,s12
+stateset col := potential(in_state({s6,s7}));
+statevect res_u := cond_acc_reward(10,success,re,col);
+
+};
+
+print("test multiple collision state ", agv_1.success, "\n");
+//print("test multiple collision state ", agv_1.col, "\n");
+//print("test cond accumulated reward avoiding collision state ", agv_1.res, "\n");
+print("test cond expected accumulated reward ", agv_1.res_u, "\n");
