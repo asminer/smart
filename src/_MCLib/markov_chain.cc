@@ -2108,10 +2108,10 @@ void MCLib::Markov_chain::conditional_accumulated_reward_timestep(int t, double*
     //}
 
     // Create a deep copy of the original vector
-            std::vector< double> original_p(Qoff.size);
-            for (long i = 0; i < Qoff.size; i++) {
-                original_p[i] = p[i];
-            }
+            // std::vector< double> original_p(Qoff.size);
+            // for (long i = 0; i < Qoff.size; i++) {
+            //     original_p[i] = p[i];
+            // }
     // double* original_p = new double[Qoff.size];
     // for(long i =0;i<Qoff.size;i++){
     //   original_p[i]= p[i];
@@ -2150,6 +2150,7 @@ void MCLib::Markov_chain::conditional_accumulated_reward_timestep(int t, double*
             assert(reward != nullptr && "Reward vector is not properly allocated");
     
     std::setprecision(15);
+    std::cout<< "computation starts " << std::endl;
     templ_dtmc_accumulated_reward_timestep(Qdiag,Qoff,selfloops_d,t,p,reward,q,false,opts);
     std::setprecision(15);
     //std::cout << "After templ_dtmc_accumulated_reward - Reward Size: " << Qoff.size << std::endl;
@@ -2170,10 +2171,10 @@ void MCLib::Markov_chain::conditional_accumulated_reward_timestep(int t, double*
     graphToMatrix(G_byrows_diag, Qdiag);
     graphToMatrix(G_byrows_off, Qoff);
     // Create a deep copy of the original vector
-            std::vector< double> original_p(Qoff.size);
-            for (long i = 0; i < Qoff.size; i++) {
-                original_p[i] =  static_cast<double>(p[i]);
-            }
+            // std::vector< double> original_p(Qoff.size);
+            // for (long i = 0; i < Qoff.size; i++) {
+            //     original_p[i] =  static_cast<double>(p[i]);
+            // }
     // double* original_p = new double[Qoff.size];
     // for(long i =0;i<Qoff.size;i++){
     //   original_p[i]= p[i];
@@ -2218,9 +2219,9 @@ void MCLib::Markov_chain::conditional_accumulated_reward_timestep(int t, double*
 //     for (long i = 0; i < Qoff.size; i++) {
 //   std::cout << "After templ_dtmc_accumulated_reward: p[" << i << "] = " << p[i] << ", reward[" << i << "] = " << reward[i] << std::endl;
 // }
-    for(long i =0;i<Qoff.size;i++){
-      //std::cout <<"before q " << q[i] <<std::endl;
-    }
+    // for(long i =0;i<Qoff.size;i++){
+    //   //std::cout <<"before q " << q[i] <<std::endl;
+    // }
     
    // templ_dtmc_cond_accumulated_reward(Qdiag, Qoff, selfloops_f, t, p, q, false, opts);
   }
