@@ -549,6 +549,22 @@ namespace MCLib {
                       (Will decide the output later!)
       */
       void conditional_accumulated_reward_unbounded(int t, double* x,double* r, double* q, DTMC_transient_options &opts) const;
+      /** Compute conditional expected accumulated reward till time t, for all possible starting states.
+          Must be a DTMC.
+          Vectors are allocated so that x[s] is the expected accumulated reward when the
+          chain starts in state s, for any legal state handle s.
+          Specifically, we determine
+
+            r[s] = m[s,s']*rho[s]  
+            x[s]= E [ f(state at time t) ], given we start in state s
+
+          @param  t   Time
+          @param  r   Reward rate vector
+          @param  x   On input: function f() to compute expectation over.
+                      On output: expected value for each starting state.
+                      (Will decide the output later!)
+      */
+      void conditional_accumulated_reward_timestep(int t, double* x,double* r, double* q, DTMC_transient_options &opts) const;
 /** Compute conditional expected accumulated reward till time t, for all possible starting states.
           Must be a DTMC.
           Vectors are allocated so that x[s] is the expected accumulated reward when the
@@ -566,6 +582,22 @@ namespace MCLib {
                       (Will decide the output later!)
       */
       void conditional_accumulated_reward_unbounded_time(int t, int T,  double* x,double* r, double* q, DTMC_transient_options &opts) const;
+
+      /**
+       *  Conditional expected accumulated reward under strict bounded until
+       *  (Reading A): first time \a b holds is exactly at time \a T, atomic \a a
+       *  holds at times 0,…,T−1, and \a b is false at times 0,…,T−1.
+       *  Vectors \a atomic_a[i] and \a atomic_b[i] are nonzero where the
+       *  corresponding atomic proposition holds.
+       *  On output, \a out[s] is the conditional expectation when X_0 = s
+       *  (for every state index s). Uses backward iteration (same P·x kernel as
+       *  conditional_accumulated_reward_timestep).
+       */
+      void conditional_accumulated_reward_strict_until_TT(
+          int T, double* out, const double* reward,
+          const double* atomic_a, const double* atomic_b,
+          DTMC_transient_options &opts) const;
+
       /** Compute the accumulated time spent in every state, up
           to and including time t.
           Must be a DTMC.

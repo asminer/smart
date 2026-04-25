@@ -847,8 +847,6 @@ void mc_acc_reward::Compute(traverse_data &x, expr** pass, int np)
   pass[1]->Compute(x);
   if (!x.answer->isNormal()) return ;
   long time = x.answer->getInt();
-  std::cerr << "time: " << time << "\n";
-
   ExtractParams(x, pass, np, proc, accept);
   if (0==proc || 0==accept) {
     x.answer->setNull();
@@ -910,7 +908,6 @@ void mc_acc_reward::Compute(traverse_data &x, expr** pass, int np)
   // std::cerr << acc_state << " " << probs[5] << "\n";
   //how to set the pointer ??
   statevect* svv= new statevect(proc,probs,proc->getPROC()->getNumStates());
-  std::cout<< "svv size"<< svv->size()<< std:: endl;
   x.answer->setPtr(svv);
 
 }
@@ -966,8 +963,6 @@ void mc_cond_acc_reward::Compute(traverse_data &x, expr** pass, int np)
   pass[1]->Compute(x);
   if (!x.answer->isNormal()) return ;
   long time = x.answer->getInt();
-  std::cerr << "time: " << time << "\n";
-
   ExtractParams(x, pass, np, proc, accept);
   if (0==proc || 0==accept) {
     x.answer->setNull();
@@ -1021,7 +1016,7 @@ void mc_cond_acc_reward::Compute(traverse_data &x, expr** pass, int np)
 
   stateset* ss_q = smart_cast <stateset*>(Share(x.answer->getPtr()));
   expl_stateset* e_q = dynamic_cast <expl_stateset*>(ss_q);
-  if (!e) {
+  if (!e_q) {
 
     if (em->startError()) {
       em->causedBy(this);
@@ -1036,7 +1031,7 @@ void mc_cond_acc_reward::Compute(traverse_data &x, expr** pass, int np)
   const intset& eis_q = e_q->getExplicit();
   double* q=new double[proc->getNumStates()];
   for(long i = 0; i < proc->getPROC()->getNumStates(); ++i) {
-     q[1] =0;
+     q[i] =0;
   }
   for(long i=0;i<proc->getPROC()->getNumStates();i++){
     //how to assign the values to probs
@@ -1061,7 +1056,6 @@ void mc_cond_acc_reward::Compute(traverse_data &x, expr** pass, int np)
   // std::cerr << acc_state << " " << probs[5] << "\n";
   //how to set the pointer ??
   statevect* svv= new statevect(proc,probs,proc->getPROC()->getNumStates());
-  std::cout<< "svv size"<< svv->size()<< std:: endl;
   x.answer->setPtr(svv);
 
 }
@@ -1118,12 +1112,9 @@ void mc_cond_acc_reward_time::Compute(traverse_data &x, expr** pass, int np)
   pass[1]->Compute(x);
   if (!x.answer->isNormal()) return ;
   long time = x.answer->getInt();
-  std::cerr << "time: " << time << "\n";
   pass[2]->Compute(x);
   if (!x.answer->isNormal()) return ;
   long T = x.answer->getInt();
-  std::cerr << "time to reward: " << T << "\n";
-
   ExtractParams(x, pass, np, proc, accept);
   if (0==proc || 0==accept) {
     x.answer->setNull();
@@ -1177,7 +1168,7 @@ void mc_cond_acc_reward_time::Compute(traverse_data &x, expr** pass, int np)
 
   stateset* ss_q = smart_cast <stateset*>(Share(x.answer->getPtr()));
   expl_stateset* e_q = dynamic_cast <expl_stateset*>(ss_q);
-  if (!e) {
+  if (!e_q) {
 
     if (em->startError()) {
       em->causedBy(this);
@@ -1192,7 +1183,7 @@ void mc_cond_acc_reward_time::Compute(traverse_data &x, expr** pass, int np)
   const intset& eis_q = e_q->getExplicit();
   double* q=new double[proc->getNumStates()];
   for(long i = 0; i < proc->getPROC()->getNumStates(); ++i) {
-     q[1] =0;
+     q[i] =0;
   }
   for(long i=0;i<proc->getPROC()->getNumStates();i++){
     //how to assign the values to probs
@@ -1217,7 +1208,6 @@ void mc_cond_acc_reward_time::Compute(traverse_data &x, expr** pass, int np)
   // std::cerr << acc_state << " " << probs[5] << "\n";
   //how to set the pointer ??
   statevect* svv= new statevect(proc,probs,proc->getPROC()->getNumStates());
-  std::cout<< "svv size"<< svv->size()<< std:: endl;
   x.answer->setPtr(svv);
 
 }
@@ -1271,8 +1261,6 @@ void mc_reverse_tta::Compute(traverse_data &x, expr** pass, int np)
   pass[1]->Compute(x);
   if (!x.answer->isNormal()) return ;
   long time = x.answer->getInt();
-  std::cerr << "time: " << time << "\n";
-
   ExtractParams(x, pass, np, proc, accept);
   if (0==proc || 0==accept) {
     x.answer->setNull();
@@ -1563,7 +1551,6 @@ void mc_conditional_tta::Compute(traverse_data &x, expr** pass, int np)
   pass[1]->Compute(x);
   if (!x.answer->isNormal()) return ;
   long h = x.answer->getInt();
-  std::cerr << "time: " << time << "\n";
   pass[2]->Compute(x);
   if (!x.answer->isNormal()) return ;
   long k = x.answer->getInt();

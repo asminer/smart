@@ -1,0 +1,54 @@
+// State map: n=1, m=3 (per AGV: local mode + count_x).
+// After first delivery: DELIVERED(c=1) --1--> MOVING(c=1) (one step in delivered).
+// s0: a0:moving,c=0
+// s1: a0:waiting,c=0
+// s2: a0:collided,c=0
+// s3: a0:moving,c=1
+// s4: a0:waiting,c=1
+// s5: a0:collided,c=1
+// s6: a0:moving,c=2
+// s7: a0:waiting,c=2
+// s8: a0:collided,c=2
+// s9: a0:delivered,c=1
+// s10: a0:delivered,c=2
+// s11: a0:delivered,c=3
+// s12: a0:done,c=3
+
+dtmc agv:={
+state s0,s1,s2,s3,s4,s5,s6,s7,s8,s9,s10,s11,s12;
+init(s0:1);
+  arcs(
+  s0 : s0 :0.25,
+  s0 : s1 :0.1,
+  s0 : s2 :0.05,
+  s0 : s9 :0.6,
+  s1 : s0 :0.98,
+  s1 : s2 :0.02,
+  s2 : s0 :1,
+  s3 : s3 :0.25,
+  s3 : s4 :0.1,
+  s3 : s5 :0.05,
+  s3 : s10 :0.6,
+  s4 : s3 :0.98,
+  s4 : s5 :0.02,
+  s5 : s3 :1,
+  s6 : s6 :0.25,
+  s6 : s7 :0.1,
+  s6 : s8 :0.05,
+  s6 : s11 :0.6,
+  s7 : s6 :0.98,
+  s7 : s8 :0.02,
+  s8 : s6 :1,
+  s9 : s3 :1,
+  s10 : s6 :1,
+  s11 : s12 :1,
+  s12 : s12 :1
+  );
+
+// re: rate(s) = #AGVs in local DELIVERED (equivalent to impulse-on-enter-DELIVERED while each visit lasts 1 step).
+statevect re:= reward(s9:1,s10:1,s11:1);
+stateset success := potential(in_state({s12}));
+stateset collided := potential(in_state({s2,s5,s8}));
+statevect res := cond_acc_reward(10,success,re,collided);
+};
+print(" cond expected acc reward for test MC ", agv.res, "\n");

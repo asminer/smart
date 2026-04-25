@@ -1,27 +1,27 @@
 dtmc agv:={
 state s0,s1,s2,s3,s4,s5;
 init(s0:1);
-	arcs(
-	s0 : s0 :0.25,
-	s0 : s1 :0.1,
-	s0 : s2 :0.05,
-	s0 : s3 :0.6,
-	s1 : s0 : 0.98,
-	s1 : s3 : 0.02,
-	s2 : s2 : 1,
-	s3 : s5 : 1,
-	s4 : s4 : 1,
-	s5: s5: 1
+  arcs(
+  s0 : s0 :0.25,
+  s0 : s1 :0.1,
+  s0 : s2 :0.05,
+  s0 : s3 :0.6,
+  s1 : s0 : 0.98,
+  s1 : s2 : 0.02,
+  s2 : s2 : 1,
+  s3 : s5 : 1,
+  s4 : s4 : 1,
+  s5: s5: 1
 
-	);
+  );
 
 statevect re:= reward(s0:0.6);
 stateset abs:= potential(is_absorbed);
 stateset trns:= potential(transient);
 stateset test := potential(in_state(s2));
 stateset b := potential(in_state(s5));
-statevect res := cond_acc_reward_time(5,10,b,re,test);
-statevect res_u := cond_acc_reward(10,b,re,test);
+//statevect res := cond_acc_reward_time(5,10,b,re,test);
+statevect res_u := cond_acc_reward(2,b,re,test);
 };
 
 //print("reward for test MC ", agv.trns, "\n");

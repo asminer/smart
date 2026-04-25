@@ -650,7 +650,8 @@ bool mclib_process
       int it = int(t);
       startTransientReport(w, it);
       //chain->reverseTransientConditional_TTA(h,k, probs, probs_t, opts);
-      chain->conditional_accumulated_reward_unbounded(t,probs,reward,abs,opts);
+      //chain->conditional_accumulated_reward_unbounded(t,probs,reward,abs,opts);
+      chain->conditional_accumulated_reward_timestep(t,probs,reward,abs,opts);
       stopTransientReport(w, opts.multiplications);
 
       opts.vm_result = 0;
