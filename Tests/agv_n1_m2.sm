@@ -39,4 +39,5 @@ stateset success := potential(in_state({s8}));
 stateset collided := potential(in_state({s2,s5}));
 statevect res := cond_acc_reward(10,success,re,collided);
 };
+print("read model\n");
 print(" cond expected acc reward for test MC ", agv.res, "\n");

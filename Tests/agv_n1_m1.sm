@@ -1,3 +1,4 @@
+#Report + ALL
 // State map: n=1, m=1 (per AGV: local mode + count_x).
 // After first delivery: DELIVERED(c=1) --1--> MOVING(c=1) (one step in delivered).
 // s0: a0:moving,c=0
@@ -27,4 +28,5 @@ stateset success := potential(in_state({s4}));
 stateset collided := potential(in_state({s2}));
 statevect res := cond_acc_reward(10,success,re,collided);
 };
+print("read model\n");
 print(" cond expected acc reward for test MC ", agv.res, "\n");

@@ -50,5 +50,8 @@ statevect re:= reward(s9:1,s10:1,s11:1);
 stateset success := potential(in_state({s12}));
 stateset collided := potential(in_state({s2,s5,s8}));
 statevect res := cond_acc_reward(10,success,re,collided);
+bigint nstates := num_states;
 };
+print("Model generation is done!\n");
+print("num states = ", agv.nstates, "\n");
 print(" cond expected acc reward for test MC ", agv.res, "\n");
