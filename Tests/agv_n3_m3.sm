@@ -15640,4 +15640,5 @@ bigint narcs := num_arcs;
 print("Model generation is done!\n");
 print("num states = ", agv.nstates, "\n");
 print("num edges  = ", agv.narcs, "\n");
+print("#collided  = ", card(agv.collided), "\n");
 print(" cond expected acc reward for test MC ", agv.res, "\n");
