@@ -324,7 +324,12 @@ Help topic: binary &
         proc bool           has type: proc rand bool
         proc rand bool      has type: proc rand bool
     
+    {state} &
+        {state}         has type: stateset
+        stateset        has type: stateset
+    
     stateset &
+        {state}         has type: stateset
         stateset        has type: stateset
 
 Help topic: binary *
@@ -1058,7 +1063,12 @@ Help topic: binary ->
         ltl_top                     has type: ltl_top
         temporal_formula            has type: ctlstar_state_formula
     
+    {state} ->
+        {state}         has type: stateset
+        stateset        has type: stateset
+    
     stateset ->
+        {state}         has type: stateset
         stateset        has type: stateset
     
     temporal_formula ->
@@ -2192,7 +2202,12 @@ Help topic: binary \
     Operator \ is used for set difference. It may be used with the 
     following operand types:
     
+    {state} \
+        {state}         has type: stateset
+        stateset        has type: stateset
+    
     stateset \
+        {state}         has type: stateset
         stateset        has type: stateset
 
 Help topic: binary |
@@ -2223,7 +2238,12 @@ Help topic: binary |
         proc bool           has type: proc rand bool
         proc rand bool      has type: proc rand bool
     
+    {state} |
+        {state}         has type: stateset
+        stateset        has type: stateset
+    
     stateset |
+        {state}         has type: stateset
         stateset        has type: stateset
 
 Help topic: trinary .. ..

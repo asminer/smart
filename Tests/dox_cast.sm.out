@@ -173,6 +173,9 @@ Help topic: promotions
     From state to:
         {state}     (distance 20)
     
+    From {state} to:
+        stateset        (distance 1)
+    
     From tile to:
         {tile}      (distance 20)
     
