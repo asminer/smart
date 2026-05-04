@@ -1,7 +1,7 @@
 
 
 
-/* 
+/*
     Test of explicit CTL model checking,
     on a simple FSM model.
 
@@ -30,7 +30,7 @@
         G        K    |      .
         |         |   |      .
         |       ^ |   |      .
-        v       | v   |      
+        v       | v   |
                 |     |      |
         H --+    J ---+      |
         ^   |                v
@@ -49,7 +49,7 @@ fsm other := {
 };
 
 fsm cruft(int n) := {
-  
+
   state A, B, C, D, F, G, H, I, J, K;
 
   init(A);
@@ -60,9 +60,9 @@ fsm cruft(int n) := {
   arcs(
 	A : B,
 	B : A,  B : C,  B : D,  B : E[1],
-	
+
 	C : F,  F : F,  F : G,  G : H,  H : H,
-	
+
 	D : I,  I : D,  I : K,  K : J,  J : K,  J : D
   );
   for (int i in {2..n}) {
@@ -73,14 +73,14 @@ fsm cruft(int n) := {
 
   stateset rs := reachable;
   stateset apB := potential(in_state(B));
-  stateset apD := potential(in_state(D));
-  stateset apF := potential(in_state(F));
-  stateset apH := potential(in_state(H));
-  stateset apK:= potential(in_state(K));
+  stateset apD := { D };
+  stateset apF := { F };
+  stateset apH := { H };
+  stateset apK := { K };
   stateset apEn:= potential(in_state(E[n]));
 
   // Existentials
-  
+
   stateset prop1 := EX(apD);
   stateset prop2 := EX(EX(apD));
   stateset prop3 := EX(EX(EX(apD)));
@@ -111,7 +111,7 @@ fsm cruft(int n) := {
 
   stateset prop20:= EF(apB) & EP(apB);
   stateset prop21:= EF(apD) & EP(apD);
-  stateset prop22:= EF(apEn) & EP(apEn); 
+  stateset prop22:= EF(apEn) & EP(apEn);
   stateset prop23:= EF(apF) & EP(apF);
 
   stateset abdij:= EU(!apK, apD); // !apK U apD
@@ -134,7 +134,7 @@ fsm cruft(int n) := {
 
   stateset prop36:= EH(!apH);
   stateset prop37:= EH(EF(apH));
- 
+
   // Universals
 
   stateset prop38:= AX(apH);
@@ -158,7 +158,7 @@ fsm cruft(int n) := {
 
   stateset prop52 := AS(!apK, apD);
   stateset prop53 := AS(!apK, apB);
-  
+
   stateset prop54 := AG(!apH);
   stateset prop55 := AG(!apK);
   stateset prop56 := AG(!apEn);
@@ -170,7 +170,7 @@ fsm cruft(int n) := {
   stateset allH := AH(reachable);
 
   // Errors
-  
+
   stateset bad1 := EX(other.one);
   stateset bad2 := EY(other.one);
   stateset bad3 := EF(other.one);

@@ -488,7 +488,7 @@ int mc_reward::Traverse(traverse_data &x, expr** pass, int np)
   */
 
   return doit;
-  
+
 }
 
 void mc_reward::Compute(traverse_data &x, expr** pass, int np)
@@ -555,10 +555,10 @@ void mc_reward::Compute(traverse_data &x, expr** pass, int np)
   statevect* sv= new statevect(cruft,reward,proc->getNumStates());
   if (reward) {
       answer->setPtr(sv);
-      //std::cerr << "what!!! " << "\n";  
+      //std::cerr << "what!!! " << "\n";
   }
   else    answer->setNull();
-  
+
 }
 
 
@@ -896,7 +896,7 @@ void mc_acc_reward::Compute(traverse_data &x, expr** pass, int np)
   // for(long i=0;i<proc->getPROC()->getNumStates();i++){
   //   //reward[sv->readSparseIndex(i)]= sv->readSparseValue(i);
   //   //std::cout<< "reward vector "<< reward[i] << std::endl;
-    
+
   // }
 
   bool res= proc->getPROC()->reverseAccRewardUnbounded(time,probs,aux,reward);
@@ -1044,7 +1044,7 @@ void mc_cond_acc_reward::Compute(traverse_data &x, expr** pass, int np)
   // for(long i=0;i<proc->getPROC()->getNumStates();i++){
   //   //reward[sv->readSparseIndex(i)]= sv->readSparseValue(i);
   //   //std::cout<< "reward vector "<< reward[i] << std::endl;
-    
+
   // }
 
   bool res= proc->getPROC()->reverseCondAccRewardUnbounded(time,probs,aux,reward,q);
@@ -1196,7 +1196,7 @@ void mc_cond_acc_reward_time::Compute(traverse_data &x, expr** pass, int np)
   // for(long i=0;i<proc->getPROC()->getNumStates();i++){
   //   //reward[sv->readSparseIndex(i)]= sv->readSparseValue(i);
   //   //std::cout<< "reward vector "<< reward[i] << std::endl;
-    
+
   // }
 
   bool res= proc->getPROC()->reverseCondAccRewardUnboundedTime(time,T,probs,aux,reward,q);
@@ -1688,6 +1688,7 @@ init_mcform::init_mcform() : initializer("init_mcform")
   usesResource("em");
   usesResource("CML");
   buildsResource("formalisms");
+  buildsResource("model_state");
   usesResource("statevects");
 }
 
