@@ -105,6 +105,7 @@ smart_SOURCES = \
   Modules/expl_states.cc \
   Modules/glue_meddly.cc \
   Modules/meddly_ssets.cc \
+  Modules/sos2sset.cc \
   Modules/statesets.cc \
   Modules/statevects.cc \
   Modules/stochtypes.cc \

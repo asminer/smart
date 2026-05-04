@@ -704,9 +704,10 @@ class init_mcform : public initializer {
 };
 static init_mcform the_mcform_initializer;
 
-init_mcform::init_mcform() : initializer(__FILE__, 4)
+init_mcform::init_mcform() : initializer(__FILE__, 5)
 {
     builds_resource("mc_form.cc");
+    builds_resource("model_state");
     needs_resource("Warning");
     needs_resource("Debug");
     needs_resource("CML");

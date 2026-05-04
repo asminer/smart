@@ -14,6 +14,7 @@ class expr;
 class result;
 class symbol_table;
 class state_lldsm;
+class shared_state;
 class hldsm;
 
 // ******************************************************************

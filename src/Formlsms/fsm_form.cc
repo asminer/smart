@@ -565,9 +565,10 @@ class init_fsms : public initializer {
 };
 static init_fsms the_fsm_initializer;
 
-init_fsms::init_fsms() : initializer(__FILE__, 4)
+init_fsms::init_fsms() : initializer(__FILE__, 5)
 {
     builds_resource("fsm");
+    builds_resource("model_state");
     needs_resource("Warning");
     needs_resource("Debug");
     needs_resource("CML");
