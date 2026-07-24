@@ -45,6 +45,8 @@ class mclib_process : public markov_process {
     virtual bool reverseTransientUnbounded(int t, double* probs, double* aux) const;
     virtual bool reverseTransientBounded(int h, int k, double* probs,double* probs_t, double* aux) const;
     virtual bool reverseAccRewardUnbounded(int t, double* probs, double* aux, double* reward) const;
+    virtual bool reverseAccRewardUnboundedTime(int t, double* probs, double* aux,
+        double* reward) const;
     virtual bool reverseCondAccRewardUnbounded(int t, double* probs, double* aux, double* reward,double* abs) const;
     virtual bool reverseCondAccRewardUnboundedTime(int t,int T, double* probs, double* aux, double* reward,double* abs) const;
     virtual bool reverseTransientConditional(int h,int k, double* probs,double* probs_t,double* aux) const;

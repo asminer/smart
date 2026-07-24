@@ -160,6 +160,21 @@ public:
               @return    true on success, false otherwise.
         */
         virtual bool reverseAccRewardUnbounded(int t, double* probs,double* aux, double* reward) const;
+        /** Backward computation of expected accumulated reward over the first
+            t steps, where reward is counted only in states that can still
+            reach the target set within t steps.
+            This must be provided in derived classes; the default behavior here
+            is to print an error message.
+              @param  t       Shared horizon for reachability and reward.
+              @param  probs   On input: goal-indicator vector.
+                              On output: accumulated reward value for each start state.
+              @param  aux     Auxiliary vector, dimension getNumStates().
+              @param  reward  Reward vector, dimension getNumStates().
+
+              @return    true on success, false otherwise.
+        */
+        virtual bool reverseAccRewardUnboundedTime(int t, double* probs,
+            double* aux, double* reward) const;
          /** Backward computation of expected accumulated reward until reaches an absorbing state.
             This must be provided in derived classes, the
             default behavior here is to print an error message.

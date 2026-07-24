@@ -15636,9 +15636,11 @@ stateset collided := {s2,s5,s8,s15,s18,s21,s26,s27,s28,s29,s30,s31,s32,s33,s34,s
 statevect res := cond_acc_reward(500,success,re,collided);
 bigint nstates := num_states;
 bigint narcs := num_arcs;
+statevect acc:= acc_reward_time(100,success,re); 
 };
 print("Model generation is done!\n");
 print("num states = ", agv.nstates, "\n");
 print("num edges  = ", agv.narcs, "\n");
 print("#collided  = ", card(agv.collided), "\n");
-print(" cond expected acc reward for test MC ", agv.res, "\n");
+//print(" cond expected acc reward for test MC ", agv.res, "\n");
+print(" expected acc reward for test MC ", agv.acc, "\n");

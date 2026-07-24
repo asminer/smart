@@ -532,6 +532,24 @@ namespace MCLib {
                       (Will decide the output later!)
       */
       void reverse_accumulated_reward_unbounded(int t, double* x,double* r, DTMC_transient_options &opts) const;
+      /** Compute expected accumulated reward over a single bounded horizon.
+          Must be a DTMC.
+          Vectors are allocated so that x[s] is the expected accumulated reward when the
+          chain starts in state s, for any legal state handle s.
+          Specifically, we determine the expected reward obtained by summing
+          rewards only in states from which the goal is still reachable within
+          the remaining horizon.
+
+            x[s] = E[ sum over steps k<=t of reward(X_k)
+                      gated by ReachGoalWithinRemainingTime(X_k) ]
+
+          @param  t   Shared horizon for reachability and reward
+          @param  x   On input: goal indicator vector.
+                      On output: expected value for each starting state.
+          @param  r   Reward rate vector
+      */
+      void reverse_accumulated_reward_unbounded_time(int t, double* x, double* r,
+          DTMC_transient_options &opts) const;
 
 /** Compute conditional expected accumulated reward till time t, for all possible starting states.
           Must be a DTMC.
@@ -565,21 +583,21 @@ namespace MCLib {
                       (Will decide the output later!)
       */
       void conditional_accumulated_reward_timestep(int t, double* x,double* r, double* q, DTMC_transient_options &opts) const;
-/** Compute conditional expected accumulated reward till time t, for all possible starting states.
+/** Compute conditional expected accumulated reward with two horizons, for all possible starting states.
           Must be a DTMC.
           Vectors are allocated so that x[s] is the expected accumulated reward when the
           chain starts in state s, for any legal state handle s.
           Specifically, we determine
 
-            r[s] = m[s,s']*rho[s]  
-            x[s]= E [ f(state at time t) ], given we start in state s
+            x[s] = E[ accumulated reward over the first min(t,T) steps
+                      | reach the goal set within t steps while avoiding q ]
 
-          @param  t   Time to collect reward
-          @param  T   time associated with the formula, can be optional
+          @param  t   Bounded horizon for reaching the goal
+          @param  T   Reward horizon (only the first min(t,T) steps contribute)
           @param  r   Reward rate vector
-          @param  x   On input: function f() to compute expectation over.
+          @param  x   On input: goal indicator vector.
                       On output: expected value for each starting state.
-                      (Will decide the output later!)
+          @param  q   Avoid/absorbing set mask
       */
       void conditional_accumulated_reward_unbounded_time(int t, int T,  double* x,double* r, double* q, DTMC_transient_options &opts) const;
 

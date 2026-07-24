@@ -1398,6 +1398,64 @@ void expected_si::Compute(traverse_data &x, expr** pass, int np)
   Delete(vp);
 }
 
+// ******************************************************************
+// *                        dot_dist_si class                       *
+// ******************************************************************
+
+class dot_dist_si : public simple_internal {
+public:
+  dot_dist_si(const type* vecttype);
+  virtual void Compute(traverse_data &x, expr** pass, int np);
+};
+
+dot_dist_si::dot_dist_si(const type* vecttype)
+: simple_internal(em->REAL, "dot_dist", 2)
+{
+  DCASSERT(vecttype);
+  DCASSERT(em->STATEDIST);
+  SetFormal(0, vecttype, "x");
+  SetFormal(1, em->STATEDIST, "p");
+  SetDocumentation("Dot product of state measure vector x with distribution p.  With init(s0:1), dot_dist(cond_rew, init_dist()) is cond_rew at s0.");
+}
+
+void dot_dist_si::Compute(traverse_data &x, expr** pass, int np)
+{
+  DCASSERT(x.answer);
+  DCASSERT(2==np);
+  DCASSERT(0==x.aggregate);
+
+  SafeCompute(pass[0], x);
+  if (!x.answer->isNormal()) return;
+
+  statevect* vx = smart_cast <statevect*>(Share(x.answer->getPtr()));
+  DCASSERT(vx);
+
+  SafeCompute(pass[1], x);
+  if (!x.answer->isNormal()) {
+    Delete(vx);
+    return;
+  }
+
+  statedist* vp = smart_cast <statedist*>(Share(x.answer->getPtr()));
+  DCASSERT(vp);
+
+  if (vx->getParent() != vp->getParent()) {
+    if (em->startError()) {
+      em->causedBy(this);
+      em->cerr() << "Measure and distribution are from different model instances";
+      em->stopIO();
+    }
+    Delete(vx);
+    Delete(vp);
+    x.answer->setNull();
+    return;
+  }
+
+  x.answer->setReal( vx->dot_product(vp) );
+  Delete(vx);
+  Delete(vp);
+}
+
 
 
 // ******************************************************************
@@ -1486,6 +1544,7 @@ bool init_statevects::execute()
   st->AddSymbol(  new prob_si                   );
   st->AddSymbol(  new expected_si(t_stateprobs) );
   st->AddSymbol(  new expected_si(t_statemsrs)  );
+  st->AddSymbol(  new dot_dist_si(t_statevecs)    );
 
   return true;
 }

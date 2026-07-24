@@ -96,10 +96,13 @@ const edge graph03[]={
 const long num_nodes3 = 5;
 const double p3[] ={0,0,0,0,1} ;
 const double q3[] ={0,0,0,0,1} ;
-/* Backward from goal 4: prob t=4, reward T=3 → timed conditional vector */
-const double pt3[]={ 0, 2, 0, 0, 0};
-/* Same line, T=4 reward steps: end at state 0, accumulated r[3]+r[1]=2 */
+/* Goal within 4 steps; accumulate reward for first 3 steps only. */
+const double pt3[]={ 2, 0, 0, 0, 0};
+/* Same line, T=4 reward steps: same result here because goal is reached at step 4. */
 const double pt3_T4[]={ 2, 0, 0, 0, 0};
+/* Gold for reverse_accumulated_reward_unbounded_time on graph03. */
+const double pt3_acc_t3[]={ 0, 2, 1, 1, 0 };
+const double pt3_acc_t4[]={ 2, 2, 1, 1, 0 };
 
 const double reward3[]={0,1,0,1,0};
 /* Gold for conditional_accumulated_reward_timestep (cond_acc_reward / templ_dtmc_accumulated_reward_timestep). */
@@ -249,52 +252,93 @@ static void ref_backward_step(long n, int mult, const std::vector<double>& P,
 }
 
 static void ref_cond_accumulated_reward_unbounded_time(long n, int t_prob, int T_reward,
-  std::vector<double>& P, const double* reward, const double* q_goal, double* p_out)
+  std::vector<double>& P, const double* goal, const double* reward, const double* q_avoid,
+  double* p_out)
 {
-  std::vector<long> cid;
-  build_coarse_dtmc_classes(n, P, cid);
-
-  std::vector<double> h((size_t)n);
-  ref_hit_probs(n, P, q_goal, h.data());
-
-  std::vector<double> result((size_t)n), newQ((size_t)n), acc((size_t)n);
-  for (long i = 0; i < n; i++) {
-    newQ[(size_t)i] = q_goal[i];
-    result[(size_t)i] = q_goal[i];
-  }
-  for (int mult = 1; mult <= t_prob; mult++) {
-    ref_backward_step(n, mult, P, cid, newQ.data(), acc.data());
-    for (long i = 0; i < n; i++) {
-      result[(size_t)i] += acc[(size_t)i];
-    }
-    std::vector<double> tmp((size_t)n);
-    for (long i = 0; i < n; i++) tmp[(size_t)i] = acc[(size_t)i];
-    newQ.swap(tmp);
-  }
+  const int reward_steps = std::max(0, std::min(t_prob, T_reward));
+  std::vector<double> D((size_t)n), U((size_t)n, 0.0), Dnext((size_t)n), Unext((size_t)n), goal0((size_t)n);
 
   for (long i = 0; i < n; i++) {
-    newQ[(size_t)i] = q_goal[i];
-  }
-  double total_s = 0.0;
-  for (int k = 1; k <= T_reward; k++) {
-    int sk = (k == 1) ? 1 : 2;
-    ref_backward_step(n, sk, P, cid, newQ.data(), acc.data());
-    for (long i = 0; i < n; i++) {
-      double hi = h[(size_t)i];
-      if (hi < 1e-15) hi = 1.0;
-      total_s += acc[(size_t)i] * reward[i] / hi;
-    }
-    std::vector<double> tmp((size_t)n);
-    for (long i = 0; i < n; i++) tmp[(size_t)i] = acc[(size_t)i];
-    newQ.swap(tmp);
+    D[(size_t)i] = goal[i];
+    goal0[(size_t)i] = goal[i];
   }
 
-  for (long j = 0; j < n; j++) {
-    if (result[(size_t)j] != 0.0 && newQ[(size_t)j] != 0.0) {
-      p_out[j] = total_s * newQ[(size_t)j] / result[(size_t)j];
-    } else {
-      p_out[j] = 0.0;
+  for (int step = 0; step < t_prob; step++) {
+    for (long i = 0; i < n; i++) {
+      double sD = 0.0;
+      double sU = 0.0;
+      for (long j = 0; j < n; j++) {
+        const double pij = P[(size_t)i * (size_t)n + (size_t)j];
+        sD += pij * D[(size_t)j];
+        sU += pij * U[(size_t)j];
+      }
+      Dnext[(size_t)i] = sD;
+      Unext[(size_t)i] = sU;
     }
+
+    for (long i = 0; i < n; i++) {
+      if (q_avoid[i] != 0.0) {
+        Dnext[(size_t)i] = 0.0;
+        Unext[(size_t)i] = 0.0;
+      } else if (step < reward_steps) {
+        double add = reward[i] * Dnext[(size_t)i];
+        if (step == 0 && goal0[(size_t)i] != 0.0) {
+          add = 0.0;
+        }
+        Unext[(size_t)i] += add;
+      }
+    }
+
+    D.swap(Dnext);
+    U.swap(Unext);
+  }
+
+  for (long i = 0; i < n; i++) {
+    const double den = D[(size_t)i];
+    p_out[i] = (den != 0.0) ? (U[(size_t)i] / den) : 0.0;
+  }
+}
+
+static void ref_reverse_accumulated_reward_unbounded_time(long n, int t,
+  std::vector<double>& P, const double* goal, const double* reward, double* p_out)
+{
+  std::vector<double> D((size_t)n), U((size_t)n, 0.0), Dnext((size_t)n), Unext((size_t)n), goal0((size_t)n);
+
+  for (long i = 0; i < n; i++) {
+    D[(size_t)i] = goal[i];
+    goal0[(size_t)i] = goal[i];
+  }
+
+  for (int step = 0; step < t; step++) {
+    for (long i = 0; i < n; i++) {
+      double sD = 0.0;
+      double sU = 0.0;
+      for (long j = 0; j < n; j++) {
+        const double pij = P[(size_t)i * (size_t)n + (size_t)j];
+        sD += pij * D[(size_t)j];
+        sU += pij * U[(size_t)j];
+      }
+      Dnext[(size_t)i] = sD;
+      Unext[(size_t)i] = sU;
+    }
+
+    for (long i = 0; i < n; i++) {
+      double add = 0.0;
+      if (Dnext[(size_t)i] > 0.0) {
+        add = reward[i];
+      }
+      if (step == 0 && goal0[(size_t)i] != 0.0) {
+        add = 0.0;
+      }
+      Unext[(size_t)i] += add;
+    }
+
+    D.swap(Dnext);
+    U.swap(Unext);
+  }
+
+  for (long i = 0; i < n; i++) {
+    p_out[i] = U[(size_t)i];
   }
 }
 
@@ -708,8 +752,59 @@ static bool quiet_cond_accumulated_reward_unbounded_time_case(const char* case_n
   return ok;
 }
 
+static bool quiet_reverse_accumulated_reward_unbounded_time_case(const char* case_name,
+  const edge graph[], long num_nodes, const double init[], long time,
+  const double reward[], const double expect[])
+{
+  const double tol = 1e-5;
+  bool verbose = false;
+  Markov_chain* MCd = build_double(true, graph, num_nodes, verbose);
+  Markov_chain* MCf = build_float(true, graph, num_nodes, verbose);
+  Markov_chain::DTMC_transient_options opt;
+
+  double* sold = new double[num_nodes];
+  memcpy(sold, init, num_nodes * sizeof(double));
+  double* solf = new double[num_nodes];
+  memcpy(solf, init, num_nodes * sizeof(double));
+  double* r = new double[num_nodes];
+  memcpy(r, reward, num_nodes * sizeof(double));
+
+  bool ok = true;
+  try {
+    MCd->reverse_accumulated_reward_unbounded_time(time, sold, r, opt);
+    MCf->reverse_accumulated_reward_unbounded_time(time, solf, r, opt);
+  }
+  catch (GraphLib::error e) {
+    cerr << "  [" << case_name << "] graph error: " << e.getString() << "\n";
+    ok = false;
+  }
+  catch (MCLib::error e) {
+    cerr << "  [" << case_name << "] mclib error: " << e.getString() << "\n";
+    ok = false;
+  }
+
+  if (ok) {
+    double dd = diff_vector(expect, sold, num_nodes);
+    double df = diff_vector(expect, solf, num_nodes);
+    if (dd >= tol || df >= tol) {
+      ok = false;
+      cerr << "  FAIL " << case_name << " (tol " << tol << ")\n";
+      show_vector("    MCd", sold, num_nodes);
+      show_vector("    MCf", solf, num_nodes);
+      show_vector("    exp", expect, num_nodes);
+    }
+  }
+
+  delete MCd;
+  delete MCf;
+  delete[] sold;
+  delete[] solf;
+  delete[] r;
+  return ok;
+}
+
 static bool quiet_library_matches_dense_ref(const char* case_name,
-  const edge graph[], long num_nodes, long time, long T,
+  const edge graph[], long num_nodes, const double init[], long time, long T,
   const double reward[], const double q_mask[])
 {
   const double tol_d = 1e-5;
@@ -718,7 +813,7 @@ static bool quiet_library_matches_dense_ref(const char* case_name,
   build_P_from_edges(graph, num_nodes, P);
   std::vector<double> expect((size_t)num_nodes);
   ref_cond_accumulated_reward_unbounded_time(
-    num_nodes, (int)time, (int)T, P, reward, q_mask, expect.data());
+    num_nodes, (int)time, (int)T, P, init, reward, q_mask, expect.data());
 
   Markov_chain* MCd = build_double(true, graph, num_nodes, false);
   Markov_chain* MCf = build_float(true, graph, num_nodes, false);
@@ -728,8 +823,8 @@ static bool quiet_library_matches_dense_ref(const char* case_name,
   std::vector<double> sold((size_t)num_nodes, 0.0);
   std::vector<double> solf((size_t)num_nodes, 0.0);
   for (long i = 0; i < num_nodes; i++) {
-    sold[(size_t)i] = q_mask[i];
-    solf[(size_t)i] = q_mask[i];
+    sold[(size_t)i] = init[i];
+    solf[(size_t)i] = init[i];
   }
 
   bool ok = true;
@@ -738,6 +833,60 @@ static bool quiet_library_matches_dense_ref(const char* case_name,
       (int)time, (int)T, sold.data(), r.data(), qv.data(), opt);
     MCf->conditional_accumulated_reward_unbounded_time(
       (int)time, (int)T, solf.data(), r.data(), qv.data(), opt);
+  }
+  catch (GraphLib::error e) {
+    cerr << "  [" << case_name << "] graph error: " << e.getString() << "\n";
+    ok = false;
+  }
+  catch (MCLib::error e) {
+    cerr << "  [" << case_name << "] mclib error: " << e.getString() << "\n";
+    ok = false;
+  }
+
+  if (ok) {
+    if (diff_vector(expect.data(), sold.data(), num_nodes) >= tol_d ||
+        diff_vector(expect.data(), solf.data(), num_nodes) >= tol_f) {
+      ok = false;
+      cerr << "  FAIL dense-ref " << case_name << "\n";
+      show_vector("    ref", expect.data(), num_nodes);
+      show_vector("    MCd", sold.data(), num_nodes);
+      show_vector("    MCf", solf.data(), num_nodes);
+    }
+  }
+  delete MCd;
+  delete MCf;
+  return ok;
+}
+
+static bool quiet_reverse_library_matches_dense_ref(const char* case_name,
+  const edge graph[], long num_nodes, const double init[], long time,
+  const double reward[])
+{
+  const double tol_d = 1e-5;
+  const double tol_f = 2e-4;
+  std::vector<double> P;
+  build_P_from_edges(graph, num_nodes, P);
+  std::vector<double> expect((size_t)num_nodes);
+  ref_reverse_accumulated_reward_unbounded_time(
+    num_nodes, (int)time, P, init, reward, expect.data());
+
+  Markov_chain* MCd = build_double(true, graph, num_nodes, false);
+  Markov_chain* MCf = build_float(true, graph, num_nodes, false);
+  Markov_chain::DTMC_transient_options opt;
+  std::vector<double> r(reward, reward + num_nodes);
+  std::vector<double> sold((size_t)num_nodes, 0.0);
+  std::vector<double> solf((size_t)num_nodes, 0.0);
+  for (long i = 0; i < num_nodes; i++) {
+    sold[(size_t)i] = init[i];
+    solf[(size_t)i] = init[i];
+  }
+
+  bool ok = true;
+  try {
+    MCd->reverse_accumulated_reward_unbounded_time(
+      (int)time, sold.data(), r.data(), opt);
+    MCf->reverse_accumulated_reward_unbounded_time(
+      (int)time, solf.data(), r.data(), opt);
   }
   catch (GraphLib::error e) {
     cerr << "  [" << case_name << "] graph error: " << e.getString() << "\n";
@@ -805,7 +954,7 @@ static bool run_backward_timed_random_vs_ref()
     char name[80];
     std::snprintf(name, sizeof(name), "rand_t%ld_T%ld_n%ld_%d", t, T, n, trial);
 
-    if (!quiet_library_matches_dense_ref(name, edges.data(), n, t, T,
+    if (!quiet_library_matches_dense_ref(name, edges.data(), n, qmask.data(), t, T,
           reward.data(), qmask.data())) {
       nfail++;
     }
@@ -844,15 +993,15 @@ static bool run_backward_timed_cond_regression()
   nrun++;
 
   if (!quiet_library_matches_dense_ref(
-        "dense_graph03_t4_T3", graph03, num_nodes3, 4, 3, reward3, q3)) {
+        "dense_graph03_t4_T3", graph03, num_nodes3, p3, 4, 3, reward3, q3)) {
     nfail++;
   }
   if (!quiet_library_matches_dense_ref(
-        "dense_graph03_t4_T4", graph03, num_nodes3, 4, 4, reward3, q3)) {
+        "dense_graph03_t4_T4", graph03, num_nodes3, p3, 4, 4, reward3, q3)) {
     nfail++;
   }
   if (!quiet_library_matches_dense_ref(
-        "dense_graph04_t4_T4", graph04, num_nodes4, 4, 4, reward4, q4)) {
+        "dense_graph04_t4_T4", graph04, num_nodes4, p4, 4, 4, reward4, q4)) {
     nfail++;
   }
 
@@ -864,14 +1013,111 @@ static bool run_backward_timed_cond_regression()
   return false;
 }
 
+static bool run_backward_timed_acc_random_vs_ref()
+{
+  const int trials = 30;
+  int nfail = 0;
+  uint64_t seed = 0xA11CEu;
+  auto rnd32 = [&]() -> uint32_t {
+    seed = seed * 6364136223846793005ull + 1442695040888963407ull;
+    return (uint32_t)(seed >> 32);
+  };
+
+  for (int trial = 0; trial < trials; trial++) {
+    long n = 4 + (long)(rnd32() % 5);
+    long goal = n - 1;
+    std::vector<edge> edges;
+    for (long i = 0; i < goal; i++) {
+      double w = 1.0 + (double)(rnd32() % 5);
+      edges.push_back({i, i + 1, w});
+    }
+    edges.push_back({goal, goal, 1.0});
+    int nex = 2 + (int)(rnd32() % 5);
+    for (int e = 0; e < nex; e++) {
+      long i = (long)(rnd32() % (uint32_t)(n - 1));
+      long j = (long)(rnd32() % (uint32_t)n);
+      if (i == j) continue;
+      double w = 1.0 + (double)(rnd32() % 5);
+      edges.push_back({i, j, w});
+    }
+    edges.push_back({-1, -1, -1});
+
+    std::vector<double> reward((size_t)n, 0.0);
+    std::vector<double> goal_mask((size_t)n, 0.0);
+    for (long i = 0; i < n; i++) {
+      reward[(size_t)i] = (double)(rnd32() % 4);
+    }
+    goal_mask[(size_t)goal] = 1.0;
+
+    long t = 2 + (long)(rnd32() % 4);
+    char name[80];
+    std::snprintf(name, sizeof(name), "rand_acc_t%ld_n%ld_%d", t, n, trial);
+
+    if (!quiet_reverse_library_matches_dense_ref(
+          name, edges.data(), n, goal_mask.data(), t, reward.data())) {
+      nfail++;
+    }
+  }
+
+  if (nfail == 0) {
+    cout << "backward_timed_acc: " << trials
+         << " random DTMCs OK vs dense ref (MCd+MCf)\n";
+    return true;
+  }
+  cerr << "backward_timed_acc: " << nfail << " random case(s) failed vs dense ref\n";
+  return false;
+}
+
+static bool run_backward_timed_acc_regression()
+{
+  int nfail = 0;
+  int nrun = 0;
+
+  if (!quiet_reverse_accumulated_reward_unbounded_time_case(
+        "graph03_acc_t3", graph03, num_nodes3, q3, 3, reward3, pt3_acc_t3)) {
+    nfail++;
+  }
+  nrun++;
+
+  if (!quiet_reverse_accumulated_reward_unbounded_time_case(
+        "graph03_acc_t4", graph03, num_nodes3, q3, 4, reward3, pt3_acc_t4)) {
+    nfail++;
+  }
+  nrun++;
+
+  if (!quiet_reverse_library_matches_dense_ref(
+        "dense_graph03_acc_t3", graph03, num_nodes3, q3, 3, reward3)) {
+    nfail++;
+  }
+  if (!quiet_reverse_library_matches_dense_ref(
+        "dense_graph03_acc_t4", graph03, num_nodes3, q3, 4, reward3)) {
+    nfail++;
+  }
+  if (!quiet_reverse_library_matches_dense_ref(
+        "dense_graph04_acc_t4", graph04, num_nodes4, q4, 4, reward4)) {
+    nfail++;
+  }
+
+  if (nfail == 0) {
+    cout << "backward_timed_acc: " << nrun << " gold + 3 dense-ref checks OK (MCd + MCf)\n";
+    return true;
+  }
+  cerr << "backward_timed_acc: " << nfail << " case(s) failed\n";
+  return false;
+}
+
 
 // =======================================================================
 
 int main(){
-  // if (!run_backward_timed_cond_regression())
-  //   return 1;
-  // if (!run_backward_timed_random_vs_ref())
-  //   return 1;
+  if (!run_backward_timed_cond_regression())
+    return 1;
+  if (!run_backward_timed_random_vs_ref())
+    return 1;
+  if (!run_backward_timed_acc_regression())
+    return 1;
+  if (!run_backward_timed_acc_random_vs_ref())
+    return 1;
   if (!cond_accumulated_reward_timestep_test(
         "graph03_cond_accumulated_reward_timestep_t4", graph03, num_nodes3, p3, 4, reward3,
         pt3_timestep_t4, q3))

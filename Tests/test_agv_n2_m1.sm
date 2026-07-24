@@ -1,0 +1,60 @@
+dtmc agv:={
+state s0,s1,s2,s3,s4,s5,s6,s7,s8,s9,s10,s11,s12,s13,s14,s15,s16,s17,s18,s19,s20,s21,s22,s23,s24,s25;
+init(s0:1);
+  arcs(
+  s0 : s0 :0.0625,
+  s0 : s1 :0.025,
+  s0 : s2 :0.0125,
+  s0 : s3 :0.15,
+  s0 : s5 :0.025,
+  s0 : s6 :0.01,
+  s0 : s7 :0.005,
+  s0 : s8 :0.06,
+  s0 : s10 :0.0125,
+  s0 : s11 :0.005,
+  s0 : s12 :0.0025,
+  s0 : s13 :0.03,
+  s0 : s15 :0.15,
+  s0 : s16 :0.06,
+  s0 : s17 :0.03,
+  s0 : s25 :0.36,
+  s1 : s0 :0.4,
+  s1 : s15 :0.6,
+  s2 : s0 :0.4,
+  s2 : s15 :0.6,
+  s3 : s4 :0.4,
+  s3 : s25 :0.6,
+  s4 : s4 :0.4,
+  s4 : s25 :0.6,
+  s5 : s0 :0.4,
+  s5 : s3 :0.6,
+  s6 : s0 :1,
+  s7 : s0 :1,
+  s8 : s4 :1,
+  s9 : s4 :1,
+  s10 : s0 :0.4,
+  s10 : s3 :0.6,
+  s11 : s0 :1,
+  s12 : s0 :1,
+  s13 : s4 :1,
+  s14 : s4 :1,
+  s15 : s20 :0.4,
+  s15 : s25 :0.6,
+  s16 : s20 :1,
+  s17 : s20 :1,
+  s18 : s25 :1,
+  s19 : s25 :1,
+  s20 : s20 :0.4,
+  s20 : s25 :0.6,
+  s21 : s20 :1,
+  s22 : s20 :1,
+  s23 : s25 :1,
+  s24 : s25 :1,
+  s25 : s25 :1
+  );
+
+// re: rate(s) = #AGVs in local DELIVERED (equivalent to impulse-on-enter-DELIVERED while each visit lasts 1 step).
+statevect re:= reward(s3:1,s8:1,s13:1,s15:1,s16:1,s17:1,s18:2,s19:1,s23:1);
+stateset success := {s25};
+stateset collided := {s2,s7,s10,s11,s12,s13,s14,s17,s22};
+};

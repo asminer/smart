@@ -635,6 +635,40 @@ bool mclib_process
 // ******************************************************************
 
 bool mclib_process
+::reverseAccRewardUnboundedTime(int t, double* probs, double* aux, double* reward) const
+{
+  if (0==chain || 0==probs)  return false;
+  DCASSERT(chain);
+
+  try {
+    timer w;
+    if (is_discrete) {
+      MCLib::Markov_chain::DTMC_transient_options opts;
+      opts.vm_result = aux;
+
+      int it = int(t);
+      startTransientReport(w, it);
+      chain->reverse_accumulated_reward_unbounded_time(t, probs, reward, opts);
+      stopTransientReport(w, opts.multiplications);
+
+      opts.vm_result = 0;
+      opts.accumulator = 0;
+    }
+    return true;
+  }
+  catch (MCLib::error e) {
+    if (em->startInternal(__FILE__, __LINE__)) {
+      em->noCause();
+      em->internal() << "Unexpected error: ";
+      em->internal() << e.getString();
+      em->stopIO();
+    }
+    return false;
+  }
+}
+// ******************************************************************
+
+bool mclib_process
 ::reverseCondAccRewardUnbounded(int t, double* probs, double* aux, double* reward, double* abs) const
 {
   if (0==chain || 0==probs)  return false;

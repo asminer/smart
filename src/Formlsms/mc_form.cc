@@ -913,6 +913,105 @@ void mc_acc_reward::Compute(traverse_data &x, expr** pass, int np)
 }
 
 // **************************************************************************
+// *                           mc_acc_reward_time class                       *
+// **************************************************************************
+
+class mc_acc_reward_time : public model_internal {
+  bool is_disc;
+public:
+  mc_acc_reward_time(bool disc);
+  virtual void Compute(traverse_data &x, expr** pass, int np);
+
+  inline void ExtractParams(traverse_data &x, expr** pass, int np,
+    stochastic_lldsm* &cruft, shared_object* &ss) {
+
+      DCASSERT(x.answer);
+      DCASSERT(4==np);
+
+      model_instance* mi = grabModelInstance(x, pass[0]);
+      DCASSERT(mi);
+      hldsm* foo = mi->GetCompiledModel();
+      DCASSERT(foo);
+      lldsm* bar = foo->GetProcess();
+      DCASSERT(bar);
+      cruft = smart_cast<stochastic_lldsm*>(bar);
+      DCASSERT(cruft);
+
+      ss = cruft->getPotential(pass[2]);
+  }
+};
+
+mc_acc_reward_time::mc_acc_reward_time(bool disc)
+: model_internal(
+    em->STATEVECT, "acc_reward_time", 4
+  )
+{
+  is_disc = disc;
+  SetFormal(1,em->INT,"time");
+  SetFormal(2, em->STATESET, "q");
+  SetFormal(3, em->STATEVECT, "r");
+  SetDocumentation("Returns the accumulated reward over the first time steps, counting reward only in states from which q is reachable within the remaining time.");
+}
+
+void mc_acc_reward_time::Compute(traverse_data &x, expr** pass, int np)
+{
+  stochastic_lldsm* proc = 0;
+  shared_object* accept = 0;
+
+  pass[1]->Compute(x);
+  if (!x.answer->isNormal()) return ;
+  long time = x.answer->getInt();
+  ExtractParams(x, pass, np, proc, accept);
+  if (0==proc || 0==accept) {
+    x.answer->setNull();
+    return;
+  }
+
+  SafeCompute(pass[2], x);
+  if (!x.answer->isNormal()) {
+    return;
+  }
+
+  stateset* ss = smart_cast <stateset*>(Share(x.answer->getPtr()));
+  expl_stateset* e = dynamic_cast <expl_stateset*>(ss);
+  if (!e) {
+
+    if (em->startError()) {
+      em->causedBy(this);
+      em->cerr() << "Sorry, condition() requires explicit statesets (for now)";
+      em->stopIO();
+    }
+    Delete(accept);
+    x.answer->setNull();
+    return;
+  }
+  const intset& eis = e->getExplicit();
+  double* probs=new double[proc->getNumStates()];
+  for(long p = 0; p < proc->getPROC()->getNumStates(); ++p) {
+     probs[p] =0;
+  }
+  for(long i=0;i<proc->getPROC()->getNumStates();i++){
+    if(eis.contains(i)){
+      probs[i]=1;
+    }
+  }
+
+  double* aux=0;
+  SafeCompute(pass[3],x);
+  if (!x.answer->isNormal()) {
+    return;
+  }
+  statevect* sv = smart_cast <statevect*>(Share(x.answer->getPtr()));
+  double* reward= new double[proc->getPROC()->getNumStates()];
+  sv->ExportTo(reward);
+
+  bool res= proc->getPROC()->reverseAccRewardUnboundedTime(time, probs, aux, reward);
+
+  statevect* svv= new statevect(proc,probs,proc->getPROC()->getNumStates());
+  x.answer->setPtr(svv);
+}
+
+// **************************************************************************
 // *                              mc_cond_acc_reward class                              *
 // **************************************************************************
 
@@ -1097,11 +1196,11 @@ mc_cond_acc_reward_time::mc_cond_acc_reward_time(bool disc)
 {
   is_disc = disc;
   SetFormal(1,em->INT,"time");
-  SetFormal(2,em->INT,"T");//this is the exact time t, up to which time we accumulate reward
+  SetFormal(2,em->INT,"T");
   SetFormal(3, em->STATESET, "p");
   SetFormal(4, em->STATEVECT, "r");
    SetFormal(5, em->STATESET, "q");
-  SetDocumentation("Returns the conditional expected accumulated reward until reaching p states avoiding absorbing q state, when starting from the transient states.");
+  SetDocumentation("Returns the conditional expected accumulated reward over the first min(time,T) steps, conditioned on reaching p within time steps while avoiding q.");
 }
 #include <iostream>
 void mc_cond_acc_reward_time::Compute(traverse_data &x, expr** pass, int np)
@@ -1781,6 +1880,7 @@ void init_mcform::FillSymbolTable(bool disc, formalism* mc)
   static symbol*  rev_dTTA=0;
   static symbol*  rev_timed_dTTA=0;
   static symbol*  rev_cond_dTTA=0;
+  static symbol*  acc_reward_time=0;
   static symbol*  cond_acc_reward=0;
   static symbol*  cond_acc_reward_time=0;
 
@@ -1812,6 +1912,8 @@ void init_mcform::FillSymbolTable(bool disc, formalism* mc)
     mcsyms->AddSymbol(rev_cond_dTTA);
     if (!acc_reward)    acc_reward = new  mc_acc_reward(true);
       mcsyms->AddSymbol(acc_reward);
+    if (!acc_reward_time)    acc_reward_time = new  mc_acc_reward_time(true);
+      mcsyms->AddSymbol(acc_reward_time);
     if (!cond_acc_reward)    cond_acc_reward = new  mc_cond_acc_reward(true);
       mcsyms->AddSymbol(cond_acc_reward);
     if (!cond_acc_reward_time)    cond_acc_reward_time = new  mc_cond_acc_reward_time(true);

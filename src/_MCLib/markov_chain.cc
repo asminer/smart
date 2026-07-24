@@ -1321,10 +1321,10 @@ namespace MCLib {
               
       //         aux[i] = aux[i]+reward[i];
       //         }  
-              std::cout<< "aux ";
+              //std::cout<< "aux ";
       for(long i =0;i<Qdiag.size;i++){
               
-              std::cout<< aux[i]<< " ";
+              //std::cout<< aux[i]<< " ";
               //std::cout<< "p"<< p[i]<< std::endl;
               }
               std::cout << "\n";
@@ -1868,84 +1868,165 @@ namespace MCLib {
     delete[] y;
   }
 
-  // Backward uses G_bycols (transpose); hitting probs use G_byrows (forward P).
   template <class MATRIX, class REAL>
-  void templ_dtmc_backward_timed_cond_reward(MATRIX &Qdiag_bycols, MATRIX &Qoff_bycols,
-    MATRIX &Qdiag_byrows, MATRIX &Qoff_byrows,
-    const REAL* diags, int t_prob, int T_reward, double* p,
-    const double* reward, const double* q_goal, bool normalize,
-    Markov_chain::DTMC_transient_options &opts)
+  void templ_dtmc_reverse_accumulated_reward_timestep(MATRIX &Qdiag, MATRIX &Qoff, const REAL* diags,
+    int t, double* p, const double* reward,
+    bool normalize, Markov_chain::DTMC_transient_options &opts)
   {
-    DCASSERT(diags);
-    const long size = Qdiag_bycols.Size();
-    (void)normalize;
+      DCASSERT(diags);
+      (void)normalize;
 
-    double* h = new double[size];
-    templ_dtmc_hit_goal_probs(Qdiag_byrows, Qoff_byrows, diags, q_goal, h, size);
+      const long size = Qdiag.Size();
 
-    double* result = new double[size];
-    double* newQ = new double[size];
-    double* acc = new double[size];
+      auto P_times = [&](double* out, const double* x) {
+        zeroArray(out, size);
+        Qdiag.MatrixVectorMultiply(out, x);
+        Qoff.MatrixVectorMultiply(out, x);
+        for (long i = 0; i < size; i++) {
+          out[i] += x[i] * diags[i];
+        }
+      };
 
-    for (long i = 0; i < size; i++) {
-      newQ[i] = q_goal[i];
-      result[i] = q_goal[i];
-    }
-    for (int mult = 1; mult <= t_prob; mult++) {
-      zeroArray(acc, size);
-      if (mult == 1) {
-        Qoff_bycols.VectorMatrixMultiply(acc, newQ);
-      } else {
-        Qdiag_bycols.VectorMatrixMultiply(acc, newQ);
-        Qoff_bycols.VectorMatrixMultiply(acc, newQ);
-        adjustDiagonals(acc, newQ, diags, size);
+      double* D = new double[size];
+      double* U = new double[size];
+      double* Dnext = new double[size];
+      double* Unext = new double[size];
+      double* goal0 = new double[size];
+
+      memcpy(D, p, size * sizeof(double));
+      memcpy(goal0, p, size * sizeof(double));
+      zeroArray(U, size);
+
+      for (int step = 0; step < t; step++) {
+        P_times(Dnext, D);
+        P_times(Unext, U);
+
+        for (long i = 0; i < size; i++) {
+          double add = 0.0;
+          if (reward && Dnext[i] > 0.0) {
+            add = reward[i];
+          }
+          if (step == 0 && goal0[i] != 0.0) {
+            add = 0.0;
+          }
+          Unext[i] += add;
+        }
+
+        SWAP(U, Unext);
+        SWAP(D, Dnext);
       }
+
+      memcpy(p, U, size * sizeof(double));
+
+      delete[] D;
+      delete[] U;
+      delete[] Dnext;
+      delete[] Unext;
+      delete[] goal0;
+      opts.multiplications = t;
+  }
+
+  template <class MATRIX, class REAL>
+  void templ_dtmc_accumulated_reward_timestep_time(MATRIX &Qdiag, MATRIX &Qoff, const REAL* diags,
+    int t_prob, int T_reward, double* p, const double* reward, const double* q,
+    bool normalize, Markov_chain::DTMC_transient_options &opts)
+  {
+      DCASSERT(diags);
+      (void)normalize;
+
+      const long size = Qdiag.Size();
+      const int reward_steps = std::max(0, std::min(t_prob, T_reward));
+
+      auto P_times = [&](double* out, const double* x) {
+        zeroArray(out, size);
+        Qdiag.MatrixVectorMultiply(out, x);
+        Qoff.MatrixVectorMultiply(out, x);
+        for (long i = 0; i < size; i++) {
+          out[i] += x[i] * diags[i];
+        }
+      };
+
+      double* D = new double[size];
+      double* U = new double[size];
+      double* Dnext = new double[size];
+      double* Unext = new double[size];
+      double* goal0 = new double[size];
+
+      memcpy(D, p, size * sizeof(double));
+      memcpy(goal0, p, size * sizeof(double));
+      zeroArray(U, size);
+
+      for (int step = 0; step < t_prob; step++) {
+        P_times(Dnext, D);
+        if (q) {
+          for (long i = 0; i < size; i++) {
+            if (q[i] != 0.0) Dnext[i] = 0.0;
+          }
+        }
+
+        P_times(Unext, U);
+        for (long i = 0; i < size; i++) {
+          if (q && q[i] != 0.0) {
+            Unext[i] = 0.0;
+          } else {
+            double add = 0.0;
+            if (step < reward_steps) {
+              add = reward ? (reward[i] * Dnext[i]) : 0.0;
+              if (step == 0 && goal0[i] != 0.0) {
+                add = 0.0;
+              }
+            }
+            Unext[i] += add;
+          }
+        }
+
+        SWAP(U, Unext);
+        SWAP(D, Dnext);
+      }
+
       for (long i = 0; i < size; i++) {
-        result[i] += acc[i];
+        const double den = D[i];
+        p[i] = (den != 0.0) ? (U[i] / den) : 0.0;
       }
-      SWAP(acc, newQ);
-    }
 
-    for (long i = 0; i < size; i++) {
-      newQ[i] = q_goal[i];
-    }
-    double total_s = 0.0;
-    for (int k = 1; k <= T_reward; k++) {
-      zeroArray(acc, size);
-      if (k == 1) {
-        Qoff_bycols.VectorMatrixMultiply(acc, newQ);
-      } else {
-        Qdiag_bycols.VectorMatrixMultiply(acc, newQ);
-        Qoff_bycols.VectorMatrixMultiply(acc, newQ);
-        adjustDiagonals(acc, newQ, diags, size);
-      }
-      for (long i = 0; i < size; i++) {
-        double hi = h[i];
-        if (hi < 1e-15) hi = 1.0;
-        total_s += acc[i] * reward[i] / hi;
-      }
-      SWAP(acc, newQ);
-    }
-
-    // total_s already uses r[i]/h[i] at arrivals; newQ and result are the same
-    // backward kernel, so do not divide again by h[j] (that doubled the correction).
-    for (long j = 0; j < size; j++) {
-      if (result[j] != 0.0 && newQ[j] != 0.0) {
-        p[j] = total_s * newQ[j] / result[j];
-      } else {
-        p[j] = 0.0;
-      }
-    }
-
-    delete[] h;
-    delete[] result;
-    delete[] acc;
-    delete[] newQ;
-    opts.multiplications = t_prob;
+      delete[] D;
+      delete[] U;
+      delete[] Dnext;
+      delete[] Unext;
+      delete[] goal0;
+      opts.multiplications = t_prob;
   }
 }  
 
 
+// ******************************************************************
+
+void MCLib::Markov_chain::reverse_accumulated_reward_unbounded_time(int t, double* p, double* reward,
+  DTMC_transient_options &opts) const
+{
+  if (0==p) {
+    throw MCLib::error(MCLib::error::Null_Vector);
+  }
+  if (!isDiscrete()) {
+    throw MCLib::error(MCLib::error::Wrong_Type);
+  }
+
+  if (double_graphs) {
+    LS_CRS_Matrix_double Qdiag, Qoff;
+    graphToMatrix(G_byrows_diag, Qdiag);
+    graphToMatrix(G_byrows_off, Qoff);
+    templ_dtmc_reverse_accumulated_reward_timestep(
+      Qdiag, Qoff, selfloops_d, t, p, reward, false, opts
+    );
+  } else {
+    LS_CRS_Matrix_float Qdiag, Qoff;
+    graphToMatrix(G_byrows_diag, Qdiag);
+    graphToMatrix(G_byrows_off, Qoff);
+    templ_dtmc_reverse_accumulated_reward_timestep(
+      Qdiag, Qoff, selfloops_f, t, p, reward, false, opts
+    );
+  }
+}
 // ******************************************************************
 
 void MCLib::Markov_chain::conditional_accumulated_reward_unbounded(int t, double* p, double* reward,double* q,
@@ -2231,8 +2312,6 @@ void MCLib::Markov_chain::conditional_accumulated_reward_timestep(int t, double*
 void MCLib::Markov_chain::conditional_accumulated_reward_unbounded_time(int t,int T, double* p, double* reward,double* q,
   DTMC_transient_options &opts) const
 {
-  /////// ******************************************************** ///////
-  ////I am using timestep version of the function because I am using the timestep version of the function in the other function
   if (0==p) {
     throw MCLib::error(MCLib::error::Null_Vector);
   }
@@ -2241,21 +2320,19 @@ void MCLib::Markov_chain::conditional_accumulated_reward_unbounded_time(int t,in
   }
 
   if (double_graphs) {
-    LS_CRS_Matrix_double Q_bc_d, Q_bc_o, Q_br_d, Q_br_o;
-    graphToMatrix(G_bycols_diag, Q_bc_d);
-    graphToMatrix(G_bycols_off, Q_bc_o);
-    graphToMatrix(G_byrows_diag, Q_br_d);
-    graphToMatrix(G_byrows_off, Q_br_o);
-    templ_dtmc_backward_timed_cond_reward(Q_bc_d, Q_bc_o, Q_br_d, Q_br_o,
-      selfloops_d, t, T, p, reward, q, false, opts);
+    LS_CRS_Matrix_double Qdiag, Qoff;
+    graphToMatrix(G_byrows_diag, Qdiag);
+    graphToMatrix(G_byrows_off, Qoff);
+    templ_dtmc_accumulated_reward_timestep_time(
+      Qdiag, Qoff, selfloops_d, t, T, p, reward, q, false, opts
+    );
   } else {
-    LS_CRS_Matrix_float Q_bc_d, Q_bc_o, Q_br_d, Q_br_o;
-    graphToMatrix(G_bycols_diag, Q_bc_d);
-    graphToMatrix(G_bycols_off, Q_bc_o);
-    graphToMatrix(G_byrows_diag, Q_br_d);
-    graphToMatrix(G_byrows_off, Q_br_o);
-    templ_dtmc_backward_timed_cond_reward(Q_bc_d, Q_bc_o, Q_br_d, Q_br_o,
-      selfloops_f, t, T, p, reward, q, false, opts);
+    LS_CRS_Matrix_float Qdiag, Qoff;
+    graphToMatrix(G_byrows_diag, Qdiag);
+    graphToMatrix(G_byrows_off, Qoff);
+    templ_dtmc_accumulated_reward_timestep_time(
+      Qdiag, Qoff, selfloops_f, t, T, p, reward, q, false, opts
+    );
   }
 }
 
